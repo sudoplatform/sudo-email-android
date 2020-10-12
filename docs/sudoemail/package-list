@@ -1,0 +1,8 @@
+$dokka.format:html
+$dokka.linkExtension:html
+
+com.sudoplatform.sudoemail
+com.sudoplatform.sudoemail.subscription
+com.sudoplatform.sudoemail.types
+com.sudoplatform.sudoemail.types.inputs.filters
+

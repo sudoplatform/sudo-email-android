@@ -1,0 +1,391 @@
+# this is an auto generated file. This will be overwritten
+query GetEmailDomains {
+  getEmailDomains {
+    domains
+  }
+}
+query CheckEmailAddressAvailability(
+  $input: CheckEmailAddressAvailabilityInput!
+) {
+  checkEmailAddressAvailability(input: $input) {
+    addresses
+  }
+}
+query GetEmailAddress($id: String!) {
+  getEmailAddress(id: $id) {
+    id
+    userId
+    sudoId
+    identityId
+    keyRingId
+    owners {
+      id
+      issuer
+    }
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    emailAddress
+  }
+}
+query ListEmailAddresses($input: ListEmailAddressesInput!) {
+  listEmailAddresses(input: $input) {
+    items {
+      id
+      userId
+      sudoId
+      identityId
+      keyRingId
+      owners {
+        id
+        issuer
+      }
+      version
+      createdAtEpochMs
+      updatedAtEpochMs
+      emailAddress
+    }
+    nextToken
+  }
+}
+query GetEmailMessage($id: ID!) {
+  getEmailMessage(id: $id) {
+    id
+    messageId
+    userId
+    sudoId
+    emailAddressId
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    algorithm
+    keyId
+    direction
+    seen
+    state
+    clientRefId
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+  }
+}
+query ListEmailMessages($input: ListEmailMessagesInput!) {
+  listEmailMessages(input: $input) {
+    items {
+      id
+      messageId
+      userId
+      sudoId
+      emailAddressId
+      version
+      createdAtEpochMs
+      updatedAtEpochMs
+      algorithm
+      keyId
+      direction
+      seen
+      state
+      clientRefId
+      from
+      replyTo
+      to
+      cc
+      bcc
+      subject
+    }
+    nextToken
+  }
+}
+query GetPublicKeyForEmail($keyId: String!) {
+  getPublicKeyForEmail(keyId: $keyId) {
+    id
+    keyId
+    keyRingId
+    algorithm
+    publicKey
+    owner
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+  }
+}
+query GetPublicKeysForEmail($limit: Int, $nextToken: String) {
+  getPublicKeysForEmail(limit: $limit, nextToken: $nextToken) {
+    items {
+      id
+      keyId
+      keyRingId
+      algorithm
+      publicKey
+      owner
+      version
+      createdAtEpochMs
+      updatedAtEpochMs
+    }
+    nextToken
+  }
+}
+query GetKeyRingForEmail($keyRingId: String!, $limit: Int, $nextToken: String) {
+  getKeyRingForEmail(
+    keyRingId: $keyRingId
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    items {
+      id
+      keyId
+      keyRingId
+      algorithm
+      publicKey
+      owner
+      version
+      createdAtEpochMs
+      updatedAtEpochMs
+    }
+    nextToken
+  }
+}
+mutation ProvisionEmailAddress($input: ProvisionEmailAddressInput!) {
+  provisionEmailAddress(input: $input) {
+    id
+    userId
+    sudoId
+    identityId
+    keyRingId
+    owners {
+      id
+      issuer
+    }
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    emailAddress
+  }
+}
+mutation DeprovisionEmailAddress($input: DeprovisionEmailAddressInput!) {
+  deprovisionEmailAddress(input: $input) {
+    id
+    userId
+    sudoId
+    identityId
+    keyRingId
+    owners {
+      id
+      issuer
+    }
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    emailAddress
+  }
+}
+mutation SendEmailMessage($input: SendEmailMessageInput!) {
+  sendEmailMessage(input: $input)
+}
+mutation DeleteEmailMessage($input: DeleteEmailMessageInput!) {
+  deleteEmailMessage(input: $input)
+}
+mutation InternalFireOnEmailMessageCreated(
+  $input: InternalFireSealedEmailMessageInput!
+) {
+  internalFireOnEmailMessageCreated(input: $input) {
+    id
+    messageId
+    userId
+    sudoId
+    emailAddressId
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    algorithm
+    keyId
+    direction
+    seen
+    state
+    clientRefId
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+  }
+}
+mutation InternalFireOnEmailMessageDeleted(
+  $input: InternalFireSealedEmailMessageInput!
+) {
+  internalFireOnEmailMessageDeleted(input: $input) {
+    id
+    messageId
+    userId
+    sudoId
+    emailAddressId
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    algorithm
+    keyId
+    direction
+    seen
+    state
+    clientRefId
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+  }
+}
+mutation CreatePublicKeyForEmail($input: CreatePublicKeyInput!) {
+  createPublicKeyForEmail(input: $input) {
+    id
+    keyId
+    keyRingId
+    algorithm
+    publicKey
+    owner
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+  }
+}
+mutation DeletePublicKeyForEmail($input: DeletePublicKeyInput) {
+  deletePublicKeyForEmail(input: $input) {
+    id
+    keyId
+    keyRingId
+    algorithm
+    publicKey
+    owner
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+  }
+}
+subscription OnEmailAddressCreated($userId: ID!) {
+  onEmailAddressCreated(userId: $userId) {
+    id
+    userId
+    sudoId
+    identityId
+    keyRingId
+    owners {
+      id
+      issuer
+    }
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    emailAddress
+  }
+}
+subscription OnEmailMessageCreated(
+  $userId: String!
+) {
+  onEmailMessageCreated(userId: $userId) {
+    id
+    messageId
+    userId
+    sudoId
+    emailAddressId
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    algorithm
+    keyId
+    direction
+    seen
+    state
+    clientRefId
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+  }
+}
+subscription OnEmailMessageCreatedByDirection(
+  $userId: String!
+  $direction: EmailMessageDirection!
+) {
+  onEmailMessageCreated(userId: $userId, direction: $direction) {
+    id
+    messageId
+    userId
+    sudoId
+    emailAddressId
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    algorithm
+    keyId
+    direction
+    seen
+    state
+    clientRefId
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+  }
+}
+subscription OnEmailMessageDeleted(
+  $userId: ID!
+) {
+  onEmailMessageDeleted(userId: $userId) {
+    id
+    messageId
+    userId
+    sudoId
+    emailAddressId
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    algorithm
+    keyId
+    direction
+    seen
+    state
+    clientRefId
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+  }
+}
+subscription OnEmailMessageDeletedById(
+  $userId: ID!
+  $id: ID!
+) {
+  onEmailMessageDeleted(userId: $userId, id: $id) {
+    id
+    messageId
+    userId
+    sudoId
+    emailAddressId
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
+    algorithm
+    keyId
+    direction
+    seen
+    state
+    clientRefId
+    from
+    replyTo
+    to
+    cc
+    bcc
+    subject
+  }
+}
