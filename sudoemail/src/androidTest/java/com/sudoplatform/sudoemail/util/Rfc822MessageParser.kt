@@ -44,31 +44,31 @@ internal object Rfc822MessageParser {
             val bccRecipients = getRecipients(Message.RecipientType.BCC)?.map { it.toString() } ?: emptyList()
 
             return buildString {
-                appendln("MimeMessage [")
-                appendln("  From: $sender")
-                appendln("  To: $toRecipients")
-                appendln("  Cc: $ccRecipients")
-                appendln("  Bcc: $bccRecipients")
-                appendln("  Subject: $subject")
-                appendln("  Received: $receivedDate")
-                appendln("  ContentType: $contentType")
-                appendln("  Description: $description")
-                appendln("  Encoding: $encoding")
-                appendln("  Size: $size")
+                appendLine("MimeMessage [")
+                appendLine("  From: $sender")
+                appendLine("  To: $toRecipients")
+                appendLine("  Cc: $ccRecipients")
+                appendLine("  Bcc: $bccRecipients")
+                appendLine("  Subject: $subject")
+                appendLine("  Received: $receivedDate")
+                appendLine("  ContentType: $contentType")
+                appendLine("  Description: $description")
+                appendLine("  Encoding: $encoding")
+                appendLine("  Size: $size")
                 val multipart = MimeMultipart(dataHandler.dataSource)
-                appendln("  Preamble: ${multipart.preamble}")
+                appendLine("  Preamble: ${multipart.preamble}")
                 for (i in 0 until multipart.count) {
                     val bodyPart = multipart.getBodyPart(i)
-                    appendln("  Body Part $i [")
-                    appendln("    ContentType: ${bodyPart.contentType}")
-                    appendln("    Description: ${bodyPart.description}")
-                    appendln("    Size: ${bodyPart.size}")
+                    appendLine("  Body Part $i [")
+                    appendLine("    ContentType: ${bodyPart.contentType}")
+                    appendLine("    Description: ${bodyPart.description}")
+                    appendLine("    Size: ${bodyPart.size}")
                     if (bodyPart.contentType == "text/plain") {
-                        appendln("    Content: ${bodyPart.content}")
+                        appendLine("    Content: ${bodyPart.content}")
                     }
-                    appendln("  ]")
+                    appendLine("  ]")
                 }
-                appendln("]")
+                appendLine("]")
             }
         }
     }

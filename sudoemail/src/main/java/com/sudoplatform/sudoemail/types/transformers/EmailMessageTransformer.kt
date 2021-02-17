@@ -170,7 +170,8 @@ internal object EmailMessageTransformer {
         return when (filter) {
             is EmailMessageFilter.PropertyFilter.LogicalAnd -> {
                 EmailMessageFilterInput.builder()
-                    .and(filter.filters.map {
+                    .and(
+                        filter.filters.map {
                             it.toEmailMessageFilterInput()
                         }
                     )
@@ -178,7 +179,8 @@ internal object EmailMessageTransformer {
             }
             is EmailMessageFilter.PropertyFilter.LogicalOr -> {
                 EmailMessageFilterInput.builder()
-                    .or(filter.filters.map {
+                    .or(
+                        filter.filters.map {
                             it.toEmailMessageFilterInput()
                         }
                     )
@@ -223,16 +225,20 @@ internal object EmailMessageTransformer {
         return when (this) {
             is EmailMessageFilter.PropertyFilter.LogicalAnd -> {
                 EmailMessageFilterInput.builder()
-                    .and(this.filters.map {
-                        it.toEmailMessageFilterInput()
-                    })
+                    .and(
+                        this.filters.map {
+                            it.toEmailMessageFilterInput()
+                        }
+                    )
                     .build()
             }
             is EmailMessageFilter.PropertyFilter.LogicalOr -> {
                 EmailMessageFilterInput.builder()
-                    .or(this.filters.map {
-                        it.toEmailMessageFilterInput()
-                    })
+                    .or(
+                        this.filters.map {
+                            it.toEmailMessageFilterInput()
+                        }
+                    )
                     .build()
             }
             is EmailMessageFilter.PropertyFilter.StringFilter -> this.toEmailMessageFilterInput()

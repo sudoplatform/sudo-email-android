@@ -456,17 +456,19 @@ suspend fun SudoEmailClient.subscribeToEmailMessages(
     onEmailMessageCreated: (emailMessage: EmailMessage) -> Unit,
     onEmailMessageDeleted: (emailMessage: EmailMessage) -> Unit
 ) =
-    subscribeToEmailMessages(id, object : EmailMessageSubscriber {
-        override fun connectionStatusChanged(state: EmailMessageSubscriber.ConnectionState) {
-            onConnectionChange.invoke(state)
-        }
+    subscribeToEmailMessages(
+        id,
+        object : EmailMessageSubscriber {
+            override fun connectionStatusChanged(state: EmailMessageSubscriber.ConnectionState) {
+                onConnectionChange.invoke(state)
+            }
 
-        override fun emailMessageCreated(emailMessage: EmailMessage) {
-            onEmailMessageCreated.invoke(emailMessage)
-        }
+            override fun emailMessageCreated(emailMessage: EmailMessage) {
+                onEmailMessageCreated.invoke(emailMessage)
+            }
 
-        override fun emailMessageDeleted(emailMessage: EmailMessage) {
-            onEmailMessageDeleted.invoke(emailMessage)
+            override fun emailMessageDeleted(emailMessage: EmailMessage) {
+                onEmailMessageDeleted.invoke(emailMessage)
+            }
         }
-    }
-)
+    )

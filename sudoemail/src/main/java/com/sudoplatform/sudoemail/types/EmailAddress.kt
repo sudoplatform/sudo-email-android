@@ -7,7 +7,7 @@
 package com.sudoplatform.sudoemail.types
 
 import android.os.Parcelable
-import kotlinx.android.parcel.Parcelize
+import kotlinx.parcelize.Parcelize
 import java.util.Date
 
 /**

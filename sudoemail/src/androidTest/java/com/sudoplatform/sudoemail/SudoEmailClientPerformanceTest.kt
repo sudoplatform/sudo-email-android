@@ -8,7 +8,6 @@ package com.sudoplatform.sudoemail
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import com.google.common.base.Stopwatch
 import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.filters.filterEmailMessagesBy
@@ -28,6 +27,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import timber.log.Timber
+import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -58,17 +59,15 @@ class SudoEmailClientPerformanceTest : BaseIntegrationTest() {
     private val verbose = false
     private val logLevel = if (verbose) LogLevel.VERBOSE else LogLevel.INFO
     private val logger = Logger("email-test", AndroidUtilsLogDriver(logLevel))
-    private val stopwatch = Stopwatch.createUnstarted()
     private val timings = mutableMapOf<Step, Long>()
 
     private lateinit var emailClient: SudoEmailClient
 
     private suspend fun <T> measure(step: Step, block: suspend () -> T): T {
-        stopwatch.reset()
-        stopwatch.start()
+        val start = Instant.now()
         val result = block.invoke()
-        stopwatch.stop()
-        timings[step] = stopwatch.elapsed(TimeUnit.MILLISECONDS)
+        val end = Instant.now()
+        timings[step] = Duration.between(start, end).toMillis()
         return result
     }
 
@@ -130,7 +129,7 @@ class SudoEmailClientPerformanceTest : BaseIntegrationTest() {
         val messageSubject = "Hello ${UUID.randomUUID()}"
         val body = buildString {
             for (i in 0 until 500) {
-                appendln("Body of message ${UUID.randomUUID()}")
+                appendLine("Body of message ${UUID.randomUUID()}")
             }
         }
         val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
@@ -200,7 +199,7 @@ class SudoEmailClientPerformanceTest : BaseIntegrationTest() {
                 if (step == Step.SEND_EMAILS || step == Step.FETCH_ENVELOPES || step == Step.FETCH_BODIES) {
                     val meanMillisecondsPerTxn = totalMilliseconds.toDouble() / NUMBER_EMAILS.toDouble()
                     if (meanMillisecondsPerTxn > MAX_MEAN_MS_PER_EMAIL) {
-                        appendln("$step had mean of $meanMillisecondsPerTxn ms per email (should be < $MAX_MEAN_MS_PER_EMAIL)")
+                        appendLine("$step had mean of $meanMillisecondsPerTxn ms per email (should be < $MAX_MEAN_MS_PER_EMAIL)")
                     }
                 }
             }

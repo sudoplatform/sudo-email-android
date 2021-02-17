@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.amazonaws.appsync'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-parcelize'
 apply plugin: "org.owasp.dependencycheck"
 
 android {
@@ -58,16 +58,15 @@ android {
 }
 
 ext {
-    core_version = "2.17.0"
-    coroutine_version = "1.3.8"
-    kotlintest_version = "3.3.2"
+    core_version = "2.22.1"
+    coroutine_version = "1.4.2"
+    kotlintest_version = "3.4.2"
 }
 
 dependencies {
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine_version"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutine_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutine_version"
 
     // AWS
@@ -75,32 +74,43 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version"
 
     // Sudo Platform
-    implementation "com.sudoplatform:sudouser:8.0.5"
-    implementation "com.sudoplatform:sudoprofiles:3.1.7"
+    implementation "com.sudoplatform:sudouser:9.1.1"
+    implementation "com.sudoplatform:sudoprofiles:6.0.0"
 
     // Utils
-    implementation "commons-codec:commons-codec:1.14"
+    implementation "commons-codec:commons-codec:1.15"
 
     // Testing
-    testImplementation "junit:junit:4.13"
+    testImplementation "junit:junit:4.13.1"
     testImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
+    testImplementation "org.mockito:mockito-core:3.7.7"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
     testImplementation "androidx.test:core:1.3.0"
-    testImplementation 'org.robolectric:robolectric:4.3.1'
+    testImplementation "org.robolectric:robolectric:4.5.1"
     testImplementation "com.jakewharton.timber:timber:4.7.1"
+
     androidTestImplementation "androidx.test.ext:junit:1.1.2"
     androidTestImplementation "androidx.test:runner:1.3.0"
     androidTestImplementation "androidx.test:core:1.3.0"
     androidTestImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
     androidTestImplementation "com.jakewharton.timber:timber:4.7.1"
-    androidTestImplementation 'org.awaitility:awaitility:3.1.6'
+    androidTestImplementation "org.awaitility:awaitility:3.1.6"
     androidTestImplementation('com.sun.mail:jakarta.mail:2.0.0-RC6') {
         // This exclusion and the inclusion of the modified jar below are to work around
         // an error in the pom.xml metadata. https://github.com/eclipse-ee4j/jaf/issues/53
         exclude group: 'com.sun.activation', module: 'jakarta.activation'
     }
     androidTestImplementation files('libs/jakarta.activation-2.0.0-RC3-ali1.jar')
+}
+
+configurations.all {
+    resolutionStrategy {
+        dependencySubstitution {
+            // Some kotlin 1.4 things aren't uniformaly updated yet
+            substitute module("org.jetbrains.kotlin:kotlin-reflect") with module("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
+        }
+    }
 }
 
 // Returns a list of `configurations` which should not be scanned for vulnerabilities
@@ -176,7 +186,6 @@ kotlinter {
     ignoreFailures = false
     reporters = ['checkstyle', 'plain']
     experimentalRules = false
-    fileBatchSize = 30
 }
 
 // Apollo Code Generation
@@ -210,21 +219,17 @@ task jacocoTestReport(type: JacocoReport, dependsOn: "testDebugUnitTest") {
 apply plugin: 'org.jetbrains.dokka'
 
 dokkaHtml {
-    outputDirectory = "$buildDir/javadoc"
-
+    outputDirectory.set(project.file("$buildDir/javadoc"))
     dokkaSourceSets {
         configureEach {
-
-            jdkVersion = 8
-            skipEmptyPackages = true
-
-            includes = ["packages.md"]
-            samples = ["src/test/java/com/sudoplatform/sudoemail/samples/Samples.kt"]
-
+            jdkVersion.set(8)
+            skipEmptyPackages.set(true)
+            includes.from(files("packages.md"))
+            samples.from(files("src/test/java/com/sudoplatform/sudoemail/samples/Samples.kt"))
             // Root URL of the generated documentation to link with. The trailing slash is required!
             externalDocumentationLink {
-                url = new URL("https://sudoplatform.github.io/sudo-user-android/sudouser/")
-                packageListUrl = new URL("https://sudoplatform.github.io/sudo-user-android/sudouser/package-list")
+                url.set(new URL("https://sudoplatform.github.io/sudo-user-android/sudouser/"))
+                packageListUrl.set(new URL("https://sudoplatform.github.io/sudo-user-android/sudouser/package-list"))
             }
         }
     }

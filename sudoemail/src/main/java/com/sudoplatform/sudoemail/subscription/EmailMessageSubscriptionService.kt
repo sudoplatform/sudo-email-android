@@ -56,17 +56,21 @@ internal class EmailMessageSubscriptionService(
 
         scope.launch {
             if (createSubscriptionManager.watcher == null) {
-                val watcher = appSyncClient.subscribe(OnEmailMessageCreatedSubscription.builder()
-                    .userId(userSubject)
-                    .build())
+                val watcher = appSyncClient.subscribe(
+                    OnEmailMessageCreatedSubscription.builder()
+                        .userId(userSubject)
+                        .build()
+                )
                 createSubscriptionManager.watcher = watcher
                 watcher.execute(createCallback)
             }
 
             if (deleteSubscriptionManager.watcher == null) {
-                val watcher = appSyncClient.subscribe(OnEmailMessageDeletedSubscription.builder()
-                    .userId(userSubject)
-                    .build())
+                val watcher = appSyncClient.subscribe(
+                    OnEmailMessageDeletedSubscription.builder()
+                        .userId(userSubject)
+                        .build()
+                )
                 deleteSubscriptionManager.watcher = watcher
                 watcher.execute(deleteCallback)
             }

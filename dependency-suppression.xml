@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
-    <suppress>
-        <notes><![CDATA[
-            okhttp uses certificate pinning which some claim and others dispute can allow a man-in-the-middle attack
-            ]]></notes>
-        <cve>CVE-2018-20200</cve>
-    </suppress>
-    <suppress until="2021-03-31">
+    <suppress until="2021-04-30">
         <notes><![CDATA[
             Kotlin script is not used in the Sudo Platform Email SDK. Set suppression to expire end
             of March 2021.
             ]]></notes>
         <cve>CVE-2020-15824</cve>
     </suppress>
-    <suppress until="2021-03-31">
-        <notes>Kotlin analysis is only used during documentation generation</notes>
-        <cve>CVE-2015-5237</cve>
+    <suppress until="2021-04-30">
+        <notes><![CDATA[
+            False positive. We're at Kotlin 1.4.30 which is beyond 1.4.21 when fix was available. False positive
+            occurs because the kotlin coroutines libraries are at 1.4.2 and match the broad CPE pattern.
+            ]]></notes>
+        <cve>CVE-2020-29582</cve>
     </suppress>
 </suppressions>

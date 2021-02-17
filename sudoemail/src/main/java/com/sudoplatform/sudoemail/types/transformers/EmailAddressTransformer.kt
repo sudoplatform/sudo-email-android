@@ -176,16 +176,20 @@ internal object EmailAddressTransformer {
         return when (filter) {
             is EmailAddressFilter.PropertyFilter.LogicalAnd -> {
                 EmailAddressFilterInput.builder()
-                    .and(filter.filters.map {
-                        it.toEmailAddressFilterInput()
-                    })
+                    .and(
+                        filter.filters.map {
+                            it.toEmailAddressFilterInput()
+                        }
+                    )
                     .build()
             }
             is EmailAddressFilter.PropertyFilter.LogicalOr -> {
                 EmailAddressFilterInput.builder()
-                    .or(filter.filters.map {
-                        it.toEmailAddressFilterInput()
-                    })
+                    .or(
+                        filter.filters.map {
+                            it.toEmailAddressFilterInput()
+                        }
+                    )
                     .build()
             }
             is EmailAddressFilter.PropertyFilter.StringFilter -> {
@@ -207,16 +211,20 @@ internal object EmailAddressTransformer {
         return when (this) {
             is EmailAddressFilter.PropertyFilter.LogicalAnd -> {
                 EmailAddressFilterInput.builder()
-                    .and(this.filters.map {
-                        it.toEmailAddressFilterInput()
-                    })
+                    .and(
+                        this.filters.map {
+                            it.toEmailAddressFilterInput()
+                        }
+                    )
                     .build()
             }
             is EmailAddressFilter.PropertyFilter.LogicalOr -> {
                 EmailAddressFilterInput.builder()
-                    .or(this.filters.map {
-                        it.toEmailAddressFilterInput()
-                    })
+                    .or(
+                        this.filters.map {
+                            it.toEmailAddressFilterInput()
+                        }
+                    )
                     .build()
             }
             is EmailAddressFilter.PropertyFilter.StringFilter -> this.toEmailAddressFilterInput()

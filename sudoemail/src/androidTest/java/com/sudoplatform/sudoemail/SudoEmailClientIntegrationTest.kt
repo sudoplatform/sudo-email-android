@@ -389,7 +389,7 @@ class SudoEmailClientIntegrationTest : BaseIntegrationTest() {
         val messageSubject = "Hello ${UUID.randomUUID()}"
         val body = buildString {
             for (i in 0 until 500) {
-                appendln("Body of message ${UUID.randomUUID()}")
+                appendLine("Body of message ${UUID.randomUUID()}")
             }
         }
         val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
@@ -674,7 +674,7 @@ class SudoEmailClientIntegrationTest : BaseIntegrationTest() {
         val messageSubject = "Hello ${UUID.randomUUID()}"
         val body = buildString {
             for (i in 1..100) {
-                appendln("Body of message ${UUID.randomUUID()}")
+                appendLine("Body of message ${UUID.randomUUID()}")
             }
         }
         val rfc822Data = Rfc822MessageFactory.makeRfc822Data(

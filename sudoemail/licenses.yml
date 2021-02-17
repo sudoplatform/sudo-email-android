@@ -292,11 +292,6 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: http://developer.android.com/tools/extras/support-library.html
-- artifact: org.codehaus.mojo:animal-sniffer-annotations:+
-  name: Animal Sniffer Annotations
-  copyrightHolder: codehaus.org
-  license: MIT License
-  url: http://www.mojohaus.org/animal-sniffer/animal-sniffer-annotations/project-info.html
 - artifact: androidx.legacy:legacy-support-core-ui:+
   name: Android Support Library core UI
   copyrightHolder: Google, Inc.
@@ -356,22 +351,6 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: https://developer.android.com/jetpack/androidx
-- artifact: com.google.guava:guava:+
-  name: Guava Google Core Libraries for Java
-  copyrightHolder: Google, Inc.
-  license: The Apache License, Version 2.0
-  url: https://github.com/google/guava
-- artifact: com.google.guava:failureaccess:+
-  name: Guava InternalFutureFailureAccess and InternalFutures
-  copyrightHolder: Google, Inc.
-  license: The Apache License, Version 2.0
-  url: https://github.com/google/guava
-- artifact: org.jetbrains.kotlinx:kotlinx-coroutines-core:+
-  name: kotlinx-coroutines-core
-  copyrightHolder: JetBrains s.r.o.
-  license: The Apache Software License, Version 2.0
-  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
-  url: https://github.com/Kotlin/kotlinx.coroutines
 - artifact: androidx.legacy:legacy-support-core-utils:+
   name: Android Support Library core utils
   copyrightHolder: Google, Inc.
@@ -396,23 +375,6 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: http://developer.android.com/tools/extras/support-library.html
-- artifact: com.google.guava:listenablefuture:+
-  name: Guava ListenableFuture only
-  copyrightHolder: Google, Inc.
-  license: The Apache License, Version 2.0
-  url: https://github.com/google/guava
-- artifact: com.google.errorprone:error_prone_annotations:+
-  name: error-prone annotations
-  copyrightHolder: Google, Inc.
-  license: Apache 2.0
-  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
-  url: https://github.com/google/error-prone
-- artifact: com.google.j2objc:j2objc-annotations:+
-  name: J2ObjC Annotations
-  copyrightHolder: Google, Inc.
-  license: The Apache Software License, Version 2.0
-  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
-  url: https://github.com/google/j2objc/
 - artifact: org.bouncycastle:bcpkix-jdk15on:+
   name: Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs
   copyrightHolder: The JSR-330 Expert Group
@@ -452,3 +414,21 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: https://github.com/square/retrofit/blob/master/LICENSE.txt
   url: https://mvnrepository.com/artifact/com.google.code.gson/gson
+- artifact: com.squareup.okio:okio:+
+  name: Okio
+  copyrightHolder:  Square, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/square/okio/
+- artifact: org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:+
+  name: kotlinx-coroutines-core
+  copyrightHolder: Jetbrains, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/Kotlin/kotlinx.coroutines
+- artifact: org.jetbrains.kotlin:kotlin-parcelize-runtime:+
+  name: Parcelize Runtime
+  copyrightHolder: Jetbrains, Inc.
+  license: The Apache License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://kotlinlang.org/

@@ -7,6 +7,7 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
+import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
 import com.sudoplatform.sudoprofiles.ListOption
@@ -32,7 +33,7 @@ abstract class BaseIntegrationTest {
     }
 
     protected val sudoClient by lazy {
-        val containerURI = context.cacheDir.toURI()
+        val containerURI = Uri.fromFile(context.cacheDir)
         SudoProfilesClient.builder(context, userClient, containerURI)
             .build()
     }
