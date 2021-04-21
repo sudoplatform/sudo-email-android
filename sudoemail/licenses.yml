@@ -375,13 +375,37 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: http://developer.android.com/tools/extras/support-library.html
-- artifact: org.bouncycastle:bcpkix-jdk15on:+
+- artifact: org.bouncycastle:bcpkix-jdk15to18:+
   name: Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs
   copyrightHolder: The JSR-330 Expert Group
   license: Bouncy Castle Licence
   licenseUrl: http://www.bouncycastle.org/licence.html
   url: http://www.bouncycastle.org/java.html
-- artifact: org.bouncycastle:bcprov-jdk15on:+
+- artifact: com.appmattus.certificatetransparency:certificatetransparency:+
+  name: com.appmattus.certificatetransparency:certificatetransparency
+  copyrightHolder: Babylon Partners Limited
+  license: The Apache Software License, Version 2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/appmattus/certificatetransparency
+- artifact: org.bouncycastle:bctls-jdk15to18:+
+  name: Bouncy Castle JSSE provider and TLS/DTLS API
+  copyrightHolder: The JSR-330 Expert Group
+  license: Bouncy Castle Licence
+  licenseUrl: http://www.bouncycastle.org/licence.html
+  url: http://www.bouncycastle.org/java.html
+- artifact: com.appmattus.certificatetransparency:certificatetransparency-android:+
+  name: com.appmattus.certificatetransparency:certificatetransparency-android
+  copyrightHolder: Babylon Partners Limited
+  license: The Apache Software License, Version 2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/appmattus/certificatetransparency
+- artifact: org.jetbrains.kotlin:kotlin-stdlib-jdk8:+
+  name: org.jetbrains.kotlin:kotlin-stdlib-jdk8
+  copyrightHolder: The JSR-330 Expert Group
+  license: The Apache License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://kotlinlang.org/
+- artifact: org.bouncycastle:bcprov-jdk15to18:+
   name: Bouncy Castle Provider
   copyrightHolder: The JSR-330 Expert Group
   license: Bouncy Castle Licence
@@ -392,16 +416,6 @@
   copyrightHolder: Apache
   license: Apache License, Version 2.0
   url: https://commons.apache.org/proper/commons-codec/
-- artifact: com.babylon.certificatetransparency:certificatetransparency:+
-  name: certificatetransparency
-  copyrightHolder: Babylon Health
-  license: The Apache Software License, Version 2.0
-  url: https://github.com/babylonhealth/certificate-transparency-android
-- artifact: com.babylon.certificatetransparency:certificatetransparency-android:+
-  name: certificatetransparency-android
-  copyrightHolder: Babylon Health
-  license: The Apache Software License, Version 2.0
-  url: https://github.com/babylonhealth/certificate-transparency-android
 - artifact: com.squareup.retrofit2:retrofit:+
   name: Retrofit
   copyrightHolder: Square, Inc.
@@ -432,3 +446,39 @@
   license: The Apache License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: https://kotlinlang.org/
+- artifact: org.bouncycastle:bcprov-jdk15to18:+
+  name: Bouncy Castle Provider
+  copyrightHolder: The JSR-330 Expert Group
+  license: Bouncy Castle Licence
+  licenseUrl: http://www.bouncycastle.org/licence.html
+  url: http://www.bouncycastle.org/java.html
+- artifact: com.appmattus.certificatetransparency:certificatetransparency:+
+  name: com.appmattus.certificatetransparency:certificatetransparency
+  copyrightHolder: Appmattus Limited
+  license: The Apache Software License, Version 2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/appmattus/certificatetransparency
+- artifact: org.bouncycastle:bctls-jdk15to18:+
+  name: Bouncy Castle JSSE provider and TLS/DTLS API
+  copyrightHolder: The JSR-330 Expert Group
+  license: Bouncy Castle Licence
+  licenseUrl: http://www.bouncycastle.org/licence.html
+  url: http://www.bouncycastle.org/java.html
+- artifact: com.appmattus.certificatetransparency:certificatetransparency-android:+
+  name: com.appmattus.certificatetransparency:certificatetransparency-android
+  copyrightHolder: Appmattus Limited
+  license: The Apache Software License, Version 2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/appmattus/certificatetransparency
+- artifact: org.jetbrains.kotlin:kotlin-stdlib-jdk8:+
+  name: org.jetbrains.kotlin:kotlin-stdlib-jdk8
+  copyrightHolder: Jetbrains, Inc.
+  license: The Apache License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://kotlinlang.org/
+- artifact: org.bouncycastle:bcpkix-jdk15to18:+
+  name: Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs
+  copyrightHolder: The JSR-330 Expert Group
+  license: Bouncy Castle Licence
+  licenseUrl: http://www.bouncycastle.org/licence.html
+  url: http://www.bouncycastle.org/java.html
