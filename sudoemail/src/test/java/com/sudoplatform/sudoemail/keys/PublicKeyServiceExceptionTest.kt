@@ -7,10 +7,10 @@
 package com.sudoplatform.sudoemail.keys
 
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doThrow
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.graphql.CreatePublicKeyForEmailMutation
 import com.sudoplatform.sudoemail.graphql.GetKeyRingForEmailQuery

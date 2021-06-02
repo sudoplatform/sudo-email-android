@@ -214,7 +214,10 @@ interface SudoEmailClient : AutoCloseable {
     sealed class EmailAddressException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
         class FailedException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
-        class EntitlementExceededException(message: String? = null, cause: Throwable? = null) :
+        @Deprecated("InsufficientEntitlementsException is now thrown instead")
+        class EntitlementsExceededException(message: String? = null, cause: Throwable? = null) :
+            EmailAddressException(message = message, cause = cause)
+        class InsufficientEntitlementsException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
         class InvalidAddressFilterException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)

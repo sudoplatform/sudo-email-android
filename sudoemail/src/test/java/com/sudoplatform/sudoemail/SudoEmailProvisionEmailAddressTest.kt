@@ -10,14 +10,14 @@ import android.content.Context
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.amazonaws.util.Base64
 import com.apollographql.apollo.api.Response
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.doThrow
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.stub
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.CreatePublicKeyForEmailMutation
 import com.sudoplatform.sudoemail.graphql.GetKeyRingForEmailQuery
@@ -458,7 +458,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw when response has an entitlement exceeded error`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw when response has an insufficient entitlements error`() = runBlocking<Unit> {
 
         provisionHolder.callback shouldBe null
         keyRingHolder.callback shouldBe null
@@ -468,7 +468,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "EntitlementExceededError")
+                mapOf("errorType" to "InsufficientEntitlementsError")
             )
             Response.builder<ProvisionEmailAddressMutation.Data>(ProvisionEmailAddressMutation(input))
                 .errors(listOf(error))
@@ -476,7 +476,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         }
 
         val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<SudoEmailClient.EmailAddressException.EntitlementExceededException> {
+            shouldThrow<SudoEmailClient.EmailAddressException.InsufficientEntitlementsException> {
                 client.provisionEmailAddress("example@sudoplatform.com", "sudoId")
             }
         }
@@ -523,7 +523,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         }
 
         val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<SudoEmailClient.EmailAddressException.EntitlementExceededException> {
+            shouldThrow<SudoEmailClient.EmailAddressException.InsufficientEntitlementsException> {
                 client.provisionEmailAddress("example@sudoplatform.com", "sudoId")
             }
         }

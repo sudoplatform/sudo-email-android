@@ -7,7 +7,7 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.nhaarman.mockitokotlin2.mock
+import org.mockito.kotlin.mock
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver

@@ -99,7 +99,7 @@ internal class DefaultSudoEmailClient(
         private const val NO_EMAIL_ERROR_MSG = "No email address returned"
         private const val INVALID_KEYRING_MSG = "Invalid key ring identifier"
         private const val INVALID_EMAIL_ADDRESS_MSG = "Invalid email address"
-        private const val ENTITLEMENT_EXCEEDED_MSG = "Entitlements have been exceeded"
+        private const val INSUFFICIENT_ENTITLEMENTS_MSG = "Entitlements have been exceeded"
         private const val NO_EMAIL_ID_ERROR_MSG = "No email message identifier returned"
         private const val INVALID_MESSAGE_CONTENT_MSG = "Invalid email message contents"
         private const val EMAIL_ADDRESS_NOT_FOUND_MSG = "Email address not found"
@@ -113,7 +113,6 @@ internal class DefaultSudoEmailClient(
         private const val SERVICE_ERROR = "ServiceError"
         private const val ERROR_INVALID_KEYRING = "InvalidKeyRingId"
         private const val ERROR_INVALID_EMAIL = "EmailValidation"
-        private const val ERROR_ENTITLEMENT_EXCEEDED = "EntitlementExceededError"
         private const val ERROR_POLICY_FAILED = "PolicyFailed"
         private const val ERROR_INVALID_EMAIL_CONTENTS = "InvalidEmailContents"
         private const val ERROR_UNAUTHORIZED_ADDRESS = "UnauthorizedAddress"
@@ -121,6 +120,7 @@ internal class DefaultSudoEmailClient(
         private const val ERROR_ADDRESS_UNAVAILABLE = "AddressUnavailable"
         private const val ERROR_INVALID_DOMAIN = "InvalidEmailDomain"
         private const val ERROR_MESSAGE_NOT_FOUND = "EmailMessageNotFound"
+        private const val ERROR_INSUFFICIENT_ENTITLEMENTS = "InsufficientEntitlementsError"
     }
 
     /** This manages the subscriptions to email message creates and deletes */
@@ -576,8 +576,8 @@ internal class DefaultSudoEmailClient(
             return SudoEmailClient.EmailAddressException.UnavailableEmailAddressException(EMAIL_ADDRESS_UNAVAILABLE_MSG)
         } else if (error.contains(ERROR_UNAUTHORIZED_ADDRESS)) {
             return SudoEmailClient.EmailAddressException.UnauthorizedEmailAddressException(EMAIL_ADDRESS_UNAUTHORIZED_MSG)
-        } else if (error.contains(ERROR_ENTITLEMENT_EXCEEDED) || error.contains(ERROR_POLICY_FAILED)) {
-            return SudoEmailClient.EmailAddressException.EntitlementExceededException(ENTITLEMENT_EXCEEDED_MSG)
+        } else if (error.contains(ERROR_INSUFFICIENT_ENTITLEMENTS) || error.contains(ERROR_POLICY_FAILED)) {
+            return SudoEmailClient.EmailAddressException.InsufficientEntitlementsException(INSUFFICIENT_ENTITLEMENTS_MSG)
         }
         return SudoEmailClient.EmailAddressException.FailedException(e.toString())
     }

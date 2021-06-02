@@ -171,7 +171,7 @@ class SudoEmailClientIntegrationTest : BaseIntegrationTest() {
 
         // Should only be able to create one email address per Sudo
         val emailAddressInputTwo = UUID.randomUUID().toString() + "@" + emailDomains.first()
-        shouldThrow<SudoEmailClient.EmailAddressException.EntitlementExceededException> {
+        shouldThrow<SudoEmailClient.EmailAddressException.InsufficientEntitlementsException> {
             emailClient.provisionEmailAddress(emailAddressInputTwo, sudo.id!!)
         }
     }

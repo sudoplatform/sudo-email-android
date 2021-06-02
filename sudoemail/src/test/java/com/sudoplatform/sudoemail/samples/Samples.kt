@@ -7,7 +7,7 @@
 package com.sudoplatform.sudoemail.samples
 
 import android.content.Context
-import com.nhaarman.mockitokotlin2.mock
+import org.mockito.kotlin.mock
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.types.inputs.filters.filterEmailAddressesBy

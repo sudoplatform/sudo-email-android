@@ -58,7 +58,7 @@ android {
 }
 
 ext {
-    coroutine_version = "1.4.2"
+    coroutine_version = "1.4.3"
     kotlintest_version = "3.4.2"
 }
 
@@ -77,16 +77,15 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
 
     // Sudo Platform
-    implementation "com.sudoplatform:sudokeymanager:3.7.2"
-    implementation "com.sudoplatform:sudologging:1.0.20"
-    implementation "com.sudoplatform:sudoconfigmanager:1.2.2"
-    // implementation "com.sudoplatform:sudouser:[9.3.1,10.0.0)"
-    // implementation "com.sudoplatform:sudoprofiles:[6.0.0,7.0.0)"
-    implementation "com.sudoplatform:sudouser:9.3.4"
-    implementation "com.sudoplatform:sudoapiclient:2.0.3"
-    implementation "com.sudoplatform:sudoprofiles:6.1.3"
+    implementation "com.sudoplatform:sudokeymanager:3.7.3"
+    implementation "com.sudoplatform:sudologging:1.0.25"
+    implementation "com.sudoplatform:sudoconfigmanager:1.2.3"
+    implementation "com.sudoplatform:sudouser:9.3.5"
+    implementation "com.sudoplatform:sudoapiclient:2.0.4"
+    implementation "com.sudoplatform:sudoprofiles:6.2.1"
 
     // Utils
+    //noinspection GradleDependency
     implementation "commons-codec:commons-codec:1.15"
     implementation "org.bouncycastle:bcpkix-jdk15to18:1.68"
 
@@ -94,8 +93,8 @@ dependencies {
     testImplementation "junit:junit:4.13.2"
     testImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
-    testImplementation "org.mockito:mockito-core:3.8.0"
-    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0"
+    testImplementation "org.mockito:mockito-core:3.10.0"
+    testImplementation "org.mockito.kotlin:mockito-kotlin:3.2.0"
     testImplementation "androidx.test:core:1.3.0"
     testImplementation "org.robolectric:robolectric:4.5.1"
     testImplementation "com.jakewharton.timber:timber:4.7.1"
