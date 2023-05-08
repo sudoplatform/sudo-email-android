@@ -1,8 +1,9 @@
 /*
- * Copyright © 2020 - Anonyome Labs, Inc. - All rights reserved
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 package com.sudoplatform.sudoemail.util
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,8 +15,6 @@ import org.junit.runner.RunWith
 /**
  * Test the simple RFC822 email message formatter and parser can at least encode
  * and decode its own messages.
- *
- * @since 2020-09-17
  */
 @RunWith(AndroidJUnit4::class)
 class Rfc822MessageTest {

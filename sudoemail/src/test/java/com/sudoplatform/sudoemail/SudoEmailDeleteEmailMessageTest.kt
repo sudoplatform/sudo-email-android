@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,97 +9,87 @@ package com.sudoplatform.sudoemail
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.apollographql.apollo.api.Response
+import com.apollographql.apollo.exception.ApolloHttpException
+import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
+import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessagesInput
+import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.s3.S3Client
+import com.sudoplatform.sudoemail.sealing.DefaultSealingService
+import com.sudoplatform.sudokeymanager.KeyManagerInterface
+import com.sudoplatform.sudouser.SudoUserClient
+import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
+import io.kotlintest.shouldThrow
+import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Protocol
+import okhttp3.ResponseBody.Companion.toResponseBody
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
-import com.sudoplatform.sudoemail.graphql.DeleteEmailMessageMutation
-import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessageInput
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
-import com.sudoplatform.sudoemail.keys.DefaultPublicKeyService
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudoprofiles.S3Client
-import com.sudoplatform.sudoprofiles.Sudo
-import com.sudoplatform.sudoprofiles.SudoProfilesClient
-import com.sudoplatform.sudouser.SudoUserClient
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldNotBe
-import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
 import org.robolectric.RobolectricTestRunner
 
 /**
- * Test the correct operation of [SudoEmailClient.deleteEmailMessage] using mocks and spies.
- *
- * @since 2020-08-19
+ * Test the correct operation of [SudoEmailClient.deleteEmailMessage]
+ * using mocks and spies.
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     private val input by before {
-        DeleteEmailMessageInput.builder()
-            .messageId("id")
+        DeleteEmailMessagesInput.builder()
+            .messageIds(listOf("id"))
             .build()
     }
 
     private val mutationResult by before {
-        "deleteEmailMessage"
+        emptyList<String>()
     }
 
     private val mutationResponse by before {
-        Response.builder<DeleteEmailMessageMutation.Data>(DeleteEmailMessageMutation(input))
-            .data(DeleteEmailMessageMutation.Data(mutationResult))
+        Response.builder<DeleteEmailMessagesMutation.Data>(DeleteEmailMessagesMutation(input))
+            .data(DeleteEmailMessagesMutation.Data(mutationResult))
             .build()
     }
 
-    private val holder = CallbackHolder<DeleteEmailMessageMutation.Data>()
+    private val holder = CallbackHolder<DeleteEmailMessagesMutation.Data>()
 
     private val context by before {
         InstrumentationRegistry.getInstrumentation().targetContext
     }
 
     private val mockUserClient by before {
-        mock<SudoUserClient>().stub {
-            on { getSubject() } doReturn "subject"
-            on { getRefreshToken() } doReturn "refreshToken"
-        }
-    }
-
-    private val mockSudoClient by before {
-        mock<SudoProfilesClient>().stub {
-            onBlocking { getOwnershipProof(any<Sudo>(), anyString()) } doReturn "jwt"
-        }
+        mock<SudoUserClient>()
     }
 
     private val mockAppSyncClient by before {
         mock<AWSAppSyncClient>().stub {
-            on { mutate(any<DeleteEmailMessageMutation>()) } doReturn holder.mutationOperation
+            on { mutate(any<DeleteEmailMessagesMutation>()) } doReturn holder.mutationOperation
         }
     }
 
     private val mockKeyManager by before {
-        mock<KeyManagerInterface>().stub {
-            on { getPassword(anyString()) } doReturn ByteArray(42)
-            on { getPublicKeyData(anyString()) } doReturn ByteArray(42)
-            on { getPrivateKeyData(anyString()) } doReturn ByteArray(42)
-        }
+        mock<KeyManagerInterface>()
     }
 
     private val mockDeviceKeyManager by before {
         DefaultDeviceKeyManager(
-            context,
             "keyRingService",
             mockUserClient,
             mockKeyManager,
@@ -107,18 +97,15 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
         )
     }
 
-    private val publicKeyService by before {
-        DefaultPublicKeyService(
-            mockDeviceKeyManager,
-            mockAppSyncClient,
-            mockLogger
-        )
+    private val mockS3Client by before {
+        mock<S3Client>()
     }
 
-    private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString()) } doReturn "42"
-        }
+    private val mockSealingService by before {
+        DefaultSealingService(
+            mockDeviceKeyManager,
+            mockLogger
+        )
     }
 
     private val client by before {
@@ -126,10 +113,9 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
             context,
             mockAppSyncClient,
             mockUserClient,
-            mockSudoClient,
             mockLogger,
             mockDeviceKeyManager,
-            publicKeyService,
+            mockSealingService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -145,7 +131,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockUserClient, mockSudoClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
     }
 
     @Test
@@ -164,9 +150,57 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
         val result = deferredResult.await()
         result shouldNotBe null
-        result.isBlank() shouldBe false
+        result?.isBlank() shouldBe false
 
-        verify(mockAppSyncClient).mutate(any<DeleteEmailMessageMutation>())
+        verify(mockAppSyncClient)
+            .mutate<
+                DeleteEmailMessagesMutation.Data,
+                DeleteEmailMessagesMutation,
+                DeleteEmailMessagesMutation.Variables
+                >(
+                check {
+                    it.variables().input().messageIds() shouldBe listOf("id")
+                }
+            )
+    }
+
+    @Test
+    fun `deleteEmailMessage() should return null result when delete operation fails`() = runBlocking<Unit> {
+
+        val mutationResult by before {
+            listOf("id")
+        }
+
+        val mutationResponse by before {
+            Response.builder<DeleteEmailMessagesMutation.Data>(DeleteEmailMessagesMutation(input))
+                .data(DeleteEmailMessagesMutation.Data(mutationResult))
+                .build()
+        }
+
+        holder.callback shouldBe null
+
+        val deferredResult = async(Dispatchers.IO) {
+            client.deleteEmailMessage("id")
+        }
+        deferredResult.start()
+
+        delay(100L)
+        holder.callback shouldNotBe null
+        holder.callback?.onResponse(mutationResponse)
+
+        val result = deferredResult.await()
+        result shouldBe null
+
+        verify(mockAppSyncClient)
+            .mutate<
+                DeleteEmailMessagesMutation.Data,
+                DeleteEmailMessagesMutation,
+                DeleteEmailMessagesMutation.Variables
+                >(
+                check {
+                    it.variables().input().messageIds() shouldBe listOf("id")
+                }
+            )
     }
 
     @Test
@@ -175,7 +209,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
         holder.callback shouldBe null
 
         val nullProvisionResponse by before {
-            Response.builder<DeleteEmailMessageMutation.Data>(DeleteEmailMessageMutation(input))
+            Response.builder<DeleteEmailMessagesMutation.Data>(DeleteEmailMessagesMutation(input))
                 .data(null)
                 .build()
         }
@@ -193,7 +227,16 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<DeleteEmailMessageMutation>())
+        verify(mockAppSyncClient)
+            .mutate<
+                DeleteEmailMessagesMutation.Data,
+                DeleteEmailMessagesMutation,
+                DeleteEmailMessagesMutation.Variables
+                >(
+                check {
+                    it.variables().input().messageIds() shouldBe listOf("id")
+                }
+            )
     }
 
     @Test
@@ -201,7 +244,110 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
         testException<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException>("EmailMessageNotFound")
         testException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
-        verify(mockAppSyncClient, times(2)).mutate(any<DeleteEmailMessageMutation>())
+        verify(mockAppSyncClient, times(2))
+            .mutate<
+                DeleteEmailMessagesMutation.Data,
+                DeleteEmailMessagesMutation,
+                DeleteEmailMessagesMutation.Variables
+                >(
+                check {
+                    it.variables().input().messageIds() shouldBe listOf("id")
+                }
+            )
+    }
+
+    @Test
+    fun `deleteEmailMessage() should throw when http error occurs`() = runBlocking<Unit> {
+
+        holder.callback shouldBe null
+
+        val deferredResult = async(Dispatchers.IO) {
+            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                client.deleteEmailMessage("id")
+            }
+        }
+        deferredResult.start()
+        delay(100L)
+
+        val request = okhttp3.Request.Builder()
+            .get()
+            .url("http://www.smh.com.au")
+            .build()
+        val responseBody = "{}".toResponseBody("application/json; charset=utf-8".toMediaType())
+        val forbidden = okhttp3.Response.Builder()
+            .protocol(Protocol.HTTP_1_1)
+            .code(HttpURLConnection.HTTP_FORBIDDEN)
+            .request(request)
+            .message("Forbidden")
+            .body(responseBody)
+            .build()
+
+        holder.callback shouldNotBe null
+        holder.callback?.onHttpError(ApolloHttpException(forbidden))
+
+        deferredResult.await()
+
+        verify(mockAppSyncClient)
+            .mutate<
+                DeleteEmailMessagesMutation.Data,
+                DeleteEmailMessagesMutation,
+                DeleteEmailMessagesMutation.Variables
+                >(
+                check {
+                    it.variables().input().messageIds() shouldBe listOf("id")
+                }
+            )
+    }
+
+    @Test
+    fun `deleteEmailMessage() should throw when unknown error occurs()`() = runBlocking<Unit> {
+
+        holder.callback shouldBe null
+
+        mockAppSyncClient.stub {
+            on { mutate(any<DeleteEmailMessagesMutation>()) } doThrow RuntimeException("Mock Runtime Exception")
+        }
+
+        val deferredResult = async(Dispatchers.IO) {
+            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                client.deleteEmailMessage("id")
+            }
+        }
+        deferredResult.start()
+        delay(100L)
+
+        deferredResult.await()
+
+        verify(mockAppSyncClient)
+            .mutate<
+                DeleteEmailMessagesMutation.Data,
+                DeleteEmailMessagesMutation,
+                DeleteEmailMessagesMutation.Variables
+                >(
+                check {
+                    it.variables().input().messageIds() shouldBe listOf("id")
+                }
+            )
+    }
+
+    @Test
+    fun `deleteEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
+
+        mockAppSyncClient.stub {
+            on { mutate(any<DeleteEmailMessagesMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
+        }
+
+        val deferredResult = async(Dispatchers.IO) {
+            shouldThrow<CancellationException> {
+                client.deleteEmailMessage("id1")
+            }
+        }
+        deferredResult.start()
+        delay(100L)
+
+        deferredResult.await()
+
+        verify(mockAppSyncClient).mutate(any<DeleteEmailMessagesMutation>())
     }
 
     private inline fun <reified T : Exception> testException(apolloError: String) = runBlocking<Unit> {
@@ -214,7 +360,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
                 emptyList(),
                 mapOf("errorType" to apolloError)
             )
-            Response.builder<DeleteEmailMessageMutation.Data>(DeleteEmailMessageMutation(input))
+            Response.builder<DeleteEmailMessagesMutation.Data>(DeleteEmailMessagesMutation(input))
                 .errors(listOf(error))
                 .build()
         }

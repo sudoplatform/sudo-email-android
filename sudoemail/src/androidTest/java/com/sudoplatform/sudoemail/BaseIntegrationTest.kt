@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,94 +9,270 @@ package com.sudoplatform.sudoemail
 import android.content.Context
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.platform.app.InstrumentationRegistry
+import com.sudoplatform.sudoemail.types.CachePolicy
+import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailFolder
+import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.util.Rfc822MessageFactory
+import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
+import com.sudoplatform.sudoentitlementsadmin.SudoEntitlementsAdminClient
+import com.sudoplatform.sudoentitlementsadmin.types.Entitlement
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
-import com.sudoplatform.sudoprofiles.ListOption
+import com.sudoplatform.sudologging.AndroidUtilsLogDriver
+import com.sudoplatform.sudologging.LogLevel
+import com.sudoplatform.sudoprofiles.Sudo
 import com.sudoplatform.sudoprofiles.SudoProfilesClient
 import com.sudoplatform.sudouser.SudoUserClient
 import com.sudoplatform.sudouser.TESTAuthenticationProvider
+import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.shouldBe
+import kotlinx.coroutines.runBlocking
+import org.junit.AfterClass
+import org.junit.BeforeClass
 import timber.log.Timber
+import java.util.UUID
+import java.util.logging.Logger
 
 /**
  * Test the operation of the [SudoEmailClient].
- *
- * @since 2020-08-04
  */
 abstract class BaseIntegrationTest {
 
-    protected val context: Context = ApplicationProvider.getApplicationContext<Context>()
+    protected val toSimulatorAddress = "ooto@simulator.amazonses.com"
+    protected val fromSimulatorAddress = "MAILER-DAEMON@amazonses.com"
 
-    protected val userClient by lazy {
-        SudoUserClient.builder(context)
-            .setNamespace("eml-client-test")
-            .build()
-    }
+    companion object {
 
-    protected val sudoClient by lazy {
-        val containerURI = Uri.fromFile(context.cacheDir)
-        SudoProfilesClient.builder(context, userClient, containerURI)
-            .build()
-    }
+        val context: Context = ApplicationProvider.getApplicationContext<Context>()
 
-    protected val keyManager by lazy {
-        KeyManagerFactory(context).createAndroidKeyManager()
-    }
+        private const val verbose = false
+        private val logLevel = if (verbose) LogLevel.VERBOSE else LogLevel.INFO
+        val logger = com.sudoplatform.sudologging.Logger("email-test", AndroidUtilsLogDriver(logLevel))
 
-    private suspend fun register() {
-        userClient.isRegistered() shouldBe false
-
-        val privateKey = readTextFile("register_key.private")
-        val keyId = readTextFile("register_key.id")
-
-        val authProvider = TESTAuthenticationProvider(
-            name = "eml-client-test",
-            privateKey = privateKey,
-            publicKey = null,
-            keyManager = keyManager,
-            keyId = keyId
+        @JvmStatic
+        protected val entitlements = listOf(
+            Entitlement("sudoplatform.sudo.max", "test", 3),
+            Entitlement("sudoplatform.email.emailAddressUserEntitled", "test", 1),
+            Entitlement("sudoplatform.email.emailStorageMaxPerUser", "test", 500000),
+            Entitlement("sudoplatform.email.emailAddressMaxPerSudo", "test", 3),
+            Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
+            Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
+            Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1)
         )
 
-        userClient.registerWithAuthenticationProvider(authProvider, "eml-client-test")
-    }
-
-    private fun readTextFile(fileName: String): String {
-        return context.assets.open(fileName).bufferedReader().use {
-            it.readText().trim()
+        @JvmStatic
+        protected val userClient by lazy {
+            SudoUserClient.builder(context)
+                .setNamespace("eml-client-test")
+                .build()
         }
-    }
 
-    protected suspend fun signInAndRegister() {
-        if (!userClient.isRegistered()) {
-            register()
+        @JvmStatic
+        protected val sudoClient by lazy {
+            val containerURI = Uri.fromFile(context.cacheDir)
+            SudoProfilesClient.builder(context, userClient, containerURI)
+                .build()
         }
-        userClient.isRegistered() shouldBe true
-        if (userClient.isSignedIn()) {
-            userClient.getRefreshToken()?.let { userClient.refreshTokens(it) }
-        } else {
-            userClient.signInWithKey()
+
+        @JvmStatic
+        protected val entitlementsClient by lazy {
+            SudoEntitlementsClient.builder()
+                .setContext(context)
+                .setSudoUserClient(userClient)
+                .build()
         }
-        userClient.isSignedIn() shouldBe true
-    }
 
-    protected fun clientConfigFilesPresent(): Boolean {
-        val configFiles = context.assets.list("")?.filter { fileName ->
-            fileName == "sudoplatformconfig.json" ||
-                fileName == "register_key.private" ||
-                fileName == "register_key.id"
-        } ?: emptyList()
-        Timber.d("config files present ${configFiles.size}")
-        return configFiles.size == 3
-    }
+        @JvmStatic
+        protected val entitlementsAdminClient by lazy {
+            val adminApiKey = readArgument("ADMIN_API_KEY", "api.key")
+            SudoEntitlementsAdminClient.builder(context, adminApiKey).build()
+        }
 
-    protected suspend fun deleteAllSudos() {
-        if (userClient.isRegistered()) {
-            sudoClient.listSudos(ListOption.REMOTE_ONLY).forEach {
-                try {
-                    sudoClient.deleteSudo(it)
-                } catch (e: Throwable) {
-                    Timber.e(e)
-                }
+        @JvmStatic
+        protected val keyManager by lazy {
+            KeyManagerFactory(context).createAndroidKeyManager("eml-client-test")
+        }
+
+        @JvmStatic
+        protected lateinit var emailClient: SudoEmailClient
+
+        private fun readTextFile(fileName: String): String {
+            return context.assets.open(fileName).bufferedReader().use {
+                it.readText().trim()
             }
         }
+
+        @JvmStatic
+        protected fun readArgument(argumentName: String, fallbackFileName: String?): String {
+            val argumentValue = InstrumentationRegistry.getArguments().getString(argumentName)?.trim()
+            if (argumentValue != null) {
+                return argumentValue
+            }
+            if (fallbackFileName != null) {
+                return readTextFile(fallbackFileName)
+            }
+            throw IllegalArgumentException("$argumentName property not found")
+        }
+
+        private suspend fun register() {
+            userClient.isRegistered() shouldBe false
+
+            val privateKey = readArgument("REGISTER_KEY", "register_key.private")
+            val keyId = readArgument("REGISTER_KEY_ID", "register_key.id")
+
+            val authProvider = TESTAuthenticationProvider(
+                name = "eml-client-test",
+                privateKey = privateKey,
+                publicKey = null,
+                keyManager = keyManager,
+                keyId = keyId
+            )
+
+            userClient.registerWithAuthenticationProvider(authProvider, "eml-client-test")
+        }
+
+        @JvmStatic
+        protected suspend fun deregister() {
+            userClient.deregister()
+        }
+
+        private suspend fun signIn() {
+            userClient.signInWithKey()
+        }
+
+        private suspend fun registerAndSignIn() {
+            userClient.isRegistered() shouldBe false
+            register()
+            userClient.isRegistered() shouldBe true
+            signIn()
+            userClient.isSignedIn() shouldBe true
+        }
+
+        @JvmStatic
+        protected suspend fun registerSignInAndEntitle() {
+            registerAndSignIn()
+            val externalId = entitlementsClient.getExternalId()
+            entitlementsAdminClient.applyEntitlementsToUser(externalId, entitlements)
+            entitlementsClient.redeemEntitlements()
+        }
+
+        @BeforeClass @JvmStatic
+        fun init() {
+            Timber.plant(Timber.DebugTree())
+
+            if (verbose) {
+                Logger.getLogger("com.amazonaws").level = java.util.logging.Level.FINEST
+                Logger.getLogger("org.apache.http").level = java.util.logging.Level.FINEST
+            }
+
+            sudoClient.generateEncryptionKey()
+            emailClient = SudoEmailClient.builder()
+                .setContext(context)
+                .setSudoUserClient(userClient)
+                .setLogger(logger)
+                .build()
+
+            runBlocking {
+                registerSignInAndEntitle()
+            }
+        }
+
+        @AfterClass @JvmStatic
+        fun fini() = runBlocking {
+            if (userClient.isRegistered()) {
+                deregister()
+            }
+            emailClient.reset()
+            sudoClient.reset()
+            userClient.reset()
+            Timber.uprootAll()
+        }
+    }
+
+    protected suspend fun createSudo(sudoInput: Sudo): Sudo {
+        return sudoClient.createSudo(sudoInput)
+    }
+
+    protected suspend fun getOwnershipProof(sudo: Sudo): String {
+        return sudoClient.getOwnershipProof(sudo, "sudoplatform.email.email-address")
+    }
+
+    protected suspend fun getEmailDomains(client: SudoEmailClient): List<String> {
+        return client.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+    }
+
+    protected fun generateSafeLocalPart(prefix: String? = null): String {
+        val safePrefix = prefix ?: "safe-"
+        val safeMap = mapOf(
+            "-" to "-",
+            "0" to "0",
+            "1" to "1",
+            "2" to "2",
+            "3" to "3",
+            "4" to "4",
+            "5" to "5",
+            "6" to "6",
+            "7" to "7",
+            "8" to "8",
+            "9" to "9",
+            "a" to "10",
+            "b" to "11",
+            "c" to "12",
+            "d" to "13",
+            "e" to "14",
+            "f" to "15",
+        )
+        val pref = if (safePrefix.endsWith("-")) safePrefix else "$safePrefix-"
+        val uuid = UUID.randomUUID().toString().map { it.toString() }
+        return (pref + uuid.map { safeMap[it] }.joinToString(""))
+    }
+
+    protected suspend fun provisionEmailAddress(
+        client: SudoEmailClient,
+        ownershipProofToken: String,
+        address: String? = null,
+        alias: String? = null
+    ): EmailAddress {
+        val emailDomains = client.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+        emailDomains.size shouldBeGreaterThanOrEqual 1
+
+        val localPart = generateSafeLocalPart()
+        val emailAddress = address ?: localPart + "@" + emailDomains.first()
+        val provisionInput = ProvisionEmailAddressInput(
+            emailAddress = emailAddress,
+            ownershipProofToken = ownershipProofToken,
+            alias = alias
+        )
+        return client.provisionEmailAddress(provisionInput)
+    }
+
+    protected suspend fun sendEmailMessage(
+        client: SudoEmailClient,
+        fromAddress: EmailAddress,
+        toAddress: String = toSimulatorAddress,
+        body: String? = null
+    ): String {
+        val messageSubject = "Hello ${UUID.randomUUID()}"
+        val emailBody = body ?: buildString {
+            for (i in 0 until 500) {
+                appendLine("Body of message ${UUID.randomUUID()}")
+            }
+        }
+        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+            from = fromAddress.emailAddress,
+            to = toAddress,
+            subject = messageSubject,
+            body = emailBody
+        )
+        val sendEmailMessageInput = SendEmailMessageInput(rfc822Data, fromAddress.id)
+        return client.sendEmailMessage(sendEmailMessageInput)
+    }
+
+    protected suspend fun getFolderByName(client: SudoEmailClient, emailAddressId: String, folderName: String): EmailFolder? {
+        val listFoldersInput = ListEmailFoldersForEmailAddressIdInput(emailAddressId)
+        return client.listEmailFoldersForEmailAddressId(listFoldersInput).items.find { it.folderName == folderName }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,6 @@ import java.io.IOException
  * A factory that creates RFC 822 compatible email message content.
  * Note that the email message content created is also compatible with the more recent RFC 6854
  * standard which supersedes RFC 822.
- *
- * @since 2020-08-06
  */
 internal object Rfc822MessageFactory {
 

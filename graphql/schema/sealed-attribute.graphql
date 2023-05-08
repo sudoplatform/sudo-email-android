@@ -1,0 +1,6 @@
+type SealedAttribute {
+  algorithm: String!
+  keyId: String!
+  plainTextType: String!
+  base64EncodedSealedData: String!
+}

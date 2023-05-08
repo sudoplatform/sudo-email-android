@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,8 +17,6 @@ import java.util.Date
 
 /**
  * Test the public facing data classes can be written into and read from a [Bundle].
- *
- * @since 2020-08-27
  */
 @RunWith(AndroidJUnit4::class)
 class ParcelTest {
@@ -30,29 +28,49 @@ class ParcelTest {
         val emailAddress = EmailMessageTransformer.toEmailAddress(rfc822Address)
             ?: throw AssertionError("Parsing should not fail")
         val owner = Owner("id", "issuer")
-        val provisionedEmailAddress = EmailAddress(
-            id = "emailAddressId",
-            emailAddress = rfc822Address,
-            userId = "userId",
-            sudoId = "sudoId",
+        val emailFolder = EmailFolder(
+            "folderId",
+            "owner",
             owners = listOf(owner),
+            "emailAddressId",
+            "INBOX",
+            0.0,
+            0,
+            1,
             createdAt = Date(42L),
             updatedAt = Date(43L)
         )
+        val provisionedEmailAddress = EmailAddress(
+            id = "emailAddressId",
+            owner = "owner",
+            owners = listOf(owner),
+            emailAddress = rfc822Address,
+            size = 0.0,
+            version = 1,
+            createdAt = Date(42L),
+            updatedAt = Date(43L),
+            null,
+            null,
+            listOf(emailFolder)
+        )
         val emailMessage = EmailMessage(
-            messageId = "messageId",
-            userId = "userId",
-            sudoId = "sudoId",
+            id = "id",
+            owner = "owner",
+            owners = listOf(owner),
             emailAddressId = "emailAddressId",
-            direction = EmailMessage.Direction.OUTBOUND,
-            state = EmailMessage.State.SENT,
+            folderId = "folderId",
+            previousFolderId = "previousFolderId",
+            seen = false,
+            direction = Direction.OUTBOUND,
+            state = State.SENT,
+            version = 1,
+            sortDate = Date(42L),
             from = listOf(emailAddress),
             to = listOf(emailAddress),
             createdAt = Date(42L),
             updatedAt = Date(43L),
-            id = "id",
-            algorithm = "algorithm",
-            keyId = "keyId"
+            size = 0.0,
+            hasAttachments = false,
         )
 
         val bundle = Bundle()

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,12 +9,10 @@ package com.sudoplatform.sudoemail.keys
 /**
  * Key Pair created and/or retrieved from a [DeviceKeyManager].
  *
- * @property keyId Unique identifier of the key pair.
- * @property keyRingId Identifier of the key ring that contains the key pair.
- * @property publicKey Bytes of the public key (PEM format)
- * @property privateKey Bytes of the private key (PEM format)
- *
- * @since 2020-08-05
+ * @property keyId [String] Unique identifier of the key pair.
+ * @property keyRingId [String] Identifier of the key ring that contains the key pair.
+ * @property publicKey [ByteArray] Bytes of the public key (PEM format).
+ * @property privateKey [ByteArray] Bytes of the private key (PEM format).
  */
 internal data class KeyPair(
     val keyId: String,

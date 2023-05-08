@@ -1,50 +1,70 @@
+<!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>SudoEmailClient</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
-<script src="https://unpkg.com/kotlin-playground@1" data-selector="code.runnablesample"></script>    <link href="../../../styles/style.css" rel="Stylesheet">
-    <script type="text/javascript" src="../../../scripts/navigationLoader.js" async="async"></script>
-    <script type="text/javascript" src="../../../scripts/platformContentHandler.js" async="async"></script>
-    <script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
-    <script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
-    <link href="../../../styles/jetbrains-mono.css" rel="Stylesheet">
     <script>var pathToRoot = "../../../";</script>
-  </head>
-  <body>
-    <div id="container">
-      <div id="leftColumn">
-        <div id="logo"></div>
-        <div id="paneSearch"></div>
-        <div id="sideMenu"></div>
-      </div>
-      <div id="main">
-        <div id="leftToggler"><span class="icon-toggler"></span></div>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script src="https://unpkg.com/kotlin-playground@1"></script><script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/jetbrains-mono.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+<div class="navigation-wrapper" id="navigation-wrapper">
+    <div id="leftToggler"><span class="icon-toggler"></span></div>
+    <div class="library-name">
+            <a href="../../../index.html">
+                    <span>sudoemail</span>
+            </a>
+    </div>
+    <div>
+    </div>
+    <div class="pull-right d-flex">
+        <button id="theme-toggle-button"><span id="theme-toggle"></span></button>
         <div id="searchBar"></div>
-        <script type="text/javascript" src="../../../scripts/pages.js"></script>
-        <script type="text/javascript" src="../../../scripts/main.js"></script>
-        <div id="content" pageIds="com.sudoplatform.sudoemail/SudoEmailClient///PointingToDeclaration/">
-          <div class="breadcrumbs"><a href="../../index.html">sudoemail</a>/<a href="../index.html">com.sudoplatform.sudoemail</a>/<a href="index.html">SudoEmailClient</a></div>
-          <div class="cover ">
-            <div class="filter-section" id="filter-section"><button class="platform-tag platform-selector jvm-like" data-active="" data-filter=":sudoemail:dokkaHtml/release">androidJvm</button></div>
-            <h1 class="cover"><a data-name="sudoemailclient"></a><span>Sudo</span><wbr></wbr><span>Email</span><wbr></wbr><span>Client</span></h1>
-            <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><p class="paragraph">Interface encapsulating a library for interacting with the Sudo Platform Email service.</p><h4 class=""><a data-name="since"></a>Since</h4><p class="paragraph">2020-08-04</p><div class="symbol monospace">interface <a href="index.html">SudoEmailClient</a> : <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html">AutoCloseable</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-          </div>
-          <div class="tabbedcontent">
-            <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Types">Types</button><button class="section-tab" data-togglable="Functions">Functions</button><button class="section-tab" data-togglable="Extensions">Extensions</button><button class="section-tab" data-togglable="Samples">Samples</button></div>
-            <div class="tabs-section-body">
-              <h2 class=""><a data-name="samples"></a>Samples</h2>
-              <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Samples"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="sample-container"><code class="runnablesample monospace" theme="idea"><pre>import android.content.Context
+    </div>
+</div>
+<div id="container">
+    <div id="leftColumn">
+        <div id="sideMenu"></div>
+    </div>
+    <div id="main">
+<div class="main-content" id="content" pageIds="sudoemail::com.sudoplatform.sudoemail/SudoEmailClient///PointingToDeclaration//2021949935">
+  <div class="breadcrumbs"><a href="../../../index.html">sudoemail</a><span class="delimiter">/</span><a href="../index.html">com.sudoplatform.sudoemail</a><span class="delimiter">/</span><span class="current">SudoEmailClient</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Sudo</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Client</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">SudoEmailClient</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/AutoCloseable.html">AutoCloseable</a></div><p class="paragraph">Interface encapsulating a library for interacting with the Sudo Platform Email service.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Types">Types</button><button class="section-tab" data-togglable="Functions">Functions</button><button class="section-tab" data-togglable="Extensions">Extensions</button><button class="section-tab" data-togglable="Samples">Samples</button></div>
+    <div class="tabs-section-body">
+      <h4 class="">Samples</h4>
+      <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Samples"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="sample-container"><pre><code class="runnablesample monospace block lang-kotlin" theme="idea">import android.content.Context
 import org.mockito.kotlin.mock
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.types.inputs.filters.filterEmailAddressesBy
-import com.sudoplatform.sudoemail.types.inputs.filters.filterEmailMessagesBy
-import com.sudoplatform.sudoprofiles.SudoProfilesClient
 import com.sudoplatform.sudouser.SudoUserClient
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,747 +74,549 @@ fun main() {
    val emailClient = SudoEmailClient.builder()
     .setContext(context)
     .setSudoUserClient(sudoUserClient)
-    .setSudoProfilesClient(sudoProfilesClient)
     .build() 
    //sampleEnd
-}</pre></code></div></div></div>
-              <h2 class=""><a data-name="types"></a>Types</h2>
-              <div class="table" data-togglable="Types"><a data-name="com.sudoplatform.sudoemail/SudoEmailClient.Builder///PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="-builder/index.html">Builder</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient.Builder///PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Builder used to construct the <a href="index.html">SudoEmailClient</a>.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">class <a href="-builder/index.html">Builder</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient.Companion///PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="-companion/index.html">Companion</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient.Companion///PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">object <a href="-companion/index.html">Companion</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient.EmailAddressException///PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="-email-address-exception/index.html">EmailAddressException</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient.EmailAddressException///PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Defines the exceptions for the email address based methods.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">sealed class <a href="-email-address-exception/index.html">EmailAddressException</a> : <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/RuntimeException.html">RuntimeException</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient.EmailMessageException///PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="-email-message-exception/index.html">EmailMessageException</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient.EmailMessageException///PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Defines the exceptions for the email message based methods.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">sealed class <a href="-email-message-exception/index.html">EmailMessageException</a> : <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/RuntimeException.html">RuntimeException</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-              </div>
-              <h2 class=""><a data-name="functions"></a>Functions</h2>
-              <div class="table" data-togglable="Functions"><a data-name="com.sudoplatform.sudoemail/SudoEmailClient/checkEmailAddressAvailability/#kotlin.collections.List[kotlin.String]#kotlin.collections.List[kotlin.String]/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="check-email-address-availability.html">checkEmailAddressAvailability</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/checkEmailAddressAvailability/#kotlin.collections.List[kotlin.String]#kotlin.collections.List[kotlin.String]/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Check if an email address is available to be provisioned within a domain.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="check-email-address-availability.html">checkEmailAddressAvailability</a>(localParts: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;, domains: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="java.lang/AutoCloseable/close/#/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="index.html#java.lang/AutoCloseable/close/#/PointingToDeclaration/">close</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="java.lang/AutoCloseable/close/#/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract override fun <a href="index.html#java.lang/AutoCloseable/close/#/PointingToDeclaration/">close</a>()<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/deleteEmailMessage/#kotlin.String/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="delete-email-message.html">deleteEmailMessage</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/deleteEmailMessage/#kotlin.String/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Delete an <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a> using the <span data-unresolved-link="com.sudoplatform.sudoemail/SudoEmailClient/id/#/PointingToCallableParameters(-1)/">id</span> parameter.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="delete-email-message.html">deleteEmailMessage</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/deprovisionEmailAddress/#kotlin.String/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="deprovision-email-address.html">deprovisionEmailAddress</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/deprovisionEmailAddress/#kotlin.String/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">De-provision an <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="deprovision-email-address.html">deprovisionEmailAddress</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="kotlin/Any/equals/#kotlin.Any?/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-message-filter/-builder/index.html#kotlin/Any/equals/#kotlin.Any?/PointingToDeclaration/">equals</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="kotlin/Any/equals/#kotlin.Any?/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">open operator override fun <a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-message-filter/-builder/index.html#kotlin/Any/equals/#kotlin.Any?/PointingToDeclaration/">equals</a>(other: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html">Any</a>?): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html">Boolean</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/getEmailAddress/#kotlin.String#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="get-email-address.html">getEmailAddress</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/getEmailAddress/#kotlin.String#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Get an <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a> using the <span data-unresolved-link="com.sudoplatform.sudoemail/SudoEmailClient/id/#/PointingToCallableParameters(-1)/">id</span> parameter.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="get-email-address.html">getEmailAddress</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, cachePolicy: <a href="../../com.sudoplatform.sudoemail.types/-cache-policy/index.html">CachePolicy</a>): <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>?<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/getEmailMessage/#kotlin.String#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="get-email-message.html">getEmailMessage</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/getEmailMessage/#kotlin.String#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Get an <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a> using the <span data-unresolved-link="com.sudoplatform.sudoemail/SudoEmailClient/id/#/PointingToCallableParameters(-1)/">id</span> parameter.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="get-email-message.html">getEmailMessage</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, cachePolicy: <a href="../../com.sudoplatform.sudoemail.types/-cache-policy/index.html">CachePolicy</a>): <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>?<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/getEmailMessageRfc822Data/#kotlin.String#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="get-email-message-rfc822-data.html">getEmailMessageRfc822Data</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/getEmailMessageRfc822Data/#kotlin.String#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Get the RFC 6854 (supersedes RFC 822) data of an <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a> using the <span data-unresolved-link="com.sudoplatform.sudoemail/SudoEmailClient/id/#/PointingToCallableParameters(-1)/">id</span> parameter.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="get-email-message-rfc822-data.html">getEmailMessageRfc822Data</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, cachePolicy: <a href="../../com.sudoplatform.sudoemail.types/-cache-policy/index.html">CachePolicy</a>): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html">ByteArray</a>?<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/getSupportedEmailDomains/#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="get-supported-email-domains.html">getSupportedEmailDomains</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/getSupportedEmailDomains/#com.sudoplatform.sudoemail.types.CachePolicy/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Get a list of the supported email domains from the service.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="get-supported-email-domains.html">getSupportedEmailDomains</a>(cachePolicy: <a href="../../com.sudoplatform.sudoemail.types/-cache-policy/index.html">CachePolicy</a>): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a>&lt;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>&gt;<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="kotlin/Any/hashCode/#/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-message-filter/-builder/index.html#kotlin/Any/hashCode/#/PointingToDeclaration/">hashCode</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="kotlin/Any/hashCode/#/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">open override fun <a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-message-filter/-builder/index.html#kotlin/Any/hashCode/#/PointingToDeclaration/">hashCode</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/listEmailAddresses/#kotlin.String?#kotlin.Int#kotlin.String?#com.sudoplatform.sudoemail.types.CachePolicy#kotlin.Function0[com.sudoplatform.sudoemail.types.inputs.filters.EmailAddressFilter?]/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="list-email-addresses.html">listEmailAddresses</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/listEmailAddresses/#kotlin.String?#kotlin.Int#kotlin.String?#com.sudoplatform.sudoemail.types.CachePolicy#kotlin.Function0[com.sudoplatform.sudoemail.types.inputs.filters.EmailAddressFilter?]/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Get a <a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html">ListOutput</a> of <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>es. If no <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>es can be found, the <a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html">ListOutput</a> will contain null for the <a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html#com.sudoplatform.sudoemail.types/ListOutput/nextToken/#/PointingToDeclaration/">ListOutput.nextToken</a> field and contain an empty list.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="list-email-addresses.html">listEmailAddresses</a>(sudoId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>?, limit: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a>, nextToken: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>?, cachePolicy: <a href="../../com.sudoplatform.sudoemail.types/-cache-policy/index.html">CachePolicy</a>, filter: () -&gt; <a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-address-filter/index.html">EmailAddressFilter</a>?): <a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html">ListOutput</a>&lt;<a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>&gt;<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/listEmailMessages/#kotlin.String?#kotlin.String?#kotlin.Int#kotlin.String?#com.sudoplatform.sudoemail.types.CachePolicy#kotlin.Function0[com.sudoplatform.sudoemail.types.inputs.filters.EmailMessageFilter?]/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="list-email-messages.html">listEmailMessages</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/listEmailMessages/#kotlin.String?#kotlin.String?#kotlin.Int#kotlin.String?#com.sudoplatform.sudoemail.types.CachePolicy#kotlin.Function0[com.sudoplatform.sudoemail.types.inputs.filters.EmailMessageFilter?]/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Get a <a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html">ListOutput</a> of <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s. If no email messages can be found, an empty list will be returned.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="list-email-messages.html">listEmailMessages</a>(emailAddressId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>?, sudoId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>?, limit: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html">Int</a>, nextToken: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>?, cachePolicy: <a href="../../com.sudoplatform.sudoemail.types/-cache-policy/index.html">CachePolicy</a>, filter: () -&gt; <a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-message-filter/index.html">EmailMessageFilter</a>?): <a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html">ListOutput</a>&lt;<a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>&gt;<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/provisionEmailAddress/#kotlin.String#kotlin.String/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="provision-email-address.html">provisionEmailAddress</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/provisionEmailAddress/#kotlin.String#kotlin.String/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Provision an <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="provision-email-address.html">provisionEmailAddress</a>(emailAddress: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, sudoId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/reset/#/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="reset.html">reset</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/reset/#/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Reset any internal state and cached content.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract fun <a href="reset.html">reset</a>()<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/sendEmailMessage/#kotlin.ByteArray#kotlin.String/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="send-email-message.html">sendEmailMessage</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/sendEmailMessage/#kotlin.ByteArray#kotlin.String/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="send-email-message.html">sendEmailMessage</a>(rfc822Data: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-byte-array/index.html">ByteArray</a>, senderEmailAddressId: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/subscribeToEmailMessages/#kotlin.String#com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="subscribe-to-email-messages.html">subscribeToEmailMessages</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/subscribeToEmailMessages/#kotlin.String#com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Subscribes to be notified of new and deleted <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="subscribe-to-email-messages.html">subscribeToEmailMessages</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, subscriber: <a href="../../com.sudoplatform.sudoemail.subscription/-email-message-subscriber/index.html">EmailMessageSubscriber</a>)<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="kotlin/Any/toString/#/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-message-filter/-builder/index.html#kotlin/Any/toString/#/PointingToDeclaration/">toString</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="kotlin/Any/toString/#/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">open override fun <a href="../../com.sudoplatform.sudoemail.types.inputs.filters/-email-message-filter/-builder/index.html#kotlin/Any/toString/#/PointingToDeclaration/">toString</a>(): <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/unsubscribeAll/#/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="unsubscribe-all.html">unsubscribeAll</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/unsubscribeAll/#/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Unsubscribe all subscribers from receiving notifications about new or deleted <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="unsubscribe-all.html">unsubscribeAll</a>()<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-<a data-name="com.sudoplatform.sudoemail/SudoEmailClient/unsubscribeFromEmailMessages/#kotlin.String/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="unsubscribe-from-email-messages.html">unsubscribeFromEmailMessages</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail/SudoEmailClient/unsubscribeFromEmailMessages/#kotlin.String/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Unsubscribe the specified subscriber so that it no longer receives notifications about new or deleted <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">abstract suspend fun <a href="unsubscribe-from-email-messages.html">unsubscribeFromEmailMessages</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>)<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
-              </div>
-              <h2 class="tabbedcontent"><a data-name="extensions"></a>Extensions</h2>
-              <div class="table" data-togglable="Extensions"><a data-name="com.sudoplatform.sudoemail//subscribeToEmailMessages/com.sudoplatform.sudoemail.SudoEmailClient#kotlin.String#kotlin.Function1[com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber.ConnectionState,kotlin.Unit]#kotlin.Function1[com.sudoplatform.sudoemail.types.EmailMessage,kotlin.Unit]#kotlin.Function1[com.sudoplatform.sudoemail.types.EmailMessage,kotlin.Unit]/PointingToDeclaration/"></a>
-                <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-                  <div class="main-subrow "><span><a href="../subscribe-to-email-messages.html">subscribeToEmailMessages</a><span class="anchor-wrapper"><span class="anchor-icon" pointing-to="com.sudoplatform.sudoemail//subscribeToEmailMessages/com.sudoplatform.sudoemail.SudoEmailClient#kotlin.String#kotlin.Function1[com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber.ConnectionState,kotlin.Unit]#kotlin.Function1[com.sudoplatform.sudoemail.types.EmailMessage,kotlin.Unit]#kotlin.Function1[com.sudoplatform.sudoemail.types.EmailMessage,kotlin.Unit]/PointingToDeclaration/"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21.2496 5.3C20.3496 4.5 19.2496 4 18.0496 4C16.8496 4 15.6496 4.5 14.8496 5.3L10.3496 9.8L11.7496 11.2L16.2496 6.7C17.2496 5.7 18.8496 5.7 19.8496 6.7C20.8496 7.7 20.8496 9.3 19.8496 10.3L15.3496 14.8L16.7496 16.2L21.2496 11.7C22.1496 10.8 22.5496 9.7 22.5496 8.5C22.5496 7.3 22.1496 6.2 21.2496 5.3Z"/>
-    <path d="M8.35 16.7998C7.35 17.7998 5.75 17.7998 4.75 16.7998C3.75 15.7998 3.75 14.1998 4.75 13.1998L9.25 8.6998L7.85 7.2998L3.35 11.7998C1.55 13.5998 1.55 16.3998 3.35 18.1998C4.25 19.0998 5.35 19.4998 6.55 19.4998C7.75 19.4998 8.85 19.0998 9.75 18.1998L14.25 13.6998L12.85 12.2998L8.35 16.7998Z"/>
-</svg></span>
-                        <div class="copy-popup-wrapper "><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Link copied to clipboard</span></div>
-                      </span></span>
-                    <div class="platform-tags">
-                      <div class="platform-tag jvm-like">androidJvm</div>
-                    </div>
-                  </div>
-                  <div class="platform-dependent-row keyValue">
-                    <div></div>
-                    <div class="title"><div class="divergent-group" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="brief-with-platform-tags"><div class="inner-brief-with-platform-tags"><div class="brief "><p class="paragraph">Subscribes to be notified of new and deleted <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s.</p></div></div>
-<span class="pull-right"></span></div>
-
-  <div class="main-subrow">
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-depenent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace">suspend fun <a href="index.html">SudoEmailClient</a>.<a href="../subscribe-to-email-messages.html">subscribeToEmailMessages</a>(id: <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a>, onConnectionChange: (<a href="../../com.sudoplatform.sudoemail.subscription/-email-message-subscriber/-connection-state/index.html">EmailMessageSubscriber.ConnectionState</a>) -&gt; <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a>, onEmailMessageCreated: (<a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>) -&gt; <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a>, onEmailMessageDeleted: (<a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>) -&gt; <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a>)<span class="top-right-position"><span class="copy-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M5 4H15V16H5V4ZM17 7H19V18V20H17H8V18H17V7Z" fill="black"/>
-                       </svg></span><div class="copy-popup-wrapper popup-to-left"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 9C18 14 14 18 9 18C4 18 0 14 0 9C0 4 4 0 9 0C14 0 18 4 18 9ZM14.2 6.2L12.8 4.8L7.5 10.1L5.3 7.8L3.8 9.2L7.5 13L14.2 6.2Z" fill="#4DBB5F"/>
-</svg><span>Content copied to clipboard</span></div></span></div></div></div>
-  </div>
-</div>
-</div>
-                  </div>
-                </div>
+}</code></pre></div></div></div>
+      <h2 class="">Types</h2>
+      <div class="table" data-togglable="Types"><a data-name="209305323%2FClasslikes%2F2021949935" anchor-label="Builder" id="209305323%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-builder/index.html"><span><span>Builder</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="209305323%2FClasslikes%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-builder/index.html">Builder</a></div><div class="brief "><p class="paragraph">Builder used to construct the <a href="index.html">SudoEmailClient</a>.</p></div></div></div>
               </div>
             </div>
           </div>
         </div>
-        <div class="footer"><span class="go-to-top-icon"><a href="#container"><svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M11.3337 9.66683H0.666992L6.00033 3.66683L11.3337 9.66683Z" fill="black"/>
-    <path d="M0.666992 0.333496H11.3337V1.66683H0.666992V0.333496Z" fill="black"/>
-</svg></a></span><span>© 2020 Copyright</span><span class="pull-right"><span>Sponsored and developed by dokka</span><a href="https://github.com/Kotlin/dokka"><span class="padded-icon"><svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 0H2.3949L4.84076 2.44586L0 7.28662L0.713376 8L5.55414 3.15924L8 5.6051V0Z" fill="black"/>
-</svg></span></a></span></div>
+<a data-name="78623578%2FClasslikes%2F2021949935" anchor-label="Companion" id="78623578%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="78623578%2FClasslikes%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1818226383%2FClasslikes%2F2021949935" anchor-label="EmailAddressException" id="1818226383%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-email-address-exception/index.html"><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1818226383%2FClasslikes%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-email-address-exception/index.html">EmailAddressException</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/RuntimeException.html">RuntimeException</a></div><div class="brief "><p class="paragraph">Defines the exceptions for the email address based methods.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1267869841%2FClasslikes%2F2021949935" anchor-label="EmailConfigurationException" id="1267869841%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-email-configuration-exception/index.html"><span>Email</span><wbr></wbr><span>Configuration</span><wbr></wbr><span><span>Exception</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1267869841%2FClasslikes%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-email-configuration-exception/index.html">EmailConfigurationException</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/RuntimeException.html">RuntimeException</a></div><div class="brief "><p class="paragraph">Defines the exceptions for the email configuration based methods.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1736687689%2FClasslikes%2F2021949935" anchor-label="EmailFolderException" id="-1736687689%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-email-folder-exception/index.html"><span>Email</span><wbr></wbr><span>Folder</span><wbr></wbr><span><span>Exception</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1736687689%2FClasslikes%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-email-folder-exception/index.html">EmailFolderException</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/RuntimeException.html">RuntimeException</a></div><div class="brief "><p class="paragraph">Defines the exceptions for the email folder based methods.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="569413154%2FClasslikes%2F2021949935" anchor-label="EmailMessageException" id="569413154%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="-email-message-exception/index.html"><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Exception</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="569413154%2FClasslikes%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-email-message-exception/index.html">EmailMessageException</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/RuntimeException.html">RuntimeException</a></div><div class="brief "><p class="paragraph">Defines the exceptions for the email message based methods.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h2 class="">Functions</h2>
+      <div class="table" data-togglable="Functions"><a data-name="1616503897%2FFunctions%2F2021949935" anchor-label="checkEmailAddressAvailability" id="1616503897%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="check-email-address-availability.html"><span>check</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Availability</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1616503897%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="check-email-address-availability.html"><span class="token function">checkEmailAddressAvailability</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-check-email-address-availability-input/index.html">CheckEmailAddressAvailabilityInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Check if an email address is available to be provisioned within a domain.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1117130810%2FFunctions%2F2021949935" anchor-label="close" id="-1117130810%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="index.html#-1117130810%2FFunctions%2F2021949935"><span><span>close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1117130810%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="index.html#-1117130810%2FFunctions%2F2021949935"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1548657849%2FFunctions%2F2021949935" anchor-label="createDraftEmailMessage" id="1548657849%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="create-draft-email-message.html"><span>create</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1548657849%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="create-draft-email-message.html"><span class="token function">createDraftEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-create-draft-email-message-input/index.html">CreateDraftEmailMessageInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Creates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-754386779%2FFunctions%2F2021949935" anchor-label="deleteDraftEmailMessages" id="-754386779%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="delete-draft-email-messages.html"><span>delete</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Messages</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-754386779%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="delete-draft-email-messages.html"><span class="token function">deleteDraftEmailMessages</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-delete-draft-email-messages-input/index.html">DeleteDraftEmailMessagesInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-batch-operation-result/index.html">BatchOperationResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Delete multiple draft email messages with a list of identifiers.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1255663661%2FFunctions%2F2021949935" anchor-label="deleteEmailMessage" id="-1255663661%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="delete-email-message.html"><span>delete</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1255663661%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="delete-email-message.html"><span class="token function">deleteEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">id<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Delete a single <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a> using the <a href="delete-email-message.html">id</a> parameter.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-267114656%2FFunctions%2F2021949935" anchor-label="deleteEmailMessages" id="-267114656%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="delete-email-messages.html"><span>delete</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Messages</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-267114656%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="delete-email-messages.html"><span class="token function">deleteEmailMessages</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">ids<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-batch-operation-result/index.html">BatchOperationResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Delete multiple <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s using a list of identifiers.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-58146915%2FFunctions%2F2021949935" anchor-label="deprovisionEmailAddress" id="-58146915%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="deprovision-email-address.html"><span>deprovision</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-58146915%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="deprovision-email-address.html"><span class="token function">deprovisionEmailAddress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">id<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a></div><div class="brief "><p class="paragraph">Deprovision an <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-450290211%2FFunctions%2F2021949935" anchor-label="getConfigurationData" id="-450290211%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-configuration-data.html"><span>get</span><wbr></wbr><span>Configuration</span><wbr></wbr><span><span>Data</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-450290211%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-configuration-data.html"><span class="token function">getConfigurationData</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-configuration-data/index.html">ConfigurationData</a></div><div class="brief "><p class="paragraph">Get the configuration data for the email service.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1212040339%2FFunctions%2F2021949935" anchor-label="getDraftEmailMessage" id="-1212040339%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-draft-email-message.html"><span>get</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1212040339%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-draft-email-message.html"><span class="token function">getDraftEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-get-draft-email-message-input/index.html">GetDraftEmailMessageInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-draft-email-message-with-content/index.html">DraftEmailMessageWithContent</a></div><div class="brief "><p class="paragraph">Retrieves a draft email message</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1147373177%2FFunctions%2F2021949935" anchor-label="getEmailAddress" id="1147373177%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-email-address.html"><span>get</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1147373177%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-email-address.html"><span class="token function">getEmailAddress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-get-email-address-input/index.html">GetEmailAddressInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Get an <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a> using its identifier.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="49409497%2FFunctions%2F2021949935" anchor-label="getEmailMessage" id="49409497%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-email-message.html"><span>get</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="49409497%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-email-message.html"><span class="token function">getEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-get-email-message-input/index.html">GetEmailMessageInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Get an <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a> using its identifier.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="962010169%2FFunctions%2F2021949935" anchor-label="getEmailMessageRfc822Data" id="962010169%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-email-message-rfc822-data.html"><span>get</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Rfc822Data</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="962010169%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-email-message-rfc822-data.html"><span class="token function">getEmailMessageRfc822Data</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-get-email-message-rfc822-data-input/index.html">GetEmailMessageRfc822DataInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-email-message-rfc822-data/index.html">EmailMessageRfc822Data</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Get the RFC 6854 (supersedes RFC 822) data of an <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1350609277%2FFunctions%2F2021949935" anchor-label="getSupportedEmailDomains" id="1350609277%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="get-supported-email-domains.html"><span>get</span><wbr></wbr><span>Supported</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Domains</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1350609277%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-supported-email-domains.html"><span class="token function">getSupportedEmailDomains</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">cachePolicy<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-cache-policy/index.html">CachePolicy</a><span class="token operator"> = </span>CachePolicy.REMOTE_ONLY</span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get a list of the supported email domains.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="440621166%2FFunctions%2F2021949935" anchor-label="listDraftEmailMessageMetadata" id="440621166%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="list-draft-email-message-metadata.html"><span>list</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Metadata</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="440621166%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-draft-email-message-metadata.html"><span class="token function">listDraftEmailMessageMetadata</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">emailAddressId<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-draft-email-message-metadata/index.html">DraftEmailMessageMetadata</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Lists the metadata for all draft messages associated with the emailAddressId</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="966039689%2FFunctions%2F2021949935" anchor-label="listEmailAddresses" id="966039689%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="list-email-addresses.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Addresses</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="966039689%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-addresses.html"><span class="token function">listEmailAddresses</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-list-email-addresses-input/index.html">ListEmailAddressesInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-list-a-p-i-result/index.html">ListAPIResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a><span class="token punctuation">, </span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-partial-email-address/index.html">PartialEmailAddress</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get a list of <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>es.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-715930919%2FFunctions%2F2021949935" anchor-label="listEmailAddressesForSudoId" id="-715930919%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="list-email-addresses-for-sudo-id.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Addresses</span><wbr></wbr><span>For</span><wbr></wbr><span>Sudo</span><wbr></wbr><span><span>Id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-715930919%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-addresses-for-sudo-id.html"><span class="token function">listEmailAddressesForSudoId</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-list-email-addresses-for-sudo-id-input/index.html">ListEmailAddressesForSudoIdInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-list-a-p-i-result/index.html">ListAPIResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a><span class="token punctuation">, </span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-partial-email-address/index.html">PartialEmailAddress</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get a list of <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>es owned by the Sudo identified by sudoId.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-912888423%2FFunctions%2F2021949935" anchor-label="listEmailFoldersForEmailAddressId" id="-912888423%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="list-email-folders-for-email-address-id.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Folders</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-912888423%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-folders-for-email-address-id.html"><span class="token function">listEmailFoldersForEmailAddressId</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-list-email-folders-for-email-address-id-input/index.html">ListEmailFoldersForEmailAddressIdInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html">ListOutput</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-email-folder/index.html">EmailFolder</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get a <a href="../../com.sudoplatform.sudoemail.types/-list-output/index.html">ListOutput</a> of <a href="../../com.sudoplatform.sudoemail.types/-email-folder/index.html">EmailFolder</a>s.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="2012273829%2FFunctions%2F2021949935" anchor-label="listEmailMessagesForEmailAddressId" id="2012273829%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="list-email-messages-for-email-address-id.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2012273829%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-messages-for-email-address-id.html"><span class="token function">listEmailMessagesForEmailAddressId</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-list-email-messages-for-email-address-id-input/index.html">ListEmailMessagesForEmailAddressIdInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-list-a-p-i-result/index.html">ListAPIResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a><span class="token punctuation">, </span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-partial-email-message/index.html">PartialEmailMessage</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get a list of <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s for the specified email address identifier.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1509200647%2FFunctions%2F2021949935" anchor-label="listEmailMessagesForEmailFolderId" id="-1509200647%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="list-email-messages-for-email-folder-id.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span>Folder</span><wbr></wbr><span><span>Id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1509200647%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-messages-for-email-folder-id.html"><span class="token function">listEmailMessagesForEmailFolderId</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-list-email-messages-for-email-folder-id-input/index.html">ListEmailMessagesForEmailFolderIdInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-list-a-p-i-result/index.html">ListAPIResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a><span class="token punctuation">, </span><span class="token keyword"></span><a href="../../com.sudoplatform.sudoemail.types/-partial-email-message/index.html">PartialEmailMessage</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Get a list of <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s for the specified email folder identifier.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="803516185%2FFunctions%2F2021949935" anchor-label="provisionEmailAddress" id="803516185%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="provision-email-address.html"><span>provision</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="803516185%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="provision-email-address.html"><span class="token function">provisionEmailAddress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-provision-email-address-input/index.html">ProvisionEmailAddressInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a></div><div class="brief "><p class="paragraph">Provision an <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-1848596828%2FFunctions%2F2021949935" anchor-label="reset" id="-1848596828%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="reset.html"><span><span>reset</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1848596828%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="reset.html"><span class="token function">reset</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Reset any internal state and cached content.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="2138799463%2FFunctions%2F2021949935" anchor-label="sendEmailMessage" id="2138799463%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="send-email-message.html"><span>send</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2138799463%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="send-email-message.html"><span class="token function">sendEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-send-email-message-input/index.html">SendEmailMessageInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="100640475%2FFunctions%2F2021949935" anchor-label="subscribeToEmailMessages" id="100640475%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="subscribe-to-email-messages.html"><span>subscribe</span><wbr></wbr><span>To</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Messages</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="100640475%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="subscribe-to-email-messages.html"><span class="token function">subscribeToEmailMessages</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">id<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">subscriber<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.subscription/-email-message-subscriber/index.html">EmailMessageSubscriber</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Subscribes to be notified of new and deleted <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s. Subscribing multiple times with the same subscriber id will cause the previous subscriber to be unsubscribed.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="299882245%2FFunctions%2F2021949935" anchor-label="unsubscribeAllFromEmailMessages" id="299882245%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="unsubscribe-all-from-email-messages.html"><span>unsubscribe</span><wbr></wbr><span>All</span><wbr></wbr><span>From</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Messages</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="299882245%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="unsubscribe-all-from-email-messages.html"><span class="token function">unsubscribeAllFromEmailMessages</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Unsubscribe all subscribers from receiving notifications about modifications to <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="-783366230%2FFunctions%2F2021949935" anchor-label="unsubscribeFromEmailMessages" id="-783366230%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="unsubscribe-from-email-messages.html"><span>unsubscribe</span><wbr></wbr><span>From</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Messages</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-783366230%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="unsubscribe-from-email-messages.html"><span class="token function">unsubscribeFromEmailMessages</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">id<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Unsubscribe the specified subscriber so that it no longer receives notifications about new or deleted <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1478879001%2FFunctions%2F2021949935" anchor-label="updateDraftEmailMessage" id="1478879001%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="update-draft-email-message.html"><span>update</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1478879001%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="update-draft-email-message.html"><span class="token function">updateDraftEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-update-draft-email-message-input/index.html">UpdateDraftEmailMessageInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Updates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="1198250017%2FFunctions%2F2021949935" anchor-label="updateEmailAddressMetadata" id="1198250017%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="update-email-address-metadata.html"><span>update</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Metadata</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1198250017%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="update-email-address-metadata.html"><span class="token function">updateEmailAddressMetadata</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-update-email-address-metadata-input/index.html">UpdateEmailAddressMetadataInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Update the metadata of an <a href="../../com.sudoplatform.sudoemail.types/-email-address/index.html">EmailAddress</a>.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+<a data-name="311452441%2FFunctions%2F2021949935" anchor-label="updateEmailMessages" id="311452441%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="update-email-messages.html"><span>update</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Messages</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="311452441%2FFunctions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="update-email-messages.html"><span class="token function">updateEmailMessages</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-update-email-messages-input/index.html">UpdateEmailMessagesInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-batch-operation-result/index.html">BatchOperationResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Update multiple <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s using a list of identifiers.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h2 class="tabbedcontent">Extensions</h2>
+      <div class="table" data-togglable="Extensions"><a data-name="1283250738%2FExtensions%2F2021949935" anchor-label="subscribeToEmailMessages" id="1283250738%2FExtensions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+          <div class="main-subrow keyValue ">
+            <div class=""><span class="inline-flex">
+                <div><a href="../subscribe-to-email-messages.html"><span>subscribe</span><wbr></wbr><span>To</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Messages</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1283250738%2FExtensions%2F2021949935"></span>
+                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                </span></span></div>
+            <div>
+              <div class="title">
+                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="index.html">SudoEmailClient</a><span class="token punctuation">.</span><a href="../subscribe-to-email-messages.html"><span class="token function">subscribeToEmailMessages</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">id<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">onConnectionChange<span class="token operator">: </span><span class="token punctuation">(</span><span class="token keyword"></span>status<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.subscription/-subscriber/-connection-state/index.html">Subscriber.ConnectionState</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator"> = </span>{}<span class="token punctuation">, </span></span><span class="parameter ">onEmailMessageChanged<span class="token operator">: </span><span class="token punctuation">(</span><span class="token keyword"></span>emailMessage<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a><span class="token punctuation">)</span><span class="token operator"> -&gt; </span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Subscribes to be notified of new and deleted <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a>s.</p></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </body>
+  </div>
+</div>
+      <div class="footer">
+        <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2023 Copyright</span><span
+                class="pull-right"><span>Generated by </span><a
+                href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span>
+      </div>
+    </div>
+</div>
+</body>
 </html>
-

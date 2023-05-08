@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,26 +11,60 @@ import kotlinx.parcelize.Parcelize
 import java.util.Date
 
 /**
- * A representation of an email address provisioned by the email service.
+ * Representation of an email address used in the Sudo Platform Email SDK.
  *
- * @property id Unique identifier of the email address
- * @property emailAddress Address in format 'local-part@domain' of the email.
- * @property userId Identifier of the user that owns the email address.
- * @property sudoId Identifier of the sudo that owns the email address.
- * @property owners List of identifiers of user/accounts associated with this email address. Typically, this will
- * consist of at least the user id and sudo id of the account.
- * @property createdAt [Date] when the email address was created.
- * @property updatedAt [Date] when the email address was last updated.
- *
- * @since 2020-08-04
+ * @property id [String] Unique identifier of the email address.
+ * @property owner [String] Identifier of the user that owns the email address.
+ * @property owners [List<Owner>] List of identifiers of the user/sudo associated with this email address.
+ * @property emailAddress [String] Address in format 'local-part@domain' of the email.
+ * @property size [Double] The total size of all email messages assigned to the email address in bytes.
+ * @property version [Int] Current version of the email address.
+ * @property createdAt [Date] When the email address was created.
+ * @property updatedAt [Date] When the email address was last updated.
+ * @property lastReceivedAt [Date] When the email address last received an email message.
+ * @property alias [String] An optional user defined alias name for the the email address.
+ * @property folders [List<EmailFolder>] List of folders associated with this email address.
  */
 @Parcelize
 data class EmailAddress(
     val id: String,
-    val emailAddress: String,
-    val userId: String,
-    val sudoId: String,
+    val owner: String,
     val owners: List<Owner>,
+    val emailAddress: String,
+    val size: Double,
+    val version: Int,
     val createdAt: Date,
-    val updatedAt: Date
+    val updatedAt: Date,
+    val lastReceivedAt: Date? = null,
+    val alias: String? = null,
+    val folders: List<EmailFolder>
+) : Parcelable
+
+/**
+ * Representation of an email address without its unsealed attributes used in the Sudo
+ * Platform Email SDK.
+ *
+ * @property id [String] Unique identifier of the email address.
+ * @property owner [String] Identifier of the user that owns the email address.
+ * @property owners [List<Owner>] List of identifiers of the user/sudo associated with this email address.
+ * @property emailAddress [String] Address in format 'local-part@domain' of the email.
+ * @property size [Double] The total size of all email messages assigned to the email address in bytes.
+ * @property version [Int] Current version of the email address.
+ * @property createdAt [Date] When the email address was created.
+ * @property updatedAt [Date] When the email address was last updated.
+ * @property lastReceivedAt [Date] When the email address last received an email message.
+ * @property folders [List<EmailFolder>] List of folders associated with this email address.
+ */
+@Parcelize
+data class PartialEmailAddress(
+    val id: String,
+    val owner: String,
+    val owners: List<Owner>,
+    val emailAddress: String,
+    val size: Double,
+    val version: Int,
+    val createdAt: Date,
+    val updatedAt: Date,
+    val lastReceivedAt: Date? = null,
+    val folders: List<EmailFolder>
 ) : Parcelable

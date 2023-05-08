@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,17 +7,16 @@
 package com.sudoplatform.sudoemail.subscription
 
 import com.amazonaws.mobileconnectors.appsync.AppSyncSubscriptionCall
-import com.sudoplatform.sudoemail.types.EmailMessage
 
 /**
  * Manages subscriptions for a specific GraphQL subscription.
  */
-internal class SubscriptionManager<T> {
+internal open class SubscriptionManager<T, S : Subscriber> {
 
     /**
-     * Subscribers.
+     * Map of subscribers.
      */
-    private val subscribers: MutableMap<String, EmailMessageSubscriber> = mutableMapOf()
+    private val subscribers: MutableMap<String, S> = mutableMapOf()
 
     /**
      * AppSync subscription watcher.
@@ -25,21 +24,28 @@ internal class SubscriptionManager<T> {
     internal var watcher: AppSyncSubscriptionCall<T>? = null
 
     /**
-     * Adds or replaces a subscriber with the specified ID.
-     *
-     * @param id subscriber ID.
-     * @param subscriber subscriber to subscribe.
+     * Retrieves the map of subscribers.
      */
-    internal fun replaceSubscriber(id: String, subscriber: EmailMessageSubscriber) {
+    protected fun getSubscribers(): MutableMap<String, S> {
+        return this.subscribers
+    }
+
+    /**
+     * Adds or replaces a subscriber with the specified identifier.
+     *
+     * @param id [String] Identifier of the subscriber.
+     * @param subscriber [S] Subscriber to subscribe.
+     */
+    internal fun replaceSubscriber(id: String, subscriber: S) {
         synchronized(this) {
             subscribers[id] = subscriber
         }
     }
 
     /**
-     * Removes the subscriber with the specified ID.
+     * Removes the subscriber with the specified identifier.
      *
-     * @param id subscriber ID.
+     * @param id [String] Identifier of the subscriber.
      */
     internal fun removeSubscriber(id: String) {
         synchronized(this) {
@@ -64,57 +70,19 @@ internal class SubscriptionManager<T> {
     }
 
     /**
-     * Notifies subscribers of a new [EmailMessage].
-     *
-     * @param emailMessage new [EmailMessage].
-     */
-    internal fun emailMessageCreated(emailMessage: EmailMessage) {
-        var subscribersToNotify: ArrayList<EmailMessageSubscriber>
-        synchronized(this) {
-            // Take a copy of the subscribers to notify in synchronized block
-            // but notify outside the block to avoid deadlock.
-            subscribersToNotify = ArrayList(subscribers.values)
-        }
-
-        // Notify subscribers.
-        for (subscriber in subscribersToNotify) {
-            subscriber.emailMessageCreated(emailMessage)
-        }
-    }
-
-    /**
-     * Notifies subscribers of a deleted [EmailMessage].
-     *
-     * @param emailMessage deleted [EmailMessage].
-     */
-    internal fun emailMessageDeleted(emailMessage: EmailMessage) {
-        var subscribersToNotify: ArrayList<EmailMessageSubscriber>
-        synchronized(this) {
-            // Take a copy of the subscribers to notify in synchronized block
-            // but notify outside the block to avoid deadlock.
-            subscribersToNotify = ArrayList(subscribers.values)
-        }
-
-        // Notify subscribers.
-        for (subscriber in subscribersToNotify) {
-            subscriber.emailMessageDeleted(emailMessage)
-        }
-    }
-
-    /**
      * Processes AppSync subscription connection status change.
      *
-     * @param state connection state.
+     * @param state [Subscriber.ConnectionState] Connection state.
      */
-    internal fun connectionStatusChanged(state: EmailMessageSubscriber.ConnectionState) {
-        var subscribersToNotify: ArrayList<EmailMessageSubscriber>
+    internal fun connectionStatusChanged(state: Subscriber.ConnectionState) {
+        var subscribersToNotify: ArrayList<S>
         synchronized(this) {
             // Take a copy of the subscribers to notify in synchronized block
             // but notify outside the block to avoid deadlock.
             subscribersToNotify = ArrayList(subscribers.values)
 
             // If the subscription was disconnected then remove all subscribers.
-            if (state == EmailMessageSubscriber.ConnectionState.DISCONNECTED) {
+            if (state == Subscriber.ConnectionState.DISCONNECTED) {
                 subscribers.clear()
                 if (watcher?.isCanceled == false) {
                     watcher?.cancel()

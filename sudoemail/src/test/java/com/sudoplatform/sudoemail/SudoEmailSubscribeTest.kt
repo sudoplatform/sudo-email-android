@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,30 +8,26 @@ package com.sudoplatform.sudoemail
 
 import android.content.Context
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
-import com.sudoplatform.sudoemail.keys.DefaultPublicKeyService
-import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
+import com.sudoplatform.sudoemail.s3.S3Client
+import com.sudoplatform.sudoemail.sealing.DefaultSealingService
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudoprofiles.S3Client
-import com.sudoplatform.sudoprofiles.SudoProfilesClient
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 
 /**
  * Test the correct operation of [SudoEmailClient.subscribeToEmailMessages] using mocks and spies.
- *
- * @since 2020-08-25
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailSubscribeTest : BaseTests() {
@@ -46,10 +42,6 @@ class SudoEmailSubscribeTest : BaseTests() {
         }
     }
 
-    private val mockSudoClient by before {
-        mock<SudoProfilesClient>()
-    }
-
     private val mockAppSyncClient by before {
         mock<AWSAppSyncClient>()
     }
@@ -60,18 +52,9 @@ class SudoEmailSubscribeTest : BaseTests() {
 
     private val mockDeviceKeyManager by before {
         DefaultDeviceKeyManager(
-            mockContext,
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
-        )
-    }
-
-    private val publicKeyService by before {
-        DefaultPublicKeyService(
-            mockDeviceKeyManager,
-            mockAppSyncClient,
             mockLogger
         )
     }
@@ -80,15 +63,21 @@ class SudoEmailSubscribeTest : BaseTests() {
         mock<S3Client>()
     }
 
+    private val mockSealingService by before {
+        DefaultSealingService(
+            mockDeviceKeyManager,
+            mockLogger
+        )
+    }
+
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
             mockAppSyncClient,
             mockUserClient,
-            mockSudoClient,
             mockLogger,
             mockDeviceKeyManager,
-            publicKeyService,
+            mockSealingService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -99,7 +88,7 @@ class SudoEmailSubscribeTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockSudoClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
     }
 
     @Test
@@ -110,14 +99,13 @@ class SudoEmailSubscribeTest : BaseTests() {
         }
 
         shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            client.subscribeToEmailMessages("id", mock<EmailMessageSubscriber>())
+            client.subscribeToEmailMessages("id", mock())
         }
 
         shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
             client.subscribeToEmailMessages(
                 "id",
-                onEmailMessageCreated = {},
-                onEmailMessageDeleted = {}
+                onEmailMessageChanged = {},
             )
         }
 

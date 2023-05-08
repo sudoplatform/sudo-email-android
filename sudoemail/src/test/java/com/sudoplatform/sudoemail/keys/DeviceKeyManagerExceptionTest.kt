@@ -1,17 +1,11 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 package com.sudoplatform.sudoemail.keys
 
-import android.content.Context
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudokeymanager.KeyManagerException
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -20,23 +14,22 @@ import io.kotlintest.shouldThrow
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
  * Test the operation of [DefaultDeviceKeyManager] under exceptional conditions using mocks.
- *
- * @since 2020-08-05
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class DeviceKeyManagerExceptionTest : BaseTests() {
 
     private val keyRingServiceName = "sudo-email"
-
-    private val mockContext by before {
-        mock<Context>()
-    }
 
     private val mockUserClient by before {
         mock<SudoUserClient>().stub {
@@ -50,7 +43,6 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
 
     private val deviceKeyManager by before {
         DefaultDeviceKeyManager(
-            context = mockContext,
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = mockKeyManager,
@@ -59,48 +51,68 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
-    fun shouldThrowIfKeyManagerThrowsWhenExecutingGetCurrentKeyPair() {
-        mockKeyManager.stub {
-            on { getPassword(anyString()) } doThrow KeyManagerException("mock")
-        }
-        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyNotFoundException> {
-            deviceKeyManager.getCurrentKeyPair()
-        }
-    }
-
-    @Test
-    fun shouldThrowIfKeyManagerThrowsWhenExecutingGetKeyPairWithId() {
-        mockKeyManager.stub {
-            on { getPublicKeyData(anyString()) } doThrow KeyManagerException("mock")
-        }
-        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyNotFoundException> {
-            deviceKeyManager.getKeyPairWithId("42")
-        }
-    }
-
-    @Test
-    fun shouldThrowIfKeyManagerThrowsWhenExecutingGetKeyPairWithId2() {
-        mockKeyManager.stub {
-            on { getPublicKeyData(anyString()) } doReturn ByteArray(42)
-            on { getPrivateKeyData(anyString()) } doThrow KeyManagerException("mock")
-        }
-        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyNotFoundException> {
-            deviceKeyManager.getKeyPairWithId("42")
-        }
-    }
-
-    @Test
-    fun shouldThrowIfKeyManagerThrowsWhenExecutingGenerateNewCurrentKeyPair() {
+    fun getCurrentKeyPairShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
             on { getPassword(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
-            deviceKeyManager.generateNewCurrentKeyPair()
+            deviceKeyManager.generateKeyPair()
         }
     }
 
     @Test
-    fun shouldThrowIfKeyManagerThrowsWhenExecutingDecryptWithPrivateKey() {
+    fun getKeyPairWithIdShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { getPublicKeyData(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            deviceKeyManager.getKeyPairWithId("42")
+        }
+    }
+
+    @Test
+    fun getKeyPairWithIdShouldThrowIfKeyManagerThrows2() {
+        mockKeyManager.stub {
+            on { getPublicKeyData(anyString()) } doReturn ByteArray(42)
+            on { getPrivateKeyData(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            deviceKeyManager.getKeyPairWithId("42")
+        }
+    }
+
+    @Test
+    fun generateNewCurrentKeyPairShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { getPassword(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
+            deviceKeyManager.generateKeyPair()
+        }
+    }
+
+    @Test
+    fun getCurrentSymmetricKeyIdShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { getPassword(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            deviceKeyManager.getCurrentSymmetricKeyId()
+        }
+    }
+
+    @Test
+    fun generateNewCurrentSymmetricKeyShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { deletePassword(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
+            deviceKeyManager.generateNewCurrentSymmetricKey()
+        }
+    }
+
+    @Test
+    fun decryptWithPrivateKeyShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("mock")
         }
@@ -114,7 +126,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
-    fun shouldThrowIfKeyManagerThrowsDecryptWithSymmetricKey() {
+    fun decryptWithSymmetricKeyShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
             on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
         }
@@ -127,7 +139,33 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
-    fun shouldThrowIfKeyManagerThrowsWhenExecutingRemoveAllKeys() {
+    fun decryptWithSymmetricKeyIdShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { decryptWithSymmetricKey(anyString(), any<ByteArray>()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
+            deviceKeyManager.decryptWithSymmetricKeyId(
+                "42",
+                ByteArray(42)
+            )
+        }
+    }
+
+    @Test
+    fun encryptWithSymmetricKeyIdShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { encryptWithSymmetricKey(anyString(), any()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
+            deviceKeyManager.encryptWithSymmetricKeyId(
+                "42",
+                ByteArray(42)
+            )
+        }
+    }
+
+    @Test
+    fun removeAllKeysShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
             on { removeAllKeys() } doThrow RuntimeException("mock")
         }
@@ -137,7 +175,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
-    fun shouldThrowIfKeyManagerThrowsWhenExecutingGetKeyRingId() {
+    fun getKeyRingIdShouldThrowIfUserClientThrows() {
         mockUserClient.stub {
             on { getSubject() } doThrow RuntimeException("mock")
         }

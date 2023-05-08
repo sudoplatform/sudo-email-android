@@ -1,0 +1,116 @@
+fragment PublicKey on PublicKey {
+  id
+  keyId
+  keyRingId
+  algorithm
+  keyFormat
+  publicKey
+  owner
+  version
+  createdAtEpochMs
+  updatedAtEpochMs
+}
+
+fragment PaginatedPublicKey on PaginatedPublicKey {
+  items {
+    ...PublicKey
+  }
+  nextToken
+}
+
+fragment Owner on Owner {
+  id
+  issuer
+}
+
+fragment SealedAttribute on SealedAttribute {
+  algorithm
+  keyId
+  plainTextType
+  base64EncodedSealedData
+}
+
+fragment EmailAddressWithoutFolders on EmailAddress {
+  id
+  owner
+  owners {
+    id
+    issuer
+  }
+  identityId
+  keyRingId
+  keyIds
+  version
+  createdAtEpochMs
+  updatedAtEpochMs
+  lastReceivedAtEpochMs
+  emailAddress
+  size
+  alias {
+    ...SealedAttribute
+  }
+}
+
+fragment EmailAddress on EmailAddress {
+  ...EmailAddressWithoutFolders
+  folders {
+    ...EmailFolder
+  }
+}
+
+fragment EmailFolder on EmailFolder {
+  id
+  owner
+  owners {
+    id
+    issuer
+  }
+  version
+  createdAtEpochMs
+  updatedAtEpochMs
+  emailAddressId
+  folderName
+  size
+  unseenCount
+  ttl
+}
+
+fragment SealedEmailMessage on SealedEmailMessage {
+  id
+  owner
+  owners {
+    id
+    issuer
+  }
+  emailAddressId
+  version
+  createdAtEpochMs
+  updatedAtEpochMs
+  sortDateEpochMs
+  folderId
+  previousFolderId
+  direction
+  seen
+  state
+  clientRefId
+  rfc822Header {
+    algorithm
+    keyId
+    plainTextType
+    base64EncodedSealedData
+  }
+  size
+}
+
+fragment UpdateEmailMessagesResult on UpdateEmailMessagesResult {
+  status
+  successMessageIds
+  failedMessageIds
+}
+
+fragment EmailConfigurationData on EmailConfigurationData {
+  deleteEmailMessagesLimit
+  updateEmailMessagesLimit
+  emailMessageMaxInboundMessageSize
+  emailMessageMaxOutboundMessageSize
+}

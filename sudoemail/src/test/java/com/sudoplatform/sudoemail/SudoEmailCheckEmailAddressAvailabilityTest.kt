@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,27 +10,20 @@ import android.content.Context
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.apollographql.apollo.api.Response
 import com.apollographql.apollo.exception.ApolloHttpException
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
-import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
-import com.sudoplatform.sudoemail.keys.DefaultPublicKeyService
+import com.sudoplatform.sudoemail.s3.S3Client
+import com.sudoplatform.sudoemail.sealing.DefaultSealingService
+import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudoprofiles.S3Client
-import com.sudoplatform.sudoprofiles.SudoProfilesClient
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
+import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -44,14 +37,20 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import java.net.HttpURLConnection
-import java.util.concurrent.CancellationException
+import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput as CheckEmailAddressAvailabilityRequest
 
 /**
- * Test the correct operation of [SudoEmailClient.checkEmailAddressAvailability] using mocks and spies.
- *
- * @since 2020-08-13
+ * Test the correct operation of [SudoEmailClient.checkEmailAddressAvailability]
+ * using mocks and spies.
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
@@ -64,7 +63,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         CheckEmailAddressAvailabilityQuery.CheckEmailAddressAvailability("typename", answers)
     }
 
-    private val queryInput = CheckEmailAddressAvailabilityInput.builder()
+    private val queryInput = CheckEmailAddressAvailabilityRequest.builder()
         .localParts(localParts)
         .domains(domains)
         .build()
@@ -85,10 +84,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockSudoClient by before {
-        mock<SudoProfilesClient>()
-    }
-
     private val mockAppSyncClient by before {
         mock<AWSAppSyncClient>().stub {
             on { query(any<CheckEmailAddressAvailabilityQuery>()) } doReturn queryHolder.queryOperation
@@ -103,7 +98,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     private val mockDeviceKeyManager by before {
         DefaultDeviceKeyManager(
-            mockContext,
             "keyRingService",
             mockUserClient,
             mockKeyManager,
@@ -111,18 +105,14 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         )
     }
 
-    private val publicKeyService by before {
-        DefaultPublicKeyService(
-            mockDeviceKeyManager,
-            mockAppSyncClient,
-            mockLogger
-        )
-    }
-
     private val mockS3Client by before {
         mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString()) } doReturn "42"
+            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
         }
+    }
+
+    private val mockSealingService by before {
+        DefaultSealingService(mockDeviceKeyManager, mockLogger)
     }
 
     private val client by before {
@@ -130,10 +120,9 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             mockContext,
             mockAppSyncClient,
             mockUserClient,
-            mockSudoClient,
             mockLogger,
             mockDeviceKeyManager,
-            publicKeyService,
+            mockSealingService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -149,7 +138,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockSudoClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
     }
 
     @Test
@@ -157,8 +146,12 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         queryHolder.callback shouldBe null
 
+        val input = CheckEmailAddressAvailabilityInput(
+            localParts,
+            domains
+        )
         val deferredResult = async(Dispatchers.IO) {
-            client.checkEmailAddressAvailability(localParts, domains)
+            client.checkEmailAddressAvailability(input)
         }
         deferredResult.start()
 
@@ -193,8 +186,12 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
                 .build()
         }
 
+        val input = CheckEmailAddressAvailabilityInput(
+            localParts,
+            domains
+        )
         val deferredResult = async(Dispatchers.IO) {
-            client.checkEmailAddressAvailability(localParts, domains)
+            client.checkEmailAddressAvailability(input)
         }
         deferredResult.start()
 
@@ -221,8 +218,12 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
                 .build()
         }
 
+        val input = CheckEmailAddressAvailabilityInput(
+            localParts,
+            domains
+        )
         val deferredResult = async(Dispatchers.IO) {
-            client.checkEmailAddressAvailability(localParts, domains)
+            client.checkEmailAddressAvailability(input)
         }
         deferredResult.start()
 
@@ -255,9 +256,13 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
                 .build()
         }
 
+        val input = CheckEmailAddressAvailabilityInput(
+            localParts,
+            domains
+        )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
-                client.checkEmailAddressAvailability(localParts, domains)
+                client.checkEmailAddressAvailability(input)
             }
         }
         deferredResult.start()
@@ -276,9 +281,13 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         queryHolder.callback shouldBe null
 
+        val input = CheckEmailAddressAvailabilityInput(
+            localParts,
+            domains
+        )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
-                client.checkEmailAddressAvailability(localParts, domains)
+                client.checkEmailAddressAvailability(input)
             }
         }
         deferredResult.start()
@@ -314,9 +323,13 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             on { query(any<CheckEmailAddressAvailabilityQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
         }
 
+        val input = CheckEmailAddressAvailabilityInput(
+            localParts,
+            domains
+        )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                client.checkEmailAddressAvailability(localParts, domains)
+                client.checkEmailAddressAvailability(input)
             }
         }
         deferredResult.start()
@@ -334,8 +347,12 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             on { query(any<CheckEmailAddressAvailabilityQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }
 
+        val input = CheckEmailAddressAvailabilityInput(
+            localParts,
+            domains
+        )
         shouldThrow<CancellationException> {
-            client.checkEmailAddressAvailability(localParts, domains)
+            client.checkEmailAddressAvailability(input)
         }
 
         verify(mockAppSyncClient).query(any<CheckEmailAddressAvailabilityQuery>())

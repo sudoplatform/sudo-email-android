@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,28 +9,19 @@ package com.sudoplatform.sudoemail
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.apollographql.apollo.api.Response
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoMoreInteractions
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
-import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
-import com.sudoplatform.sudoemail.keys.DefaultPublicKeyService
+import com.sudoplatform.sudoemail.s3.S3Client
+import com.sudoplatform.sudoemail.sealing.DefaultSealingService
+import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudoprofiles.S3Client
-import com.sudoplatform.sudoprofiles.Sudo
-import com.sudoplatform.sudoprofiles.SudoProfilesClient
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -40,13 +31,21 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import java.util.concurrent.CancellationException
+import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
 
 /**
- * Test the correct operation of [SudoEmailClient.sendEmailMessage] using mocks and spies.
- *
- * @since 2020-08-06
+ * Test the correct operation of [SudoEmailClient.sendEmailMessage]
+ * using mocks and spies.
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailSendEmailMessageTest : BaseTests() {
@@ -60,7 +59,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     }
 
     private val input by before {
-        SendEmailMessageInput.builder()
+        SendEmailMessageRequest.builder()
             .emailAddressId("emailAddressId")
             .clientRefId("clientRefId")
             .message(message)
@@ -90,12 +89,6 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         }
     }
 
-    private val mockSudoClient by before {
-        mock<SudoProfilesClient>().stub {
-            onBlocking { getOwnershipProof(any<Sudo>(), anyString()) } doReturn "jwt"
-        }
-    }
-
     private val mockAppSyncClient by before {
         mock<AWSAppSyncClient>().stub {
             on { mutate(any<SendEmailMessageMutation>()) } doReturn holder.mutationOperation
@@ -112,7 +105,6 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private val mockDeviceKeyManager by before {
         DefaultDeviceKeyManager(
-            context,
             "keyRingService",
             mockUserClient,
             mockKeyManager,
@@ -120,18 +112,17 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         )
     }
 
-    private val publicKeyService by before {
-        DefaultPublicKeyService(
-            mockDeviceKeyManager,
-            mockAppSyncClient,
-            mockLogger
-        )
-    }
-
     private val mockS3Client by before {
         mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString()) } doReturn "42"
+            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
         }
+    }
+
+    private val mockSealingService by before {
+        DefaultSealingService(
+            mockDeviceKeyManager,
+            mockLogger
+        )
     }
 
     private val client by before {
@@ -139,10 +130,9 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             context,
             mockAppSyncClient,
             mockUserClient,
-            mockSudoClient,
             mockLogger,
             mockDeviceKeyManager,
-            publicKeyService,
+            mockSealingService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -158,16 +148,20 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockUserClient, mockSudoClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
     }
 
     @Test
-    fun `sendEmailMessage() should return results when no error present`() = runBlocking<Unit> {
+    fun `sendEmailMessage() should return results when no error present`() = runBlocking {
 
         holder.callback shouldBe null
 
+        val input = SendEmailMessageInput(
+            "rfc822data".toByteArray(),
+            "senderEmailAddress"
+        )
         val deferredResult = async(Dispatchers.IO) {
-            client.sendEmailMessage("rfc822data".toByteArray(), "senderEmailAddress")
+            client.sendEmailMessage(input)
         }
         deferredResult.start()
 
@@ -180,12 +174,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         result.isBlank() shouldBe false
 
         verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-        verify(mockS3Client).upload(any(), anyString())
+        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
         verify(mockS3Client).delete(anyString())
     }
 
     @Test
-    fun `sendEmailMessage() should throw when email mutation response is null`() = runBlocking<Unit> {
+    fun `sendEmailMessage() should throw when email mutation response is null`() = runBlocking {
 
         holder.callback shouldBe null
 
@@ -195,9 +189,13 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 .build()
         }
 
+        val input = SendEmailMessageInput(
+            "rfc822data".toByteArray(),
+            "senderEmailAddress"
+        )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.sendEmailMessage("rfc822data".toByteArray(), "senderEmailAddress")
+                client.sendEmailMessage(input)
             }
         }
         deferredResult.start()
@@ -209,18 +207,18 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         deferredResult.await()
 
         verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-        verify(mockS3Client).upload(any(), anyString())
+        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
         verify(mockS3Client).delete(anyString())
     }
 
     @Test
-    fun `sendEmailMessage() should throw when response has various errors`() = runBlocking<Unit> {
+    fun `sendEmailMessage() should throw when response has various errors`() = runBlocking {
         testException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>("InvalidEmailContents")
         testException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>("UnauthorizedAddress")
         testException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
         verify(mockAppSyncClient, times(3)).mutate(any<SendEmailMessageMutation>())
-        verify(mockS3Client, times(3)).upload(any(), anyString())
+        verify(mockS3Client, times(3)).upload(any(), anyString(), anyOrNull())
         verify(mockS3Client, times(3)).delete(anyString())
     }
 
@@ -239,9 +237,13 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 .build()
         }
 
+        val input = SendEmailMessageInput(
+            "rfc822data".toByteArray(),
+            "senderEmailAddress"
+        )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<T> {
-                client.sendEmailMessage("rfc822data".toByteArray(), "senderEmailAddress")
+                client.sendEmailMessage(input)
             }
         }
         deferredResult.start()
@@ -257,13 +259,23 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     fun `sendEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
 
         mockS3Client.stub {
-            onBlocking { upload(any(), anyString()) } doThrow CancellationException("mock")
+            onBlocking { upload(any(), anyString(), anyOrNull()) } doThrow CancellationException("mock")
         }
 
-        shouldThrow<CancellationException> {
-            client.sendEmailMessage("rfc822data".toByteArray(), "senderEmailAddress")
+        val input = SendEmailMessageInput(
+            "rfc822data".toByteArray(),
+            "senderEmailAddress"
+        )
+        val deferredResult = async(Dispatchers.IO) {
+            shouldThrow<CancellationException> {
+                client.sendEmailMessage(input)
+            }
         }
+        deferredResult.start()
+        delay(100L)
 
-        verify(mockS3Client).upload(any(), anyString())
+        deferredResult.await()
+
+        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
     }
 }

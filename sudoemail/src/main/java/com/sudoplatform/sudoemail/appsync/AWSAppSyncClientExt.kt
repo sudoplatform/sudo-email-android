@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,9 @@ internal suspend fun <T> GraphQLCall<T>.enqueueFirst(): Response<T> = suspendCor
             }
         }
         override fun onFailure(e: ApolloException) {
-            cont.resumeWithException(e)
+            if (counter.getAndIncrement() == 0) {
+                cont.resumeWithException(e)
+            }
         }
     })
 }

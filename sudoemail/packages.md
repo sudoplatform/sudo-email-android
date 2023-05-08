@@ -14,9 +14,4 @@ to construct an instance of the Sudo Platform Email SDK.
 
 # Package com.sudoplatform.sudoemail.types
 
-Types used by the methods of the Sudo Platform Email SDK. 
-
-# Package com.sudoplatform.sudoemail.types.inputs.filters
-
-Email address and message filter types used with the APIs that allow filtered querying of email addresses and messages.
-
+Types used by the methods of the Sudo Platform Email SDK.

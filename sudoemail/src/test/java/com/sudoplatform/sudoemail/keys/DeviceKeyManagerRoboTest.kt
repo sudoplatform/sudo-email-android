@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,6 @@ package com.sudoplatform.sudoemail.keys
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManager
@@ -26,14 +23,15 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import timber.log.Timber
 
 /**
  * Test the operation of [DefaultDeviceKeyManager] using mocks under Robolectric.
- *
- * @since 2020-08-05
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
@@ -55,7 +53,6 @@ class DeviceKeyManagerRoboTest : BaseTests() {
 
     private val deviceKeyManager by before {
         DefaultDeviceKeyManager(
-            context = context,
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = keyManager,
@@ -76,7 +73,6 @@ class DeviceKeyManagerRoboTest : BaseTests() {
 
     @Test
     fun shouldThrowIfNotRegistered() {
-        // given
         mockUserClient.stub {
             on { getSubject() } doReturn null
         }
@@ -94,10 +90,9 @@ class DeviceKeyManagerRoboTest : BaseTests() {
     @Test
     fun shouldBeAbleToPerformOperationsAfterSignIn() = runBlocking {
 
-        deviceKeyManager.getCurrentKeyPair() shouldBe null
         deviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
 
-        val keyPair = deviceKeyManager.generateNewCurrentKeyPair()
+        val keyPair = deviceKeyManager.generateKeyPair()
         with(keyPair) {
             this shouldNotBe null
             keyRingId shouldStartWith keyRingServiceName
@@ -108,26 +103,26 @@ class DeviceKeyManagerRoboTest : BaseTests() {
             privateKey.size shouldBeGreaterThan 0
         }
 
-        val currentKeyPair = deviceKeyManager.getCurrentKeyPair()
-        currentKeyPair shouldNotBe null
-        currentKeyPair shouldBe keyPair
+        val newKeyPair = deviceKeyManager.generateKeyPair()
+        newKeyPair shouldNotBe null
+        newKeyPair shouldNotBe keyPair
 
-        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(currentKeyPair!!.keyId)
+        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(newKeyPair!!.keyId)
         fetchedKeyPair shouldNotBe null
-        fetchedKeyPair shouldBe keyPair
-        fetchedKeyPair shouldBe currentKeyPair
+        fetchedKeyPair shouldNotBe keyPair
+        fetchedKeyPair shouldBe newKeyPair
 
         deviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
 
         val clearData = "hello world".toByteArray()
         var secretData = keyManager.encryptWithPublicKey(
-            currentKeyPair.keyId,
+            newKeyPair.keyId,
             clearData,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
         )
         var decryptedData = deviceKeyManager.decryptWithPrivateKey(
             secretData,
-            currentKeyPair.keyId,
+            newKeyPair.keyId,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
         )
         decryptedData shouldBe clearData
@@ -138,5 +133,17 @@ class DeviceKeyManagerRoboTest : BaseTests() {
 
         decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData)
         decryptedData shouldBe clearData
+    }
+
+    @Test
+    fun shouldBeAbleToGenerateSymmetricKeyId() = runBlocking {
+        deviceKeyManager.getCurrentSymmetricKeyId() shouldBe null
+
+        val symmetricKey = deviceKeyManager.generateNewCurrentSymmetricKey()
+        symmetricKey.isBlank() shouldBe false
+
+        val symmetricKeyId = deviceKeyManager.getCurrentSymmetricKeyId()
+        symmetricKeyId shouldNotBe null
+        symmetricKeyId?.isBlank() shouldBe false
     }
 }

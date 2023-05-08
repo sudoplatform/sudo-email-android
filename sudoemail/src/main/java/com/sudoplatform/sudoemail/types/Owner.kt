@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +12,8 @@ import kotlinx.parcelize.Parcelize
 /**
  * This represents the relationship of a unique identifier [id] with the [issuer].
  *
- * @property id Unique Identifier of the owner.
- * @property issuer Issuer of the owner identifier.
- *
- * @since 2020-08-04
+ * @property id [String] Unique Identifier of the owner.
+ * @property issuer [String] Issuer of the owner identifier.
  */
 @Parcelize
 data class Owner(

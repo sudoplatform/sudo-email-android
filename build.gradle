@@ -1,24 +1,23 @@
 buildscript {
-    ext.kotlin_version = '1.4.32'
+    ext.kotlin_version = '1.7.20'
     ext.plugin_version = '2.2.0'
-    ext.aws_version = '2.16.12'
-    ext.appsync_version = '3.1.1'
-    ext.dokka_version = '1.4.10'
+    ext.aws_version = '2.62.0'
+    ext.appsync_version = '3.3.2'
+    ext.dokka_version = '1.7.20'
 
     repositories {
         maven { url = "https://plugins.gradle.org/m2" }
         google()
         mavenCentral()
-        jcenter()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:4.2.1"
+        classpath "com.android.tools.build:gradle:4.2.2"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.owasp:dependency-check-gradle:6.1.1"
+        classpath "org.owasp:dependency-check-gradle:8.1.2"
         classpath "com.cookpad.android.licensetools:license-tools-plugin:1.7.0"
-        classpath "org.jmailen.gradle:kotlinter-gradle:3.3.0"
+        classpath "org.jmailen.gradle:kotlinter-gradle:3.9.0"
         classpath "com.amazonaws:aws-android-sdk-appsync-gradle-plugin:$appsync_version"
-        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.1.1"
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:4.0.0.2929"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${dokka_version}"
     }
 }
@@ -49,7 +48,6 @@ if (project.findProperty("tag") && sonatypeStagingProfileId) {
         repositories {
             sonatype {
                 stagingProfileId = sonatypeStagingProfileId
-
                 username = nexusUsername
                 password = nexusPassword
             }
@@ -80,7 +78,6 @@ allprojects {
                 }
             }
         }
-        jcenter()
     }
     gradle.projectsEvaluated {
         tasks.withType(Test) {

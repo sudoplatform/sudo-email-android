@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,6 @@ import com.apollographql.apollo.fetcher.ResponseFetcher
 
 /**
  * Enumeration outlining options for how data will be fetched.
- *
- * @since 2020-08-05
  */
 enum class CachePolicy {
     /**

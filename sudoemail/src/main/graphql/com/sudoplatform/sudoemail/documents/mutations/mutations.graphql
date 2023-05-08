@@ -1,0 +1,39 @@
+mutation CreatePublicKeyForEmail($input: CreatePublicKeyInput!) {
+  createPublicKeyForEmail(input: $input) {
+    ...PublicKey
+  }
+}
+
+mutation DeleteEmailMessages($input: DeleteEmailMessagesInput!) {
+  deleteEmailMessages(input: $input)
+}
+
+mutation ProvisionEmailAddress($input: ProvisionEmailAddressInput!) {
+  provisionEmailAddress(input: $input) {
+    ...EmailAddress
+  }
+}
+
+mutation DeprovisionEmailAddress($input: DeprovisionEmailAddressInput!) {
+  deprovisionEmailAddress(input: $input) {
+    ...EmailAddressWithoutFolders
+  }
+}
+
+mutation UpdateEmailAddressMetadata($input: UpdateEmailAddressMetadataInput!) {
+  updateEmailAddressMetadata(input: $input)
+}
+
+mutation SendEmailMessage($input: SendEmailMessageInput!) {
+  sendEmailMessage(input: $input)
+}
+
+mutation UpdateEmailMessages($input: UpdateEmailMessagesInput!) {
+  updateEmailMessages(input: $input) {
+    ...UpdateEmailMessagesResult
+  }
+}
+
+mutation DeleteEmailMessage($input: DeleteEmailMessageInput!) {
+  deleteEmailMessage(input: $input)
+}

@@ -1,0 +1,105 @@
+
+query GetKeyRingForEmail($keyRingId: String!, $limit: Int, $nextToken: String) {
+  getKeyRingForEmail(
+    keyRingId: $keyRingId
+    limit: $limit
+    nextToken: $nextToken
+  ) {
+    ...PaginatedPublicKey
+  }
+}
+
+query GetPublicKeyForEmail($keyId: String!) {
+  getPublicKeyForEmail(keyId: $keyId) {
+    ...PublicKey
+  }
+}
+
+query GetPublicKeysForEmail($limit: Int, $nextToken: String) {
+  getPublicKeysForEmail(limit: $limit, nextToken: $nextToken) {
+    ...PaginatedPublicKey
+  }
+}
+
+query GetEmailConfig {
+  getEmailConfig {
+    ...EmailConfigurationData
+  }
+}
+
+query GetEmailDomains {
+  getEmailDomains {
+    domains
+  }
+}
+
+query CheckEmailAddressAvailability(
+  $input: CheckEmailAddressAvailabilityInput!
+) {
+  checkEmailAddressAvailability(input: $input) {
+    addresses
+  }
+}
+
+query GetEmailAddress($id: String!) {
+  getEmailAddress(id: $id) {
+    ...EmailAddress
+  }
+}
+
+query ListEmailAddresses($input: ListEmailAddressesInput!) {
+  listEmailAddresses(input: $input) {
+    items {
+      ...EmailAddress
+    }
+    nextToken
+  }
+}
+
+query ListEmailAddressesForSudoId($input: ListEmailAddressesForSudoIdInput!) {
+  listEmailAddressesForSudoId(input: $input) {
+    items {
+      ...EmailAddress
+    }
+    nextToken
+  }
+}
+
+query ListEmailFoldersForEmailAddressId(
+  $input: ListEmailFoldersForEmailAddressIdInput!
+) {
+  listEmailFoldersForEmailAddressId(input: $input) {
+    items {
+      ...EmailFolder
+    }
+    nextToken
+  }
+}
+
+query GetEmailMessage($id: ID!) {
+  getEmailMessage(id: $id) {
+    ...SealedEmailMessage
+  }
+}
+
+query ListEmailMessagesForEmailAddressId(
+  $input: ListEmailMessagesForEmailAddressIdInput!
+) {
+  listEmailMessagesForEmailAddressId(input: $input) {
+    items {
+      ...SealedEmailMessage
+    }
+    nextToken
+  }
+}
+
+query ListEmailMessagesForEmailFolderId(
+  $input: ListEmailMessagesForEmailFolderIdInput!
+) {
+  listEmailMessagesForEmailFolderId(input: $input) {
+    items {
+      ...SealedEmailMessage
+    }
+    nextToken
+  }
+}

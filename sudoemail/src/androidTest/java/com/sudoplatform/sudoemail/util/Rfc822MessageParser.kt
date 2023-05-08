@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,8 +27,6 @@ internal data class SimplifiedEmailMessage(
 /**
  * A parser of RFC 822 compatible email message content. Note that parsing is also compatible with the more recent RFC 6854
  * standard which supersedes RFC 822.
- *
- * @since 2020-08-18
  */
 internal object Rfc822MessageParser {
 

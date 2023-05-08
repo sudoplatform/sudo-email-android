@@ -1,0 +1,334 @@
+enum KeyFormat {
+  # PKCS#1 RSA Public Key
+  RSA_PUBLIC_KEY
+  # X.509 SubjectPublicKeyInfo
+  SPKI
+}
+
+type PaginatedPublicKey {
+  items: [PublicKey!]!
+  nextToken: String
+}
+
+type PublicKey {
+  id: ID!
+  keyId: String!
+  keyRingId: String!
+  algorithm: String!
+  keyFormat: KeyFormat
+  publicKey: String!
+  owner: ID!
+  version: Int!
+  createdAtEpochMs: Float!
+  updatedAtEpochMs: Float!
+}
+
+enum EmailMessageState {
+  QUEUED
+  SENT
+  DELIVERED
+  UNDELIVERED
+  FAILED
+  RECEIVED
+}
+
+enum EmailMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum UpdateEmailMessagesStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum SortOrder {
+  ASC
+  DESC
+}
+
+input CreatePublicKeyInput {
+  keyId: String!
+  keyRingId: String!
+  algorithm: String!
+  keyFormat: KeyFormat
+  publicKey: String!
+}
+
+input ProvisionEmailAddressPublicKeyInput {
+  keyId: String!
+  algorithm: String!
+  keyFormat: KeyFormat
+  publicKey: String!
+}
+
+input ProvisionEmailAddressInput {
+  ownershipProofTokens: [String!]!
+  emailAddress: String!
+  key: ProvisionEmailAddressPublicKeyInput!
+  alias: SealedAttributeInput
+}
+
+input EmailAddressMetadataUpdateValuesInput {
+  alias: SealedAttributeInput
+}
+
+input UpdateEmailAddressMetadataInput {
+  id: ID!
+  values: EmailAddressMetadataUpdateValuesInput!
+}
+
+input CheckEmailAddressAvailabilityInput {
+  localParts: [String!]!
+  domains: [String!]
+}
+
+input ListEmailAddressesInput {
+  limit: Int
+  nextToken: String
+}
+
+input ListEmailAddressesForSudoIdInput {
+  sudoId: ID!
+  limit: Int
+  nextToken: String
+}
+
+input ListEmailFoldersForEmailAddressIdInput {
+  emailAddressId: ID!
+  limit: Int
+  nextToken: String
+}
+
+input ListEmailMessagesForEmailAddressIdInput {
+  emailAddressId: ID!
+  dateRange: DateRangeInput
+  limit: Int
+  sortOrder: SortOrder
+  nextToken: String
+}
+
+input ListEmailMessagesForEmailFolderIdInput {
+  folderId: ID!
+  dateRange: DateRangeInput
+  limit: Int
+  sortOrder: SortOrder
+  nextToken: String
+}
+
+input DeprovisionEmailAddressInput {
+  emailAddressId: ID!
+}
+
+input SendEmailMessageInput {
+  emailAddressId: ID!
+  message: S3EmailObjectInput!
+  clientRefId: String
+}
+
+input DeleteEmailMessagesInput {
+  messageIds: [ID!]!
+}
+
+input EmailMessageUpdateValuesInput {
+  folderId: ID
+  seen: Boolean
+}
+
+input UpdateEmailMessagesInput {
+  messageIds: [ID!]!
+  values: EmailMessageUpdateValuesInput!
+}
+
+input DeleteEmailMessageInput {
+  messageId: ID!
+}
+
+input OwnerInput {
+  id: String!
+  issuer: String!
+}
+
+input DateRangeInput {
+  startDateEpochMs: Float!
+  endDateEpochMs: Float!
+}
+
+input S3EmailObjectInput {
+  key: String!
+  bucket: String!
+  region: String!
+}
+
+input SealedAttributeInput {
+  algorithm: String!
+  keyId: String!
+  plainTextType: String!
+  base64EncodedSealedData: String!
+}
+
+type EmailConfigurationData {
+  deleteEmailMessagesLimit: Int!
+  updateEmailMessagesLimit: Int!
+  emailMessageMaxInboundMessageSize: Int!
+  emailMessageMaxOutboundMessageSize: Int!
+}
+
+type Owner {
+  id: String!
+  issuer: String!
+}
+
+type EmailAddress {
+  id: ID!
+  owner: ID!
+  owners: [Owner!]!
+  identityId: ID!
+  keyRingId: ID!
+  keyIds: [String!]!
+  version: Int!
+  createdAtEpochMs: Float!
+  updatedAtEpochMs: Float!
+  lastReceivedAtEpochMs: Float
+  emailAddress: String!
+  size: Float!
+  alias: SealedAttribute
+  folders: [EmailFolder!]!
+}
+
+type EmailFolder {
+  id: ID!
+  owner: ID!
+  owners: [Owner!]!
+  emailAddressId: ID!
+  folderName: String!
+  size: Float!
+  unseenCount: Float!
+  ttl: Float
+  version: Int!
+  createdAtEpochMs: Float!
+  updatedAtEpochMs: Float!
+}
+
+type SealedEmailMessage {
+  id: ID!
+  owner: ID!
+  owners: [Owner!]!
+  emailAddressId: ID!
+  version: Int!
+  createdAtEpochMs: Float!
+  updatedAtEpochMs: Float!
+  sortDateEpochMs: Float!
+  folderId: ID!
+  previousFolderId: ID
+  direction: EmailMessageDirection!
+  seen: Boolean!
+  state: EmailMessageState!
+  clientRefId: String
+  rfc822Header: SealedAttribute!
+  size: Float!
+}
+
+type UpdateEmailMessagesResult {
+  status: UpdateEmailMessagesStatus!
+  failedMessageIds: [ID!]
+  successMessageIds: [ID!]
+}
+
+# Array of email domains.
+type SupportedDomains {
+  domains: [String!]!
+}
+
+type AvailableAddresses {
+  addresses: [String!]!
+}
+
+type EmailAddressConnection {
+  items: [EmailAddress!]!
+  nextToken: String
+}
+
+type EmailFolderConnection {
+  items: [EmailFolder!]!
+  nextToken: String
+}
+
+type EmailMessageConnection {
+  items: [SealedEmailMessage!]!
+  nextToken: String
+}
+
+type Query {
+  getEmailConfig: EmailConfigurationData!
+
+  getEmailDomains: SupportedDomains!
+
+  checkEmailAddressAvailability(
+    input: CheckEmailAddressAvailabilityInput!
+  ): AvailableAddresses!
+
+  getEmailAddress(id: String!): EmailAddress
+
+  listEmailAddresses(input: ListEmailAddressesInput!): EmailAddressConnection!
+
+  listEmailAddressesForSudoId(
+    input: ListEmailAddressesForSudoIdInput!
+  ): EmailAddressConnection!
+
+  listEmailFoldersForEmailAddressId(
+    input: ListEmailFoldersForEmailAddressIdInput!
+  ): EmailFolderConnection!
+
+  getEmailMessage(id: ID!): SealedEmailMessage
+
+  listEmailMessagesForEmailAddressId(
+    input: ListEmailMessagesForEmailAddressIdInput!
+  ): EmailMessageConnection!
+
+  listEmailMessagesForEmailFolderId(
+    input: ListEmailMessagesForEmailFolderIdInput!
+  ): EmailMessageConnection!
+
+  getPublicKeyForEmail(keyId: String!): PublicKey
+
+  getPublicKeysForEmail(limit: Int, nextToken: String): PaginatedPublicKey!
+
+  getKeyRingForEmail(
+    keyRingId: String!
+    limit: Int
+    nextToken: String
+  ): PaginatedPublicKey!
+}
+
+type Mutation {
+  createPublicKeyForEmail(input: CreatePublicKeyInput!): PublicKey!
+
+  provisionEmailAddress(input: ProvisionEmailAddressInput!): EmailAddress!
+
+  deprovisionEmailAddress(input: DeprovisionEmailAddressInput!): EmailAddress!
+
+  sendEmailMessage(input: SendEmailMessageInput!): ID!
+
+  deleteEmailMessages(input: DeleteEmailMessagesInput!): [ID!]!
+
+  updateEmailMessages(
+    input: UpdateEmailMessagesInput!
+  ): UpdateEmailMessagesResult!
+
+  deleteEmailMessage(input: DeleteEmailMessageInput!): ID!
+
+  updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput!): ID!
+}
+
+type Subscription {
+  onEmailAddressCreated(owner: ID!): EmailAddress
+
+  onEmailMessageCreated(
+    owner: String!
+    direction: EmailMessageDirection
+  ): SealedEmailMessage
+
+  onEmailMessageDeleted(owner: ID!, id: ID): SealedEmailMessage
+}

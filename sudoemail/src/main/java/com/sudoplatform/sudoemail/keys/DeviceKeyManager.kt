@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,25 +10,25 @@ import com.sudoplatform.sudokeymanager.KeyManagerInterface
 
 /**
  * Responsible for managing the local storage and lifecycle of key pairs associated with the email service.
- *
- * @since 2020-08-05
  */
 internal interface DeviceKeyManager {
 
     /**
      * Defines the exceptions for the [DeviceKeyManager] methods.
      *
-     * @property message Accompanying message for the exception.
-     * @property cause The cause for the exception.
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
      */
     sealed class DeviceKeyManagerException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
         class UserIdNotFoundException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
         class KeyGenerationException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
-        class KeyNotFoundException(message: String? = null, cause: Throwable? = null) :
+        class KeyOperationFailedException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
         class DecryptionException(message: String? = null, cause: Throwable? = null) :
+            DeviceKeyManagerException(message = message, cause = cause)
+        class EncryptionException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
         class UnknownException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
@@ -37,65 +37,97 @@ internal interface DeviceKeyManager {
     /**
      * Returns the key ring id associated with the owner's service.
      *
-     * @return the identifier of the key ring associated with the owner's service
+     * @return The identifier of the key ring associated with the owner's service.
      * @throws [DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException] if the user Id cannot be found.
      */
     @Throws(DeviceKeyManagerException::class)
     fun getKeyRingId(): String
 
     /**
-     * Returns the key pair that is currently being used by this service.
-     * If no key pair has been previously generated, will return null and require the caller
-     * to call [generateNewCurrentKeyPair] if a current key pair is required.
-     *
-     * @return the current key pair in use or null.
-     */
-    @Throws(DeviceKeyManagerException::class)
-    fun getCurrentKeyPair(): KeyPair?
-
-    /**
      * Returns the [KeyPair] with the identifier [id] if it exists.
      *
-     * @return the [KeyPair] with the identifier [id] if it exists, null if it does not.
+     * @param id [String] Identifier of the [KeyPair] to retrieve.
+     * @return The [KeyPair] with the identifier [id] if it exists, null if it does not.
      */
     @Throws(DeviceKeyManagerException::class)
     fun getKeyPairWithId(id: String): KeyPair?
 
     /**
-     * Generate a new [KeyPair] and make it the current [KeyPair].
+     * Returns a new [KeyPair].
      *
-     * @return the generated [KeyPair]
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException] if unable to generate the [KeyPair]
+     * @return The generated [KeyPair].
+     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException] if unable to generate the [KeyPair].
      */
     @Throws(DeviceKeyManagerException::class)
-    fun generateNewCurrentKeyPair(): KeyPair
+    fun generateKeyPair(): KeyPair
 
     /**
-     * Decrypt the [data] with the private key [keyId] and [algorithm]
+     * Generate a new symmetric key.
      *
-     * @param data Data to be decrypted
-     * @param keyId Key to use to decrypt the [data]
-     * @param algorithm Algorithm to use to decrypt the [data]
-     * @return the decrypted data
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyNotFoundException] if the key with identifier [keyId] cannot be found
+     * @return The generated symmetric key identifier.
+     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException] if unable to generate the symmetric key.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun generateNewCurrentSymmetricKey(): String
+
+    /**
+     * Returns the symmetric key identifier that is currently being used by this service.
+     * If no symmetric key has been previously generated, will return null and require the caller
+     * to call [generateNewCurrentSymmetricKey] if a current symmetric key is required.
+     *
+     * @return The current symmetric key identifier in use or null.
+     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun getCurrentSymmetricKeyId(): String?
+
+    /**
+     * Decrypt the [data] with the private key [keyId] and [algorithm].
+     *
+     * @param data [ByteArray] Data to be decrypted.
+     * @param keyId [String] Key to use to decrypt the [data].
+     * @param algorithm [KeyManagerInterface.PublicKeyEncryptionAlgorithm] Algorithm to use to decrypt the [data].
+     * @return The decrypted data.
      * @throws [DeviceKeyManager.DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted
      */
     @Throws(DeviceKeyManagerException::class)
     fun decryptWithPrivateKey(data: ByteArray, keyId: String, algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm): ByteArray
 
     /**
-     * Decrypt the [data] with the symmetric key [key]
+     * Decrypt the [data] with the symmetric key [key].
      *
-     * @param key Key to use to decrypt the [data]
-     * @param data Data to be decrypted
-     * @return the decrypted data
+     * @param key [ByteArray] Key to use to decrypt the [data].
+     * @param data [ByteArray] Data to be decrypted.
+     * @return The decrypted data.
      * @throws [DeviceKeyManager.DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted
      */
     @Throws(DeviceKeyManagerException::class)
     fun decryptWithSymmetricKey(key: ByteArray, data: ByteArray): ByteArray
 
     /**
-     * Remove all the keys from the [DeviceKeyManager]
+     * Decrypt the [data] with the symmetric key [keyId].
+     *
+     * @param keyId [String] Key identifier belonging to the symmetric key used to decrypt the [data].
+     * @param data [ByteArray] Data to be decrypted.
+     * @return the decrypted data.
+     * @throws [DeviceKeyManager.DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun decryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray
+
+    /**
+     * Encrypt the [data] with the symmetric key [keyId].
+     *
+     * @param keyId [String] Key identifier belonging to the symmetric key used to encrypt the [data].
+     * @param data [ByteArray] Data to be encrypted.
+     * @return The encrypted data.
+     * @throws [DeviceKeyManager.DeviceKeyManagerException.EncryptionException] if the data cannot be encrypted.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun encryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray
+
+    /**
+     * Remove all the keys from the [DeviceKeyManager].
      */
     @Throws(DeviceKeyManagerException::class)
     fun removeAllKeys()

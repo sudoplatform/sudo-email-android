@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,22 +13,46 @@ import com.sudoplatform.sudoapiclient.ApiClientManager
 import com.sudoplatform.sudoconfigmanager.DefaultSudoConfigManager
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
-import com.sudoplatform.sudoemail.keys.DefaultPublicKeyService
 import com.sudoplatform.sudoemail.logging.LogConstants
+import com.sudoplatform.sudoemail.sealing.DefaultSealingService
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
+import com.sudoplatform.sudoemail.subscription.Subscriber
+import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.CachePolicy
+import com.sudoplatform.sudoemail.types.ConfigurationData
+import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
+import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
+import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
+import com.sudoplatform.sudoemail.types.ListAPIResult
+import com.sudoplatform.sudoemail.types.ListOutput
+import com.sudoplatform.sudoemail.types.PartialEmailAddress
+import com.sudoplatform.sudoemail.types.PartialEmailMessage
+import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
+import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
+import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudoemail.types.ListOutput
-import com.sudoplatform.sudoemail.types.inputs.filters.EmailAddressFilter
-import com.sudoplatform.sudoemail.types.inputs.filters.EmailMessageFilter
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
-import com.sudoplatform.sudoprofiles.Sudo
-import com.sudoplatform.sudoprofiles.SudoProfilesClient
 import com.sudoplatform.sudouser.SudoUserClient
 import org.json.JSONException
 import java.util.Objects
@@ -37,7 +61,6 @@ import java.util.Objects
  * Interface encapsulating a library for interacting with the Sudo Platform Email service.
  *
  * @sample com.sudoplatform.sudoemail.samples.Samples.sudoEmailClient
- * @since 2020-08-04
  */
 interface SudoEmailClient : AutoCloseable {
 
@@ -47,16 +70,19 @@ interface SudoEmailClient : AutoCloseable {
         fun builder() = Builder()
 
         const val DEFAULT_EMAIL_ADDRESS_LIMIT = 10
+        const val DEFAULT_EMAIL_FOLDER_LIMIT = 10
         const val DEFAULT_EMAIL_MESSAGE_LIMIT = 10
 
-        private const val CONFIG_IDENTITY_SERVICE = "identityService"
+        const val DEFAULT_KEY_NAMESPACE = "eml"
+
+        private const val CONFIG_EMAIL_SERVICE = "emService"
         private const val CONFIG_REGION = "region"
-        private const val CONFIG_IDENTITY_BUCKET = "bucket"
-        private const val CONFIG_TRANSIENT_BUCKET = "transientBucket"
+        private const val CONFIG_EMAIL_BUCKET = "bucket"
+        private const val CONFIG_EMAIL_TRANSIENT_BUCKET = "transientBucket"
 
         internal data class S3Configuration(
             val region: String,
-            val identityBucket: String,
+            val emailBucket: String,
             val transientBucket: String
         )
 
@@ -69,34 +95,34 @@ interface SudoEmailClient : AutoCloseable {
         ): S3Configuration {
 
             val preamble = "sudoplatformconfig.json does not contain"
-            val postamble = "the $CONFIG_IDENTITY_SERVICE stanza"
+            val postamble = "the $CONFIG_EMAIL_SERVICE stanza"
 
-            val identityConfig = try {
-                configManager.getConfigSet(CONFIG_IDENTITY_SERVICE)
+            val emailConfig = try {
+                configManager.getConfigSet(CONFIG_EMAIL_SERVICE)
             } catch (e: JSONException) {
                 throw Builder.ConfigurationException("$preamble $postamble", e)
             }
-            identityConfig ?: throw Builder.ConfigurationException("$preamble $CONFIG_TRANSIENT_BUCKET in $postamble")
+            emailConfig ?: throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble")
 
             val region = try {
-                identityConfig.getString(CONFIG_REGION)
+                emailConfig.getString(CONFIG_REGION)
             } catch (e: JSONException) {
                 throw Builder.ConfigurationException("$preamble $CONFIG_REGION in $postamble", e)
             }
 
-            val identityBucket = try {
-                identityConfig.getString(CONFIG_IDENTITY_BUCKET)
+            val emailBucket = try {
+                emailConfig.getString(CONFIG_EMAIL_BUCKET)
             } catch (e: JSONException) {
-                throw Builder.ConfigurationException("$preamble $CONFIG_IDENTITY_BUCKET in $postamble", e)
+                throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_BUCKET in $postamble", e)
             }
 
-            val transientBucket = try {
-                identityConfig.getString(CONFIG_TRANSIENT_BUCKET)
+            val emailTransientBucket = try {
+                emailConfig.getString(CONFIG_EMAIL_TRANSIENT_BUCKET)
             } catch (e: JSONException) {
-                throw Builder.ConfigurationException("$preamble $CONFIG_TRANSIENT_BUCKET in $postamble", e)
+                throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble", e)
             }
 
-            return S3Configuration(region, identityBucket, transientBucket)
+            return S3Configuration(region, emailBucket, emailTransientBucket)
         }
     }
 
@@ -106,10 +132,11 @@ interface SudoEmailClient : AutoCloseable {
     class Builder internal constructor() {
         private var context: Context? = null
         private var sudoUserClient: SudoUserClient? = null
-        private var sudoProfilesClient: SudoProfilesClient? = null
         private var appSyncClient: AWSAppSyncClient? = null
         private var keyManager: KeyManagerInterface? = null
         private var logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
+        private var namespace: String = DEFAULT_KEY_NAMESPACE
+        private var databaseName: String = AndroidSQLiteStore.DEFAULT_DATABASE_NAME
 
         /**
          * Provide the application context (required input).
@@ -124,14 +151,6 @@ interface SudoEmailClient : AutoCloseable {
          */
         fun setSudoUserClient(sudoUserClient: SudoUserClient) = also {
             this.sudoUserClient = sudoUserClient
-        }
-
-        /**
-         * Provide the implementation of the [SudoProfilesClient] used to perform
-         * ownership proof lifecycle operations (required input).
-         */
-        fun setSudoProfilesClient(sudoProfilesClient: SudoProfilesClient) = also {
-            this.sudoProfilesClient = sudoProfilesClient
         }
 
         /**
@@ -160,47 +179,59 @@ interface SudoEmailClient : AutoCloseable {
             this.logger = logger
         }
 
+        /**
+         * Provide the namespace to use for internal data and cryptographic keys. This should be unique
+         * per client per app to avoid name conflicts between multiple clients. If a value is not supplied
+         * a default value will be used.
+         */
+        fun setNamespace(namespace: String) = also {
+            this.namespace = namespace
+        }
+
+        /**
+         * Provide the database name to use for exportable key store database.
+         */
+        fun setDatabaseName(databaseName: String) = also {
+            this.databaseName = databaseName
+        }
+
         /** A configuration item that is needed is missing */
         class ConfigurationException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
         /**
          * Construct the [SudoEmailClient]. Will throw a [NullPointerException] if
-         * the [context], [sudoUserClient] and [sudoProfilesClient] has not been provided.
+         * the [context] and [sudoUserClient] has not been provided.
          */
         @Throws(NullPointerException::class, ConfigurationException::class)
         fun build(): SudoEmailClient {
             Objects.requireNonNull(context, "Context must be provided.")
             Objects.requireNonNull(sudoUserClient, "SudoUserClient must be provided.")
-            Objects.requireNonNull(sudoProfilesClient, "SudoProfilesClient must be provided.")
 
             val appSyncClient = appSyncClient ?: ApiClientManager.getClient(this@Builder.context!!, this@Builder.sudoUserClient!!)
 
             val deviceKeyManager = DefaultDeviceKeyManager(
-                context = context!!,
                 keyRingServiceName = "sudo-email",
                 userClient = sudoUserClient!!,
-                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager()
+                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(this.namespace, this.databaseName)
             )
 
-            val publicKeyService = DefaultPublicKeyService(
+            val sealingService = DefaultSealingService(
                 deviceKeyManager = deviceKeyManager,
-                appSyncClient = appSyncClient,
-                logger = logger
+                logger = logger,
             )
 
-            val (region, identityBucket, transientBucket) = readConfiguration(context!!, logger)
+            val (region, emailBucket, transientBucket) = readConfiguration(context!!, logger)
 
             return DefaultSudoEmailClient(
                 context = context!!,
                 appSyncClient = appSyncClient,
                 sudoUserClient = sudoUserClient!!,
-                sudoProfilesClient = sudoProfilesClient!!,
                 logger = logger,
                 deviceKeyManager = deviceKeyManager,
-                publicKeyService = publicKeyService,
                 region = region,
-                identityBucket = identityBucket,
-                transientBucket = transientBucket
+                emailBucket = emailBucket,
+                transientBucket = transientBucket,
+                sealingService = sealingService
             )
         }
     }
@@ -208,113 +239,276 @@ interface SudoEmailClient : AutoCloseable {
     /**
      * Defines the exceptions for the email address based methods.
      *
-     * @property message Accompanying message for the exception.
-     * @property cause The cause for the exception.
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
      */
     sealed class EmailAddressException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
         class FailedException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         @Deprecated("InsufficientEntitlementsException is now thrown instead")
         class EntitlementsExceededException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         class InsufficientEntitlementsException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
-        class InvalidAddressFilterException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+
         class ProvisionFailedException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         class InvalidEmailAddressException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         class EmailAddressNotFoundException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         class UnavailableEmailAddressException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         class UnauthorizedEmailAddressException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         class PublicKeyException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
+        class UnsealingException(message: String? = null, cause: Throwable? = null) :
+            EmailAddressException(message = message, cause = cause)
+
         class DeprovisionFailedException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
+        class UpdateFailedException(message: String? = null, cause: Throwable? = null) :
+            EmailAddressException(message = message, cause = cause)
+
         class AuthenticationException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
+
         class UnknownException(cause: Throwable) :
             EmailAddressException(cause = cause)
     }
 
     /**
+     * Defines the exceptions for the email folder based methods.
+     *
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
+     */
+    sealed class EmailFolderException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+        class FailedException(message: String? = null, cause: Throwable? = null) :
+            EmailFolderException(message = message, cause = cause)
+
+        class AuthenticationException(message: String? = null, cause: Throwable? = null) :
+            EmailFolderException(message = message, cause = cause)
+
+        class UnknownException(cause: Throwable) :
+            EmailFolderException(cause = cause)
+    }
+
+    /**
      * Defines the exceptions for the email message based methods.
      *
-     * @property message Accompanying message for the exception.
-     * @property cause The cause for the exception.
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
      */
     sealed class EmailMessageException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
         class FailedException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
+
         class SendFailedException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
-        class InvalidMessageFilterException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+
         class InvalidMessageContentException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
+
         class UnauthorizedAddressException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
-        class PublicKeyException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+
         class UnsealingException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
+
         class AuthenticationException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
+
         class EmailMessageNotFoundException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
+
+        class LimitExceededException(message: String? = null, cause: Throwable? = null) :
+            EmailMessageException(message = message, cause = cause)
+
+        class InvalidArgumentException(message: String? = null, cause: Throwable? = null) :
+            EmailMessageException(message = message, cause = cause)
+
         class UnknownException(cause: Throwable) :
             EmailMessageException(cause = cause)
     }
 
     /**
-     * Provision an [EmailAddress].
+     * Defines the exceptions for the email configuration based methods.
      *
-     * @param emailAddress The email address to provision.
-     * @param sudoId Identifier of the [Sudo] used to provision an email address.
-     * @return The provisioned [EmailAddress].
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
      */
-    @Throws(EmailAddressException::class)
-    suspend fun provisionEmailAddress(emailAddress: String, sudoId: String): EmailAddress
+    sealed class EmailConfigurationException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+        class FailedException(message: String? = null, cause: Throwable? = null) :
+            EmailConfigurationException(message = message, cause = cause)
+
+        class UnknownException(cause: Throwable) :
+            EmailConfigurationException(cause = cause)
+    }
 
     /**
-     * De-provision an [EmailAddress].
+     * Provision an [EmailAddress].
      *
-     * @param id The identifier of the [EmailAddress] to de-provision.
-     * @return The de-provisioned [EmailAddress].
+     * @param input [ProvisionEmailAddressInput] Parameters used to provision an email address.
+     * @return The provisioned [EmailAddress].
+     *
+     * @throws [EmailAddressException].
+     */
+    @Throws(EmailAddressException::class)
+    suspend fun provisionEmailAddress(input: ProvisionEmailAddressInput): EmailAddress
+
+    /**
+     * Deprovision an [EmailAddress].
+     *
+     * @param id [String] The identifier of the [EmailAddress] to deprovision.
+     * @return The deprovisioned [EmailAddress].
+     *
+     * @throws [EmailAddressException].
      */
     @Throws(EmailAddressException::class)
     suspend fun deprovisionEmailAddress(id: String): EmailAddress
 
     /**
-     * Send an email message using [RFC 6854] (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
+     * Update the metadata of an [EmailAddress].
      *
-     * @param rfc822Data Data formatted under the [RFC-6854] (supersedes RFC 822) (https://tools.ietf.org/html/rfc6854) standard.
-     * @param senderEmailAddressId Identifier of the [EmailAddress] being used to send the email. The identifier must match the identifier
-     * of the address of the `from` field in the RFC 6854 data.
-     * @return The identifier of the email message that is being sent.
+     * @property input [UpdateEmailAddressMetadataInput] Parameters used to update the metadata of
+     *  an email address.
+     * @return The identifier of the updated [EmailAddress].
+     *
+     * @throws [EmailAddressException].
      */
-    @Throws(EmailMessageException::class)
-    suspend fun sendEmailMessage(rfc822Data: ByteArray, senderEmailAddressId: String): String
+    @Throws(EmailAddressException::class)
+    suspend fun updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput): String
 
     /**
-     * Delete an [EmailMessage] using the [id] parameter.
+     * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
      *
-     * @param id Identifier of the [EmailMessage] to be deleted.
-     * @returns The identifier of the [EmailMessage] that was deleted.
+     * @param input [SendEmailMessageInput] Parameters used to send an email message.
+     * @return The identifier of the [EmailMessage] that is being sent.
+     *
+     * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun deleteEmailMessage(id: String): String
+    suspend fun sendEmailMessage(input: SendEmailMessageInput): String
 
     /**
-     * Get a list of the supported email domains from the service.
+     * Update multiple [EmailMessage]s using a list of identifiers.
      *
-     * @param cachePolicy Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
-     * be aware that this will only return cached results of similar exact API calls.
-     * @return [List] of supported domains.
+     * Email messages can only be updated in batches of 100 or less. Anything greater will throw an
+     * [EmailMessageException.LimitExceededException].
+     *
+     * This API returns a [BatchOperationResult]:
+     * - On Success, all email messages succeeded to update.
+     * - On Partial, only a partial amount of messages succeeded to update. Result includes a list
+     *     of identifiers of the email messages that failed and succeeded to update.
+     * - On Failure, all email messages failed to update. Result contains a list of identifiers of
+     *     email messages that failed to update.
+     *
+     * @param input [UpdateEmailMessagesInput] Parameters used to update a list of email messages.
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email messages identifiers that succeeded or failed to be updated.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun updateEmailMessages(input: UpdateEmailMessagesInput): BatchOperationResult<String>
+
+    /**
+     * Delete multiple [EmailMessage]s using a list of identifiers.
+     *
+     * Email messages can only be deleted in batches of 100 or less. Anything greater will throw an
+     * [EmailMessageException.LimitExceededException].
+     *
+     * This API returns a [BatchOperationResult]:
+     * - On Success, all email messages succeeded to delete.
+     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
+     *     of identifiers of the email messages that failed and succeeded to delete.
+     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
+     *     email messages that failed to delete.
+     *
+     * @param ids [List<String>] A list of one or more identifiers of the email messages to be deleted.
+     *  There is a limit of 100 email message identifiers per request. Exceeding this will cause an exception.
+     *  to be thrown.
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email messages identifiers that succeeded or failed to be deleted.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun deleteEmailMessages(ids: List<String>): BatchOperationResult<String>
+
+    /**
+     * Delete a single [EmailMessage] using the [id] parameter.
+     *
+     * @param id [String] Identifier of the [EmailMessage] to be deleted.
+     * @returns The identifier of the [EmailMessage] that was deleted or null if the email message
+     *  could not be deleted.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun deleteEmailMessage(id: String): String?
+
+    /**
+     * Creates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
+     *
+     * @param input [CreateDraftEmailMessageInput] Parameters used to create a draft email message.
+     * @return The identifier of the draft message that is being created.
+     *
+     * @throws [EmailMessageException], [EmailAddressException].
+     */
+    @Throws(EmailMessageException::class, EmailAddressException::class)
+    suspend fun createDraftEmailMessage(input: CreateDraftEmailMessageInput): String
+
+    /**
+     * Updates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
+     *
+     * @param input [UpdateDraftEmailMessageInput] Parameters used to update a draft email message.
+     * @return The identifier of the draft message that is being updated.
+     *
+     * @throws [EmailMessageException], [EmailAddressException].
+     */
+    @Throws(EmailMessageException::class, EmailAddressException::class)
+    suspend fun updateDraftEmailMessage(input: UpdateDraftEmailMessageInput): String
+
+    /**
+     * Delete multiple draft email messages with a list of identifiers.
+     *
+     * This API returns a [BatchOperationResult]:
+     * - On Success, all email messages succeeded to delete.
+     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
+     *     of identifiers of the email messages that failed and succeeded to delete.
+     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
+     *     email messages that failed to delete.
+     *
+     * @param input [DeleteDraftEmailMessagesInput] Input parameters containing a list of draft email message
+     * identifiers and an email address identifier.
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email messages identifiers that succeeded or failed to be deleted.
+     *
+     * @throws [EmailAddressException], [EmailMessageException].
+     */
+    @Throws(EmailAddressException::class, EmailMessageException::class)
+    suspend fun deleteDraftEmailMessages(input: DeleteDraftEmailMessagesInput): BatchOperationResult<String>
+
+    /**
+     * Get a list of the supported email domains.
+     *
+     * @param cachePolicy [CachePolicy] Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
+     * be aware that this will only return cached results of identical API calls.
+     * @return A list of supported domains.
+     *
+     * @throws [EmailAddressException].
      */
     @Throws(EmailAddressException::class)
     suspend fun getSupportedEmailDomains(cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): List<String>
@@ -322,105 +516,195 @@ interface SudoEmailClient : AutoCloseable {
     /**
      * Check if an email address is available to be provisioned within a domain.
      *
-     * @param localParts A starting point for the email service to search for addresses that match this in part or whole.
-     * The [localParts] should only be the local part of an email address without the '@' character or the email domain.
-     * @param domains The email domains in which to search for an available address.
-     * @return [List] of available email addresses in the [domains] that match the [localParts].
+     * Criteria:
+     *  - At least one local part is required.
+     *  - A maximum of 5 local parts per request.
+     *  - Local parts must not exceed 64 characters.
+     *  - Local parts must match the following pattern: `^[a-zA-Z0-9](\.?[-_a-zA-Z0-9])*$`.
+     *
+     * @param input [CheckEmailAddressAvailabilityInput] Parameters used to check for email address availability.
+     * @return A list of fully qualified available email addresses in the domains that match the local parts.
+     *
+     * @throws [EmailAddressException].
      */
     @Throws(EmailAddressException::class)
-    suspend fun checkEmailAddressAvailability(
-        localParts: List<String>,
-        domains: List<String>
-    ): List<String>
+    suspend fun checkEmailAddressAvailability(input: CheckEmailAddressAvailabilityInput): List<String>
 
     /**
-     * Get an [EmailAddress] using the [id] parameter.
+     * Get an [EmailAddress] using its identifier.
      *
-     * @param id Identifier of the [EmailAddress] to be retrieved.
-     * @param cachePolicy Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
-     * be aware that this will only return cached results of similar exact API calls.
-     * @return The [EmailAddress] associated with the [id] or null if the email address cannot be found.
+     * @param input [GetEmailAddressInput] Parameters used to retrieve an [EmailAddress].
+     * @return The [EmailAddress] associated with the identifier or null if the email address cannot be found.
+     *
+     * @throws [EmailAddressException].
      */
     @Throws(EmailAddressException::class)
-    suspend fun getEmailAddress(id: String, cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): EmailAddress?
+    suspend fun getEmailAddress(input: GetEmailAddressInput): EmailAddress?
 
     /**
-     * Get a [ListOutput] of [EmailAddress]es. If no [EmailAddress]es can be found, the [ListOutput]
-     * will contain null for the [ListOutput.nextToken] field and contain an empty list.
+     * Get a list of [EmailAddress]es.
      *
-     * @param sudoId The identifier of the [Sudo] that owns the [EmailAddress].
-     * @param limit Number of [EmailAddress]es to return. If omitted the limit defaults to 10.
-     * @param nextToken A token generated from previous calls to [listEmailAddresses].
-     * This is to allow for pagination. This value should be generated from a previous
-     * pagination call, otherwise it will throw an exception. The same arguments should be
-     * supplied to this method if using a previously generated [nextToken].
-     * @param cachePolicy Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
-     * be aware that this will only return cached results of similar exact API calls.
-     * @param filter Filter the email addresses so that only those that match all of the values of the
-     * fields in the filter are returned.
-     * @return A list of [EmailAddress]es or an empty list if no email addresses can be found.
+     * This API returns a [ListAPIResult]:
+     * - On [ListAPIResult.Success] result, contains the list of requested [EmailAddress]es.
+     * - On [ListAPIResult.Partial] result, contains the list of [PartialEmailAddress]es representing
+     *     email addresses that could not be unsealed successfully and the exception indicating why
+     *     the unsealing failed. An email address may fail to unseal if the client version is not up to
+     *     date or the required cryptographic key is missing from the client device.
+     *
+     * If no [EmailAddress]es can be found, the result will contain null for the nextToken field and
+     * contain an empty item list.
+     *
+     * @param input [ListEmailAddressesInput] Parameters used to retrieve a list of provisioned email addresses.
+     * @return A [ListAPIResult.Success] or a [ListAPIResult.Partial] result containing either a list of
+     *  [EmailAddress]es or [PartialEmailAddress]es respectively. Returns an empty list if no email addresses can be found.
+     *
+     * @throws [EmailAddressException].
      */
     @Throws(EmailAddressException::class)
-    suspend fun listEmailAddresses(
-        sudoId: String? = null,
-        limit: Int = DEFAULT_EMAIL_ADDRESS_LIMIT,
-        nextToken: String? = null,
-        cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY,
-        filter: () -> EmailAddressFilter? = { null }
-    ): ListOutput<EmailAddress>
+    suspend fun listEmailAddresses(input: ListEmailAddressesInput): ListAPIResult<EmailAddress, PartialEmailAddress>
 
     /**
-     * Get an [EmailMessage] using the [id] parameter.
+     * Get a list of [EmailAddress]es owned by the Sudo identified by sudoId.
      *
-     * @param id Identifier of the [EmailMessage] to be retrieved.
-     * @param cachePolicy Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
-     * be aware that this will only return cached results of similar exact API calls.
-     * @returns The [EmailMessage] associated with the [id] or null if the email message cannot be found.
+     * This API returns a [ListAPIResult]:
+     * - On [ListAPIResult.Success] result, contains the list of requested [EmailAddress]es.
+     * - On [ListAPIResult.Partial] result, contains the list of [PartialEmailAddress]es representing
+     *     email addresses that could not be unsealed successfully and the exception indicating why
+     *     the unsealing failed. An email address may fail to unseal if the client version is not up to
+     *     date or the required cryptographic key is missing from the client device.
+     *
+     * If no [EmailAddress]es can be found, the result will contain null for the nextToken field and
+     * contain an empty item list.
+     *
+     * @param input [ListEmailAddressesForSudoIdInput] Parameters used to retrieve a list of provisioned email addresses for a Sudo.
+     * @return A [ListAPIResult.Success] or a [ListAPIResult.Partial] result containing either a list of
+     *  [EmailAddress]es or [PartialEmailAddress]es respectively. Returns an empty list if no email addresses can be found.
+     *
+     * @throws [EmailAddressException].
+     */
+    @Throws(EmailAddressException::class)
+    suspend fun listEmailAddressesForSudoId(input: ListEmailAddressesForSudoIdInput): ListAPIResult<EmailAddress, PartialEmailAddress>
+
+    /**
+     * Get a [ListOutput] of [EmailFolder]s.
+     *
+     * If no [EmailFolder]s can be found, the [ListOutput] will contain null for the [ListOutput.nextToken]
+     * field and contain an empty [ListOutput.items] list.
+     *
+     * @param input [ListEmailFoldersForEmailAddressIdInput] Parameters used to list email folders for an email address identifier.
+     * @return A list of [EmailFolder]s or an empty list if no email folders can be found.
+     *
+     * @throws [EmailFolderException].
+     */
+    @Throws(EmailFolderException::class)
+    suspend fun listEmailFoldersForEmailAddressId(input: ListEmailFoldersForEmailAddressIdInput): ListOutput<EmailFolder>
+
+    /**
+     * Get an [EmailMessage] using its identifier.
+     *
+     * @param input [GetEmailMessageInput] Parameters used to retrieve an [EmailMessage].
+     * @return The [EmailMessage] associated with the identifier or null if the email message cannot be found.
      */
     @Throws(EmailMessageException::class)
-    suspend fun getEmailMessage(id: String, cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): EmailMessage?
+    suspend fun getEmailMessage(input: GetEmailMessageInput): EmailMessage?
 
     /**
-     * Get the RFC 6854 (supersedes RFC 822) data of an [EmailMessage] using the [id] parameter.
+     * Get the RFC 6854 (supersedes RFC 822) data of an [EmailMessage].
      *
-     * @param id Identifier of the [EmailMessage] data to be retrieved.
-     * @param cachePolicy Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
-     * be aware that this will only return cached results of similar exact API calls.
-     * @returns The data associated with the [EmailMessage] with the unique [id] or null if the email message cannot be found.
+     * @param input [GetEmailMessageRfc822DataInput] Parameters used to retrieve the data of the email message.
+     * @returns The data associated with the [EmailMessage] or null if the email message cannot be found.
      */
     @Throws(EmailMessageException::class)
-    suspend fun getEmailMessageRfc822Data(id: String, cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): ByteArray?
+    suspend fun getEmailMessageRfc822Data(input: GetEmailMessageRfc822DataInput): EmailMessageRfc822Data?
 
     /**
-     * Get a [ListOutput] of [EmailMessage]s. If no email messages can be found, an empty list will be returned.
+     * Get a list of [EmailMessage]s for the specified email address identifier.
      *
-     * @param emailAddressId The identifier of the [EmailAddress] that is associated with the [EmailMessage]. Note that when supplying an
-     * [emailAddressId], a [sudoId] must also be provided.
-     * @param sudoId The identifier of the [Sudo] that owns the [EmailAddress].
-     * @param limit Number of email messages to return. If omitted the limit is 10.
-     * @param nextToken Generated token by previous calls to [listEmailMessages]. This is used for pagination. This value should
-     * have been generated from a previous pagination call, otherwise it will throw an error. It is important to note that the
-     * same arguments should be used if using a when using a previously generated [nextToken].
-     * @param cachePolicy Determines how the data is fetched. When using [CachePolicy.CACHE_ONLY], please be aware that this
-     * will only return cached results of similar exact API calls.
-     * @param filter Filter to be applied to results of query.
-     * @return Email messages associated with the user, or an empty list if no email message can be found.
+     * This API returns a [ListAPIResult]:
+     * - On [ListAPIResult.Success] result, contains the list of requested [EmailMessage]s.
+     * - On [ListAPIResult.Partial] result, contains the list of [PartialEmailMessage]s representing
+     *     email messages that could not be unsealed successfully and the exception indicating why
+     *     the unsealing failed. An email message may fail to unseal if the client version is not up to
+     *     date or the required cryptographic key is missing from the client device.
+     *
+     * If no [EmailMessage]s can be found, the result will contain null for the nextToken field and
+     * contain an empty item list.
+     *
+     * @param input [ListEmailMessagesForEmailAddressIdInput] Parameters used to retrieve a list of email messages
+     *  for an email address identifier.
+     * @return A [ListAPIResult.Success] or a [ListAPIResult.Partial] result containing either a list of
+     *  [EmailMessage]s or [PartialEmailMessage]s respectively. Returns an empty list if no email messages can be found.
+     *
+     * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun listEmailMessages(
-        emailAddressId: String? = null,
-        sudoId: String? = null,
-        limit: Int = DEFAULT_EMAIL_MESSAGE_LIMIT,
-        nextToken: String? = null,
-        cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY,
-        filter: () -> EmailMessageFilter? = { null }
-    ): ListOutput<EmailMessage>
+    suspend fun listEmailMessagesForEmailAddressId(
+        input: ListEmailMessagesForEmailAddressIdInput
+    ): ListAPIResult<EmailMessage, PartialEmailMessage>
 
     /**
-     * Subscribes to be notified of new and deleted [EmailMessage]s.
+     * Get a list of [EmailMessage]s for the specified email folder identifier.
      *
-     * @param id Unique ID for the subscriber.
-     * @param subscriber Subscriber to notify.
+     * This API returns a [ListAPIResult]:
+     * - On [ListAPIResult.Success] result, contains the list of requested [EmailMessage]s.
+     * - On [ListAPIResult.Partial] result, contains the list of [PartialEmailMessage]s representing
+     *     email messages that could not be unsealed successfully and the exception indicating why
+     *     the unsealing failed. An email message may fail to unseal if the client version is not up to
+     *     date or the required cryptographic key is missing from the client device.
+     *
+     * If no [EmailMessage]s can be found, the result will contain null for the nextToken field and
+     * contain an empty item list.
+     *
+     * @param input [ListEmailMessagesForEmailFolderIdInput] Parameters used to retrieve a list of email messages
+     *  for an email folder identifier.
+     * @return A [ListAPIResult.Success] or a [ListAPIResult.Partial] result containing either a list of
+     *  [EmailMessage]s or [PartialEmailMessage]s respectively. Returns an empty list if no email messages can be found.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun listEmailMessagesForEmailFolderId(
+        input: ListEmailMessagesForEmailFolderIdInput
+    ): ListAPIResult<EmailMessage, PartialEmailMessage>
+
+    /**
+     * Lists the metadata for all draft messages associated with the emailAddressId
+     *
+     * @param emailAddressId [String] the email address id
+     * @return List of [DraftEmailMessageMetadata]
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun listDraftEmailMessageMetadata(emailAddressId: String): List<DraftEmailMessageMetadata>
+
+    /**
+     * Retrieves a draft email message
+     *
+     * @param input [GetDraftEmailMessageInput] Parameters used to get draft email message
+     * @return The [DraftEmailMessageWithContent]
+     *
+     * @throws [EmailMessageException]
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun getDraftEmailMessage(input: GetDraftEmailMessageInput): DraftEmailMessageWithContent
+
+    /**
+     * Get the configuration data for the email service.
+     *
+     * @returns The configuration data [ConfigurationData] for the email service.
+     *
+     * @throws [EmailConfigurationException].
+     */
+    @Throws(EmailConfigurationException::class)
+    suspend fun getConfigurationData(): ConfigurationData
+
+    /**
+     * Subscribes to be notified of new and deleted [EmailMessage]s. Subscribing multiple
+     * times with the same subscriber id will cause the previous subscriber to be unsubscribed.
+     *
+     * @param id [String] Unique identifier of the subscriber.
+     * @param subscriber [EmailMessageSubscriber] Subscriber to notify.
      */
     @Throws(EmailMessageException.AuthenticationException::class)
     suspend fun subscribeToEmailMessages(id: String, subscriber: EmailMessageSubscriber)
@@ -429,14 +713,14 @@ interface SudoEmailClient : AutoCloseable {
      * Unsubscribe the specified subscriber so that it no longer receives notifications about
      * new or deleted [EmailMessage]s.
      *
-     * @param id Unique ID for the subscriber.
+     * @param id [String] Unique identifier of the subscriber.
      */
     suspend fun unsubscribeFromEmailMessages(id: String)
 
     /**
-     * Unsubscribe all subscribers from receiving notifications about new or deleted [EmailMessage]s.
+     * Unsubscribe all subscribers from receiving notifications about modifications to [EmailMessage]s.
      */
-    suspend fun unsubscribeAll()
+    suspend fun unsubscribeAllFromEmailMessages()
 
     /**
      * Reset any internal state and cached content.
@@ -447,31 +731,25 @@ interface SudoEmailClient : AutoCloseable {
 /**
  * Subscribes to be notified of new and deleted [EmailMessage]s.
  *
- * @param id Unique ID for the subscriber.
+ * @param id [String] Unique identifier for the subscriber.
  * @param onConnectionChange Lambda that is called when the subscription connection state changes.
- * @param onEmailMessageCreated Lambda that receives new [EmailMessage]s.
- * @param onEmailMessageDeleted Lambda that receives deleted [EmailMessage]s.
+ * @param onEmailMessageChanged Lambda that receives updates as [EmailMessage]s are modified.
  */
 @Throws(SudoEmailClient.EmailMessageException::class)
 suspend fun SudoEmailClient.subscribeToEmailMessages(
     id: String,
-    onConnectionChange: (status: EmailMessageSubscriber.ConnectionState) -> Unit = {},
-    onEmailMessageCreated: (emailMessage: EmailMessage) -> Unit,
-    onEmailMessageDeleted: (emailMessage: EmailMessage) -> Unit
+    onConnectionChange: (status: Subscriber.ConnectionState) -> Unit = {},
+    onEmailMessageChanged: (emailMessage: EmailMessage) -> Unit,
 ) =
     subscribeToEmailMessages(
         id,
         object : EmailMessageSubscriber {
-            override fun connectionStatusChanged(state: EmailMessageSubscriber.ConnectionState) {
+            override fun connectionStatusChanged(state: Subscriber.ConnectionState) {
                 onConnectionChange.invoke(state)
             }
 
-            override fun emailMessageCreated(emailMessage: EmailMessage) {
-                onEmailMessageCreated.invoke(emailMessage)
-            }
-
-            override fun emailMessageDeleted(emailMessage: EmailMessage) {
-                onEmailMessageDeleted.invoke(emailMessage)
+            override fun emailMessageChanged(emailMessage: EmailMessage) {
+                onEmailMessageChanged.invoke(emailMessage)
             }
         }
     )

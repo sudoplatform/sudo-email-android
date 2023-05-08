@@ -1,5 +1,5 @@
 /*
- * Copyright © 2020 - Anonyome Labs, Inc. - All rights reserved
+ * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@ package com.sudoplatform.sudoemail
 import android.content.Context
 import org.mockito.kotlin.mock
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
+import com.sudoplatform.sudoconfigmanager.ValidationResult
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
@@ -20,8 +21,6 @@ import org.robolectric.RobolectricTestRunner
 
 /**
  * Test the handling of the JSON config items.
- *
- * @since 2020-08-07
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailClientConfigTest : BaseTests() {
@@ -33,10 +32,14 @@ class SudoEmailClientConfigTest : BaseTests() {
     private fun configManager(configJson: String): SudoConfigManager {
         return object : SudoConfigManager {
             override fun getConfigSet(namespace: String): JSONObject? {
-                if (namespace == "identityService") {
+                if (namespace == "emService") {
                     return JSONObject(configJson)
                 }
                 return null
+            }
+
+            override suspend fun validateConfig(): ValidationResult {
+                return ValidationResult(emptyList(), emptyList())
             }
         }
     }
