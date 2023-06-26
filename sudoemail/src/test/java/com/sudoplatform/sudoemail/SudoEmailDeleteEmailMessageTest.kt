@@ -136,7 +136,6 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     @Test
     fun `deleteEmailMessage() should return results when no error present`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val deferredResult = async(Dispatchers.IO) {
@@ -166,7 +165,6 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     @Test
     fun `deleteEmailMessage() should return null result when delete operation fails`() = runBlocking<Unit> {
-
         val mutationResult by before {
             listOf("id")
         }
@@ -205,7 +203,6 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     @Test
     fun `deleteEmailMessage() should throw when email mutation response is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val nullProvisionResponse by before {
@@ -258,7 +255,6 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     @Test
     fun `deleteEmailMessage() should throw when http error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val deferredResult = async(Dispatchers.IO) {
@@ -301,7 +297,6 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     @Test
     fun `deleteEmailMessage() should throw when unknown error occurs()`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -332,7 +327,6 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
     @Test
     fun `deleteEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { mutate(any<DeleteEmailMessagesMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
         }
@@ -351,7 +345,6 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     private inline fun <reified T : Exception> testException(apolloError: String) = runBlocking<Unit> {
-
         holder.callback = null
 
         val errorSendResponse by before {

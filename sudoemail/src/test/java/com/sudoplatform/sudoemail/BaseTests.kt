@@ -26,7 +26,8 @@ import org.junit.Rule
  * And provides convenient access to the [PropertyResetRule.before] via [PropertyResetter.before].
  */
 abstract class BaseTests : PropertyResetter by ActualPropertyResetter() {
-    @Rule @JvmField val timberLogRule = TimberLogRule()
+    @Rule @JvmField
+    val timberLogRule = TimberLogRule()
 
     private val mockLogDriver by before {
         mock<LogDriverInterface>().stub {

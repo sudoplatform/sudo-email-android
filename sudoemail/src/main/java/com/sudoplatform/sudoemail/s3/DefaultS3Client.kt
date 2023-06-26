@@ -38,7 +38,7 @@ class DefaultS3Client(
     sudoUserClient: SudoUserClient,
     override val region: String,
     override val bucket: String,
-    private val logger: Logger,
+    private val logger: Logger
 ) : S3Client {
 
     private val transferUtility: TransferUtility

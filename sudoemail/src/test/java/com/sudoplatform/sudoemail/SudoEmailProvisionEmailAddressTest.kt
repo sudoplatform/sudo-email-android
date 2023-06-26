@@ -123,7 +123,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                             null,
                             "example@sudoplatform.com",
                             0.0,
-                            null,
+                            null
                         )
                     )
                 )
@@ -170,7 +170,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 keyId = "keyId",
                 keyRingId = "keyRingId",
                 publicKey = ByteArray(42),
-                privateKey = ByteArray(42),
+                privateKey = ByteArray(42)
             )
             on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
         }
@@ -217,7 +217,6 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `provisionEmailAddress() should return results when no error present`() = runBlocking<Unit> {
-
         provisionHolder.callback shouldBe null
 
         val input = ProvisionEmailAddressInput(
@@ -280,7 +279,6 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `provisionEmailAddress() should throw when email mutation response is null`() = runBlocking<Unit> {
-
         provisionHolder.callback shouldBe null
 
         val nullProvisionResponse by before {
@@ -320,7 +318,6 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `provisionEmailAddress() should throw when response has illegal format error`() = runBlocking<Unit> {
-
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {
@@ -365,7 +362,6 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `provisionEmailAddress() should throw when response has an invalid key ring error`() = runBlocking<Unit> {
-
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {
@@ -410,7 +406,6 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `provisionEmailAddress() should throw when response has an insufficient entitlements error`() = runBlocking<Unit> {
-
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {
@@ -455,7 +450,6 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `provisionEmailAddress() should throw when response has a policy failed error`() = runBlocking<Unit> {
-
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {

@@ -20,5 +20,5 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class DraftEmailMessageMetadata(
     override val id: String,
-    override val updatedAt: Date,
+    override val updatedAt: Date
 ) : Parcelable, DraftEmailMessage

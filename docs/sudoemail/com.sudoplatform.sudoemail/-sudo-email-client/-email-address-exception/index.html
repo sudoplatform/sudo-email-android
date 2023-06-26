@@ -42,6 +42,9 @@
     <div>
     </div>
     <div class="pull-right d-flex">
+        <div class="filter-section" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active="" data-filter=":sudoemail:dokkaHtml/release">androidJvm</button>
+        </div>
         <button id="theme-toggle-button"><span id="theme-toggle"></span></button>
         <div id="searchBar"></div>
     </div>
@@ -51,534 +54,384 @@
         <div id="sideMenu"></div>
     </div>
     <div id="main">
-<div class="main-content" id="content" pageIds="sudoemail::com.sudoplatform.sudoemail/SudoEmailClient.EmailAddressException///PointingToDeclaration//2021949935">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="sudoemail::com.sudoplatform.sudoemail/SudoEmailClient.EmailAddressException///PointingToDeclaration//2021949935">
   <div class="breadcrumbs"><a href="../../../../index.html">sudoemail</a><span class="delimiter">/</span><a href="../../index.html">com.sudoplatform.sudoemail</a><span class="delimiter">/</span><a href="../index.html">SudoEmailClient</a><span class="delimiter">/</span><span class="current">EmailAddressException</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="index.html">EmailAddressException</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/RuntimeException.html">RuntimeException</a></div><p class="paragraph">Defines the exceptions for the email address based methods.</p></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="index.html">EmailAddressException</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/RuntimeException.html">RuntimeException</a></div><p class="paragraph">Defines the exceptions for the email address based methods.</p><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-failed-exception/index.html">FailedException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-entitlements-exceeded-exception/index.html">EntitlementsExceededException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-insufficient-entitlements-exception/index.html">InsufficientEntitlementsException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-provision-failed-exception/index.html">ProvisionFailedException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-invalid-email-address-exception/index.html">InvalidEmailAddressException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-email-address-not-found-exception/index.html">EmailAddressNotFoundException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-unavailable-email-address-exception/index.html">UnavailableEmailAddressException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-unauthorized-email-address-exception/index.html">UnauthorizedEmailAddressException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-public-key-exception/index.html">PublicKeyException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-unsealing-exception/index.html">UnsealingException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-deprovision-failed-exception/index.html">DeprovisionFailedException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-update-failed-exception/index.html">UpdateFailedException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-authentication-exception/index.html">AuthenticationException</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-unknown-exception/index.html">UnknownException</a></div></span></div><div></div></div></div></div></div></div>
   </div>
   <div class="tabbedcontent">
-    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="Types">Types</button><button class="section-tab" data-togglable="Functions">Functions</button><button class="section-tab" data-togglable="Properties">Properties</button><button class="section-tab" data-togglable="Inheritors">Inheritors</button></div>
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,FUNCTION,PROPERTY">Members</button></div>
     <div class="tabs-section-body">
-      <h2 class="">Types</h2>
-      <div class="table" data-togglable="Types"><a data-name="-515343290%2FClasslikes%2F2021949935" anchor-label="AuthenticationException" id="-515343290%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-authentication-exception/index.html"><span>Authentication</span><wbr></wbr><span><span>Exception</span></span></a></div>
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="-515343290%2FClasslikes%2F2021949935" anchor-label="AuthenticationException" id="-515343290%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-authentication-exception/index.html"><span>Authentication</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-515343290%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-authentication-exception/index.html">AuthenticationException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-authentication-exception/index.html">AuthenticationException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-4107001%2FClasslikes%2F2021949935" anchor-label="DeprovisionFailedException" id="-4107001%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-deprovision-failed-exception/index.html"><span>Deprovision</span><wbr></wbr><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-deprovision-failed-exception/index.html"><span>Deprovision</span><wbr></wbr><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-4107001%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-deprovision-failed-exception/index.html">DeprovisionFailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-deprovision-failed-exception/index.html">DeprovisionFailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="1982732885%2FClasslikes%2F2021949935" anchor-label="EmailAddressNotFoundException" id="1982732885%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-email-address-not-found-exception/index.html"><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Not</span><wbr></wbr><span>Found</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-email-address-not-found-exception/index.html"><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Not</span><wbr></wbr><span>Found</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1982732885%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-email-address-not-found-exception/index.html">EmailAddressNotFoundException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-email-address-not-found-exception/index.html">EmailAddressNotFoundException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="303614695%2FClasslikes%2F2021949935" anchor-label="EntitlementsExceededException" id="303614695%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-entitlements-exceeded-exception/index.html"><span>Entitlements</span><wbr></wbr><span>Exceeded</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-entitlements-exceeded-exception/index.html"><span>Entitlements</span><wbr></wbr><span>Exceeded</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="303614695%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-entitlements-exceeded-exception/index.html"><strike>EntitlementsExceededException</strike></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-entitlements-exceeded-exception/index.html"><strike>EntitlementsExceededException</strike></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-690345781%2FClasslikes%2F2021949935" anchor-label="FailedException" id="-690345781%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-failed-exception/index.html"><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-failed-exception/index.html"><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-690345781%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-failed-exception/index.html">FailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-failed-exception/index.html">FailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="195993367%2FClasslikes%2F2021949935" anchor-label="InsufficientEntitlementsException" id="195993367%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-insufficient-entitlements-exception/index.html"><span>Insufficient</span><wbr></wbr><span>Entitlements</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-insufficient-entitlements-exception/index.html"><span>Insufficient</span><wbr></wbr><span>Entitlements</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="195993367%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-insufficient-entitlements-exception/index.html">InsufficientEntitlementsException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-insufficient-entitlements-exception/index.html">InsufficientEntitlementsException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-980244987%2FClasslikes%2F2021949935" anchor-label="InvalidEmailAddressException" id="-980244987%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-invalid-email-address-exception/index.html"><span>Invalid</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-invalid-email-address-exception/index.html"><span>Invalid</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-980244987%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-invalid-email-address-exception/index.html">InvalidEmailAddressException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-invalid-email-address-exception/index.html">InvalidEmailAddressException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-2079031192%2FClasslikes%2F2021949935" anchor-label="ProvisionFailedException" id="-2079031192%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-provision-failed-exception/index.html"><span>Provision</span><wbr></wbr><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-provision-failed-exception/index.html"><span>Provision</span><wbr></wbr><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2079031192%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-provision-failed-exception/index.html">ProvisionFailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-provision-failed-exception/index.html">ProvisionFailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-2135287764%2FClasslikes%2F2021949935" anchor-label="PublicKeyException" id="-2135287764%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-public-key-exception/index.html"><span>Public</span><wbr></wbr><span>Key</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-public-key-exception/index.html"><span>Public</span><wbr></wbr><span>Key</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2135287764%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-public-key-exception/index.html">PublicKeyException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-public-key-exception/index.html">PublicKeyException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="794447258%2FClasslikes%2F2021949935" anchor-label="UnauthorizedEmailAddressException" id="794447258%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unauthorized-email-address-exception/index.html"><span>Unauthorized</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-unauthorized-email-address-exception/index.html"><span>Unauthorized</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="794447258%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unauthorized-email-address-exception/index.html">UnauthorizedEmailAddressException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unauthorized-email-address-exception/index.html">UnauthorizedEmailAddressException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-859771234%2FClasslikes%2F2021949935" anchor-label="UnavailableEmailAddressException" id="-859771234%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unavailable-email-address-exception/index.html"><span>Unavailable</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-unavailable-email-address-exception/index.html"><span>Unavailable</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-859771234%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unavailable-email-address-exception/index.html">UnavailableEmailAddressException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unavailable-email-address-exception/index.html">UnavailableEmailAddressException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="1509942592%2FClasslikes%2F2021949935" anchor-label="UnknownException" id="1509942592%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unknown-exception/index.html"><span>Unknown</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-unknown-exception/index.html"><span>Unknown</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1509942592%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unknown-exception/index.html">UnknownException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unknown-exception/index.html">UnknownException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="143926146%2FClasslikes%2F2021949935" anchor-label="UnsealingException" id="143926146%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unsealing-exception/index.html"><span>Unsealing</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-unsealing-exception/index.html"><span>Unsealing</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="143926146%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unsealing-exception/index.html">UnsealingException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-unsealing-exception/index.html">UnsealingException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="1836132276%2FClasslikes%2F2021949935" anchor-label="UpdateFailedException" id="1836132276%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-update-failed-exception/index.html"><span>Update</span><wbr></wbr><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-update-failed-exception/index.html"><span>Update</span><wbr></wbr><span>Failed</span><wbr></wbr><span><span>Exception</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1836132276%2FClasslikes%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-update-failed-exception/index.html">UpdateFailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">class </span><a href="-update-failed-exception/index.html">UpdateFailedException</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">message<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">cause<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span> : <a href="index.html">SudoEmailClient.EmailAddressException</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <h2 class="">Functions</h2>
-      <div class="table" data-togglable="Functions"><a data-name="282858770%2FFunctions%2F2021949935" anchor-label="addSuppressed" id="282858770%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#282858770%2FFunctions%2F2021949935"><span>add</span><wbr></wbr><span><span>Suppressed</span></span></a></div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="282858770%2FFunctions%2F2021949935" anchor-label="addSuppressed" id="282858770%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#282858770%2FFunctions%2F2021949935"><span>add</span><wbr></wbr><span><span>Suppressed</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="282858770%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#282858770%2FFunctions%2F2021949935"><span class="token function">addSuppressed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></span></span><span class="token punctuation">)</span></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#282858770%2FFunctions%2F2021949935"><span class="token function">addSuppressed</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-1102069925%2FFunctions%2F2021949935" anchor-label="fillInStackTrace" id="-1102069925%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1102069925%2FFunctions%2F2021949935"><span>fill</span><wbr></wbr><span>In</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1102069925%2FFunctions%2F2021949935"><span>fill</span><wbr></wbr><span>In</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1102069925%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1102069925%2FFunctions%2F2021949935"><span class="token function">fillInStackTrace</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1102069925%2FFunctions%2F2021949935"><span class="token function">fillInStackTrace</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="1043865560%2FFunctions%2F2021949935" anchor-label="getLocalizedMessage" id="1043865560%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1043865560%2FFunctions%2F2021949935"><span>get</span><wbr></wbr><span>Localized</span><wbr></wbr><span><span>Message</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1043865560%2FFunctions%2F2021949935"><span>get</span><wbr></wbr><span>Localized</span><wbr></wbr><span><span>Message</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1043865560%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1043865560%2FFunctions%2F2021949935"><span class="token function">getLocalizedMessage</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1043865560%2FFunctions%2F2021949935"><span class="token function">getLocalizedMessage</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="2050903719%2FFunctions%2F2021949935" anchor-label="getStackTrace" id="2050903719%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2050903719%2FFunctions%2F2021949935"><span>get</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2050903719%2FFunctions%2F2021949935"><span>get</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2050903719%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2050903719%2FFunctions%2F2021949935"><span class="token function">getStackTrace</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://developer.android.com/reference/kotlin/java/lang/StackTraceElement.html">StackTraceElement</a><span class="token operator">&gt;</span></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2050903719%2FFunctions%2F2021949935"><span class="token function">getStackTrace</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://developer.android.com/reference/kotlin/java/lang/StackTraceElement.html">StackTraceElement</a><span class="token operator">&gt;</span></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="672492560%2FFunctions%2F2021949935" anchor-label="getSuppressed" id="672492560%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#672492560%2FFunctions%2F2021949935"><span>get</span><wbr></wbr><span><span>Suppressed</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#672492560%2FFunctions%2F2021949935"><span>get</span><wbr></wbr><span><span>Suppressed</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="672492560%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#672492560%2FFunctions%2F2021949935"><span class="token function">getSuppressed</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">&gt;</span></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#672492560%2FFunctions%2F2021949935"><span class="token function">getSuppressed</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">&gt;</span></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-418225042%2FFunctions%2F2021949935" anchor-label="initCause" id="-418225042%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-418225042%2FFunctions%2F2021949935"><span>init</span><wbr></wbr><span><span>Cause</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-418225042%2FFunctions%2F2021949935"><span>init</span><wbr></wbr><span><span>Cause</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-418225042%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-418225042%2FFunctions%2F2021949935"><span class="token function">initCause</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-418225042%2FFunctions%2F2021949935"><span class="token function">initCause</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="-762248569%2FFunctions%2F2021949935" anchor-label="printStackTrace" id="-762248569%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1769529168%2FFunctions%2F2021949935"><span>print</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1769529168%2FFunctions%2F2021949935"><span>print</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-762248569%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1769529168%2FFunctions%2F2021949935"><span class="token function">printStackTrace</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1841853697%2FFunctions%2F2021949935"><span class="token function">printStackTrace</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/io/PrintStream.html">PrintStream</a></span></span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1175535278%2FFunctions%2F2021949935"><span class="token function">printStackTrace</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/io/PrintWriter.html">PrintWriter</a></span></span><span class="token punctuation">)</span></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-1769529168%2FFunctions%2F2021949935"><span class="token function">printStackTrace</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1841853697%2FFunctions%2F2021949935"><span class="token function">printStackTrace</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/io/PrintStream.html">PrintStream</a></span></span><span class="token punctuation">)</span></div><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1175535278%2FFunctions%2F2021949935"><span class="token function">printStackTrace</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://developer.android.com/reference/kotlin/java/io/PrintWriter.html">PrintWriter</a></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="2135801318%2FFunctions%2F2021949935" anchor-label="setStackTrace" id="2135801318%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2135801318%2FFunctions%2F2021949935"><span>set</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2135801318%2FFunctions%2F2021949935"><span>set</span><wbr></wbr><span>Stack</span><wbr></wbr><span><span>Trace</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2135801318%2FFunctions%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2135801318%2FFunctions%2F2021949935"><span class="token function">setStackTrace</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://developer.android.com/reference/kotlin/java/lang/StackTraceElement.html">StackTraceElement</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">fun </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#2135801318%2FFunctions%2F2021949935"><span class="token function">setStackTrace</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">p0<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-array/index.html">Array</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://developer.android.com/reference/kotlin/java/lang/StackTraceElement.html">StackTraceElement</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <h2 class="">Properties</h2>
-      <div class="table" data-togglable="Properties"><a data-name="-654012527%2FProperties%2F2021949935" anchor-label="cause" id="-654012527%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-654012527%2FProperties%2F2021949935"><span><span>cause</span></span></a></div>
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="-654012527%2FProperties%2F2021949935" anchor-label="cause" id="-654012527%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-654012527%2FProperties%2F2021949935"><span><span>cause</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-654012527%2FProperties%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><a data-name="-654012527%2FProperties%2F2021949935" anchor-label="cause" id="-654012527%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">val </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-654012527%2FProperties%2F2021949935">cause</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">val </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#-654012527%2FProperties%2F2021949935">cause</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html">Throwable</a><span class="token operator">?</span></div></div></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 <a data-name="1824300659%2FProperties%2F2021949935" anchor-label="message" id="1824300659%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1824300659%2FProperties%2F2021949935"><span><span>message</span></span></a></div>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1824300659%2FProperties%2F2021949935"><span><span>message</span></span></a></div>
 <span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1824300659%2FProperties%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div>
-              <div class="title">
-                <div class="platform-hinted " data-platform-hinted="data-platform-hinted" data-togglable="Properties"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><a data-name="1824300659%2FProperties%2F2021949935" anchor-label="message" id="1824300659%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">val </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1824300659%2FProperties%2F2021949935">message</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span></div></div></div>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">val </span><a href="../../../com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html#1824300659%2FProperties%2F2021949935">message</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html">String</a><span class="token operator">?</span></div></div></div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-      <h2 class="">Inheritors</h2>
-      <div class="table" data-togglable="Inheritors"><a data-name="-690345781%2FInheritors%2F2021949935" anchor-label="FailedException" id="-690345781%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-failed-exception/index.html">FailedException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-690345781%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="303614695%2FInheritors%2F2021949935" anchor-label="EntitlementsExceededException" id="303614695%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-entitlements-exceeded-exception/index.html">EntitlementsExceededException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="303614695%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="195993367%2FInheritors%2F2021949935" anchor-label="InsufficientEntitlementsException" id="195993367%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-insufficient-entitlements-exception/index.html">InsufficientEntitlementsException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="195993367%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="-2079031192%2FInheritors%2F2021949935" anchor-label="ProvisionFailedException" id="-2079031192%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-provision-failed-exception/index.html">ProvisionFailedException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2079031192%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="-980244987%2FInheritors%2F2021949935" anchor-label="InvalidEmailAddressException" id="-980244987%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-invalid-email-address-exception/index.html">InvalidEmailAddressException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-980244987%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="1982732885%2FInheritors%2F2021949935" anchor-label="EmailAddressNotFoundException" id="1982732885%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-email-address-not-found-exception/index.html">EmailAddressNotFoundException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1982732885%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="-859771234%2FInheritors%2F2021949935" anchor-label="UnavailableEmailAddressException" id="-859771234%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unavailable-email-address-exception/index.html">UnavailableEmailAddressException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-859771234%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="794447258%2FInheritors%2F2021949935" anchor-label="UnauthorizedEmailAddressException" id="794447258%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unauthorized-email-address-exception/index.html">UnauthorizedEmailAddressException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="794447258%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="-2135287764%2FInheritors%2F2021949935" anchor-label="PublicKeyException" id="-2135287764%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-public-key-exception/index.html">PublicKeyException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2135287764%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="143926146%2FInheritors%2F2021949935" anchor-label="UnsealingException" id="143926146%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unsealing-exception/index.html">UnsealingException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="143926146%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="-4107001%2FInheritors%2F2021949935" anchor-label="DeprovisionFailedException" id="-4107001%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-deprovision-failed-exception/index.html">DeprovisionFailedException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-4107001%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="1836132276%2FInheritors%2F2021949935" anchor-label="UpdateFailedException" id="1836132276%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-update-failed-exception/index.html">UpdateFailedException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1836132276%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="-515343290%2FInheritors%2F2021949935" anchor-label="AuthenticationException" id="-515343290%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-authentication-exception/index.html">AuthenticationException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-515343290%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
-          </div>
-        </div>
-<a data-name="1509942592%2FInheritors%2F2021949935" anchor-label="UnknownException" id="1509942592%2FInheritors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-        <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
-          <div class="main-subrow keyValue ">
-            <div class=""><span class="inline-flex">
-                <div><a href="-unknown-exception/index.html">UnknownException</a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1509942592%2FInheritors%2F2021949935"></span>
-                  <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                </span></span></div>
-            <div></div>
           </div>
         </div>
       </div>

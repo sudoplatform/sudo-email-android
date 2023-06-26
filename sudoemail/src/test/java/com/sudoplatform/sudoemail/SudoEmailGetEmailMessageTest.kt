@@ -189,7 +189,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return results when no error present`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = GetEmailMessageInput(id = "emailMessageId")
@@ -237,7 +236,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return results when hasAttachments is true`() = runBlocking<Unit> {
-
         mockKeyManager.stub {
             on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
                 unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
@@ -290,7 +288,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return results when hasAttachments is unset`() = runBlocking<Unit> {
-
         mockKeyManager.stub {
             on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
                 unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
@@ -343,7 +340,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return null result when query result data is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val responseWithNullResult by before {
@@ -374,7 +370,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return null result when query response is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val nullResponse by before {
@@ -405,7 +400,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should throw when http error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = GetEmailMessageInput(id = "emailMessageId")
@@ -444,7 +438,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -471,7 +464,6 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should not suppress CancellationException`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {

@@ -194,7 +194,6 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
 
     @Test
     fun `getEmailAddress() should return results when no error present`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = GetEmailAddressInput(id = "emailAddressId")
@@ -243,7 +242,6 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
 
     @Test
     fun `getEmailAddress() should return null result when query result data is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val responseWithNullResult by before {
@@ -270,7 +268,6 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
 
     @Test
     fun `getEmailAddress() should return null result when query response is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val nullResponse by before {
@@ -297,7 +294,6 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
 
     @Test
     fun `getEmailAddress() should throw when http error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = GetEmailAddressInput(id = "emailAddressId")
@@ -332,7 +328,6 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
 
     @Test
     fun `getEmailAddress() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -355,7 +350,6 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
 
     @Test
     fun `getEmailAddress() should not suppress CancellationException`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {

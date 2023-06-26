@@ -18,12 +18,13 @@ import com.sudoplatform.sudokeymanager.KeyManagerInterface
  */
 internal class Unsealer(
     private val deviceKeyManager: DeviceKeyManager,
-    private val keyInfo: KeyInfo,
+    private val keyInfo: KeyInfo
 ) {
     companion object {
         /** Size of the AES symmetric key. */
         @VisibleForTesting
         const val KEY_SIZE_AES = 256
+
         /** Algorithm used when creating/registering public keys. */
         const val DEFAULT_ALGORITHM = "RSAEncryptionOAEPAESCBC"
     }

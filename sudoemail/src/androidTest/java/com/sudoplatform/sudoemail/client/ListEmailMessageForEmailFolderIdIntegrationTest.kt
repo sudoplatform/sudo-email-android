@@ -334,7 +334,7 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                             startDate = emailAddress.createdAt,
                             endDate = Date(emailAddress.createdAt.time + 100000)
                         ),
-                        sortOrder = SortOrder.ASC,
+                        sortOrder = SortOrder.ASC
                     )
                     emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
                 }

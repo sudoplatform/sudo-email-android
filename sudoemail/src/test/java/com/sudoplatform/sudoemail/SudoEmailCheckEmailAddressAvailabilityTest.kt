@@ -143,7 +143,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @Test
     fun `checkEmailAddressAvailability() should return results when no error present`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = CheckEmailAddressAvailabilityInput(
@@ -170,7 +169,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @Test
     fun `checkEmailAddressAvailability() should return empty list output when query result data is empty`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -209,7 +207,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @Test
     fun `checkEmailAddressAvailability() should return empty list output when query response is null`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val responseWithNullData by before {
@@ -241,7 +238,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @Test
     fun `checkEmailAddressAvailability() should throw when response has error`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -278,7 +274,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @Test
     fun `checkEmailAddressAvailability() should throw when http error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = CheckEmailAddressAvailabilityInput(
@@ -316,7 +311,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @Test
     fun `checkEmailAddressAvailability() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -342,7 +336,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
     @Test
     fun `checkEmailAddressAvailability() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { query(any<CheckEmailAddressAvailabilityQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

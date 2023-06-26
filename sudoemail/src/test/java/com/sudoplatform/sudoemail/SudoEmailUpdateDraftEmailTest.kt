@@ -132,7 +132,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
                             "example@sudoplatform.com",
                             0.0,
                             null
-                        ),
+                        )
                     )
                 )
             )
@@ -334,7 +334,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
                 upload(
                     any(),
                     any(),
-                    anyOrNull(),
+                    anyOrNull()
                 )
             } doThrow error
         }
@@ -382,7 +382,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
             },
             org.mockito.kotlin.check {
                 it shouldNotBe null
-            },
+            }
         )
     }
 
@@ -432,7 +432,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
             },
             org.mockito.kotlin.check {
                 it shouldNotBe null
-            },
+            }
         )
     }
 }

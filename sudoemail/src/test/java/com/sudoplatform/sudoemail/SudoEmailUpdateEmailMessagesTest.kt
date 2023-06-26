@@ -158,7 +158,6 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @Test
     fun `updateEmailMessages() should return success result when no error present`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = UpdateEmailMessagesInput(
@@ -202,7 +201,6 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @Test
     fun `updateEmailMessages() should return failure result when no error present`() = runBlocking<Unit> {
-
         val mutationResult by before {
             UpdateEmailMessagesMutation.UpdateEmailMessages(
                 "typename",
@@ -266,7 +264,6 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @Test
     fun `updateEmailMessages() should return partial result when no error present`() = runBlocking<Unit> {
-
         val mutationResult by before {
             UpdateEmailMessagesMutation.UpdateEmailMessages(
                 "typename",
@@ -332,7 +329,6 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @Test
     fun `updateEmailMessages() should throw when email mutation response is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val nullProvisionResponse by before {
@@ -420,7 +416,6 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @Test
     fun `updateEmailMessages() should throw when http error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = UpdateEmailMessagesInput(
@@ -469,7 +464,6 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @Test
     fun `updateEmailMessages() should throw when unknown error occurs()`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -506,7 +500,6 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @Test
     fun `updateEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { mutate(any<UpdateEmailMessagesMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

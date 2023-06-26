@@ -48,7 +48,6 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun subscribeUnsubscribeShouldNotFail() = runBlocking {
-
         if (!userClient.isRegistered()) {
             registerSignInAndEntitle()
         }
@@ -74,7 +73,6 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun subscribeShouldThrowWhenNotAuthenticated() = runBlocking<Unit> {
-
         if (userClient.isRegistered()) {
             deregister()
         }

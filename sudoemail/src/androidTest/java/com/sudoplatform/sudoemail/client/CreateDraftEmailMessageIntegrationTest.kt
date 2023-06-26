@@ -83,7 +83,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
             from = emailAddress.emailAddress,
-            to = emailAddress.emailAddress,
+            to = emailAddress.emailAddress
         )
         val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
         val response = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)

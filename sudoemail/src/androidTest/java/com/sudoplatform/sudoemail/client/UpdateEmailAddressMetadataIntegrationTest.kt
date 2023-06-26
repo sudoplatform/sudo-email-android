@@ -47,7 +47,6 @@ class UpdateEmailAddressMetadataIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun updateEmailAddressMetadataShouldReturnEmailAddressResult() = runBlocking {
-
         val emailDomains = getEmailDomains(emailClient)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 

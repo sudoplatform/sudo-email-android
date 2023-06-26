@@ -23,7 +23,7 @@ import kotlinx.parcelize.Parcelize
 data class DraftEmailMessageWithContent(
     override val id: String,
     override val updatedAt: Date,
-    val rfc822Data: ByteArray,
+    val rfc822Data: ByteArray
 ) : Parcelable, DraftEmailMessage {
 
     override fun equals(other: Any?): Boolean {

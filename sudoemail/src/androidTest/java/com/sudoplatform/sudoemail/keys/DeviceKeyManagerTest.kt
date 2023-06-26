@@ -167,7 +167,6 @@ class DeviceKeyManagerTest {
 
     @Test
     fun shouldBeAbleToPerformOperationsAfterSignIn() = runBlocking {
-
         registerSignInAndEntitle()
 
         deviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null

@@ -105,7 +105,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
                             "example@sudoplatform.com",
                             0.0,
                             null
-                        ),
+                        )
                     )
                 )
             )

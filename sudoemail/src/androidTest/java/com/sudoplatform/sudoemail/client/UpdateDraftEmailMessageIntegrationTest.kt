@@ -64,7 +64,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         val createDraftInput = CreateDraftEmailMessageInput(
             rfc822Data = rfc822Data,
-            senderEmailAddressId = emailAddress.id,
+            senderEmailAddressId = emailAddress.id
         )
 
         val draftId = emailClient.createDraftEmailMessage(createDraftInput)

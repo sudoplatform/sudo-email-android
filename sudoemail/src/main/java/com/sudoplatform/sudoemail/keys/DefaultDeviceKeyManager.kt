@@ -61,7 +61,6 @@ internal class DefaultDeviceKeyManager(
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
     override fun generateKeyPair(): KeyPair {
-
         val keyId = UUID.randomUUID().toString()
         try {
             // Generate the key pair

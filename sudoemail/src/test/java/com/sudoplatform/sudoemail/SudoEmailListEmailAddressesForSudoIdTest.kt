@@ -130,7 +130,7 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
                                     1.0,
                                     "example@sudoplatform.com",
                                     0.0,
-                                    null,
+                                    null
                                 )
                             )
                         )
@@ -217,7 +217,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should return results when no error present`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = ListEmailAddressesForSudoIdInput("sudoId")
@@ -283,7 +282,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should return results when populating nextToken`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithNextToken by before {
@@ -311,7 +309,7 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
                                         1.0,
                                         "example@sudoplatform.com",
                                         0.0,
-                                        null,
+                                        null
                                     )
                                 )
                             )
@@ -383,7 +381,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should return empty list output when query result data is empty`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -437,7 +434,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should return empty list output when query response is null`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val nullQueryResponse by before {
@@ -483,7 +479,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should return partial results when unsealing fails`() = runBlocking<Unit> {
-
         mockKeyManager.stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("KeyManagerException")
         }
@@ -521,10 +516,10 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
                                                     "algorithm",
                                                     "keyId",
                                                     "string",
-                                                    "alias",
+                                                    "alias"
                                                 )
                                             )
-                                        ),
+                                        )
                                     )
                                 )
                             )
@@ -605,7 +600,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should throw when unsealing fails`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { query(any<ListEmailAddressesForSudoIdQuery>()) } doThrow
                 Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
@@ -631,7 +625,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should throw when http error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = ListEmailAddressesForSudoIdInput("sudoId")
@@ -676,7 +669,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -709,7 +701,6 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
 
     @Test
     fun `listEmailAddressesForSudoId() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { query(any<ListEmailAddressesForSudoIdQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

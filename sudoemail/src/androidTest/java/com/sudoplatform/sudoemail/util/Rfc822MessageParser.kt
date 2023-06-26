@@ -35,7 +35,6 @@ internal object Rfc822MessageParser {
     private class LocalMimeMessage(session: Session, rfc822Ins: InputStream) : MimeMessage(session, rfc822Ins) {
 
         override fun toString(): String {
-
             val sender = from?.map { it.toString() } ?: emptyList()
             val toRecipients = getRecipients(Message.RecipientType.TO)?.map { it.toString() } ?: emptyList()
             val ccRecipients = getRecipients(Message.RecipientType.CC)?.map { it.toString() } ?: emptyList()
@@ -86,7 +85,6 @@ internal object Rfc822MessageParser {
 
     @Throws(MessagingException::class, IOException::class)
     private fun toSimplifiedEmailMessage(message: Message): SimplifiedEmailMessage {
-
         val sender = message.from?.map { it.toString() } ?: emptyList()
         val toRecipients = message.getRecipients(Message.RecipientType.TO)?.map { it.toString() } ?: emptyList()
         val ccRecipients = message.getRecipients(Message.RecipientType.CC)?.map { it.toString() } ?: emptyList()

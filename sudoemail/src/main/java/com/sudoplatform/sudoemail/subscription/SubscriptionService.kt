@@ -45,7 +45,6 @@ internal class SubscriptionService(
     private val deleteSubscriptionManager = EmailMessageSubscriptionManager<OnEmailMessageDeletedSubscription.Data>()
 
     suspend fun subscribeEmailMessages(id: String, subscriber: EmailMessageSubscriber) {
-
         val userSubject = userClient.getSubject()
             ?: throw SudoEmailClient.EmailMessageException.AuthenticationException(ERROR_UNAUTHENTICATED_MSG)
 

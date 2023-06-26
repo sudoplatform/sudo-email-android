@@ -2,7 +2,7 @@
 indent_style=space
 indent_size=4
 max_line_length=140
-disabled_rules=import-ordering
+ktlint_disabled_rules=import-ordering
 ij_continuation_indent_size=4
 trim_trailing_whitespace=true
 insert_final_newline=true

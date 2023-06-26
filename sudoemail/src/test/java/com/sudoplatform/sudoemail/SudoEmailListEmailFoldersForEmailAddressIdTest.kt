@@ -174,7 +174,6 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should return results when no error present`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = ListEmailFoldersForEmailAddressIdInput(
@@ -227,7 +226,6 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should return results when populating nextToken`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithNextToken by before {
@@ -249,7 +247,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
                                 "folderName",
                                 0.0,
                                 0.0,
-                                null,
+                                null
                             )
                         )
                     )
@@ -322,7 +320,6 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should return empty list output when query result data is empty`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -371,7 +368,6 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should return empty list output when query response is null`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val nullQueryResponse by before {
@@ -412,7 +408,6 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should throw when http error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = ListEmailFoldersForEmailAddressIdInput("emailAddressId")
@@ -458,7 +453,6 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -492,7 +486,6 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { query(any<ListEmailFoldersForEmailAddressIdQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

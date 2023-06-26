@@ -152,7 +152,6 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     @Test
     fun `updateEmailAddressMetadata() should return results when no error present`() = runBlocking<Unit> {
-
         mutationHolder.callback shouldBe null
 
         val input = UpdateEmailAddressMetadataRequest(
@@ -177,7 +176,6 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     @Test
     fun `updateEmailAddressMetadata() should throw when response is null`() = runBlocking<Unit> {
-
         mutationHolder.callback shouldBe null
 
         val nullResponse by before {
@@ -207,7 +205,6 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     @Test
     fun `updateEmailAddressMetadata() should throw when unsealing fails`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { mutate(any<UpdateEmailAddressMetadataMutation>()) } doThrow Unsealer.UnsealerException.UnsupportedAlgorithmException(
                 "Mock Unsealer Exception"
@@ -234,7 +231,6 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     @Test
     fun `updateEmailAddressMetadata() should throw when http error occurs`() = runBlocking<Unit> {
-
         mutationHolder.callback shouldBe null
 
         val input = UpdateEmailAddressMetadataRequest(
@@ -273,7 +269,6 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     @Test
     fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() = runBlocking<Unit> {
-
         mutationHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -300,7 +295,6 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     @Test
     fun `updateEmailAddressMetadata() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockDeviceKeyManager.stub {
             on { getCurrentSymmetricKeyId() } doThrow CancellationException("mock")
         }

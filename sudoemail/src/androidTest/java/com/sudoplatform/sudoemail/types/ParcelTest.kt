@@ -23,7 +23,6 @@ class ParcelTest {
 
     @Test
     fun parcellableClassesCanBeParcelledAndUnparcelled() {
-
         val rfc822Address = "example@sudoplatform.com"
         val emailAddress = EmailMessageTransformer.toEmailAddress(rfc822Address)
             ?: throw AssertionError("Parsing should not fail")
@@ -70,7 +69,7 @@ class ParcelTest {
             createdAt = Date(42L),
             updatedAt = Date(43L),
             size = 0.0,
-            hasAttachments = false,
+            hasAttachments = false
         )
 
         val bundle = Bundle()

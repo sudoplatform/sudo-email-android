@@ -129,7 +129,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                     1.0,
                                     "example@sudoplatform.com",
                                     0.0,
-                                    null,
+                                    null
                                 )
                             )
                         )
@@ -216,7 +216,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should return results when no error present`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
@@ -277,7 +276,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should return results when populating nextToken`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithNextToken by before {
@@ -305,7 +303,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                         1.0,
                                         "example@sudoplatform.com",
                                         0.0,
-                                        null,
+                                        null
                                     )
                                 )
                             )
@@ -371,7 +369,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should return empty list output when query result data is empty`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -420,7 +417,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should return empty list output when query response is null`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val nullQueryResponse by before {
@@ -461,7 +457,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should return partial results when unsealing fails`() = runBlocking<Unit> {
-
         mockKeyManager.stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("KeyManagerException")
         }
@@ -499,10 +494,10 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                                     "algorithm",
                                                     "keyId",
                                                     "string",
-                                                    "alias",
+                                                    "alias"
                                                 )
                                             )
-                                        ),
+                                        )
                                     )
                                 )
                             )
@@ -578,7 +573,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should throw when unsealing fails`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { query(any<ListEmailAddressesQuery>()) } doThrow
                 Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
@@ -599,7 +593,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should throw when http error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
@@ -639,7 +632,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -667,7 +659,6 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
 
     @Test
     fun `listEmailAddresses() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { query(any<ListEmailAddressesQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

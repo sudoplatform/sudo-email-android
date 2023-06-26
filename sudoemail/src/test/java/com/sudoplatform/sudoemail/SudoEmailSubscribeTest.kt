@@ -93,7 +93,6 @@ class SudoEmailSubscribeTest : BaseTests() {
 
     @Test
     fun `subscribeToEmailMessages() should throw when not authenticated`() = runBlocking<Unit> {
-
         mockUserClient.stub {
             on { getSubject() } doReturn null
         }
@@ -105,7 +104,7 @@ class SudoEmailSubscribeTest : BaseTests() {
         shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
             client.subscribeToEmailMessages(
                 "id",
-                onEmailMessageChanged = {},
+                onEmailMessageChanged = {}
             )
         }
 

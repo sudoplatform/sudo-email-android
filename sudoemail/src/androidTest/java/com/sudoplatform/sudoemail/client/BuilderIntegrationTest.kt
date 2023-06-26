@@ -35,7 +35,6 @@ class BuilderIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun shouldThrowIfRequiredItemsNotProvidedToBuilder() {
-
         // All required items not provided
         shouldThrow<NullPointerException> {
             SudoEmailClient.builder().build()

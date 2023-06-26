@@ -17,5 +17,5 @@ package com.sudoplatform.sudoemail.types.inputs
  */
 data class CheckEmailAddressAvailabilityInput(
     val localParts: List<String>,
-    val domains: List<String>?,
+    val domains: List<String>?
 )

@@ -21,7 +21,6 @@ class Rfc822MessageTest {
 
     @Test
     fun parserShouldBeAbleToParseMessageFromFactory() {
-
         val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
             from = "Foo Bar <foo@bar.com>",
             to = "Ted Bear <ted.bear@toys.org>",

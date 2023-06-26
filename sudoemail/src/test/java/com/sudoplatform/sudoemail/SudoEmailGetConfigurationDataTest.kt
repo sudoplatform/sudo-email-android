@@ -137,7 +137,6 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     @Test
     fun `getConfigurationData() should return results when no error present`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val deferredResult = async(Dispatchers.IO) {
@@ -164,7 +163,6 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     @Test
     fun `getConfigurationData() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -186,7 +184,6 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     @Test
     fun `getConfigurationData() should throw when no config data is returned`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val noDataResponse by before {
@@ -212,7 +209,6 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     @Test
     fun `getConfigurationData() should throw when query response contains errors`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val testError = com.apollographql.apollo.api.Error(

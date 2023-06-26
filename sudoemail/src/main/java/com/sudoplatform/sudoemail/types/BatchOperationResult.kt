@@ -18,7 +18,7 @@ sealed class BatchOperationResult<out T> {
     data class PartialResult<T>(
         val status: BatchOperationStatus = BatchOperationStatus.PARTIAL,
         val successValues: List<T>,
-        val failureValues: List<T>,
+        val failureValues: List<T>
     ) : BatchOperationResult<T>()
 }
 

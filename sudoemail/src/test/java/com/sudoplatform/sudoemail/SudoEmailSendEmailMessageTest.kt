@@ -153,7 +153,6 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should return results when no error present`() = runBlocking {
-
         holder.callback shouldBe null
 
         val input = SendEmailMessageInput(
@@ -180,7 +179,6 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should throw when email mutation response is null`() = runBlocking {
-
         holder.callback shouldBe null
 
         val nullProvisionResponse by before {
@@ -223,7 +221,6 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     }
 
     private inline fun <reified T : Exception> testException(apolloError: String) = runBlocking<Unit> {
-
         holder.callback = null
 
         val errorSendResponse by before {
@@ -257,7 +254,6 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockS3Client.stub {
             onBlocking { upload(any(), anyString(), anyOrNull()) } doThrow CancellationException("mock")
         }

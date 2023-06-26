@@ -32,5 +32,5 @@ data class ListEmailMessagesForEmailAddressIdInput(
     val limit: Int? = SudoEmailClient.DEFAULT_EMAIL_MESSAGE_LIMIT,
     val nextToken: String? = null,
     val dateRange: DateRange? = null,
-    val sortOrder: SortOrder = SortOrder.DESC,
+    val sortOrder: SortOrder = SortOrder.DESC
 )

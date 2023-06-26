@@ -138,7 +138,6 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
 
     @Test
     fun `getSupportedEmailDomains() should return results when no error present`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val deferredResult = async(Dispatchers.IO) {
@@ -161,7 +160,6 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
 
     @Test
     fun `getSupportedEmailDomains() should return empty list output when query result data is empty`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -196,7 +194,6 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
 
     @Test
     fun `getSupportedEmailDomains() should return empty list output when query response is null`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val responseWithNullData by before {
@@ -224,7 +221,6 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
 
     @Test
     fun `getSupportedEmailDomains() should throw when response has error`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -257,7 +253,6 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
 
     @Test
     fun `getSupportedEmailDomains() should throw when http error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         val deferredResult = async(Dispatchers.IO) {
@@ -291,7 +286,6 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
 
     @Test
     fun `getSupportedEmailDomains() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         queryHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -313,7 +307,6 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
 
     @Test
     fun `getSupportedEmailDomains() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-
         mockAppSyncClient.stub {
             on { query(any<GetEmailDomainsQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

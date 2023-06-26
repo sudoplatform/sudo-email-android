@@ -104,7 +104,7 @@ internal object EmailMessageTransformer {
             sortDate = sealedEmailMessage.sortDateEpochMs().toDate(),
             createdAt = sealedEmailMessage.createdAtEpochMs().toDate(),
             updatedAt = sealedEmailMessage.updatedAtEpochMs().toDate(),
-            size = sealedEmailMessage.size(),
+            size = sealedEmailMessage.size()
         )
     }
 

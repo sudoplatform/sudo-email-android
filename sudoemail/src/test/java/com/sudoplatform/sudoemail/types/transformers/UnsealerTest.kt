@@ -83,7 +83,6 @@ class UnsealerTest : BaseTests() {
     }
 
     private fun seal(value: String): String {
-
         val encryptedSymmetricKeyBytes = keyManager.encryptWithPublicKey(
             publicKeyId,
             keyManager.getSymmetricKeyData(symmetricKeyId),
@@ -124,7 +123,6 @@ class UnsealerTest : BaseTests() {
 
     @Test
     fun `unseal string`() {
-
         val clearData = "The owl and the pussycat went to sea in a beautiful pea green boat."
         val sealedData = seal(clearData)
         unsealer.unseal(sealedData) shouldBe clearData
@@ -132,7 +130,6 @@ class UnsealerTest : BaseTests() {
 
     @Test
     fun `unseal should throw if data too short`() {
-
         val shortData = String(Base64.encode("hello".toByteArray()), Charsets.UTF_8)
         shouldThrow<Unsealer.UnsealerException.SealedDataTooShortException> {
             unsealer.unseal(shortData)
@@ -141,7 +138,6 @@ class UnsealerTest : BaseTests() {
 
     @Test
     fun `unseal EmailAddressWithoutFolders Alias should throw for unsupported algorithm`() {
-
         val sealedAlias = EmailAddressWithoutFolders.Alias(
             "Alias",
             EmailAddressWithoutFolders.Alias.Fragments(
@@ -162,7 +158,6 @@ class UnsealerTest : BaseTests() {
 
     @Test
     fun `unseal EmailAddressWithoutFolders Alias`() {
-
         val sealedAlias = EmailAddressWithoutFolders.Alias(
             "Alias",
             EmailAddressWithoutFolders.Alias.Fragments(

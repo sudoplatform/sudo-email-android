@@ -69,7 +69,7 @@ data class EmailMessage(
     val subject: String? = null,
     val sentAt: Date? = null,
     val receivedAt: Date? = null,
-    val hasAttachments: Boolean,
+    val hasAttachments: Boolean
 ) : Parcelable {
 
     /**
@@ -134,7 +134,7 @@ data class PartialEmailMessage(
     val sortDate: Date,
     val createdAt: Date,
     val updatedAt: Date,
-    val size: Double,
+    val size: Double
 ) : Parcelable {
 
     /**
@@ -168,8 +168,10 @@ data class PartialEmailMessage(
 enum class Direction {
     /** Message is inbound to the user - message has been received by the user. */
     INBOUND,
+
     /** Message is outbound to the user - message has been sent by the user. */
     OUTBOUND,
+
     /** API Evolution - if this occurs, it may mean you need to update the library. */
     UNKNOWN
 }
@@ -183,16 +185,22 @@ enum class Direction {
 enum class State {
     /** Outbound message is queued to be sent. */
     QUEUED,
+
     /** Outbound message has been sent. */
     SENT,
+
     /** Outbound message has been acknowledged as delivered upstream. */
     DELIVERED,
+
     /** Outbound message has been acknowledged as undelivered upstream. */
     UNDELIVERED,
+
     /** Outbound message has been acknowledged as failed upstream. */
     FAILED,
+
     /** Inbound message has been received. */
     RECEIVED,
+
     /** API Evolution - if this occurs, it may mean you need to update the library. */
     UNKNOWN
 }

@@ -223,7 +223,7 @@ abstract class BaseIntegrationTest {
             "c" to "12",
             "d" to "13",
             "e" to "14",
-            "f" to "15",
+            "f" to "15"
         )
         val pref = if (safePrefix.endsWith("-")) safePrefix else "$safePrefix-"
         val uuid = UUID.randomUUID().toString().map { it.toString() }

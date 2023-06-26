@@ -77,7 +77,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
                     1.0,
                     "example@sudoplatform.com",
                     0.0,
-                    null,
+                    null
                 )
             )
         )
@@ -159,7 +159,6 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should return results when no error present`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val deferredResult = async(Dispatchers.IO) {
@@ -193,7 +192,6 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should throw when mutation response is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val nullResponse by before {
@@ -220,7 +218,6 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should throw when response has an email address not found error`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val errorDeprovisionResponse by before {
@@ -253,7 +250,6 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should throw when response has an unauthorized address error`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val errorDeprovisionResponse by before {
@@ -286,7 +282,6 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should throw when http error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val deferredResult = async(Dispatchers.IO) {
@@ -320,7 +315,6 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -342,7 +336,6 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should not suppress CancellationException`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {

@@ -95,7 +95,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
                         "plainText",
                         mockSeal(unsealedHeaderDetailsString)
                     ),
-                    1.0,
+                    1.0
                 )
             )
         )
@@ -179,7 +179,6 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should return results when no error present`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
@@ -208,7 +207,6 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should return null result when query result data is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val responseWithNullResult by before {
@@ -239,7 +237,6 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should return null result when query response is null`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val nullResponse by before {
@@ -270,7 +267,6 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should throw when http error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
@@ -309,7 +305,6 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should throw when unknown error occurs`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -336,7 +331,6 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should not suppress CancellationException`() = runBlocking<Unit> {
-
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {

@@ -89,7 +89,6 @@ class DeviceKeyManagerRoboTest : BaseTests() {
 
     @Test
     fun shouldBeAbleToPerformOperationsAfterSignIn() = runBlocking {
-
         deviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
 
         val keyPair = deviceKeyManager.generateKeyPair()

@@ -93,7 +93,6 @@ interface SudoEmailClient : AutoCloseable {
             logger: Logger,
             configManager: SudoConfigManager = DefaultSudoConfigManager(context, logger)
         ): S3Configuration {
-
             val preamble = "sudoplatformconfig.json does not contain"
             val postamble = "the $CONFIG_EMAIL_SERVICE stanza"
 
@@ -217,7 +216,7 @@ interface SudoEmailClient : AutoCloseable {
 
             val sealingService = DefaultSealingService(
                 deviceKeyManager = deviceKeyManager,
-                logger = logger,
+                logger = logger
             )
 
             val (region, emailBucket, transientBucket) = readConfiguration(context!!, logger)
@@ -739,7 +738,7 @@ interface SudoEmailClient : AutoCloseable {
 suspend fun SudoEmailClient.subscribeToEmailMessages(
     id: String,
     onConnectionChange: (status: Subscriber.ConnectionState) -> Unit = {},
-    onEmailMessageChanged: (emailMessage: EmailMessage) -> Unit,
+    onEmailMessageChanged: (emailMessage: EmailMessage) -> Unit
 ) =
     subscribeToEmailMessages(
         id,

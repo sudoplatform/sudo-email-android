@@ -109,7 +109,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                             "example@sudoplatform.com",
                             0.0,
                             null
-                        ),
+                        )
                     )
                 )
             )
@@ -256,7 +256,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                 upload(
                     any(),
                     any(),
-                    anyOrNull(),
+                    anyOrNull()
                 )
             } doThrow error
         }
@@ -299,7 +299,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             },
             check {
                 it shouldNotBe null
-            },
+            }
         )
     }
 
@@ -337,7 +337,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             },
             check {
                 it shouldNotBe null
-            },
+            }
         )
     }
 }
