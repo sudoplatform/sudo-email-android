@@ -14,10 +14,10 @@ android {
     namespace "com.sudoplatform.sudoemail"
 
     defaultConfig {
-        minSdkVersion 24
+        minSdkVersion 26
         targetSdkVersion 31
         versionCode = 1
-        versionName = "3.0.0"
+        versionName = "5.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -94,11 +94,11 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
 
     // Sudo Platform
-    implementation "com.sudoplatform:sudokeymanager:5.2.1"
-    implementation "com.sudoplatform:sudologging:2.1.0"
-    implementation "com.sudoplatform:sudoconfigmanager:5.0.0"
-    implementation 'com.sudoplatform:sudouser:16.0.0'
-    implementation 'com.sudoplatform:sudoapiclient:7.0.0'
+    implementation "com.sudoplatform:sudokeymanager:6.0.0"
+    implementation "com.sudoplatform:sudologging:3.0.0"
+    implementation "com.sudoplatform:sudoconfigmanager:6.0.0"
+    implementation 'com.sudoplatform:sudouser:17.0.0'
+    implementation 'com.sudoplatform:sudoapiclient:8.0.0'
 
     // Testing
     testImplementation "junit:junit:4.13.2"
@@ -125,9 +125,9 @@ dependencies {
     }
     androidTestImplementation files('libs/jakarta.activation-2.0.0-RC3-ali1.jar')
 
-    androidTestImplementation 'com.sudoplatform:sudoentitlements:7.0.0'
-    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:5.0.0'
-    androidTestImplementation 'com.sudoplatform:sudoprofiles:12.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoentitlements:8.0.1'
+    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:6.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoprofiles:13.0.1'
 }
 
 // Returns a list of `configurations` which should not be scanned for vulnerabilities
@@ -161,6 +161,15 @@ afterEvaluate {
             urlBase = "https://anonyome-nist-cve-mirror.s3.amazonaws.com/nvdcve-1.1-%d.json.gz"
             startYear = 2002
             waitTime = 0
+        }
+
+        analyzers {
+            assemblyEnabled = false
+            ossIndex {
+                username = "${ossIndexUsername}"
+                password = "${ossIndexPassword}"
+                warnOnlyOnRemoteErrors = true
+            }
         }
     }
 }

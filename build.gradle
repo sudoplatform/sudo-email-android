@@ -1,6 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.8.20'
-    ext.aws_version = '2.70.0'
+    ext.aws_version = '2.72.0'
     ext.appsync_version = '3.4.0'
     ext.dokka_version = '1.8.10'
 
@@ -45,6 +45,18 @@ else {
     ext["internalReleaseRepoUrl"] = ""
     ext["internalReleaseRepoName"] = ""
     ext["sonatypeStagingProfileId"] = ""
+}
+
+if (project.hasProperty("ossIndexUsername")) {
+    ext["ossIndexUsername"] = "$ossIndexUsername"
+} else {
+    ext["ossIndexUsername"] = ""
+}
+
+if (project.hasProperty("ossIndexPassword")) {
+    ext["ossIndexPassword"] = "$ossIndexPassword"
+} else {
+    ext["ossIndexPassword"] = ""
 }
 
 if (project.findProperty("tag") && sonatypeStagingProfileId) {
