@@ -52,23 +52,23 @@ internal class SubscriptionService(
         deleteSubscriptionManager.replaceSubscriber(id, subscriber)
 
         scope.launch {
-            if (createSubscriptionManager.watcher == null) {
+            if (createSubscriptionManager.watcher == null && createSubscriptionManager.pendingWatcher == null) {
                 val watcher = appSyncClient.subscribe(
                     OnEmailMessageCreatedSubscription.builder()
                         .owner(userSubject)
                         .build()
                 )
-                createSubscriptionManager.watcher = watcher
+                createSubscriptionManager.pendingWatcher = watcher
                 watcher.execute(createCallback)
             }
 
-            if (deleteSubscriptionManager.watcher == null) {
+            if (deleteSubscriptionManager.watcher == null && deleteSubscriptionManager.pendingWatcher == null) {
                 val watcher = appSyncClient.subscribe(
                     OnEmailMessageDeletedSubscription.builder()
                         .owner(userSubject)
                         .build()
                 )
-                deleteSubscriptionManager.watcher = watcher
+                deleteSubscriptionManager.pendingWatcher = watcher
                 watcher.execute(deleteCallback)
             }
         }.join()
@@ -89,7 +89,7 @@ internal class SubscriptionService(
         scope.cancel()
     }
 
-    private val createCallback = object : AppSyncSubscriptionCall.Callback<OnEmailMessageCreatedSubscription.Data> {
+    private val createCallback = object : AppSyncSubscriptionCall.StartedCallback<OnEmailMessageCreatedSubscription.Data> {
         override fun onFailure(e: ApolloException) {
             logger.error("EmailMessage created subscription error $e")
             createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
@@ -108,9 +108,17 @@ internal class SubscriptionService(
         override fun onCompleted() {
             createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
         }
+
+        override fun onStarted() {
+            createSubscriptionManager
+                .watcher = createSubscriptionManager.pendingWatcher
+            createSubscriptionManager.connectionStatusChanged(
+                Subscriber.ConnectionState.CONNECTED
+            )
+        }
     }
 
-    private val deleteCallback = object : AppSyncSubscriptionCall.Callback<OnEmailMessageDeletedSubscription.Data> {
+    private val deleteCallback = object : AppSyncSubscriptionCall.StartedCallback<OnEmailMessageDeletedSubscription.Data> {
         override fun onFailure(e: ApolloException) {
             logger.error("EmailMessage delete subscription error $e")
             deleteSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
@@ -127,7 +135,15 @@ internal class SubscriptionService(
         }
 
         override fun onCompleted() {
-            createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
+            deleteSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
+        }
+
+        override fun onStarted() {
+            deleteSubscriptionManager
+                .watcher = deleteSubscriptionManager.pendingWatcher
+            deleteSubscriptionManager.connectionStatusChanged(
+                Subscriber.ConnectionState.CONNECTED
+            )
         }
     }
 }
