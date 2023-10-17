@@ -148,6 +148,7 @@ internal class DefaultSudoEmailClient(
         private const val UNSEAL_EMAIL_ADDRESS_ERROR_MSG = "Unable to unseal email address data"
         private const val UNSEAL_EMAIL_MSG_ERROR_MSG = "Unable to unseal email message data"
         private const val KEY_GENERATION_ERROR_MSG = "Failed to generate a public key pair"
+        private const val KEY_ARCHIVE_ERROR_MSG = "Unable to perform key archive operation"
         private const val NO_EMAIL_ERROR_MSG = "No email address returned"
         private const val INVALID_KEYRING_MSG = "Invalid key ring identifier"
         private const val INVALID_EMAIL_ADDRESS_MSG = "Invalid email address"
@@ -537,6 +538,19 @@ internal class DefaultSudoEmailClient(
             successValues = if (successIds.isEmpty()) emptyList() else successIds.toList(),
             failureValues = if (failureIds.isEmpty()) emptyList() else failureIds.toList()
         )
+    }
+
+    @Throws(SudoEmailClient.EmailCryptographicKeysException::class)
+    override suspend fun importKeys(archiveData: ByteArray) {
+        if (archiveData.isEmpty()) {
+            throw SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException(INVALID_ARGUMENT_ERROR_MSG)
+        }
+        try {
+            deviceKeyManager.importKeys(archiveData)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            throw interpretEmailMessageException(e)
+        }
     }
 
     @Throws(SudoEmailClient.EmailAddressException::class)
@@ -979,6 +993,16 @@ internal class DefaultSudoEmailClient(
         }
     }
 
+    @Throws(SudoEmailClient.EmailCryptographicKeysException::class)
+    override suspend fun exportKeys(): ByteArray {
+        try {
+            return deviceKeyManager.exportKeys()
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            throw interpretEmailMessageException(e)
+        }
+    }
+
     override suspend fun subscribeToEmailMessages(id: String, subscriber: EmailMessageSubscriber) {
         subscriptions.subscribeEmailMessages(id, subscriber)
     }
@@ -1158,6 +1182,8 @@ internal class DefaultSudoEmailClient(
             is SudoEmailClient.EmailMessageException -> e
             is Unsealer.UnsealerException ->
                 SudoEmailClient.EmailMessageException.UnsealingException(UNSEAL_EMAIL_MSG_ERROR_MSG, e)
+            is DeviceKeyManager.DeviceKeyManagerException ->
+                SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException(KEY_ARCHIVE_ERROR_MSG, e)
             is AmazonS3Exception -> {
                 if (e.errorCode == S3_NOT_FOUND_ERROR_CODE) {
                     SudoEmailClient.EmailMessageException.EmailMessageNotFoundException()

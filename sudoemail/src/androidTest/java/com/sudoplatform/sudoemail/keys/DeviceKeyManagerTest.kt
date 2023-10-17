@@ -209,9 +209,28 @@ class DeviceKeyManagerTest {
         keyManager.deleteSymmetricKey("symmetricKey")
         keyManager.generateSymmetricKey("symmetricKey")
         val symmetricKey = keyManager.getSymmetricKeyData("symmetricKey")
-        secretData = keyManager.encryptWithSymmetricKey("symmetricKey", clearData)
+        val symmetricSecretData = keyManager.encryptWithSymmetricKey("symmetricKey", clearData)
 
-        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData)
+        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, symmetricSecretData)
+        decryptedData shouldBe clearData
+
+        // exportKeys and importKeys
+        val exportedKeys = deviceKeyManager.exportKeys()
+        exportedKeys shouldNotBe null
+        deviceKeyManager.removeAllKeys()
+        shouldThrow<com.sudoplatform.sudokeymanager.KeyNotFoundException> {
+            keyManager.encryptWithPublicKey(
+                newKeyPair.keyId,
+                clearData,
+                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            )
+        }
+        deviceKeyManager.importKeys(exportedKeys)
+        decryptedData = deviceKeyManager.decryptWithPrivateKey(
+            secretData,
+            newKeyPair.keyId,
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+        )
         decryptedData shouldBe clearData
     }
 }

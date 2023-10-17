@@ -94,11 +94,11 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
 
     // Sudo Platform
-    implementation "com.sudoplatform:sudokeymanager:6.0.0"
+    implementation "com.sudoplatform:sudokeymanager:6.2.0"
     implementation "com.sudoplatform:sudologging:3.0.0"
     implementation "com.sudoplatform:sudoconfigmanager:6.0.0"
-    implementation 'com.sudoplatform:sudouser:17.0.2'
-    implementation 'com.sudoplatform:sudoapiclient:8.0.0'
+    implementation 'com.sudoplatform:sudouser:17.2.0'
+    implementation 'com.sudoplatform:sudoapiclient:8.1.0'
 
     // Testing
     testImplementation "junit:junit:4.13.2"

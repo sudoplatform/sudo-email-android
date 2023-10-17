@@ -356,6 +356,17 @@ interface SudoEmailClient : AutoCloseable {
     }
 
     /**
+     * Defines the exceptions for the email cryptographic keys based methods.
+     *
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
+     */
+    sealed class EmailCryptographicKeysException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+        class SecureKeyArchiveException(message: String? = null, cause: Throwable? = null) :
+            EmailCryptographicKeysException(message = message, cause = cause)
+    }
+
+    /**
      * Provision an [EmailAddress].
      *
      * @param input [ProvisionEmailAddressInput] Parameters used to provision an email address.
@@ -499,6 +510,16 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailAddressException::class, EmailMessageException::class)
     suspend fun deleteDraftEmailMessages(input: DeleteDraftEmailMessagesInput): BatchOperationResult<String>
+
+    /**
+     * Import cryptographic keys from a key archive.
+     *
+     * @param archiveData [Data] Key archive data to import the keys from.
+     *
+     * @throws [EmailCryptographicKeysException]
+     */
+    @Throws(EmailCryptographicKeysException::class)
+    suspend fun importKeys(archiveData: ByteArray)
 
     /**
      * Get a list of the supported email domains.
@@ -697,6 +718,16 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailConfigurationException::class)
     suspend fun getConfigurationData(): ConfigurationData
+
+    /**
+     * Export the cryptographic keys to a key archive.
+     *
+     * @returns Key archive data.
+     *
+     * @throws [EmailCryptographicKeysException]
+     */
+    @Throws(EmailCryptographicKeysException::class)
+    suspend fun exportKeys(): ByteArray
 
     /**
      * Subscribes to be notified of new and deleted [EmailMessage]s. Subscribing multiple

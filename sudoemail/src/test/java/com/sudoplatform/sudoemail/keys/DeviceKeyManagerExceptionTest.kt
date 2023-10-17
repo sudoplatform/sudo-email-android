@@ -13,6 +13,7 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldThrow
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
@@ -181,6 +182,28 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException> {
             deviceKeyManager.getKeyRingId()
+        }
+    }
+
+    @Test
+    fun exportKeysShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { exportKeys() } doThrow RuntimeException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException> {
+            deviceKeyManager.exportKeys()
+        }
+    }
+
+    @Test
+    fun importKeysShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { addPassword(any(), anyString(), anyBoolean()) } doThrow RuntimeException("mock")
+            on { addSymmetricKey(any(), anyString(), anyBoolean()) } doThrow RuntimeException("mock")
+        }
+        val dummyKeyArchive = "dummy key archive".toByteArray()
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException> {
+            deviceKeyManager.importKeys(dummyKeyArchive)
         }
     }
 }
