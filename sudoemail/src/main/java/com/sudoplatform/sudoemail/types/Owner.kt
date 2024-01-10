@@ -18,5 +18,5 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class Owner(
     val id: String,
-    val issuer: String
+    val issuer: String,
 ) : Parcelable

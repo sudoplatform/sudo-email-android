@@ -55,7 +55,7 @@ class SudoEmailSubscribeTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -66,7 +66,7 @@ class SudoEmailSubscribeTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -82,7 +82,7 @@ class SudoEmailSubscribeTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -104,7 +104,7 @@ class SudoEmailSubscribeTest : BaseTests() {
         shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
             client.subscribeToEmailMessages(
                 "id",
-                onEmailMessageChanged = {}
+                onEmailMessageChanged = {},
             )
         }
 

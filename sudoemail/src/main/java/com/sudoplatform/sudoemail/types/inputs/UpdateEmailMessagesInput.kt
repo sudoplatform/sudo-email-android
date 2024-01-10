@@ -16,7 +16,7 @@ package com.sudoplatform.sudoemail.types.inputs
  */
 data class UpdateEmailMessagesInput(
     val ids: List<String>,
-    val values: UpdatableValues
+    val values: UpdatableValues,
 ) {
     /**
      * Email message values that can be updated. If null is passed into these parameters then
@@ -27,6 +27,6 @@ data class UpdateEmailMessagesInput(
      */
     data class UpdatableValues(
         val folderId: String? = null,
-        val seen: Boolean? = null
+        val seen: Boolean? = null,
     )
 }

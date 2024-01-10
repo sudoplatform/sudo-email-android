@@ -87,7 +87,7 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
 
         val input = ListEmailFoldersForEmailAddressIdInput(
             emailAddress.id,
-            limit = 1
+            limit = 1,
         )
         val listEmailFolders = emailClient.listEmailFoldersForEmailAddressId(input)
         listEmailFolders.items.size shouldBe 1

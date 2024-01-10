@@ -16,5 +16,5 @@ import java.util.Date
  */
 data class DateRange(
     val startDate: Date,
-    val endDate: Date
+    val endDate: Date,
 )

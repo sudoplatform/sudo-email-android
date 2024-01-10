@@ -37,7 +37,7 @@ data class EmailAddress(
     val updatedAt: Date,
     val lastReceivedAt: Date? = null,
     val alias: String? = null,
-    val folders: List<EmailFolder>
+    val folders: List<EmailFolder>,
 ) : Parcelable
 
 /**
@@ -66,5 +66,5 @@ data class PartialEmailAddress(
     val createdAt: Date,
     val updatedAt: Date,
     val lastReceivedAt: Date? = null,
-    val folders: List<EmailFolder>
+    val folders: List<EmailFolder>,
 ) : Parcelable

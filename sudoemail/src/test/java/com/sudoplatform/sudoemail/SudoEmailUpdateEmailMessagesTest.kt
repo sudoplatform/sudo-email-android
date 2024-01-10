@@ -26,8 +26,6 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -49,6 +47,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as UpdateEmailMessagesRequest
 
 /**
@@ -65,7 +65,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 EmailMessageUpdateValuesInput.builder()
                     .folderId("folderId2")
                     .seen(true)
-                    .build()
+                    .build(),
             )
             .build()
     }
@@ -78,9 +78,9 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                     "typename",
                     UpdateEmailMessagesStatus.SUCCESS,
                     null,
-                    null
-                )
-            )
+                    null,
+                ),
+            ),
         )
     }
 
@@ -115,7 +115,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -126,7 +126,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -142,7 +142,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -162,7 +162,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             client.updateEmailMessages(input)
@@ -189,13 +189,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             .mutate<
                 UpdateEmailMessagesMutation.Data,
                 UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables
+                UpdateEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
                     it.variables().input().values().folderId() shouldBe "folderId2"
                     it.variables().input().values().seen() shouldBe true
-                }
+                },
             )
     }
 
@@ -209,9 +209,9 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                         "typename",
                         UpdateEmailMessagesStatus.FAILED,
                         null,
-                        null
-                    )
-                )
+                        null,
+                    ),
+                ),
             )
         }
 
@@ -225,7 +225,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             client.updateEmailMessages(input)
@@ -252,13 +252,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             .mutate<
                 UpdateEmailMessagesMutation.Data,
                 UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables
+                UpdateEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
                     it.variables().input().values().folderId() shouldBe "folderId2"
                     it.variables().input().values().seen() shouldBe true
-                }
+                },
             )
     }
 
@@ -272,9 +272,9 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                         "typename",
                         UpdateEmailMessagesStatus.PARTIAL,
                         listOf("id2"),
-                        listOf("id1")
-                    )
-                )
+                        listOf("id1"),
+                    ),
+                ),
             )
         }
 
@@ -288,7 +288,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             client.updateEmailMessages(input)
@@ -317,13 +317,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             .mutate<
                 UpdateEmailMessagesMutation.Data,
                 UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables
+                UpdateEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
                     it.variables().input().values().folderId() shouldBe "folderId2"
                     it.variables().input().values().seen() shouldBe true
-                }
+                },
             )
     }
 
@@ -339,7 +339,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -358,13 +358,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             .mutate<
                 UpdateEmailMessagesMutation.Data,
                 UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables
+                UpdateEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
                     it.variables().input().values().folderId() shouldBe "folderId2"
                     it.variables().input().values().seen() shouldBe true
-                }
+                },
             )
     }
 
@@ -376,7 +376,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "blah")
+                mapOf("errorType" to "blah"),
             )
             Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
                 .errors(listOf(error))
@@ -385,7 +385,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -404,13 +404,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             .mutate<
                 UpdateEmailMessagesMutation.Data,
                 UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables
+                UpdateEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
                     it.variables().input().values().folderId() shouldBe "folderId2"
                     it.variables().input().values().seen() shouldBe true
-                }
+                },
             )
     }
 
@@ -420,7 +420,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -452,13 +452,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             .mutate<
                 UpdateEmailMessagesMutation.Data,
                 UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables
+                UpdateEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
                     it.variables().input().values().folderId() shouldBe "folderId2"
                     it.variables().input().values().seen() shouldBe true
-                }
+                },
             )
     }
 
@@ -472,7 +472,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
@@ -488,13 +488,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             .mutate<
                 UpdateEmailMessagesMutation.Data,
                 UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables
+                UpdateEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
                     it.variables().input().values().folderId() shouldBe "folderId2"
                     it.variables().input().values().seen() shouldBe true
-                }
+                },
             )
     }
 
@@ -506,7 +506,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true)
+            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<CancellationException> {

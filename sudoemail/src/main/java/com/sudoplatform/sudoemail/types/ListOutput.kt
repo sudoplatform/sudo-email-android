@@ -16,5 +16,5 @@ package com.sudoplatform.sudoemail.types
  */
 data class ListOutput<T> (
     val items: List<T>,
-    val nextToken: String?
+    val nextToken: String?,
 )

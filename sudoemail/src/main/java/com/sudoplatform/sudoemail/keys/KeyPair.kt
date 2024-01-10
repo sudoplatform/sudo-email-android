@@ -18,7 +18,7 @@ internal data class KeyPair(
     val keyId: String,
     val keyRingId: String,
     val publicKey: ByteArray,
-    val privateKey: ByteArray
+    val privateKey: ByteArray,
 ) {
     override fun toString(): String {
         val clz = this@KeyPair.javaClass.simpleName

@@ -35,7 +35,7 @@ class SealingServiceTest : BaseTests() {
     private val sealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -55,7 +55,7 @@ class SealingServiceTest : BaseTests() {
             on {
                 encryptWithSymmetricKeyId(
                     anyString(),
-                    any()
+                    any(),
                 )
             } doThrow DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Bad")
         }

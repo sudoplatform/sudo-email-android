@@ -79,10 +79,10 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                         "folderName",
                         1.0,
                         1.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -108,11 +108,11 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                             1.0,
                             "example@sudoplatform.com",
                             0.0,
-                            null
-                        )
-                    )
-                )
-            )
+                            null,
+                        ),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -165,7 +165,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                 upload(
                     any(),
                     any(),
-                    anyOrNull()
+                    anyOrNull(),
                 )
             } doReturn mockUploadResponse
         }
@@ -189,7 +189,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -210,7 +210,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         val error = com.apollographql.apollo.api.Error(
             "mock",
             emptyList(),
-            mapOf("errorType" to "AddressNotFound")
+            mapOf("errorType" to "AddressNotFound"),
         )
 
         val mockQuery by before {
@@ -226,7 +226,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
 
         val createDraftInput = CreateDraftEmailMessageInput(
             "rfc822data".toByteArray(),
-            "senderEmailAddressId"
+            "senderEmailAddressId",
         )
 
         val deferredResult = async(Dispatchers.IO) {
@@ -256,14 +256,14 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                 upload(
                     any(),
                     any(),
-                    anyOrNull()
+                    anyOrNull(),
                 )
             } doThrow error
         }
 
         val createDraftInput = CreateDraftEmailMessageInput(
             "rfc822data".toByteArray(),
-            "senderEmailAddressId"
+            "senderEmailAddressId",
         )
 
         val deferredResult = async(Dispatchers.IO) {
@@ -288,7 +288,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             },
             check {
                 it shouldBe "rfc822data".toByteArray()
-            }
+            },
         )
         verify(mockS3Client).upload(
             check {
@@ -299,7 +299,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             },
             check {
                 it shouldNotBe null
-            }
+            },
         )
     }
 
@@ -309,7 +309,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
 
         val createDraftInput = CreateDraftEmailMessageInput(
             "rfc822data".toByteArray(),
-            "senderEmailAddressId"
+            "senderEmailAddressId",
         )
 
         val deferredResult = async(Dispatchers.IO) {
@@ -337,7 +337,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             },
             check {
                 it shouldNotBe null
-            }
+            },
         )
     }
 }

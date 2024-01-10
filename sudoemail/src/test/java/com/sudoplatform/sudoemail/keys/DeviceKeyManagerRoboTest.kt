@@ -56,7 +56,7 @@ class DeviceKeyManagerRoboTest : BaseTests() {
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = keyManager,
-            logger = mockLogger
+            logger = mockLogger,
         )
     }
 
@@ -117,12 +117,12 @@ class DeviceKeyManagerRoboTest : BaseTests() {
         var secretData = keyManager.encryptWithPublicKey(
             newKeyPair.keyId,
             clearData,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         var decryptedData = deviceKeyManager.decryptWithPrivateKey(
             secretData,
             newKeyPair.keyId,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         decryptedData shouldBe clearData
 

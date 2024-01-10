@@ -25,13 +25,13 @@ import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.util.logging.Logger
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import timber.log.Timber
+import java.util.logging.Logger
 
 /**
  * Test the operation of [DefaultDeviceKeyManager] on Android.
@@ -75,7 +75,7 @@ class DeviceKeyManagerTest {
         DefaultDeviceKeyManager(
             userClient = userClient,
             keyRingServiceName = keyRingServiceName,
-            keyManager = keyManager
+            keyManager = keyManager,
         )
     }
 
@@ -128,7 +128,7 @@ class DeviceKeyManagerTest {
             privateKey = privateKey,
             publicKey = null,
             keyManager = keyManager,
-            keyId = keyId
+            keyId = keyId,
         )
 
         userClient.registerWithAuthenticationProvider(authProvider, "eml-client-test")
@@ -152,7 +152,7 @@ class DeviceKeyManagerTest {
             Entitlement("sudoplatform.email.emailAddressMaxPerSudo", "test", 3),
             Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
             Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
-            Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1)
+            Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
         )
         entitlementsAdminClient.applyEntitlementsToUser(externalId, entitlements)
         entitlementsClient.redeemEntitlements()
@@ -197,12 +197,12 @@ class DeviceKeyManagerTest {
         var secretData = keyManager.encryptWithPublicKey(
             newKeyPair.keyId,
             clearData,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         var decryptedData = deviceKeyManager.decryptWithPrivateKey(
             secretData,
             newKeyPair.keyId,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         decryptedData shouldBe clearData
 
@@ -222,14 +222,14 @@ class DeviceKeyManagerTest {
             keyManager.encryptWithPublicKey(
                 newKeyPair.keyId,
                 clearData,
-                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
             )
         }
         deviceKeyManager.importKeys(exportedKeys)
         decryptedData = deviceKeyManager.decryptWithPrivateKey(
             secretData,
             newKeyPair.keyId,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         decryptedData shouldBe clearData
     }

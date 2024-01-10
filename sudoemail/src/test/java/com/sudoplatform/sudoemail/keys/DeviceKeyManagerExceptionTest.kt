@@ -47,7 +47,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = mockKeyManager,
-            logger = mockLogger
+            logger = mockLogger,
         )
     }
 
@@ -121,7 +121,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             deviceKeyManager.decryptWithPrivateKey(
                 ByteArray(42),
                 "42",
-                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
             )
         }
     }
@@ -134,7 +134,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
             deviceKeyManager.decryptWithSymmetricKey(
                 ByteArray(42),
-                ByteArray(42)
+                ByteArray(42),
             )
         }
     }
@@ -147,7 +147,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
             deviceKeyManager.decryptWithSymmetricKeyId(
                 "42",
-                ByteArray(42)
+                ByteArray(42),
             )
         }
     }
@@ -160,7 +160,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
             deviceKeyManager.encryptWithSymmetricKeyId(
                 "42",
-                ByteArray(42)
+                ByteArray(42),
             )
         }
     }

@@ -27,7 +27,7 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 
 data class CreateDraftEmailMessageInput(
     val rfc822Data: ByteArray,
-    val senderEmailAddressId: String
+    val senderEmailAddressId: String,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -9,8 +9,6 @@ package com.sudoplatform.sudoemail.types.transformers
 import com.amazonaws.util.Base64
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress as EmailAddressFragment
-import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder as EmailFolderFragment
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.EmailAddress
@@ -19,6 +17,8 @@ import com.sudoplatform.sudoemail.types.Owner
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
+import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress as EmailAddressFragment
+import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder as EmailFolderFragment
 
 /**
  * Transformer responsible for transforming the [EmailAddress] GraphQL data
@@ -53,15 +53,15 @@ internal object EmailAddressTransformer {
      */
     fun toEntity(
         deviceKeyManager: DeviceKeyManager,
-        emailAddress: EmailAddressFragment
+        emailAddress: EmailAddressFragment,
     ): EmailAddress {
         val emailAddressWithoutFolders = emailAddress.fragments().emailAddressWithoutFolders()
             ?: throw SudoEmailClient.EmailAddressException.FailedException(
-                "unexpected null EmailAddress in EmailAddressWithoutFolders"
+                "unexpected null EmailAddress in EmailAddressWithoutFolders",
             )
         val emailAddressWithoutFoldersEntity = this.toEntity(
             deviceKeyManager,
-            emailAddressWithoutFolders = emailAddressWithoutFolders
+            emailAddressWithoutFolders = emailAddressWithoutFolders,
         )
         return EmailAddress(
             id = emailAddressWithoutFoldersEntity.id,
@@ -74,7 +74,7 @@ internal object EmailAddressTransformer {
             updatedAt = emailAddressWithoutFoldersEntity.updatedAt,
             lastReceivedAt = emailAddressWithoutFoldersEntity.lastReceivedAt,
             alias = emailAddressWithoutFoldersEntity.alias,
-            folders = emailAddress.folders().toFolders()
+            folders = emailAddress.folders().toFolders(),
         )
     }
 
@@ -87,7 +87,7 @@ internal object EmailAddressTransformer {
      */
     fun toEntity(
         deviceKeyManager: DeviceKeyManager,
-        emailAddressWithoutFolders: EmailAddressWithoutFolders
+        emailAddressWithoutFolders: EmailAddressWithoutFolders,
     ): EmailAddress {
         return EmailAddress(
             id = emailAddressWithoutFolders.id(),
@@ -105,7 +105,7 @@ internal object EmailAddressTransformer {
                 val aliasUnsealer = Unsealer(deviceKeyManager, symmetricKeyInfo)
                 aliasUnsealer.unseal(it)
             },
-            folders = emptyList()
+            folders = emptyList(),
         )
     }
 
@@ -116,10 +116,10 @@ internal object EmailAddressTransformer {
      * @return The [PartialEmailAddress] entity type.
      */
     fun toPartialEntity(
-        emailAddress: EmailAddressFragment
+        emailAddress: EmailAddressFragment,
     ): PartialEmailAddress {
         val partialEmailAddressWithoutFolders = this.toPartialEntity(
-            emailAddressWithoutFolders = emailAddress.fragments().emailAddressWithoutFolders()!!
+            emailAddressWithoutFolders = emailAddress.fragments().emailAddressWithoutFolders()!!,
         )
         return PartialEmailAddress(
             id = partialEmailAddressWithoutFolders.id,
@@ -131,12 +131,12 @@ internal object EmailAddressTransformer {
             createdAt = partialEmailAddressWithoutFolders.createdAt,
             updatedAt = partialEmailAddressWithoutFolders.updatedAt,
             lastReceivedAt = partialEmailAddressWithoutFolders.lastReceivedAt,
-            folders = emailAddress.folders().toFolders()
+            folders = emailAddress.folders().toFolders(),
         )
     }
 
     private fun toPartialEntity(
-        emailAddressWithoutFolders: EmailAddressWithoutFolders
+        emailAddressWithoutFolders: EmailAddressWithoutFolders,
     ): EmailAddress {
         return EmailAddress(
             id = emailAddressWithoutFolders.id(),
@@ -148,7 +148,7 @@ internal object EmailAddressTransformer {
             createdAt = emailAddressWithoutFolders.createdAtEpochMs().toDate(),
             updatedAt = emailAddressWithoutFolders.updatedAtEpochMs().toDate(),
             lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs().toDate(),
-            folders = emptyList()
+            folders = emptyList(),
         )
     }
 
@@ -163,7 +163,7 @@ internal object EmailAddressTransformer {
             unseenCount = fragments().emailFolder().unseenCount().toInt(),
             version = fragments().emailFolder().version(),
             createdAt = fragments().emailFolder().createdAtEpochMs().toDate(),
-            updatedAt = fragments().emailFolder().updatedAtEpochMs().toDate()
+            updatedAt = fragments().emailFolder().updatedAtEpochMs().toDate(),
         )
     }
 

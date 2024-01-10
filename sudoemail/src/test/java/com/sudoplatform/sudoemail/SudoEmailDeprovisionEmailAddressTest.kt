@@ -22,8 +22,6 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.Date
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -44,6 +42,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
+import java.net.HttpURLConnection
+import java.util.Date
 
 /**
  * Test the correct operation of [SudoEmailClient.deprovisionEmailAddress]
@@ -77,9 +77,9 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
                     1.0,
                     "example@sudoplatform.com",
                     0.0,
-                    null
-                )
-            )
+                    null,
+                ),
+            ),
         )
     }
 
@@ -114,7 +114,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -127,7 +127,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -143,7 +143,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -224,7 +224,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "AddressNotFound")
+                mapOf("errorType" to "AddressNotFound"),
             )
             Response.builder<DeprovisionEmailAddressMutation.Data>(DeprovisionEmailAddressMutation(mutationInput))
                 .errors(listOf(error))
@@ -256,7 +256,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "UnauthorizedAddress")
+                mapOf("errorType" to "UnauthorizedAddress"),
             )
             Response.builder<DeprovisionEmailAddressMutation.Data>(DeprovisionEmailAddressMutation(mutationInput))
                 .errors(listOf(error))

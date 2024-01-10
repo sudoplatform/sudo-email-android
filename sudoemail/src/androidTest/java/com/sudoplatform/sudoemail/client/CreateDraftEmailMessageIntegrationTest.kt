@@ -12,7 +12,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageFactory
+import com.sudoplatform.sudoemail.util.Rfc822MessageParser
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.string.shouldMatch
 import io.kotlintest.shouldNotBe
@@ -57,9 +57,9 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = emailAddress.emailAddress,
-            to = emailAddress.emailAddress
+            to = listOf(emailAddress.emailAddress),
         )
         val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, "bogusId")
 
@@ -81,9 +81,9 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = emailAddress.emailAddress,
-            to = emailAddress.emailAddress
+            to = listOf(emailAddress.emailAddress),
         )
         val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
         val response = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)

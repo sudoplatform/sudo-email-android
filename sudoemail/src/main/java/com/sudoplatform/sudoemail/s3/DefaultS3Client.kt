@@ -38,7 +38,7 @@ class DefaultS3Client(
     sudoUserClient: SudoUserClient,
     override val region: String,
     override val bucket: String,
-    private val logger: Logger
+    private val logger: Logger,
 ) : S3Client {
 
     private val transferUtility: TransferUtility
@@ -132,7 +132,7 @@ class DefaultS3Client(
 
             override fun onProgressChanged(id: Int, bytesCurrent: Long, bytesTotal: Long) {
                 this@DefaultS3Client.logger.debug(
-                    "S3 download progress changed: id=$id, bytesCurrent=$bytesCurrent, bytesTotal=$bytesTotal"
+                    "S3 download progress changed: id=$id, bytesCurrent=$bytesCurrent, bytesTotal=$bytesTotal",
                 )
             }
 

@@ -6,9 +6,6 @@
 
 package com.sudoplatform.sudoemail
 
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
 import com.sudoplatform.sudoemail.rules.ActualPropertyResetter
 import com.sudoplatform.sudoemail.rules.PropertyResetRule
 import com.sudoplatform.sudoemail.rules.PropertyResetter
@@ -17,6 +14,9 @@ import com.sudoplatform.sudologging.LogDriverInterface
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import org.junit.Rule
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 
 /**
  * Base class that sets up:

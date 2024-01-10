@@ -17,5 +17,5 @@ package com.sudoplatform.sudoemail.types.inputs
 data class ProvisionEmailAddressInput(
     val emailAddress: String,
     val ownershipProofToken: String,
-    val alias: String? = null
+    val alias: String? = null,
 )

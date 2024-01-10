@@ -62,7 +62,7 @@ class DeprovisionEmailAddressIntegrationTest : BaseIntegrationTest() {
         val provisionInput = ProvisionEmailAddressInput(
             emailAddress = emailAddress,
             ownershipProofToken = ownershipProof,
-            alias = aliasInput
+            alias = aliasInput,
         )
         val provisionedAddress = emailClient.provisionEmailAddress(provisionInput)
         provisionedAddress shouldNotBe null

@@ -83,7 +83,7 @@ interface SudoEmailClient : AutoCloseable {
         internal data class S3Configuration(
             val region: String,
             val emailBucket: String,
-            val transientBucket: String
+            val transientBucket: String,
         )
 
         @Throws(Builder.ConfigurationException::class)
@@ -91,7 +91,7 @@ interface SudoEmailClient : AutoCloseable {
         internal fun readConfiguration(
             context: Context,
             logger: Logger,
-            configManager: SudoConfigManager = DefaultSudoConfigManager(context, logger)
+            configManager: SudoConfigManager = DefaultSudoConfigManager(context, logger),
         ): S3Configuration {
             val preamble = "sudoplatformconfig.json does not contain"
             val postamble = "the $CONFIG_EMAIL_SERVICE stanza"
@@ -211,12 +211,12 @@ interface SudoEmailClient : AutoCloseable {
             val deviceKeyManager = DefaultDeviceKeyManager(
                 keyRingServiceName = "sudo-email",
                 userClient = sudoUserClient!!,
-                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(this.namespace, this.databaseName)
+                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(this.namespace, this.databaseName),
             )
 
             val sealingService = DefaultSealingService(
                 deviceKeyManager = deviceKeyManager,
-                logger = logger
+                logger = logger,
             )
 
             val (region, emailBucket, transientBucket) = readConfiguration(context!!, logger)
@@ -230,7 +230,7 @@ interface SudoEmailClient : AutoCloseable {
                 region = region,
                 emailBucket = emailBucket,
                 transientBucket = transientBucket,
-                sealingService = sealingService
+                sealingService = sealingService,
             )
         }
     }
@@ -659,7 +659,7 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailMessageException::class)
     suspend fun listEmailMessagesForEmailAddressId(
-        input: ListEmailMessagesForEmailAddressIdInput
+        input: ListEmailMessagesForEmailAddressIdInput,
     ): ListAPIResult<EmailMessage, PartialEmailMessage>
 
     /**
@@ -684,7 +684,7 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailMessageException::class)
     suspend fun listEmailMessagesForEmailFolderId(
-        input: ListEmailMessagesForEmailFolderIdInput
+        input: ListEmailMessagesForEmailFolderIdInput,
     ): ListAPIResult<EmailMessage, PartialEmailMessage>
 
     /**
@@ -769,7 +769,7 @@ interface SudoEmailClient : AutoCloseable {
 suspend fun SudoEmailClient.subscribeToEmailMessages(
     id: String,
     onConnectionChange: (status: Subscriber.ConnectionState) -> Unit = {},
-    onEmailMessageChanged: (emailMessage: EmailMessage) -> Unit
+    onEmailMessageChanged: (emailMessage: EmailMessage) -> Unit,
 ) =
     subscribeToEmailMessages(
         id,
@@ -781,5 +781,5 @@ suspend fun SudoEmailClient.subscribeToEmailMessages(
             override fun emailMessageChanged(emailMessage: EmailMessage) {
                 onEmailMessageChanged.invoke(emailMessage)
             }
-        }
+        },
     )

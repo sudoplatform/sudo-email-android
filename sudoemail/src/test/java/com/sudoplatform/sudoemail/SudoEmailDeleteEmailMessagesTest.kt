@@ -24,8 +24,6 @@ import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -46,6 +44,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
 
 /**
  * Test the correct operation of [SudoEmailClient.deleteEmailMessages]
@@ -95,7 +95,7 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -106,7 +106,7 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -122,7 +122,7 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -165,11 +165,11 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             .mutate<
                 DeleteEmailMessagesMutation.Data,
                 DeleteEmailMessagesMutation,
-                DeleteEmailMessagesMutation.Variables
+                DeleteEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                }
+                },
             )
     }
 
@@ -212,11 +212,11 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             .mutate<
                 DeleteEmailMessagesMutation.Data,
                 DeleteEmailMessagesMutation,
-                DeleteEmailMessagesMutation.Variables
+                DeleteEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                }
+                },
             )
     }
 
@@ -261,11 +261,11 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             .mutate<
                 DeleteEmailMessagesMutation.Data,
                 DeleteEmailMessagesMutation,
-                DeleteEmailMessagesMutation.Variables
+                DeleteEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                }
+                },
             )
     }
 
@@ -296,11 +296,11 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             .mutate<
                 DeleteEmailMessagesMutation.Data,
                 DeleteEmailMessagesMutation,
-                DeleteEmailMessagesMutation.Variables
+                DeleteEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                }
+                },
             )
     }
 
@@ -312,7 +312,7 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "blah")
+                mapOf("errorType" to "blah"),
             )
             Response.builder<DeleteEmailMessagesMutation.Data>(DeleteEmailMessagesMutation(input))
                 .errors(listOf(error))
@@ -336,11 +336,11 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             .mutate<
                 DeleteEmailMessagesMutation.Data,
                 DeleteEmailMessagesMutation,
-                DeleteEmailMessagesMutation.Variables
+                DeleteEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                }
+                },
             )
     }
 
@@ -378,11 +378,11 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             .mutate<
                 DeleteEmailMessagesMutation.Data,
                 DeleteEmailMessagesMutation,
-                DeleteEmailMessagesMutation.Variables
+                DeleteEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                }
+                },
             )
     }
 
@@ -408,11 +408,11 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             .mutate<
                 DeleteEmailMessagesMutation.Data,
                 DeleteEmailMessagesMutation,
-                DeleteEmailMessagesMutation.Variables
+                DeleteEmailMessagesMutation.Variables,
                 >(
                 check {
                     it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                }
+                },
             )
     }
 

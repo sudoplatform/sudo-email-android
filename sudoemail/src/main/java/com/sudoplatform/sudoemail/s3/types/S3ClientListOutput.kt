@@ -16,5 +16,5 @@ import java.util.Date
  */
 data class S3ClientListOutput(
     val key: String,
-    val lastModified: Date
+    val lastModified: Date,
 )

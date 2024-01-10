@@ -13,7 +13,6 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageFactory
 import com.sudoplatform.sudoemail.util.Rfc822MessageParser
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldContain
@@ -56,15 +55,15 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = emailAddress.emailAddress,
-            to = emailAddress.emailAddress,
-            subject = "Test Draft"
+            to = listOf(emailAddress.emailAddress),
+            subject = "Test Draft",
         )
 
         val createDraftInput = CreateDraftEmailMessageInput(
             rfc822Data = rfc822Data,
-            senderEmailAddressId = emailAddress.id
+            senderEmailAddressId = emailAddress.id,
         )
 
         val draftId = emailClient.createDraftEmailMessage(createDraftInput)
@@ -79,16 +78,16 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         parsedMessage.from shouldContain emailAddress.emailAddress
         parsedMessage.subject shouldBe "Test Draft"
 
-        val updatedRfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val updatedRfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = parsedMessage.from[0],
-            to = parsedMessage.to[0],
-            subject = "Test Draft updated"
+            to = listOf(parsedMessage.to[0]),
+            subject = "Test Draft updated",
         )
 
         val updateDraftEmailMessageInput = UpdateDraftEmailMessageInput(
             id = draftId,
             rfc822Data = updatedRfc822Data,
-            senderEmailAddressId = emailAddress.id
+            senderEmailAddressId = emailAddress.id,
         )
 
         val updateRes = emailClient.updateDraftEmailMessage(updateDraftEmailMessageInput)

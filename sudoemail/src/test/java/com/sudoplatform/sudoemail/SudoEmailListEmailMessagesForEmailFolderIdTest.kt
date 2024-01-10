@@ -35,9 +35,6 @@ import io.kotlintest.matchers.doubles.shouldBeLessThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.Date
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -61,6 +58,9 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.Date
+import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderIdInput as ListEmailMessagesForEmailFolderIdRequest
 import com.sudoplatform.sudoemail.graphql.type.SortOrder as SortOrderEntity
 
@@ -120,11 +120,11 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                         "algorithm",
                         "keyId",
                         "plainText",
-                        mockSeal(unsealedHeaderDetailsString)
+                        mockSeal(unsealedHeaderDetailsString),
                     ),
-                    1.0
-                )
-            )
+                    1.0,
+                ),
+            ),
         )
     }
 
@@ -132,7 +132,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         ListEmailMessagesForEmailFolderIdQuery.ListEmailMessagesForEmailFolderId(
             "typename",
             listOf(queryResultItem),
-            null
+            null,
         )
     }
 
@@ -170,7 +170,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -181,7 +181,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -197,7 +197,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -220,11 +220,11 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             limit = 1,
             nextToken = null,
             dateRange = DateRange(Date(), Date()),
-            sortOrder = SortOrder.DESC
+            sortOrder = SortOrder.DESC,
         )
         val deferredResult = async(Dispatchers.IO) {
             client.listEmailMessagesForEmailFolderId(
-                input
+                input,
             )
         }
         deferredResult.start()
@@ -275,7 +275,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -284,7 +284,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().dateRange()?.startDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
                     it.variables().input().dateRange()?.endDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+                },
             )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -304,11 +304,11 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             limit = 1,
             nextToken = null,
             dateRange = DateRange(Date(), Date()),
-            sortOrder = SortOrder.DESC
+            sortOrder = SortOrder.DESC,
         )
         val deferredResult = async(Dispatchers.IO) {
             client.listEmailMessagesForEmailFolderId(
-                input
+                input,
             )
         }
         deferredResult.start()
@@ -359,7 +359,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -368,7 +368,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().dateRange()?.startDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
                     it.variables().input().dateRange()?.endDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+                },
             )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -388,11 +388,11 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             limit = 1,
             nextToken = null,
             dateRange = DateRange(Date(), Date()),
-            sortOrder = SortOrder.ASC
+            sortOrder = SortOrder.ASC,
         )
         val deferredResult = async(Dispatchers.IO) {
             client.listEmailMessagesForEmailFolderId(
-                input
+                input,
             )
         }
         deferredResult.start()
@@ -443,7 +443,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -452,7 +452,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().dateRange()?.startDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
                     it.variables().input().dateRange()?.endDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.ASC
-                }
+                },
             )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -460,73 +460,73 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should return success result using default inputs when no error present`() = runBlocking<Unit>
-    {
-        queryHolder.callback shouldBe null
+        {
+            queryHolder.callback shouldBe null
 
-        val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessagesForEmailFolderId(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(queryResponse)
-
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
-
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
-
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners shouldBe emptyList()
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.shouldContainExactlyInAnyOrder(addresses)
-                    replyTo.shouldContainExactlyInAnyOrder(addresses)
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe false
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
-                }
-            }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
-
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesForEmailFolderIdQuery.Data,
-                ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
-                >(
-                check {
-                    it.variables().input().folderId() shouldBe "folderId"
-                    it.variables().input().limit() shouldBe 10
-                    it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange() shouldBe null
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+            val input = ListEmailMessagesForEmailFolderIdInput(
+                folderId = "folderId",
             )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessagesForEmailFolderId(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(queryResponse)
+
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
+
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
+
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners shouldBe emptyList()
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.shouldContainExactlyInAnyOrder(addresses)
+                        replyTo.shouldContainExactlyInAnyOrder(addresses)
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe false
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                    }
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesForEmailFolderIdQuery.Data,
+                    ListEmailMessagesForEmailFolderIdQuery,
+                    ListEmailMessagesForEmailFolderIdQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().folderId() shouldBe "folderId"
+                        it.variables().input().limit() shouldBe 10
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().dateRange() shouldBe null
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should return success result when populating nextToken`() = runBlocking<Unit> {
@@ -536,7 +536,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             ListEmailMessagesForEmailFolderIdQuery.ListEmailMessagesForEmailFolderId(
                 "typename",
                 listOf(queryResultItem),
-                "dummyNextToken"
+                "dummyNextToken",
             )
         }
         val queryInput by before {
@@ -548,8 +548,8 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         val responseWithNextToken by before {
             Response.builder<ListEmailMessagesForEmailFolderIdQuery.Data>(
                 ListEmailMessagesForEmailFolderIdQuery(
-                    queryInput
-                )
+                    queryInput,
+                ),
             )
                 .data(ListEmailMessagesForEmailFolderIdQuery.Data(queryResultWithNextToken))
                 .build()
@@ -557,7 +557,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
 
         val input = ListEmailMessagesForEmailFolderIdInput(
             folderId = "folderId",
-            nextToken = "dummyNextToken"
+            nextToken = "dummyNextToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             client.listEmailMessagesForEmailFolderId(input)
@@ -607,7 +607,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -615,7 +615,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe "dummyNextToken"
                     it.variables().input().dateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+                },
             )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -623,117 +623,117 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should return success empty list result when query result data is empty`() = runBlocking<Unit>
-    {
-        queryHolder.callback shouldBe null
+        {
+            queryHolder.callback shouldBe null
 
-        val queryResultWithEmptyList by before {
-            ListEmailMessagesForEmailFolderIdQuery.ListEmailMessagesForEmailFolderId(
-                "typename",
-                emptyList(),
-                null
+            val queryResultWithEmptyList by before {
+                ListEmailMessagesForEmailFolderIdQuery.ListEmailMessagesForEmailFolderId(
+                    "typename",
+                    emptyList(),
+                    null,
+                )
+            }
+
+            val responseWithEmptyList by before {
+                Response.builder<ListEmailMessagesForEmailFolderIdQuery.Data>(ListEmailMessagesForEmailFolderIdQuery(input))
+                    .data(ListEmailMessagesForEmailFolderIdQuery.Data(queryResultWithEmptyList))
+                    .build()
+            }
+
+            val input = ListEmailMessagesForEmailFolderIdInput(
+                folderId = "folderId",
             )
-        }
-
-        val responseWithEmptyList by before {
-            Response.builder<ListEmailMessagesForEmailFolderIdQuery.Data>(ListEmailMessagesForEmailFolderIdQuery(input))
-                .data(ListEmailMessagesForEmailFolderIdQuery.Data(queryResultWithEmptyList))
-                .build()
-        }
-
-        val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessagesForEmailFolderId(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(responseWithEmptyList)
-
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
-
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe true
-                listEmailMessages.result.items.size shouldBe 0
-                listEmailMessages.result.nextToken shouldBe null
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessagesForEmailFolderId(input)
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
+            deferredResult.start()
 
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesForEmailFolderIdQuery.Data,
-                ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
-                >(
-                check {
-                    it.variables().input().folderId() shouldBe "folderId"
-                    it.variables().input().limit() shouldBe 10
-                    it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange() shouldBe null
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(responseWithEmptyList)
+
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
+
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe true
+                    listEmailMessages.result.items.size shouldBe 0
+                    listEmailMessages.result.nextToken shouldBe null
                 }
-            )
-    }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesForEmailFolderIdQuery.Data,
+                    ListEmailMessagesForEmailFolderIdQuery,
+                    ListEmailMessagesForEmailFolderIdQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().folderId() shouldBe "folderId"
+                        it.variables().input().limit() shouldBe 10
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().dateRange() shouldBe null
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+        }
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should return success empty list result when query result data is null`() = runBlocking<Unit>
-    {
-        queryHolder.callback shouldBe null
+        {
+            queryHolder.callback shouldBe null
 
-        val responseWithNullData by before {
-            Response.builder<ListEmailMessagesForEmailFolderIdQuery.Data>(ListEmailMessagesForEmailFolderIdQuery(input))
-                .data(null)
-                .build()
-        }
-
-        val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessagesForEmailFolderId(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(responseWithNullData)
-
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
-
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe true
-                listEmailMessages.result.items.size shouldBe 0
-                listEmailMessages.result.nextToken shouldBe null
+            val responseWithNullData by before {
+                Response.builder<ListEmailMessagesForEmailFolderIdQuery.Data>(ListEmailMessagesForEmailFolderIdQuery(input))
+                    .data(null)
+                    .build()
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
 
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesForEmailFolderIdQuery.Data,
-                ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
-                >(
-                check {
-                    it.variables().input().folderId() shouldBe "folderId"
-                    it.variables().input().limit() shouldBe 10
-                    it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange() shouldBe null
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+            val input = ListEmailMessagesForEmailFolderIdInput(
+                folderId = "folderId",
             )
-    }
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessagesForEmailFolderId(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(responseWithNullData)
+
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
+
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe true
+                    listEmailMessages.result.items.size shouldBe 0
+                    listEmailMessages.result.nextToken shouldBe null
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesForEmailFolderIdQuery.Data,
+                    ListEmailMessagesForEmailFolderIdQuery,
+                    ListEmailMessagesForEmailFolderIdQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().folderId() shouldBe "folderId"
+                        it.variables().input().limit() shouldBe 10
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().dateRange() shouldBe null
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+        }
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should return partial results when unsealing fails`() = runBlocking<Unit> {
@@ -742,7 +742,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         }
 
         val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
+            folderId = "folderId",
         )
         val deferredResult = async(Dispatchers.IO) {
             client.listEmailMessagesForEmailFolderId(input)
@@ -794,7 +794,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         }
 
         val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
+            folderId = "folderId",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
@@ -808,7 +808,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -816,7 +816,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe null
                     it.variables().input().dateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+                },
             )
     }
 
@@ -825,7 +825,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         queryHolder.callback shouldBe null
 
         val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
+            folderId = "folderId",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -857,7 +857,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -865,7 +865,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe null
                     it.variables().input().dateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+                },
             )
     }
 
@@ -878,7 +878,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         }
 
         val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
+            folderId = "folderId",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
@@ -894,7 +894,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -902,7 +902,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe null
                     it.variables().input().dateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+                },
             )
     }
 
@@ -913,7 +913,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         }
 
         val input = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "folderId"
+            folderId = "folderId",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<CancellationException> {
@@ -927,7 +927,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             .query<
                 ListEmailMessagesForEmailFolderIdQuery.Data,
                 ListEmailMessagesForEmailFolderIdQuery,
-                ListEmailMessagesForEmailFolderIdQuery.Variables
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().folderId() shouldBe "folderId"
@@ -935,7 +935,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe null
                     it.variables().input().dateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                }
+                },
             )
     }
 }

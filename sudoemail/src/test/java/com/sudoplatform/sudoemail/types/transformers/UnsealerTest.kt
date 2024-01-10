@@ -21,7 +21,6 @@ import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
-import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -33,6 +32,7 @@ import org.mockito.kotlin.stub
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import timber.log.Timber
+import java.util.UUID
 
 /**
  * Test the operation of [Unsealer] under Robolectric.
@@ -59,7 +59,7 @@ class UnsealerTest : BaseTests() {
         DefaultDeviceKeyManager(
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
-            keyManager = keyManager
+            keyManager = keyManager,
         )
     }
 
@@ -71,14 +71,14 @@ class UnsealerTest : BaseTests() {
     private val unsealer by before {
         Unsealer(
             deviceKeyManager,
-            keyInfo
+            keyInfo,
         )
     }
 
     private val aliasUnsealer by before {
         Unsealer(
             deviceKeyManager,
-            keyInfo2
+            keyInfo2,
         )
     }
 
@@ -86,14 +86,14 @@ class UnsealerTest : BaseTests() {
         val encryptedSymmetricKeyBytes = keyManager.encryptWithPublicKey(
             publicKeyId,
             keyManager.getSymmetricKeyData(symmetricKeyId),
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         encryptedSymmetricKeyBytes.size shouldBe Unsealer.KEY_SIZE_AES
 
         val encryptedData = keyManager.encryptWithSymmetricKey(
             symmetricKeyId,
             value.toByteArray(),
-            KeyManagerInterface.SymmetricEncryptionAlgorithm.AES_CBC_PKCS7_256
+            KeyManagerInterface.SymmetricEncryptionAlgorithm.AES_CBC_PKCS7_256,
         )
 
         val data = ByteArray(encryptedSymmetricKeyBytes.size + encryptedData.size)
@@ -146,9 +146,9 @@ class UnsealerTest : BaseTests() {
                     "unsupported-algorithm",
                     symmetricKeyId,
                     "json-string",
-                    sealAlias("alias")
-                )
-            )
+                    sealAlias("alias"),
+                ),
+            ),
         )
 
         shouldThrow<Unsealer.UnsealerException.UnsupportedAlgorithmException> {
@@ -166,9 +166,9 @@ class UnsealerTest : BaseTests() {
                     SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
                     symmetricKeyId,
                     "json-string",
-                    sealAlias("alias")
-                )
-            )
+                    sealAlias("alias"),
+                ),
+            ),
         )
 
         val alias = aliasUnsealer.unseal(sealedAlias)

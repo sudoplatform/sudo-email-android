@@ -37,7 +37,7 @@ class ParcelTest {
             0,
             1,
             createdAt = Date(42L),
-            updatedAt = Date(43L)
+            updatedAt = Date(43L),
         )
         val provisionedEmailAddress = EmailAddress(
             id = "emailAddressId",
@@ -50,7 +50,7 @@ class ParcelTest {
             updatedAt = Date(43L),
             null,
             null,
-            listOf(emailFolder)
+            listOf(emailFolder),
         )
         val emailMessage = EmailMessage(
             id = "id",
@@ -69,7 +69,7 @@ class ParcelTest {
             createdAt = Date(42L),
             updatedAt = Date(43L),
             size = 0.0,
-            hasAttachments = false
+            hasAttachments = false,
         )
 
         val bundle = Bundle()

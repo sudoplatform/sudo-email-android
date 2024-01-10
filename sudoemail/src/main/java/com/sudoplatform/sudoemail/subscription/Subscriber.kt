@@ -27,7 +27,7 @@ interface Subscriber {
          * Disconnected and won't receive any updates. When disconnected all subscribers will be
          * unsubscribed so the consumer must re-subscribe.
          */
-        DISCONNECTED
+        DISCONNECTED,
     }
 
     /**

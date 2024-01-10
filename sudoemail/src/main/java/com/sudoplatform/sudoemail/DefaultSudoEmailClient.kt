@@ -96,9 +96,13 @@ import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.CancellationException
+import java.util.zip.GZIPInputStream
 import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput as CheckEmailAddressAvailabilityRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesForSudoIdInput as ListEmailAddressesForSudoIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput as ListEmailAddressesRequest
@@ -136,7 +140,7 @@ internal class DefaultSudoEmailClient(
     @VisibleForTesting
     private val s3TransientClient: S3Client = DefaultS3Client(context, sudoUserClient, region, transientBucket, logger),
     @VisibleForTesting
-    private val s3EmailClient: S3Client = DefaultS3Client(context, sudoUserClient, region, emailBucket, logger)
+    private val s3EmailClient: S3Client = DefaultS3Client(context, sudoUserClient, region, emailBucket, logger),
 ) : SudoEmailClient {
 
     companion object {
@@ -190,7 +194,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "5.0.0"
+    private val version: String = "6.0.0"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions = SubscriptionService(appSyncClient, deviceKeyManager, sudoUserClient, logger)
@@ -405,7 +409,7 @@ internal class DefaultSudoEmailClient(
             return BatchOperationResult.PartialResult(
                 status = BatchOperationStatus.PARTIAL,
                 successValues = successIds?.toList() ?: emptyList(),
-                failureValues = failureIds?.toList() ?: emptyList()
+                failureValues = failureIds?.toList() ?: emptyList(),
             )
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
@@ -430,7 +434,7 @@ internal class DefaultSudoEmailClient(
         return BatchOperationResult.PartialResult(
             status = BatchOperationStatus.PARTIAL,
             successValues = result.successIds,
-            failureValues = result.failureIds
+            failureValues = result.failureIds,
         )
     }
 
@@ -496,7 +500,7 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailMessageException::class, SudoEmailClient.EmailAddressException::class)
     override suspend fun updateDraftEmailMessage(input: UpdateDraftEmailMessageInput): String {
         this.getDraftEmailMessage(
-            GetDraftEmailMessageInput(input.id, input.senderEmailAddressId)
+            GetDraftEmailMessageInput(input.id, input.senderEmailAddressId),
         )
         try {
             return saveDraftEmailMessage(input.rfc822Data, input.senderEmailAddressId, input.id)
@@ -536,7 +540,7 @@ internal class DefaultSudoEmailClient(
         return BatchOperationResult.PartialResult(
             status = BatchOperationStatus.PARTIAL,
             successValues = if (successIds.isEmpty()) emptyList() else successIds.toList(),
-            failureValues = if (failureIds.isEmpty()) emptyList() else failureIds.toList()
+            failureValues = if (failureIds.isEmpty()) emptyList() else failureIds.toList(),
         )
     }
 
@@ -677,7 +681,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun listEmailAddressesForSudoId(
-        input: ListEmailAddressesForSudoIdInput
+        input: ListEmailAddressesForSudoIdInput,
     ): ListAPIResult<EmailAddress, PartialEmailAddress> {
         try {
             val queryInput = ListEmailAddressesForSudoIdRequest.builder()
@@ -790,16 +794,41 @@ internal class DefaultSudoEmailClient(
             val s3Key = constructS3KeyForEmailMessage(
                 input.emailAddressId,
                 input.id,
-                emailMessage.rfc822Header().keyId()
+                emailMessage.rfc822Header().keyId(),
             )
             val sealedRfc822Data = s3EmailClient.download(s3Key)
-            val unsealedRfc822Data = EmailMessageTransformer.toUnsealedRfc822Data(
-                deviceKeyManager,
-                emailMessage.rfc822Header().keyId(),
-                emailMessage.rfc822Header().algorithm(),
-                sealedRfc822Data
-            )
-            return EmailMessageRfc822Data(input.id, unsealedRfc822Data)
+            val rfc822Metadata = s3EmailClient.getObjectMetadata(s3Key)
+            val contentEncodingValues = (
+                if (rfc822Metadata.contentEncoding != null) {
+                    rfc822Metadata.contentEncoding.split(',')
+                } else {
+                    listOf("sudoplatform-crypto", "sudoplatform-binary-data")
+                }
+                ).reversed()
+            var decodedBytes = sealedRfc822Data
+            for (value in contentEncodingValues) {
+                when (value.trim().lowercase()) {
+                    "sudoplatform-compression" -> {
+                        decodedBytes = Base64.decode(decodedBytes)
+                        val bais = ByteArrayInputStream(decodedBytes)
+                        decodedBytes = withContext(Dispatchers.IO) {
+                            GZIPInputStream(bais).readBytes()
+                        }
+                        bais.close()
+                    }
+                    "sudoplatform-crypto" -> {
+                        decodedBytes = EmailMessageTransformer.toUnsealedRfc822Data(
+                            deviceKeyManager,
+                            emailMessage.rfc822Header().keyId(),
+                            emailMessage.rfc822Header().algorithm(),
+                            decodedBytes,
+                        )
+                    }
+                    "sudoplatform-binary-data" -> {} // no-op
+                    else -> throw SudoEmailClient.EmailMessageException.UnsealingException("Invalid Content-Encoding value $value")
+                }
+            }
+            return EmailMessageRfc822Data(input.id, decodedBytes)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
@@ -811,7 +840,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun listEmailMessagesForEmailAddressId(
-        input: ListEmailMessagesForEmailAddressIdInput
+        input: ListEmailMessagesForEmailAddressIdInput,
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
         try {
             val queryInput = ListEmailMessagesForEmailAddressIdRequest.builder()
@@ -841,7 +870,7 @@ internal class DefaultSudoEmailClient(
                     val unsealerEmailMessage =
                         EmailMessageTransformer.toEntity(
                             deviceKeyManager,
-                            sealedEmailMessage.fragments().sealedEmailMessage()
+                            sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
                     success.add(unsealerEmailMessage)
                 } catch (e: Exception) {
@@ -867,7 +896,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun listEmailMessagesForEmailFolderId(
-        input: ListEmailMessagesForEmailFolderIdInput
+        input: ListEmailMessagesForEmailFolderIdInput,
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
         try {
             val queryInput = ListEmailMessagesForEmailFolderIdRequest.builder()
@@ -897,7 +926,7 @@ internal class DefaultSudoEmailClient(
                     val unsealerEmailMessage =
                         EmailMessageTransformer.toEntity(
                             deviceKeyManager,
-                            sealedEmailMessage.fragments().sealedEmailMessage()
+                            sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
                     success.add(unsealerEmailMessage)
                 } catch (e: Exception) {
@@ -958,7 +987,7 @@ internal class DefaultSudoEmailClient(
             return items.map {
                 DraftEmailMessageMetadata(
                     it.key.substringAfterLast("/"),
-                    it.lastModified
+                    it.lastModified,
                 )
             }
         } catch (e: Throwable) {
@@ -1064,7 +1093,7 @@ internal class DefaultSudoEmailClient(
     private suspend fun throwIfEmailAddressNotFound(emailAddressId: String) {
         if (this.retrieveEmailAddress(GetEmailAddressInput(emailAddressId)) == null) {
             throw SudoEmailClient.EmailAddressException.EmailAddressNotFoundException(
-                EMAIL_ADDRESS_NOT_FOUND_MSG
+                EMAIL_ADDRESS_NOT_FOUND_MSG,
             )
         }
     }
@@ -1077,7 +1106,7 @@ internal class DefaultSudoEmailClient(
         val s3Key = this.constructS3KeyForDraftEmailMessage(senderEmailAddressId, draftId)
         val metadataObject = mapOf(
             "keyId" to symmetricKeyId,
-            "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString()
+            "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
         )
 
         val uploadData = DraftEmailMessageTransformer.toEncryptedAndEncodedRfc822Data(this.sealingService, rfc822Data, symmetricKeyId)
@@ -1092,7 +1121,7 @@ internal class DefaultSudoEmailClient(
     private fun constructS3KeyForEmailMessage(
         emailAddressId: String,
         emailMessageId: String,
-        keyId: String
+        keyId: String,
     ): String {
         val keyPrefix = constructS3PrefixForEmailAddress(emailAddressId)
         return "$keyPrefix/$emailMessageId-$keyId"
@@ -1129,7 +1158,8 @@ internal class DefaultSudoEmailClient(
     private fun interpretEmailAddressException(e: Throwable): Throwable {
         return when (e) {
             is CancellationException,
-            is SudoEmailClient.EmailAddressException -> e
+            is SudoEmailClient.EmailAddressException,
+            -> e
             is Unsealer.UnsealerException ->
                 SudoEmailClient.EmailAddressException.UnsealingException(UNSEAL_EMAIL_ADDRESS_ERROR_MSG, e)
             is DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException ->
@@ -1145,7 +1175,8 @@ internal class DefaultSudoEmailClient(
     private fun interpretEmailFolderException(e: Throwable): Throwable {
         return when (e) {
             is CancellationException,
-            is SudoEmailClient.EmailFolderException -> e
+            is SudoEmailClient.EmailFolderException,
+            -> e
             else -> SudoEmailClient.EmailFolderException.UnknownException(e)
         }
     }
@@ -1157,7 +1188,8 @@ internal class DefaultSudoEmailClient(
     private fun interpretEmailConfigurationException(e: Throwable): Throwable {
         return when (e) {
             is CancellationException,
-            is SudoEmailClient.EmailConfigurationException -> e
+            is SudoEmailClient.EmailConfigurationException,
+            -> e
             else -> SudoEmailClient.EmailConfigurationException.UnknownException(e)
         }
     }
@@ -1179,7 +1211,8 @@ internal class DefaultSudoEmailClient(
     private fun interpretEmailMessageException(e: Throwable): Throwable {
         return when (e) {
             is CancellationException,
-            is SudoEmailClient.EmailMessageException -> e
+            is SudoEmailClient.EmailMessageException,
+            -> e
             is Unsealer.UnsealerException ->
                 SudoEmailClient.EmailMessageException.UnsealingException(UNSEAL_EMAIL_MSG_ERROR_MSG, e)
             is DeviceKeyManager.DeviceKeyManagerException ->

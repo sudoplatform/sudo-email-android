@@ -69,7 +69,7 @@ data class EmailMessage(
     val subject: String? = null,
     val sentAt: Date? = null,
     val receivedAt: Date? = null,
-    val hasAttachments: Boolean
+    val hasAttachments: Boolean,
 ) : Parcelable {
 
     /**
@@ -81,7 +81,7 @@ data class EmailMessage(
     @Parcelize
     data class EmailAddress(
         val emailAddress: String,
-        val displayName: String? = null
+        val displayName: String? = null,
     ) : Parcelable {
 
         override fun toString(): String {
@@ -134,7 +134,7 @@ data class PartialEmailMessage(
     val sortDate: Date,
     val createdAt: Date,
     val updatedAt: Date,
-    val size: Double
+    val size: Double,
 ) : Parcelable {
 
     /**
@@ -146,7 +146,7 @@ data class PartialEmailMessage(
     @Parcelize
     data class EmailAddress(
         val emailAddress: String,
-        val displayName: String? = null
+        val displayName: String? = null,
     ) : Parcelable {
 
         override fun toString(): String {
@@ -173,7 +173,7 @@ enum class Direction {
     OUTBOUND,
 
     /** API Evolution - if this occurs, it may mean you need to update the library. */
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -202,5 +202,5 @@ enum class State {
     RECEIVED,
 
     /** API Evolution - if this occurs, it may mean you need to update the library. */
-    UNKNOWN
+    UNKNOWN,
 }

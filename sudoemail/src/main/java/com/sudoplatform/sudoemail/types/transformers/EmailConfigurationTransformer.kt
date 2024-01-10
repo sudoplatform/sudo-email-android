@@ -23,13 +23,13 @@ internal object EmailConfigurationTransformer {
      * @return The [ConfigurationData] entity type.
      */
     fun toEntity(
-        emailConfigurationData: EmailConfigurationData
+        emailConfigurationData: EmailConfigurationData,
     ): ConfigurationData {
         return ConfigurationData(
             deleteEmailMessagesLimit = emailConfigurationData.deleteEmailMessagesLimit(),
             updateEmailMessagesLimit = emailConfigurationData.updateEmailMessagesLimit(),
             emailMessageMaxInboundMessageSize = emailConfigurationData.emailMessageMaxInboundMessageSize(),
-            emailMessageMaxOutboundMessageSize = emailConfigurationData.emailMessageMaxOutboundMessageSize()
+            emailMessageMaxOutboundMessageSize = emailConfigurationData.emailMessageMaxOutboundMessageSize(),
         )
     }
 }

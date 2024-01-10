@@ -22,7 +22,9 @@ enum class SortOrder {
     /**
      * Sort the list of results in descending order.
      */
-    DESC;
+    DESC,
+
+    ;
 
     fun toSortOrderInput(sortOrder: SortOrder): SortOrderInput {
         return when (sortOrder) {

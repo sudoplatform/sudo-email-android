@@ -24,7 +24,7 @@ internal class DefaultDeviceKeyManager(
     private val keyRingServiceName: String,
     private val userClient: SudoUserClient,
     private val keyManager: KeyManagerInterface,
-    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
+    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
 ) : DeviceKeyManager {
 
     companion object {
@@ -53,7 +53,7 @@ internal class DefaultDeviceKeyManager(
                 keyId = id,
                 keyRingId = getKeyRingId(),
                 publicKey = publicKey,
-                privateKey = privateKey
+                privateKey = privateKey,
             )
         } catch (e: KeyManagerException) {
             throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException("KeyManager exception", e)
@@ -73,7 +73,7 @@ internal class DefaultDeviceKeyManager(
                 keyId = keyId,
                 keyRingId = getKeyRingId(),
                 publicKey = publicKey,
-                privateKey = privateKey
+                privateKey = privateKey,
             )
         } catch (e: Exception) {
             logger.error("error $e")
@@ -115,7 +115,7 @@ internal class DefaultDeviceKeyManager(
     override fun decryptWithPrivateKey(
         data: ByteArray,
         keyId: String,
-        algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm
+        algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
     ): ByteArray {
         try {
             return keyManager.decryptWithPrivateKey(keyId, data, algorithm)

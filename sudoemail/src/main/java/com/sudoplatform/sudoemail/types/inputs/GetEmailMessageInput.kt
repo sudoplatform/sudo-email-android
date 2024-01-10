@@ -18,5 +18,5 @@ import com.sudoplatform.sudoemail.types.CachePolicy
  */
 data class GetEmailMessageInput(
     val id: String,
-    val cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY
+    val cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY,
 )

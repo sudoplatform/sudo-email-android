@@ -98,7 +98,7 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
                 runBlocking {
                     val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
-                        folderId = inboxFolder.id
+                        folderId = inboxFolder.id,
                     )
                     emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
                 }
@@ -160,7 +160,7 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 runBlocking {
                     val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
                         folderId = inboxFolder.id,
-                        limit = 1
+                        limit = 1,
                     )
                     emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
                 }
@@ -217,8 +217,8 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                         folderId = inboxFolder.id,
                         dateRange = DateRange(
                             startDate = emailAddress.createdAt,
-                            endDate = Date(emailAddress.createdAt.time + 100000)
-                        )
+                            endDate = Date(emailAddress.createdAt.time + 100000),
+                        ),
                     )
                     emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
                 }
@@ -278,8 +278,8 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             folderId = inboxFolder.id,
             dateRange = DateRange(
                 startDate = sudo.createdAt,
-                endDate = emailAddress.createdAt
-            )
+                endDate = emailAddress.createdAt,
+            ),
         )
         when (val listEmailMessages = emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)) {
             is ListAPIResult.Success -> {
@@ -332,9 +332,9 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                         folderId = inboxFolder.id,
                         dateRange = DateRange(
                             startDate = emailAddress.createdAt,
-                            endDate = Date(emailAddress.createdAt.time + 100000)
+                            endDate = Date(emailAddress.createdAt.time + 100000),
                         ),
-                        sortOrder = SortOrder.ASC
+                        sortOrder = SortOrder.ASC,
                     )
                     emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
                 }
@@ -396,7 +396,7 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 runBlocking {
                     val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
                         folderId = inboxFolder.id,
-                        sortOrder = SortOrder.DESC
+                        sortOrder = SortOrder.DESC,
                     )
                     emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
                 }
@@ -458,7 +458,7 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 runBlocking {
                     val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
                         folderId = trashFolder.id,
-                        sortOrder = SortOrder.DESC
+                        sortOrder = SortOrder.DESC,
                     )
                     emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
                 }
@@ -477,7 +477,7 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmptyListForNonExistingEmailFolder() = runBlocking {
         val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
-            folderId = "nonExistentId"
+            folderId = "nonExistentId",
         )
         when (val listEmailMessages = emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)) {
             is ListAPIResult.Success -> {
@@ -527,7 +527,7 @@ class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         emailClient.reset()
 
         val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
-            folderId = inboxFolder.id
+            folderId = inboxFolder.id,
         )
         when (val listEmailMessages = emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)) {
             is ListAPIResult.Partial -> {

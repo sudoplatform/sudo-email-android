@@ -6,8 +6,8 @@
 
 package com.sudoplatform.sudoemail.types.inputs
 
-import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.SudoEmailClient
+import com.sudoplatform.sudoemail.types.CachePolicy
 
 /**
  * Input object containing an email address identifier and other properties used to list
@@ -26,5 +26,5 @@ data class ListEmailFoldersForEmailAddressIdInput(
     val emailAddressId: String,
     val cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY,
     val limit: Int? = SudoEmailClient.DEFAULT_EMAIL_FOLDER_LIMIT,
-    val nextToken: String? = null
+    val nextToken: String? = null,
 )

@@ -69,7 +69,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
 
     private val mockUserMetadata = listOf(
         "keyId" to "keyId",
-        "algorithm" to "algorithm"
+        "algorithm" to "algorithm",
     ).toMap()
 
     private val mockS3ObjectMetadata = ObjectMetadata()
@@ -99,10 +99,10 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
                         "folderName",
                         1.0,
                         1.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -128,11 +128,11 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
                             1.0,
                             "example@sudoplatform.com",
                             0.0,
-                            null
-                        )
-                    )
-                )
-            )
+                            null,
+                        ),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -168,7 +168,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -222,7 +222,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -245,7 +245,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         val error = com.apollographql.apollo.api.Error(
             "mock",
             emptyList(),
-            mapOf("errorType" to "AddressNotFound")
+            mapOf("errorType" to "AddressNotFound"),
         )
 
         val mockQuery by before {
@@ -310,12 +310,12 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         verify(mockS3Client).getObjectMetadata(
             check {
                 it shouldContain mockDraftId.toString()
-            }
+            },
         )
         verify(mockS3Client).download(
             check {
                 it shouldContain mockDraftId.toString()
-            }
+            },
         )
     }
 
@@ -354,7 +354,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         verify(mockS3Client).getObjectMetadata(
             check {
                 it shouldContain mockDraftId.toString()
-            }
+            },
         )
     }
 
@@ -382,12 +382,12 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         verify(mockS3Client).getObjectMetadata(
             check {
                 it shouldContain mockDraftId.toString()
-            }
+            },
         )
         verify(mockS3Client).download(
             check {
                 it shouldContain mockDraftId.toString()
-            }
+            },
         )
         verify(mockSealingService).unsealString(anyString(), any())
     }

@@ -21,7 +21,7 @@ enum class CachePolicy {
     /**
      * Returns data from the backend only and ignores any cached entries.
      */
-    REMOTE_ONLY
+    REMOTE_ONLY,
 }
 
 internal fun CachePolicy.toResponseFetcher(): ResponseFetcher {

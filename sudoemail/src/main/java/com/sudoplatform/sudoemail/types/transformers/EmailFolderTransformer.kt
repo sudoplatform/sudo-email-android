@@ -7,9 +7,9 @@
 package com.sudoplatform.sudoemail.types.transformers
 
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
-import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder as EmailFolderFragment
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.Owner
+import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder as EmailFolderFragment
 
 /**
  * Transformer responsible for transforming the [EmailFolder] GraphQL data
@@ -24,7 +24,7 @@ internal object EmailFolderTransformer {
      * @return The list of [EmailFolder]s entity type.
      */
     fun toEntity(
-        result: List<ListEmailFoldersForEmailAddressIdQuery.Item>
+        result: List<ListEmailFoldersForEmailAddressIdQuery.Item>,
     ): List<EmailFolder> {
         return result.map {
             val emailFolder = it.fragments().emailFolder()
@@ -38,7 +38,7 @@ internal object EmailFolderTransformer {
                 unseenCount = emailFolder.unseenCount().toInt(),
                 version = emailFolder.version(),
                 createdAt = emailFolder.createdAtEpochMs().toDate(),
-                updatedAt = emailFolder.updatedAtEpochMs().toDate()
+                updatedAt = emailFolder.updatedAtEpochMs().toDate(),
             )
         }
     }

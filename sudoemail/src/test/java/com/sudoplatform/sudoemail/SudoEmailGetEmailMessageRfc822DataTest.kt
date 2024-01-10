@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail
 
 import android.content.Context
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
+import com.amazonaws.services.s3.model.ObjectMetadata
 import com.apollographql.apollo.api.Response
 import com.apollographql.apollo.exception.ApolloHttpException
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
@@ -24,8 +25,6 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -48,6 +47,10 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
+import java.util.zip.GZIPOutputStream
 
 /**
  * Test the correct operation of [SudoEmailClient.getEmailMessageRfc822Data]
@@ -62,6 +65,8 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
         valueBytes.copyInto(data)
         return Base64.encodeBase64String(data)
     }
+
+    private val mockRfc822Metadata: ObjectMetadata = ObjectMetadata()
 
     private val unsealedHeaderDetailsString =
         "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
@@ -93,11 +98,11 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
                         "algorithm",
                         "keyId",
                         "plainText",
-                        mockSeal(unsealedHeaderDetailsString)
+                        mockSeal(unsealedHeaderDetailsString),
                     ),
-                    1.0
-                )
-            )
+                    1.0,
+                ),
+            ),
         )
     }
     private val response by before {
@@ -134,20 +139,21 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
     private val mockS3Client by before {
         mock<S3Client>().stub {
             onBlocking { download(anyString()) } doReturn mockSeal("foobar").toByteArray(Charsets.UTF_8)
+            onBlocking { getObjectMetadata(anyString()) } doReturn mockRfc822Metadata
         }
     }
 
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -163,7 +169,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -198,11 +204,54 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         verify(mockS3Client).download(anyString())
+        verify(mockS3Client).getObjectMetadata(anyString())
+    }
+
+    @Test
+    fun `getEmailMessageRfc822Data() should decompress data when appropriate`() = runBlocking<Unit> {
+        holder.callback shouldBe null
+        mockRfc822Metadata.contentEncoding = "sudoplatform-compression, sudoplatform-crypto, sudoplatform-binary-data"
+        val bos = ByteArrayOutputStream()
+        GZIPOutputStream(bos).bufferedWriter(Charsets.UTF_8).use { it.write(unsealedHeaderDetailsString) }
+        val compressedBytes = bos.toByteArray()
+        val encodedBytes = com.amazonaws.util.Base64.encode(compressedBytes)
+
+        mockS3Client.stub {
+            onBlocking { getObjectMetadata(anyString()) } doReturn mockRfc822Metadata
+        }
+
+        mockKeyManager.stub {
+            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn encodedBytes
+        }
+
+        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
+        val deferredResult = async(Dispatchers.IO) {
+            client.getEmailMessageRfc822Data(input)
+        }
+        deferredResult.start()
+
+        delay(100L)
+        holder.callback shouldNotBe null
+        holder.callback?.onResponse(response)
+
+        val result = deferredResult.await()
+        result?.id shouldBe "emailMessageId"
+        result?.rfc822Data?.toString(Charsets.UTF_8) shouldBe unsealedHeaderDetailsString
+
+        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+            check {
+                it.variables().id() shouldBe "emailMessageId"
+            },
+        )
+        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        verify(mockS3Client).download(anyString())
+        verify(mockS3Client).getObjectMetadata(anyString())
     }
 
     @Test
@@ -231,7 +280,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 
@@ -261,7 +310,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 
@@ -299,7 +348,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 
@@ -325,7 +374,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 

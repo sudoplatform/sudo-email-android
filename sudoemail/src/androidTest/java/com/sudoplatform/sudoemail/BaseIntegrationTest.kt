@@ -16,7 +16,7 @@ import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageFactory
+import com.sudoplatform.sudoemail.util.Rfc822MessageParser
 import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
 import com.sudoplatform.sudoentitlementsadmin.SudoEntitlementsAdminClient
 import com.sudoplatform.sudoentitlementsadmin.types.Entitlement
@@ -60,7 +60,7 @@ abstract class BaseIntegrationTest {
             Entitlement("sudoplatform.email.emailAddressMaxPerSudo", "test", 3),
             Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
             Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
-            Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1)
+            Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
         )
 
         @JvmStatic
@@ -128,7 +128,7 @@ abstract class BaseIntegrationTest {
                 privateKey = privateKey,
                 publicKey = null,
                 keyManager = keyManager,
-                keyId = keyId
+                keyId = keyId,
             )
 
             userClient.registerWithAuthenticationProvider(authProvider, "eml-client-test")
@@ -223,7 +223,7 @@ abstract class BaseIntegrationTest {
             "c" to "12",
             "d" to "13",
             "e" to "14",
-            "f" to "15"
+            "f" to "15",
         )
         val pref = if (safePrefix.endsWith("-")) safePrefix else "$safePrefix-"
         val uuid = UUID.randomUUID().toString().map { it.toString() }
@@ -234,17 +234,17 @@ abstract class BaseIntegrationTest {
         client: SudoEmailClient,
         ownershipProofToken: String,
         address: String? = null,
-        alias: String? = null
+        alias: String? = null,
     ): EmailAddress {
         val emailDomains = client.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 
         val localPart = generateSafeLocalPart()
-        val emailAddress = address ?: localPart + "@" + emailDomains.first()
+        val emailAddress = address ?: (localPart + "@" + emailDomains.first())
         val provisionInput = ProvisionEmailAddressInput(
             emailAddress = emailAddress,
             ownershipProofToken = ownershipProofToken,
-            alias = alias
+            alias = alias,
         )
         return client.provisionEmailAddress(provisionInput)
     }
@@ -253,7 +253,7 @@ abstract class BaseIntegrationTest {
         client: SudoEmailClient,
         fromAddress: EmailAddress,
         toAddress: String = toSimulatorAddress,
-        body: String? = null
+        body: String? = null,
     ): String {
         val messageSubject = "Hello ${UUID.randomUUID()}"
         val emailBody = body ?: buildString {
@@ -261,11 +261,11 @@ abstract class BaseIntegrationTest {
                 appendLine("Body of message ${UUID.randomUUID()}")
             }
         }
-        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = fromAddress.emailAddress,
-            to = toAddress,
+            to = listOf(toAddress),
             subject = messageSubject,
-            body = emailBody
+            body = emailBody,
         )
         val sendEmailMessageInput = SendEmailMessageInput(rfc822Data, fromAddress.id)
         return client.sendEmailMessage(sendEmailMessageInput)

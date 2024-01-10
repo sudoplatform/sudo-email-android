@@ -22,5 +22,5 @@ data class ConfigurationData(
     val deleteEmailMessagesLimit: Int,
     val updateEmailMessagesLimit: Int,
     val emailMessageMaxInboundMessageSize: Int,
-    val emailMessageMaxOutboundMessageSize: Int
+    val emailMessageMaxOutboundMessageSize: Int,
 ) : Parcelable

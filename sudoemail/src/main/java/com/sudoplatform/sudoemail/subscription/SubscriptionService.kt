@@ -33,7 +33,7 @@ internal class SubscriptionService(
     private val appSyncClient: AWSAppSyncClient,
     private val deviceKeyManager: DeviceKeyManager,
     private val userClient: SudoUserClient,
-    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
+    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
 ) : AutoCloseable {
 
     companion object {
@@ -56,7 +56,7 @@ internal class SubscriptionService(
                 val watcher = appSyncClient.subscribe(
                     OnEmailMessageCreatedSubscription.builder()
                         .owner(userSubject)
-                        .build()
+                        .build(),
                 )
                 createSubscriptionManager.pendingWatcher = watcher
                 watcher.execute(createCallback)
@@ -66,7 +66,7 @@ internal class SubscriptionService(
                 val watcher = appSyncClient.subscribe(
                     OnEmailMessageDeletedSubscription.builder()
                         .owner(userSubject)
-                        .build()
+                        .build(),
                 )
                 deleteSubscriptionManager.pendingWatcher = watcher
                 watcher.execute(deleteCallback)
@@ -100,7 +100,7 @@ internal class SubscriptionService(
                 val newEmailMessage = response.data()?.onEmailMessageCreated()
                     ?: return@launch
                 createSubscriptionManager.emailMessageChanged(
-                    EmailMessageTransformer.toEntity(deviceKeyManager, newEmailMessage.fragments().sealedEmailMessage())
+                    EmailMessageTransformer.toEntity(deviceKeyManager, newEmailMessage.fragments().sealedEmailMessage()),
                 )
             }
         }
@@ -113,7 +113,7 @@ internal class SubscriptionService(
             createSubscriptionManager
                 .watcher = createSubscriptionManager.pendingWatcher
             createSubscriptionManager.connectionStatusChanged(
-                Subscriber.ConnectionState.CONNECTED
+                Subscriber.ConnectionState.CONNECTED,
             )
         }
     }
@@ -129,7 +129,7 @@ internal class SubscriptionService(
                 val deletedEmailMessage = response.data()?.onEmailMessageDeleted()
                     ?: return@launch
                 deleteSubscriptionManager.emailMessageChanged(
-                    EmailMessageTransformer.toEntity(deviceKeyManager, deletedEmailMessage.fragments().sealedEmailMessage())
+                    EmailMessageTransformer.toEntity(deviceKeyManager, deletedEmailMessage.fragments().sealedEmailMessage()),
                 )
             }
         }
@@ -142,7 +142,7 @@ internal class SubscriptionService(
             deleteSubscriptionManager
                 .watcher = deleteSubscriptionManager.pendingWatcher
             deleteSubscriptionManager.connectionStatusChanged(
-                Subscriber.ConnectionState.CONNECTED
+                Subscriber.ConnectionState.CONNECTED,
             )
         }
     }

@@ -15,5 +15,5 @@ package com.sudoplatform.sudoemail.types.inputs
  */
 data class GetDraftEmailMessageInput(
     val id: String,
-    val emailAddressId: String
+    val emailAddressId: String,
 )

@@ -11,7 +11,7 @@ package com.sudoplatform.sudoemail.types.transformers
  */
 internal enum class KeyType {
     PRIVATE_KEY,
-    SYMMETRIC_KEY
+    SYMMETRIC_KEY,
 }
 
 /**
@@ -25,5 +25,5 @@ internal enum class KeyType {
 internal data class KeyInfo(
     val keyId: String,
     val keyType: KeyType,
-    val algorithm: String
+    val algorithm: String,
 )

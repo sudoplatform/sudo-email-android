@@ -24,8 +24,6 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.Date
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -48,6 +46,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.Date
 
 /**
  * Test the correct operation of [SudoEmailClient.getEmailAddress]
@@ -81,10 +81,10 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
                         "folderName",
                         0.0,
                         0.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -110,11 +110,11 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
                             1.0,
                             "example@sudoplatform.com",
                             0.0,
-                            null
-                        )
-                    )
-                )
-            )
+                            null,
+                        ),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -149,7 +149,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -162,7 +162,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -178,7 +178,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 

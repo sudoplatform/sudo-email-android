@@ -28,9 +28,6 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.Date
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -53,6 +50,9 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.Date
+import java.util.concurrent.CancellationException
 
 /**
  * Test the correct operation of [SudoEmailClient.getEmailMessage]
@@ -104,11 +104,11 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
                         "algorithm",
                         "keyId",
                         "plainText",
-                        mockSeal(unsealedHeaderDetailsString)
+                        mockSeal(unsealedHeaderDetailsString),
                     ),
-                    1.0
-                )
-            )
+                    1.0,
+                ),
+            ),
         )
     }
 
@@ -146,7 +146,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -157,7 +157,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -173,7 +173,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -228,7 +228,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -280,7 +280,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -332,7 +332,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -364,7 +364,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 
@@ -394,7 +394,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 
@@ -432,7 +432,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 
@@ -458,7 +458,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
             check {
                 it.variables().id() shouldBe "emailMessageId"
-            }
+            },
         )
     }
 

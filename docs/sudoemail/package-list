@@ -195,6 +195,15 @@ $dokka.location:com.sudoplatform.sudoemail.types/EmailAddress/owners/#/PointingT
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddress/size/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address/size.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddress/updatedAt/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address/updated-at.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddress/version/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address/version.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/EmailAttachment/#kotlin.String#kotlin.String#kotlin.String#kotlin.Boolean#kotlin.ByteArray/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/-email-attachment.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/contentId/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/content-id.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/data/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/data.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/equals/#kotlin.Any?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/equals.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/fileName/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/file-name.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/hashCode/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/hash-code.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/inlineAttachment/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/inline-attachment.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/mimeType/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/mime-type.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailFolder///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-folder/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailFolder/EmailFolder/#kotlin.String#kotlin.String#kotlin.collections.List[com.sudoplatform.sudoemail.types.Owner]#kotlin.String#kotlin.String#kotlin.Double#kotlin.Int#kotlin.Int#java.util.Date#java.util.Date/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-folder/-email-folder.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailFolder/createdAt/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-folder/created-at.html
@@ -244,6 +253,11 @@ $dokka.location:com.sudoplatform.sudoemail.types/EmailMessageRfc822Data/equals/#
 $dokka.location:com.sudoplatform.sudoemail.types/EmailMessageRfc822Data/hashCode/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-message-rfc822-data/hash-code.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailMessageRfc822Data/id/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-message-rfc822-data/id.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailMessageRfc822Data/rfc822Data/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-message-rfc822-data/rfc822-data.html
+$dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus.ENCRYPTED///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/-e-n-c-r-y-p-t-e-d/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus.UNENCRYPTED///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/-u-n-e-n-c-r-y-p-t-e-d/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/value-of.html
+$dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/values.html
 $dokka.location:com.sudoplatform.sudoemail.types/ListAPIResult.ListPartialResult///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-list-a-p-i-result/-list-partial-result/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/ListAPIResult.ListPartialResult/ListPartialResult/#kotlin.collections.List[TypeParam(bounds=[kotlin.Any?])]#kotlin.collections.List[com.sudoplatform.sudoemail.types.PartialResult[TypeParam(bounds=[kotlin.Any?])]]#kotlin.String?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-list-a-p-i-result/-list-partial-result/-list-partial-result.html
 $dokka.location:com.sudoplatform.sudoemail.types/ListAPIResult.ListPartialResult/failed/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-list-a-p-i-result/-list-partial-result/failed.html
@@ -330,6 +344,18 @@ $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm/toString/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/to-string.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/values.html
+$dokka.location:com.sudoplatform.sudoemail.util////PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/index.html
+$dokka.location:com.sudoplatform.sudoemail.util/Rfc822MessageParser///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-rfc822-message-parser/index.html
+$dokka.location:com.sudoplatform.sudoemail.util/Rfc822MessageParser/encodeToRfc822Data/#kotlin.String#kotlin.collections.List[kotlin.String]#kotlin.collections.List[kotlin.String]?#kotlin.collections.List[kotlin.String]?#kotlin.String?#kotlin.String?#kotlin.collections.List[com.sudoplatform.sudoemail.types.EmailAttachment]?#kotlin.collections.List[com.sudoplatform.sudoemail.types.EmailAttachment]?#com.sudoplatform.sudoemail.types.EncryptionStatus/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-rfc822-message-parser/encode-to-rfc822-data.html
+$dokka.location:com.sudoplatform.sudoemail.util/Rfc822MessageParser/parseRfc822Data/#kotlin.ByteArray/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-rfc822-message-parser/parse-rfc822-data.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/index.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage/SimplifiedEmailMessage/#kotlin.collections.List[kotlin.String]#kotlin.collections.List[kotlin.String]#kotlin.collections.List[kotlin.String]#kotlin.collections.List[kotlin.String]#kotlin.String?#kotlin.String?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/-simplified-email-message.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage/bcc/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/bcc.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage/body/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/body.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage/cc/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/cc.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage/from/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/from.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage/subject/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/subject.html
+$dokka.location:com.sudoplatform.sudoemail.util/SimplifiedEmailMessage/to/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.util/-simplified-email-message/to.html
 $dokka.location:com.sudoplatform.sudoemail////PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/index.html
 $dokka.location:com.sudoplatform.sudoemail//subscribeToEmailMessages/com.sudoplatform.sudoemail.SudoEmailClient#kotlin.String#kotlin.Function1[com.sudoplatform.sudoemail.subscription.Subscriber.ConnectionState,kotlin.Unit]#kotlin.Function1[com.sudoplatform.sudoemail.types.EmailMessage,kotlin.Unit]/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/subscribe-to-email-messages.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient.Builder.ConfigurationException///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/-builder/-configuration-exception/index.html
@@ -450,4 +476,5 @@ com.sudoplatform.sudoemail.s3.types
 com.sudoplatform.sudoemail.subscription
 com.sudoplatform.sudoemail.types
 com.sudoplatform.sudoemail.types.inputs
+com.sudoplatform.sudoemail.util
 

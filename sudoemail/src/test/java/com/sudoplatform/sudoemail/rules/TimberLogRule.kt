@@ -19,7 +19,7 @@ class TimberLogRule(
     /**
      * the min priority is reset to this value for every test
      */
-    private val defaultMinPriority: Int = Log.VERBOSE
+    private val defaultMinPriority: Int = Log.VERBOSE,
 ) : ExternalResource() {
 
     /**

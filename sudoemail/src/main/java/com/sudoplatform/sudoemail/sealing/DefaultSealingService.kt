@@ -14,7 +14,7 @@ import com.sudoplatform.sudologging.Logger
 
 internal class DefaultSealingService(
     private val deviceKeyManager: DeviceKeyManager,
-    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
+    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
 ) : SealingService {
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)

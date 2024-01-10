@@ -7,8 +7,8 @@
 package com.sudoplatform.sudoemail.types
 
 import android.os.Parcelable
-import java.util.Date
 import kotlinx.parcelize.Parcelize
+import java.util.Date
 
 /**
  * Representation of the metadata of a draft email message in the Sudo Platform Email SDK.
@@ -20,5 +20,5 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class DraftEmailMessageMetadata(
     override val id: String,
-    override val updatedAt: Date
+    override val updatedAt: Date,
 ) : Parcelable, DraftEmailMessage

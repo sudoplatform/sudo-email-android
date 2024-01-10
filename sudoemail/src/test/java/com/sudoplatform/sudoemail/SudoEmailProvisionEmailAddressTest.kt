@@ -63,7 +63,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                     .algorithm("RSAEncryptionOAEPAESCBC")
                     .keyId("keyId")
                     .publicKey(Base64.encodeAsString(*"publicKey".toByteArray()))
-                    .build()
+                    .build(),
             )
             .ownershipProofTokens(listOf("ownershipProofToken"))
             .build()
@@ -94,10 +94,10 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                         "folderName",
                         0.0,
                         0.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -123,11 +123,11 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                             null,
                             "example@sudoplatform.com",
                             0.0,
-                            null
-                        )
-                    )
-                )
-            )
+                            null,
+                        ),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -170,7 +170,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 keyId = "keyId",
                 keyRingId = "keyRingId",
                 publicKey = ByteArray(42),
-                privateKey = ByteArray(42)
+                privateKey = ByteArray(42),
             )
             on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
         }
@@ -185,7 +185,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -201,7 +201,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -221,7 +221,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             client.provisionEmailAddress(input)
@@ -266,12 +266,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         verify(mockAppSyncClient).mutate<
             ProvisionEmailAddressMutation.Data,
             ProvisionEmailAddressMutation,
-            ProvisionEmailAddressMutation.Variables>(
+            ProvisionEmailAddressMutation.Variables,
+            >(
             check {
                 it.variables().input().emailAddress() shouldBe "example@sudoplatform.com"
                 it.variables().input().ownershipProofTokens() shouldBe listOf("ownershipProofToken")
                 it.variables().input().alias() shouldBe null
-            }
+            },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
@@ -289,7 +290,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.ProvisionFailedException> {
@@ -305,12 +306,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         verify(mockAppSyncClient).mutate<
             ProvisionEmailAddressMutation.Data,
             ProvisionEmailAddressMutation,
-            ProvisionEmailAddressMutation.Variables>(
+            ProvisionEmailAddressMutation.Variables,
+            >(
             check {
                 it.variables().input().emailAddress() shouldBe "example@sudoplatform.com"
                 it.variables().input().ownershipProofTokens() shouldBe listOf("ownershipProofToken")
                 it.variables().input().alias() shouldBe null
-            }
+            },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
@@ -324,7 +326,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "EmailValidation")
+                mapOf("errorType" to "EmailValidation"),
             )
             Response.builder<ProvisionEmailAddressMutation.Data>(ProvisionEmailAddressMutation(input))
                 .errors(listOf(error))
@@ -333,7 +335,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
@@ -349,12 +351,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         verify(mockAppSyncClient).mutate<
             ProvisionEmailAddressMutation.Data,
             ProvisionEmailAddressMutation,
-            ProvisionEmailAddressMutation.Variables>(
+            ProvisionEmailAddressMutation.Variables,
+            >(
             check {
                 it.variables().input().emailAddress() shouldBe "example@sudoplatform.com"
                 it.variables().input().ownershipProofTokens() shouldBe listOf("ownershipProofToken")
                 it.variables().input().alias() shouldBe null
-            }
+            },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
@@ -368,7 +371,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "InvalidKeyRingId")
+                mapOf("errorType" to "InvalidKeyRingId"),
             )
             Response.builder<ProvisionEmailAddressMutation.Data>(ProvisionEmailAddressMutation(input))
                 .errors(listOf(error))
@@ -377,7 +380,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.PublicKeyException> {
@@ -393,12 +396,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         verify(mockAppSyncClient).mutate<
             ProvisionEmailAddressMutation.Data,
             ProvisionEmailAddressMutation,
-            ProvisionEmailAddressMutation.Variables>(
+            ProvisionEmailAddressMutation.Variables,
+            >(
             check {
                 it.variables().input().emailAddress() shouldBe "example@sudoplatform.com"
                 it.variables().input().ownershipProofTokens() shouldBe listOf("ownershipProofToken")
                 it.variables().input().alias() shouldBe null
-            }
+            },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
@@ -412,7 +416,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "InsufficientEntitlementsError")
+                mapOf("errorType" to "InsufficientEntitlementsError"),
             )
             Response.builder<ProvisionEmailAddressMutation.Data>(ProvisionEmailAddressMutation(input))
                 .errors(listOf(error))
@@ -421,7 +425,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.InsufficientEntitlementsException> {
@@ -437,12 +441,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         verify(mockAppSyncClient).mutate<
             ProvisionEmailAddressMutation.Data,
             ProvisionEmailAddressMutation,
-            ProvisionEmailAddressMutation.Variables>(
+            ProvisionEmailAddressMutation.Variables,
+            >(
             check {
                 it.variables().input().emailAddress() shouldBe "example@sudoplatform.com"
                 it.variables().input().ownershipProofTokens() shouldBe listOf("ownershipProofToken")
                 it.variables().input().alias() shouldBe null
-            }
+            },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
@@ -456,7 +461,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to "PolicyFailed")
+                mapOf("errorType" to "PolicyFailed"),
             )
             Response.builder<ProvisionEmailAddressMutation.Data>(ProvisionEmailAddressMutation(input))
                 .errors(listOf(error))
@@ -465,7 +470,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.InsufficientEntitlementsException> {
@@ -481,12 +486,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         verify(mockAppSyncClient).mutate<
             ProvisionEmailAddressMutation.Data,
             ProvisionEmailAddressMutation,
-            ProvisionEmailAddressMutation.Variables>(
+            ProvisionEmailAddressMutation.Variables,
+            >(
             check {
                 it.variables().input().emailAddress() shouldBe "example@sudoplatform.com"
                 it.variables().input().ownershipProofTokens() shouldBe listOf("ownershipProofToken")
                 it.variables().input().alias() shouldBe null
-            }
+            },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
@@ -500,7 +506,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.PublicKeyException> {
@@ -527,7 +533,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
-            "ownershipProofToken"
+            "ownershipProofToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             client.provisionEmailAddress(input)
@@ -572,12 +578,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         verify(mockAppSyncClient).mutate<
             ProvisionEmailAddressMutation.Data,
             ProvisionEmailAddressMutation,
-            ProvisionEmailAddressMutation.Variables>(
+            ProvisionEmailAddressMutation.Variables,
+            >(
             check {
                 it.variables().input().emailAddress() shouldBe "example@sudoplatform.com"
                 it.variables().input().ownershipProofTokens() shouldBe listOf("ownershipProofToken")
                 it.variables().input().alias() shouldBe null
-            }
+            },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()

@@ -16,5 +16,5 @@ package com.sudoplatform.sudoemail.types
  */
 internal data class DeleteEmailMessagesResult(
     val successIds: List<String>,
-    val failureIds: List<String>
+    val failureIds: List<String>,
 )

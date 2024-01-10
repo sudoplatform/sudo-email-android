@@ -13,7 +13,8 @@ package com.sudoplatform.sudoemail.types
  * @enum SymmetricKeyEncryptionAlgorithm
  */
 enum class SymmetricKeyEncryptionAlgorithm(private val algorithmName: String) {
-    AES_CBC_PKCS7PADDING("AES/CBC/PKCS7Padding");
+    AES_CBC_PKCS7PADDING("AES/CBC/PKCS7Padding"),
+    ;
 
     companion object {
         fun isAlgorithmSupported(algorithm: String): Boolean {

@@ -30,9 +30,6 @@ import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.Date
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -56,6 +53,9 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.Date
+import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput as ListEmailAddressesRequest
 
 /**
@@ -97,10 +97,10 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                         "folderName",
                         0.0,
                         0.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -129,14 +129,14 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                     1.0,
                                     "example@sudoplatform.com",
                                     0.0,
-                                    null
-                                )
-                            )
-                        )
-                    )
-                )
+                                    null,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
             ),
-            null
+            null,
         )
     }
 
@@ -171,7 +171,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -184,7 +184,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -200,7 +200,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -270,7 +270,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 
@@ -303,14 +303,14 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                         1.0,
                                         "example@sudoplatform.com",
                                         0.0,
-                                        null
-                                    )
-                                )
-                            )
-                        )
-                    )
+                                        null,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
                 ),
-                "dummyNextToken"
+                "dummyNextToken",
             )
         }
 
@@ -363,7 +363,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 1
                 it.variables().input().nextToken() shouldBe "dummyNextToken"
-            }
+            },
         )
     }
 
@@ -375,7 +375,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             ListEmailAddressesQuery.ListEmailAddresses(
                 "typename",
                 emptyList(),
-                null
+                null,
             )
         }
 
@@ -411,7 +411,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 
@@ -451,7 +451,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 
@@ -494,17 +494,17 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                                     "algorithm",
                                                     "keyId",
                                                     "string",
-                                                    "alias"
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
+                                                    "alias",
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
                 ),
-                null
+                null,
             )
         }
 
@@ -567,7 +567,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 
@@ -587,7 +587,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 
@@ -626,7 +626,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 
@@ -653,7 +653,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 
@@ -672,7 +672,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             check {
                 it.variables().input().limit() shouldBe 10
                 it.variables().input().nextToken() shouldBe null
-            }
+            },
         )
     }
 }

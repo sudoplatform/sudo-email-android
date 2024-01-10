@@ -18,12 +18,15 @@ import com.sudoplatform.sudokeymanager.KeyManagerInterface
  */
 internal class Unsealer(
     private val deviceKeyManager: DeviceKeyManager,
-    private val keyInfo: KeyInfo
+    private val keyInfo: KeyInfo,
 ) {
     companion object {
-        /** Size of the AES symmetric key. */
+        /** Size of the AES symmetric key in bits */
         @VisibleForTesting
         const val KEY_SIZE_AES = 256
+
+        /** RSA block size in bytes */
+        const val BLOCK_SIZE_RSA = 256
 
         /** Algorithm used when creating/registering public keys. */
         const val DEFAULT_ALGORITHM = "RSAEncryptionOAEPAESCBC"
@@ -58,7 +61,7 @@ internal class Unsealer(
                 if (data.size < KEY_SIZE_AES) {
                     throw UnsealerException.SealedDataTooShortException("Sealed value too short")
                 }
-                val aesEncrypted = data.copyOfRange(0, KEY_SIZE_AES)
+                val aesEncrypted = data.copyOfRange(0, BLOCK_SIZE_RSA)
                 val cipherData = data.copyOfRange(KEY_SIZE_AES, data.size)
                 val aesDecrypted = deviceKeyManager.decryptWithPrivateKey(aesEncrypted, keyInfo.keyId, algorithm)
                 String(deviceKeyManager.decryptWithSymmetricKey(aesDecrypted, cipherData), Charsets.UTF_8)

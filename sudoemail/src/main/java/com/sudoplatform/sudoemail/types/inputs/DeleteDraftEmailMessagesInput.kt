@@ -15,5 +15,5 @@ package com.sudoplatform.sudoemail.types.inputs
  */
 data class DeleteDraftEmailMessagesInput(
     val ids: List<String>,
-    val emailAddressId: String
+    val emailAddressId: String,
 )

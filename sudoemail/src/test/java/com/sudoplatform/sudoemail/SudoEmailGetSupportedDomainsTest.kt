@@ -21,8 +21,6 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -45,6 +43,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
 
 /**
  * Test the correct operation of [SudoEmailClient.getSupportedEmailDomains]
@@ -56,7 +56,7 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
     private val queryResult by before {
         GetEmailDomainsQuery.GetEmailDomains(
             "typename",
-            listOf("foo.com", "bar.com")
+            listOf("foo.com", "bar.com"),
         )
     }
 
@@ -93,7 +93,7 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -106,7 +106,7 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -122,7 +122,7 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -165,7 +165,7 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
         val queryResultWithEmptyList by before {
             GetEmailDomainsQuery.GetEmailDomains(
                 "typename",
-                emptyList()
+                emptyList(),
             )
         }
 
@@ -226,7 +226,7 @@ class SudoEmailGetSupportedDomainsTest : BaseTests() {
         val error = com.apollographql.apollo.api.Error(
             "mock",
             emptyList(),
-            mapOf("errorType" to "DilithiumCrystalsOutOfAlignment")
+            mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
         )
 
         val responseWithNullData by before {

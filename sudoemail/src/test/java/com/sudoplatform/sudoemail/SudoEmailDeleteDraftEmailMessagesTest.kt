@@ -80,10 +80,10 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                         "folderName",
                         1.0,
                         1.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -109,11 +109,11 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                             1.0,
                             "example@sudoplatform.com",
                             0.0,
-                            null
-                        )
-                    )
-                )
-            )
+                            null,
+                        ),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -177,7 +177,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -198,7 +198,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         val error = com.apollographql.apollo.api.Error(
             "mock",
             emptyList(),
-            mapOf("errorType" to "AddressNotFound")
+            mapOf("errorType" to "AddressNotFound"),
         )
 
         val mockQuery by before {
@@ -283,12 +283,12 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         verify(mockS3Client).delete(
             check {
                 it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-            }
+            },
         )
         verify(mockS3Client).delete(
             check {
                 it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-            }
+            },
         )
     }
 
@@ -305,8 +305,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             mockS3Client.delete(
                 check {
                     it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-                }
-            )
+                },
+            ),
         ).thenThrow(S3Exception.DeleteException("S3 delete failed"))
 
         val deferredResult = async(Dispatchers.IO) {
@@ -338,12 +338,12 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         verify(mockS3Client).delete(
             check {
                 it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-            }
+            },
         )
         verify(mockS3Client).delete(
             check {
                 it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-            }
+            },
         )
     }
 
@@ -386,12 +386,12 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         verify(mockS3Client).delete(
             check {
                 it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-            }
+            },
         )
         verify(mockS3Client).delete(
             check {
                 it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-            }
+            },
         )
     }
 }

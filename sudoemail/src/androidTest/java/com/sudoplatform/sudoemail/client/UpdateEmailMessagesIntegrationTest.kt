@@ -78,7 +78,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id
+                    emailAddressId = emailAddress.id,
                 )
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }
@@ -141,7 +141,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id
+                    emailAddressId = emailAddress.id,
                 )
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }
@@ -164,7 +164,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
             ?: fail("EmailFolder could not be found")
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id
+            emailAddressId = emailAddress.id,
         )
         val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
         val outbound = (listEmailMessages as ListAPIResult.Success<EmailMessage>).result.items.filter { it.direction == Direction.OUTBOUND }
@@ -200,7 +200,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id
+                    emailAddressId = emailAddress.id,
                 )
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }
@@ -262,7 +262,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id
+                    emailAddressId = emailAddress.id,
                 )
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }

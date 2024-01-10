@@ -72,7 +72,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
 
     private val mockUserMetadata = listOf(
         "keyId" to "keyId",
-        "algorithm" to "algorithm"
+        "algorithm" to "algorithm",
     ).toMap()
 
     private val mockS3ObjectMetadata = ObjectMetadata()
@@ -102,10 +102,10 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
                         "folderName",
                         1.0,
                         1.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -131,11 +131,11 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
                             1.0,
                             "example@sudoplatform.com",
                             0.0,
-                            null
-                        )
-                    )
-                )
-            )
+                            null,
+                        ),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -196,7 +196,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
                 upload(
                     any(),
                     any(),
-                    anyOrNull()
+                    anyOrNull(),
                 )
             } doReturn mockUploadResponse
             onBlocking {
@@ -227,7 +227,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -250,7 +250,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         val error = com.apollographql.apollo.api.Error(
             "mock",
             emptyList(),
-            mapOf("errorType" to "AddressNotFound")
+            mapOf("errorType" to "AddressNotFound"),
         )
 
         val mockQuery by before {
@@ -314,12 +314,12 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         verify(mockS3Client).getObjectMetadata(
             org.mockito.kotlin.check {
                 it shouldContain mockDraftId
-            }
+            },
         )
         verify(mockS3Client).download(
             org.mockito.kotlin.check {
                 it shouldContain mockDraftId
-            }
+            },
         )
     }
 
@@ -334,7 +334,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
                 upload(
                     any(),
                     any(),
-                    anyOrNull()
+                    anyOrNull(),
                 )
             } doThrow error
         }
@@ -343,7 +343,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         val updateDraftInput = UpdateDraftEmailMessageInput(
             mockDraftId,
             "rfc822data".toByteArray(),
-            "senderEmailAddressId"
+            "senderEmailAddressId",
         )
 
         val deferredResult = async(Dispatchers.IO) {
@@ -366,12 +366,12 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         verify(mockS3Client).getObjectMetadata(
             org.mockito.kotlin.check {
                 it shouldContain mockDraftId
-            }
+            },
         )
         verify(mockS3Client).download(
             org.mockito.kotlin.check {
                 it shouldContain mockDraftId
-            }
+            },
         )
         verify(mockS3Client).upload(
             org.mockito.kotlin.check {
@@ -382,7 +382,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
             },
             org.mockito.kotlin.check {
                 it shouldNotBe null
-            }
+            },
         )
     }
 
@@ -394,7 +394,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         val updateDraftInput = UpdateDraftEmailMessageInput(
             mockDraftId,
             "rfc822data".toByteArray(),
-            "senderEmailAddressId"
+            "senderEmailAddressId",
         )
 
         val deferredResult = async(Dispatchers.IO) {
@@ -416,12 +416,12 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         verify(mockS3Client).getObjectMetadata(
             org.mockito.kotlin.check {
                 it shouldContain mockDraftId
-            }
+            },
         )
         verify(mockS3Client).download(
             org.mockito.kotlin.check {
                 it shouldContain mockDraftId
-            }
+            },
         )
         verify(mockS3Client).upload(
             org.mockito.kotlin.check {
@@ -432,7 +432,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
             },
             org.mockito.kotlin.check {
                 it shouldNotBe null
-            }
+            },
         )
     }
 }

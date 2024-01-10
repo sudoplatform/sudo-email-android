@@ -361,4 +361,16 @@
   copyrightHolder: Google, Inc.
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
-  url: https://developer.android.com/jetpack/androidx/releases/annotation#1.6.0  
+  url: https://developer.android.com/jetpack/androidx/releases/annotation#1.6.0
+- artifact: com.sun.activation:jakarta.activation:+
+  name: jakarta.activation
+  copyrightHolder: Jakarta
+  license: Eclipse Public License 2.0
+  licenseUrl: https://www.eclipse.org/legal/epl-2.0/
+  url: https://github.com/jakartaee/jaf-api
+- artifact: com.sun.mail:jakarta.mail:+
+  name: jakarta.mail
+  copyrightHolder: Jakarta
+  license: Eclipse Public License 2.0
+  licenseUrl: https://www.eclipse.org/legal/epl-2.0/
+  url: https://github.com/jakartaee/jaf-api

@@ -9,15 +9,15 @@ node {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdk 34
 
     namespace "com.sudoplatform.sudoemail"
 
     defaultConfig {
         minSdkVersion 26
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionCode = 1
-        versionName = "5.0.0"
+        versionName = "6.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -33,11 +33,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     resourcePrefix 'sem_'
@@ -94,40 +94,37 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
 
     // Sudo Platform
-    implementation "com.sudoplatform:sudokeymanager:6.2.0"
-    implementation "com.sudoplatform:sudologging:3.0.0"
-    implementation "com.sudoplatform:sudoconfigmanager:6.0.0"
-    implementation 'com.sudoplatform:sudouser:17.2.0'
-    implementation 'com.sudoplatform:sudoapiclient:8.1.0'
+    implementation "com.sudoplatform:sudokeymanager:7.0.0"
+    implementation "com.sudoplatform:sudologging:4.0.0"
+    implementation "com.sudoplatform:sudoconfigmanager:7.0.2"
+    implementation 'com.sudoplatform:sudouser:18.0.0'
+    implementation 'com.sudoplatform:sudoapiclient:9.0.0'
+
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'
+    implementation 'com.sun.activation:jakarta.activation:2.0.1'
 
     // Testing
     testImplementation "junit:junit:4.13.2"
     testImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
     testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    testImplementation "org.mockito:mockito-core:4.7.0"
-    testImplementation "org.mockito.kotlin:mockito-kotlin:4.1.0"
+    testImplementation "org.mockito:mockito-core:5.5.0"
+    testImplementation "org.mockito.kotlin:mockito-kotlin:5.1.0"
     testImplementation "androidx.test:core:1.5.0"
     testImplementation 'org.robolectric:robolectric:4.10.3'
-    testImplementation "com.jakewharton.timber:timber:4.7.1"
+    testImplementation "com.jakewharton.timber:timber:5.0.1"
     testImplementation "commons-codec:commons-codec:1.15"
 
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation "androidx.test:runner:1.5.2"
     androidTestImplementation "androidx.test:core:1.5.0"
     androidTestImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
-    androidTestImplementation "com.jakewharton.timber:timber:4.7.1"
+    androidTestImplementation "com.jakewharton.timber:timber:5.0.1"
     androidTestImplementation "org.awaitility:awaitility-kotlin:3.1.6"
-    androidTestImplementation('com.sun.mail:jakarta.mail:2.0.1') {
-        // This exclusion and the inclusion of the modified jar below are to work around
-        // an error in the pom.xml metadata. https://github.com/eclipse-ee4j/jaf/issues/53
-        exclude group: 'com.sun.activation', module: 'jakarta.activation'
-    }
-    androidTestImplementation files('libs/jakarta.activation-2.0.0-RC3-ali1.jar')
 
-    androidTestImplementation 'com.sudoplatform:sudoentitlements:8.0.1'
-    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:6.0.0'
-    androidTestImplementation 'com.sudoplatform:sudoprofiles:13.0.1'
+    androidTestImplementation 'com.sudoplatform:sudoentitlements:9.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:7.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoprofiles:14.0.0'
 }
 
 // Returns a list of `configurations` which should not be scanned for vulnerabilities
@@ -216,7 +213,6 @@ apply plugin: 'org.jmailen.kotlinter'
 kotlinter {
     ignoreFailures = false
     reporters = ['checkstyle', 'plain']
-    experimentalRules = false
 }
 
 // Apollo Code Generation

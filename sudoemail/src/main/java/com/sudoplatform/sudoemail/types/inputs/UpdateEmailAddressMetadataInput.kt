@@ -14,5 +14,5 @@ package com.sudoplatform.sudoemail.types.inputs
  */
 data class UpdateEmailAddressMetadataInput(
     val id: String,
-    val alias: String? = null
+    val alias: String? = null,
 )

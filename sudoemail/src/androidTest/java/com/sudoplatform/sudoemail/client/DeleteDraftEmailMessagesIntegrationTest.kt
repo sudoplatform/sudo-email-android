@@ -10,12 +10,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
-import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageFactory
+import com.sudoplatform.sudoemail.util.Rfc822MessageParser
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
@@ -57,7 +57,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val input = DeleteDraftEmailMessagesInput(
             listOf(mockDraftId.toString()),
-            mockEmailAddressId
+            mockEmailAddressId,
         )
         shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
             emailClient.deleteDraftEmailMessages(input)
@@ -71,7 +71,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val input = DeleteDraftEmailMessagesInput(
             mockDraftIds,
-            mockEmailAddressId
+            mockEmailAddressId,
         )
         shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
             emailClient.deleteDraftEmailMessages(input)
@@ -90,22 +90,22 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = emailAddress.emailAddress,
-            to = emailAddress.emailAddress,
-            subject = "Test Draft"
+            to = listOf(emailAddress.emailAddress),
+            subject = "Test Draft",
         )
 
         val createDraftInput = CreateDraftEmailMessageInput(
             rfc822Data = rfc822Data,
-            senderEmailAddressId = emailAddress.id
+            senderEmailAddressId = emailAddress.id,
         )
 
         val draftId = emailClient.createDraftEmailMessage(createDraftInput)
 
         val deleteDraftEmailMessagesInput = DeleteDraftEmailMessagesInput(
             listOf(draftId),
-            emailAddress.id
+            emailAddress.id,
         )
         when (val result = emailClient.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)) {
             is BatchOperationResult.SuccessOrFailureResult -> {

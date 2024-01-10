@@ -25,5 +25,5 @@ data class ListEmailAddressesForSudoIdInput(
     val sudoId: String,
     val cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY,
     val limit: Int? = SudoEmailClient.DEFAULT_EMAIL_ADDRESS_LIMIT,
-    val nextToken: String? = null
+    val nextToken: String? = null,
 )

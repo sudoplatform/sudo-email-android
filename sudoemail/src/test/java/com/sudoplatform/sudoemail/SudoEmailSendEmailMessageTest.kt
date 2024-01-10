@@ -21,7 +21,6 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -41,6 +40,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
 
 /**
@@ -108,7 +108,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -121,7 +121,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -137,7 +137,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -157,7 +157,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
         val input = SendEmailMessageInput(
             "rfc822data".toByteArray(),
-            "senderEmailAddress"
+            "senderEmailAddress",
         )
         val deferredResult = async(Dispatchers.IO) {
             client.sendEmailMessage(input)
@@ -189,7 +189,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
         val input = SendEmailMessageInput(
             "rfc822data".toByteArray(),
-            "senderEmailAddress"
+            "senderEmailAddress",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -227,7 +227,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             val error = com.apollographql.apollo.api.Error(
                 "mock",
                 emptyList(),
-                mapOf("errorType" to apolloError)
+                mapOf("errorType" to apolloError),
             )
             Response.builder<SendEmailMessageMutation.Data>(SendEmailMessageMutation(input))
                 .errors(listOf(error))
@@ -236,7 +236,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
         val input = SendEmailMessageInput(
             "rfc822data".toByteArray(),
-            "senderEmailAddress"
+            "senderEmailAddress",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<T> {
@@ -260,7 +260,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
         val input = SendEmailMessageInput(
             "rfc822data".toByteArray(),
-            "senderEmailAddress"
+            "senderEmailAddress",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<CancellationException> {

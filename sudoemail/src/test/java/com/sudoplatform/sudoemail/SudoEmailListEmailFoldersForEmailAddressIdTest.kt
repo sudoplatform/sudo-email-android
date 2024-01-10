@@ -23,9 +23,6 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.Date
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -49,6 +46,9 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.Date
+import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput as ListEmailFoldersForEmailAddressIdRequest
 
 /**
@@ -89,12 +89,12 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
                             "folderName",
                             0.0,
                             0.0,
-                            1.0
-                        )
-                    )
-                )
+                            1.0,
+                        ),
+                    ),
+                ),
             ),
-            null
+            null,
         )
     }
 
@@ -129,7 +129,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -142,7 +142,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -158,7 +158,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -179,7 +179,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         val input = ListEmailFoldersForEmailAddressIdInput(
             emailAddressId = "emailAddressId",
             limit = 1,
-            nextToken = null
+            nextToken = null,
         )
         val deferredResult = async(Dispatchers.IO) {
             client.listEmailFoldersForEmailAddressId(input)
@@ -214,13 +214,13 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             .query<
                 ListEmailFoldersForEmailAddressIdQuery.Data,
                 ListEmailFoldersForEmailAddressIdQuery,
-                ListEmailFoldersForEmailAddressIdQuery.Variables
+                ListEmailFoldersForEmailAddressIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().emailAddressId() shouldBe "emailAddressId"
                     it.variables().input().limit() shouldBe 1
                     it.variables().input().nextToken() shouldBe null
-                }
+                },
             )
     }
 
@@ -247,12 +247,12 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
                                 "folderName",
                                 0.0,
                                 0.0,
-                                null
-                            )
-                        )
-                    )
+                                null,
+                            ),
+                        ),
+                    ),
                 ),
-                "dummyNextToken"
+                "dummyNextToken",
             )
         }
 
@@ -273,7 +273,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             "emailAddressId",
             CachePolicy.REMOTE_ONLY,
             1,
-            "dummyNextToken"
+            "dummyNextToken",
         )
         val deferredResult = async(Dispatchers.IO) {
             client.listEmailFoldersForEmailAddressId(input)
@@ -308,13 +308,13 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             .query<
                 ListEmailFoldersForEmailAddressIdQuery.Data,
                 ListEmailFoldersForEmailAddressIdQuery,
-                ListEmailFoldersForEmailAddressIdQuery.Variables
+                ListEmailFoldersForEmailAddressIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().emailAddressId() shouldBe "emailAddressId"
                     it.variables().input().limit() shouldBe 1
                     it.variables().input().nextToken() shouldBe "dummyNextToken"
-                }
+                },
             )
     }
 
@@ -326,7 +326,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             ListEmailFoldersForEmailAddressIdQuery.ListEmailFoldersForEmailAddressId(
                 "typename",
                 emptyList(),
-                null
+                null,
             )
         }
 
@@ -356,13 +356,13 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             .query<
                 ListEmailFoldersForEmailAddressIdQuery.Data,
                 ListEmailFoldersForEmailAddressIdQuery,
-                ListEmailFoldersForEmailAddressIdQuery.Variables
+                ListEmailFoldersForEmailAddressIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().emailAddressId() shouldBe "emailAddressId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                }
+                },
             )
     }
 
@@ -396,13 +396,13 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             .query<
                 ListEmailFoldersForEmailAddressIdQuery.Data,
                 ListEmailFoldersForEmailAddressIdQuery,
-                ListEmailFoldersForEmailAddressIdQuery.Variables
+                ListEmailFoldersForEmailAddressIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().emailAddressId() shouldBe "emailAddressId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                }
+                },
             )
     }
 
@@ -441,13 +441,13 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             .query<
                 ListEmailFoldersForEmailAddressIdQuery.Data,
                 ListEmailFoldersForEmailAddressIdQuery,
-                ListEmailFoldersForEmailAddressIdQuery.Variables
+                ListEmailFoldersForEmailAddressIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().emailAddressId() shouldBe "emailAddressId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                }
+                },
             )
     }
 
@@ -474,13 +474,13 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             .query<
                 ListEmailFoldersForEmailAddressIdQuery.Data,
                 ListEmailFoldersForEmailAddressIdQuery,
-                ListEmailFoldersForEmailAddressIdQuery.Variables
+                ListEmailFoldersForEmailAddressIdQuery.Variables,
                 >(
                 check {
                     it.variables().input().emailAddressId() shouldBe "emailAddressId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                }
+                },
             )
     }
 

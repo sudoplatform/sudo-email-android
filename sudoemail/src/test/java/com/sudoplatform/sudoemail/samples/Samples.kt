@@ -7,12 +7,12 @@
 package com.sudoplatform.sudoemail.samples
 
 import android.content.Context
-import org.mockito.kotlin.mock
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudouser.SudoUserClient
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 
 /**

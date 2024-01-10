@@ -18,7 +18,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class EmailMessageRfc822Data(
     val id: String,
-    val rfc822Data: ByteArray
+    val rfc822Data: ByteArray,
 ) : Parcelable {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -28,7 +28,7 @@ internal data class EmailHeaderDetails(
     val bcc: List<EmailMessage.EmailAddress>,
     val replyTo: List<EmailMessage.EmailAddress>,
     val hasAttachments: Boolean = false,
-    val subject: String? = null
+    val subject: String? = null,
 )
 
 /**
@@ -46,7 +46,7 @@ internal object EmailMessageTransformer {
      */
     fun toEntity(
         deviceKeyManager: DeviceKeyManager,
-        sealedEmailMessage: SealedEmailMessage
+        sealedEmailMessage: SealedEmailMessage,
     ): EmailMessage {
         val keyInfo = KeyInfo(sealedEmailMessage.rfc822Header().keyId(), KeyType.PRIVATE_KEY, sealedEmailMessage.rfc822Header().algorithm())
         val unsealer = Unsealer(deviceKeyManager, keyInfo)
@@ -76,7 +76,7 @@ internal object EmailMessageTransformer {
             bcc = unsealedRfc822Header.bcc,
             replyTo = unsealedRfc822Header.replyTo,
             subject = unsealedRfc822Header.subject,
-            hasAttachments = unsealedRfc822Header.hasAttachments
+            hasAttachments = unsealedRfc822Header.hasAttachments,
         )
     }
 
@@ -87,7 +87,7 @@ internal object EmailMessageTransformer {
      * @return The [PartialEmailMessage] entity type.
      */
     fun toPartialEntity(
-        sealedEmailMessage: SealedEmailMessage
+        sealedEmailMessage: SealedEmailMessage,
     ): PartialEmailMessage {
         return PartialEmailMessage(
             id = sealedEmailMessage.id(),
@@ -104,7 +104,7 @@ internal object EmailMessageTransformer {
             sortDate = sealedEmailMessage.sortDateEpochMs().toDate(),
             createdAt = sealedEmailMessage.createdAtEpochMs().toDate(),
             updatedAt = sealedEmailMessage.updatedAtEpochMs().toDate(),
-            size = sealedEmailMessage.size()
+            size = sealedEmailMessage.size(),
         )
     }
 
@@ -121,7 +121,7 @@ internal object EmailMessageTransformer {
         deviceKeyManager: DeviceKeyManager,
         keyId: String,
         algorithm: String,
-        sealedRfc822Data: ByteArray
+        sealedRfc822Data: ByteArray,
     ): ByteArray {
         val keyInfo = KeyInfo(keyId, KeyType.PRIVATE_KEY, algorithm)
         val unsealer = Unsealer(deviceKeyManager, keyInfo)

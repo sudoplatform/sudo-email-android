@@ -8,8 +8,8 @@ package com.sudoplatform.sudoemail.types
 
 import android.os.Parcelable
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import java.util.Date
 import kotlinx.parcelize.Parcelize
+import java.util.Date
 
 /**
  * Representation of a draft email message in the Sudo Platform Email SDK.
@@ -23,7 +23,7 @@ import kotlinx.parcelize.Parcelize
 data class DraftEmailMessageWithContent(
     override val id: String,
     override val updatedAt: Date,
-    val rfc822Data: ByteArray
+    val rfc822Data: ByteArray,
 ) : Parcelable, DraftEmailMessage {
 
     override fun equals(other: Any?): Boolean {

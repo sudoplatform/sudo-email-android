@@ -22,8 +22,6 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.net.HttpURLConnection
-import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -46,6 +44,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput as CheckEmailAddressAvailabilityRequest
 
 /**
@@ -101,7 +101,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -127,7 +127,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -147,7 +147,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains
+            domains,
         )
         val deferredResult = async(Dispatchers.IO) {
             client.checkEmailAddressAvailability(input)
@@ -174,7 +174,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         val queryResultWithEmptyList by before {
             CheckEmailAddressAvailabilityQuery.CheckEmailAddressAvailability(
                 "typename",
-                emptyList()
+                emptyList(),
             )
         }
 
@@ -186,7 +186,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains
+            domains,
         )
         val deferredResult = async(Dispatchers.IO) {
             client.checkEmailAddressAvailability(input)
@@ -217,7 +217,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains
+            domains,
         )
         val deferredResult = async(Dispatchers.IO) {
             client.checkEmailAddressAvailability(input)
@@ -243,7 +243,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         val error = com.apollographql.apollo.api.Error(
             "mock",
             emptyList(),
-            mapOf("errorType" to "DilithiumCrystalsOutOfAlignment")
+            mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
         )
 
         val responseWithNullData by before {
@@ -254,7 +254,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains
+            domains,
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
@@ -278,7 +278,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains
+            domains,
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
@@ -319,7 +319,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains
+            domains,
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
@@ -342,7 +342,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains
+            domains,
         )
         shouldThrow<CancellationException> {
             client.checkEmailAddressAvailability(input)

@@ -55,9 +55,9 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
                     10,
                     5,
                     200,
-                    100
-                )
-            )
+                    100,
+                ),
+            ),
         )
     }
 
@@ -92,7 +92,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             "keyRingService",
             mockUserClient,
             mockKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -105,7 +105,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -121,7 +121,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -214,7 +214,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         val testError = com.apollographql.apollo.api.Error(
             "Test generated error",
             null,
-            null
+            null,
         )
         val errorResponse by before {
             Response.builder<GetEmailConfigQuery.Data>(GetEmailConfigQuery())

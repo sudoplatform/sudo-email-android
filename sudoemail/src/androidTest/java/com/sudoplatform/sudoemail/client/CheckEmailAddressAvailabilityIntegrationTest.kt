@@ -61,12 +61,12 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
         val localPart2 = generateSafeLocalPart()
         val localParts = listOf(
             localPart1,
-            localPart2
+            localPart2,
         )
 
         var input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains = emailDomains
+            domains = emailDomains,
         )
         val emailAddresses = emailClient.checkEmailAddressAvailability(input)
         emailAddresses.isEmpty() shouldBe false
@@ -82,7 +82,7 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
         // Check without the domains
         input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains = null
+            domains = null,
         )
         emailClient.checkEmailAddressAvailability(input)
     }
@@ -97,7 +97,7 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
 
         var input = CheckEmailAddressAvailabilityInput(
             localParts,
-            domains = listOf("gmail.com")
+            domains = listOf("gmail.com"),
         )
         shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
             emailClient.checkEmailAddressAvailability(input)
@@ -105,7 +105,7 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
 
         input = CheckEmailAddressAvailabilityInput(
             localParts = listOf("foo@gmail.com"),
-            domains = emailDomains
+            domains = emailDomains,
         )
         shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
             emailClient.checkEmailAddressAvailability(input)
@@ -113,7 +113,7 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
 
         input = CheckEmailAddressAvailabilityInput(
             localParts = listOf(""),
-            domains = emailDomains
+            domains = emailDomains,
         )
         shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
             emailClient.checkEmailAddressAvailability(input)

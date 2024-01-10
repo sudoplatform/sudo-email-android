@@ -35,5 +35,5 @@ data class EmailFolder(
     val unseenCount: Int,
     val version: Int,
     val createdAt: Date,
-    val updatedAt: Date
+    val updatedAt: Date,
 ) : Parcelable

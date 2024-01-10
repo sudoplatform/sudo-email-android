@@ -120,7 +120,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
-            mockLogger
+            mockLogger,
         )
     }
 
@@ -136,7 +136,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -156,7 +156,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
-            "John Doe"
+            "John Doe",
         )
         val deferredResult = async(Dispatchers.IO) {
             client.updateEmailAddressMetadata(input)
@@ -186,7 +186,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
-            "John Doe"
+            "John Doe",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
@@ -207,13 +207,13 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     fun `updateEmailAddressMetadata() should throw when unsealing fails`() = runBlocking<Unit> {
         mockAppSyncClient.stub {
             on { mutate(any<UpdateEmailAddressMetadataMutation>()) } doThrow Unsealer.UnsealerException.UnsupportedAlgorithmException(
-                "Mock Unsealer Exception"
+                "Mock Unsealer Exception",
             )
         }
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
-            "John Doe"
+            "John Doe",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnsealingException> {
@@ -235,7 +235,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
-            "John Doe"
+            "John Doe",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
@@ -277,7 +277,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
-            "John Doe"
+            "John Doe",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
@@ -301,7 +301,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
-            "John Doe"
+            "John Doe",
         )
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<CancellationException> {

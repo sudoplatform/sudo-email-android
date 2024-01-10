@@ -81,7 +81,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id
+                    emailAddressId = emailAddress.id,
                 )
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }
@@ -123,7 +123,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id
+                    emailAddressId = emailAddress.id,
                 )
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }

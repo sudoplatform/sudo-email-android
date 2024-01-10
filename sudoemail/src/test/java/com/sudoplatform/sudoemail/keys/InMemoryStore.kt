@@ -20,7 +20,7 @@ class InMemoryStore() : StoreInterface {
         keyBytes: ByteArray,
         name: String,
         type: KeyType,
-        isExportable: Boolean
+        isExportable: Boolean,
     ) {
         this.keys[Pair(name, type)] = keyBytes
     }

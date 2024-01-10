@@ -24,7 +24,6 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -42,6 +41,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.util.Date
 
 /**
  * Test the correct operation of [SudoEmailClient.listDraftEmailMessageMetadata]
@@ -75,10 +75,10 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
                         "folderName",
                         1.0,
                         1.0,
-                        1.0
-                    )
-                )
-            )
+                        1.0,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -104,11 +104,11 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
                             1.0,
                             "example@sudoplatform.com",
                             0.0,
-                            null
-                        )
-                    )
-                )
-            )
+                            null,
+                        ),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -157,7 +157,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
             onBlocking {
                 list(
                     any(),
-                    any()
+                    any(),
                 )
             } doReturn mockListObjectsResponse
         }
@@ -179,7 +179,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockS3Client,
-            mockS3Client
+            mockS3Client,
         )
     }
 
@@ -200,7 +200,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
         val error = com.apollographql.apollo.api.Error(
             "mock",
             emptyList(),
-            mapOf("errorType" to "AddressNotFound")
+            mapOf("errorType" to "AddressNotFound"),
         )
 
         val mockQuery by before {
@@ -264,7 +264,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
             },
             check {
                 it shouldContain emailAddressId
-            }
+            },
         )
     }
 
@@ -296,7 +296,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
             },
             check {
                 it shouldContain emailAddressId
-            }
+            },
         )
     }
 }

@@ -7,7 +7,6 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import org.mockito.kotlin.mock
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
 import com.sudoplatform.sudoconfigmanager.ValidationResult
 import com.sudoplatform.sudoemail.logging.LogConstants
@@ -17,6 +16,7 @@ import io.kotlintest.shouldThrow
 import org.json.JSONObject
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 
 /**

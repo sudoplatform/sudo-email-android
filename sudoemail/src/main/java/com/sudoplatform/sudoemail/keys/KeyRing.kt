@@ -16,5 +16,5 @@ import com.sudoplatform.sudouser.PublicKey
  */
 internal data class KeyRing(
     val id: String,
-    val keys: List<PublicKey> = emptyList()
+    val keys: List<PublicKey> = emptyList(),
 )

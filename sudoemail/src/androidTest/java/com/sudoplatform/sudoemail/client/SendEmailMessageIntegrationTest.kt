@@ -15,7 +15,7 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageFactory
+import com.sudoplatform.sudoemail.util.Rfc822MessageParser
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
@@ -90,9 +90,9 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = emailAddress.emailAddress,
-            to = "bogusEmailAddress"
+            to = listOf("bogusEmailAddress"),
         )
 
         val sendEmailMessageInput = SendEmailMessageInput(rfc822Data, emailAddress.id)
@@ -114,9 +114,9 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageFactory.makeRfc822Data(
+        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
             from = emailAddress.emailAddress,
-            to = emailAddress.emailAddress
+            to = listOf(emailAddress.emailAddress),
         )
         val sendEmailMessageInput = SendEmailMessageInput(rfc822Data, "bogusEmailAddressId")
         shouldThrow<SudoEmailClient.EmailMessageException.UnauthorizedAddressException> {
