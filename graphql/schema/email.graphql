@@ -117,6 +117,10 @@ input ListEmailMessagesForEmailFolderIdInput {
   nextToken: String
 }
 
+input LookupEmailAddressesPublicInfoInput {
+  emailAddresses: [String!]!
+}
+
 input DeprovisionEmailAddressInput {
   emailAddressId: ID!
 }
@@ -260,6 +264,15 @@ type EmailMessageConnection {
   nextToken: String
 }
 
+type EmailAddressPublicInfo {
+  emailAddress: String!
+  publicKey: String!
+}
+
+type LookupEmailAddressesPublicInfoResponse {
+  items: [EmailAddressPublicInfo!]!
+}
+
 type Query {
   getEmailConfig: EmailConfigurationData!
 
@@ -300,6 +313,10 @@ type Query {
     limit: Int
     nextToken: String
   ): PaginatedPublicKey!
+
+  lookupEmailAddressesPublicInfo(
+    input: LookupEmailAddressesPublicInfoInput!
+  ): LookupEmailAddressesPublicInfoResponse!
 }
 
 type Mutation {

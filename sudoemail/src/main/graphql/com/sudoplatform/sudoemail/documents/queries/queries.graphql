@@ -65,6 +65,16 @@ query ListEmailAddressesForSudoId($input: ListEmailAddressesForSudoIdInput!) {
   }
 }
 
+query LookupEmailAddressesPublicInfo(
+  $input: LookupEmailAddressesPublicInfoInput!
+) {
+  lookupEmailAddressesPublicInfo(input: $input) {
+    items {
+      ...EmailAddressPublicInfo
+    }
+  }
+}
+
 query ListEmailFoldersForEmailAddressId(
   $input: ListEmailFoldersForEmailAddressIdInput!
 ) {

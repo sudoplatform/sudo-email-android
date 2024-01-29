@@ -58,6 +58,11 @@ fragment EmailAddress on EmailAddress {
   }
 }
 
+fragment EmailAddressPublicInfo on EmailAddressPublicInfo {
+   emailAddress
+   publicKey
+ }
+
 fragment EmailFolder on EmailFolder {
   id
   owner

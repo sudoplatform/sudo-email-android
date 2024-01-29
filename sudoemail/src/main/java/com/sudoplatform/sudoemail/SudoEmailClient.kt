@@ -23,6 +23,7 @@ import com.sudoplatform.sudoemail.types.ConfigurationData
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
@@ -42,6 +43,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
@@ -280,6 +282,9 @@ interface SudoEmailClient : AutoCloseable {
             EmailAddressException(message = message, cause = cause)
 
         class AuthenticationException(message: String? = null, cause: Throwable? = null) :
+            EmailAddressException(message = message, cause = cause)
+
+        class LimitExceededException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
 
         class UnknownException(cause: Throwable) :
@@ -604,6 +609,20 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailAddressException::class)
     suspend fun listEmailAddressesForSudoId(input: ListEmailAddressesForSudoIdInput): ListAPIResult<EmailAddress, PartialEmailAddress>
+
+    /**
+     * Get a list of [EmailAddressPublicInfo] objects associated with the provided email addresses.
+     *
+     * Results can only be retrieved in batches of 50 or less. Anything greater will throw an
+     * [EmailAddressException.LimitExceededException].
+     *
+     * @param input [LookupEmailAddressesPublicInfoInput] Parameters used to retrieve a list of email address public information objects.
+     * @returns An array of [EmailAddressPublicInfo], or an empty array if email addresses or their public keys cannot be found.
+     *
+     * @throws [EmailAddressException].
+     */
+    @Throws(EmailAddressException::class)
+    suspend fun lookupEmailAddressesPublicInfo(input: LookupEmailAddressesPublicInfoInput): List<EmailAddressPublicInfo>
 
     /**
      * Get a [ListOutput] of [EmailFolder]s.

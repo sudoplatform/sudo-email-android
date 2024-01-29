@@ -29,6 +29,7 @@ import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
+import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
@@ -56,6 +57,7 @@ import com.sudoplatform.sudoemail.types.DeleteEmailMessagesResult
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
@@ -77,6 +79,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
@@ -85,6 +88,7 @@ import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudoemail.types.toResponseFetcher
 import com.sudoplatform.sudoemail.types.transformers.DateRangeTransformer.toDateRangeInput
 import com.sudoplatform.sudoemail.types.transformers.DraftEmailMessageTransformer
+import com.sudoplatform.sudoemail.types.transformers.EmailAddressPublicInfoTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailAddressTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailAddressTransformer.toAliasInput
 import com.sudoplatform.sudoemail.types.transformers.EmailConfigurationTransformer
@@ -109,6 +113,7 @@ import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput as ListEm
 import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput as ListEmailFoldersForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailAddressIdInput as ListEmailMessagesForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderIdInput as ListEmailMessagesForEmailFolderIdRequest
+import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput as LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput as ProvisionEmailAddressRequest
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput as UpdateEmailAddressMetadataRequest
@@ -726,6 +731,42 @@ internal class DefaultSudoEmailClient(
             }
             val listSuccessResult = ListAPIResult.ListSuccessResult(success, newNextToken)
             return ListAPIResult.Success(listSuccessResult)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(cause = e)
+                else -> throw interpretEmailAddressException(e)
+            }
+        }
+    }
+
+    @Throws(SudoEmailClient.EmailAddressException::class)
+    override suspend fun lookupEmailAddressesPublicInfo(
+        input: LookupEmailAddressesPublicInfoInput,
+    ): List<EmailAddressPublicInfo> {
+        try {
+            val queryInput = LookupEmailAddressesPublicInfoRequest.builder()
+                .emailAddresses(input.emailAddresses)
+                .build()
+            val query = LookupEmailAddressesPublicInfoQuery.builder()
+                .input(queryInput)
+                .build()
+
+            val queryResponse = appSyncClient.query(query)
+                .responseFetcher(input.cachePolicy.toResponseFetcher())
+                .enqueueFirst()
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors()}")
+                throw interpretEmailAddressError(queryResponse.errors().first())
+            }
+
+            val queryResult = queryResponse.data()?.lookupEmailAddressesPublicInfo()
+            val emailAddressesPublicInfo = queryResult?.items() ?: emptyList()
+
+            return emailAddressesPublicInfo.map { publicInfo ->
+                EmailAddressPublicInfoTransformer.toEntity(publicInfo.fragments().emailAddressPublicInfo())
+            }
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
