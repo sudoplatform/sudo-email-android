@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,16 +22,22 @@ internal interface DeviceKeyManager {
     sealed class DeviceKeyManagerException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
         class UserIdNotFoundException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
+
         class KeyGenerationException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
+
         class KeyOperationFailedException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
+
         class DecryptionException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
+
         class EncryptionException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
+
         class SecureKeyArchiveException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
+
         class UnknownException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
     }
@@ -129,7 +135,7 @@ internal interface DeviceKeyManager {
     fun encryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray
 
     /**
-     * Import keys from a key archive.
+     * Import keys from a key archive
      *
      * @param archiveData [ByteArray] Key archive data to import the keys from.
      * @throws [DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException]

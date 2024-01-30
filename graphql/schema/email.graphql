@@ -172,6 +172,30 @@ input SealedAttributeInput {
   base64EncodedSealedData: String!
 }
 
+enum BlockedAddressHashAlgorithm {
+  SHA256
+}
+
+input BlockedEmailAddressInput {
+  hashedBlockedValue: String!
+  hashAlgorithm: BlockedAddressHashAlgorithm!
+  sealedValue: SealedAttributeInput!
+}
+
+input BlockEmailAddressesInput {
+  owner: ID!
+  blockedAddresses: [BlockedEmailAddressInput!]!
+}
+
+input UnblockEmailAddressesInput {
+  owner: ID!
+  unblockedAddresses: [String!]!
+}
+
+input GetEmailAddressBlocklistInput {
+  owner: ID!
+}
+
 type EmailConfigurationData {
   deleteEmailMessagesLimit: Int!
   updateEmailMessagesLimit: Int!
@@ -273,6 +297,36 @@ type LookupEmailAddressesPublicInfoResponse {
   items: [EmailAddressPublicInfo!]!
 }
 
+type BlockedEmailAddress {
+  owner: ID!
+  owners: [Owner!]!
+  version: Int!
+  createdAtEpochMs: Float!
+  updatedAtEpochMs: Float!
+  # Hashed value of the address to block
+  hashedBlockedValue: String!
+  # Algorithm used for hashing
+  hashAlgorithm: BlockedAddressHashAlgorithm!
+  # Sealed value of address to block
+  sealedValue: SealedAttribute!
+}
+
+enum BlockEmailAddressesBulkUpdateStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+type BlockEmailAddressesBulkUpdateResult {
+  status: BlockEmailAddressesBulkUpdateStatus!
+  failedAddresses: [String!]
+  successAddresses: [String!]
+}
+
+type GetEmailAddressBlocklistResponse {
+  sealedBlockedAddresses: [SealedAttribute!]!
+}
+
 type Query {
   getEmailConfig: EmailConfigurationData!
 
@@ -317,6 +371,10 @@ type Query {
   lookupEmailAddressesPublicInfo(
     input: LookupEmailAddressesPublicInfoInput!
   ): LookupEmailAddressesPublicInfoResponse!
+
+  getEmailAddressBlocklist(
+    input: GetEmailAddressBlocklistInput!
+  ): GetEmailAddressBlocklistResponse!
 }
 
 type Mutation {
@@ -337,6 +395,10 @@ type Mutation {
   deleteEmailMessage(input: DeleteEmailMessageInput!): ID!
 
   updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput!): ID!
+
+  blockEmailAddresses(input: BlockEmailAddressesInput!): BlockEmailAddressesBulkUpdateResult!
+
+  unblockEmailAddresses(input: UnblockEmailAddressesInput!): BlockEmailAddressesBulkUpdateResult!
 }
 
 type Subscription {

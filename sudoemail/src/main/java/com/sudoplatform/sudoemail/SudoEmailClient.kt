@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
+import com.sudoplatform.sudoemail.types.inputs.BlockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
@@ -46,6 +47,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderId
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
@@ -103,7 +105,8 @@ interface SudoEmailClient : AutoCloseable {
             } catch (e: JSONException) {
                 throw Builder.ConfigurationException("$preamble $postamble", e)
             }
-            emailConfig ?: throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble")
+            emailConfig
+                ?: throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble")
 
             val region = try {
                 emailConfig.getString(CONFIG_REGION)
@@ -114,13 +117,19 @@ interface SudoEmailClient : AutoCloseable {
             val emailBucket = try {
                 emailConfig.getString(CONFIG_EMAIL_BUCKET)
             } catch (e: JSONException) {
-                throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_BUCKET in $postamble", e)
+                throw Builder.ConfigurationException(
+                    "$preamble $CONFIG_EMAIL_BUCKET in $postamble",
+                    e,
+                )
             }
 
             val emailTransientBucket = try {
                 emailConfig.getString(CONFIG_EMAIL_TRANSIENT_BUCKET)
             } catch (e: JSONException) {
-                throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble", e)
+                throw Builder.ConfigurationException(
+                    "$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble",
+                    e,
+                )
             }
 
             return S3Configuration(region, emailBucket, emailTransientBucket)
@@ -135,7 +144,8 @@ interface SudoEmailClient : AutoCloseable {
         private var sudoUserClient: SudoUserClient? = null
         private var appSyncClient: AWSAppSyncClient? = null
         private var keyManager: KeyManagerInterface? = null
-        private var logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
+        private var logger: Logger =
+            Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
         private var namespace: String = DEFAULT_KEY_NAMESPACE
         private var databaseName: String = AndroidSQLiteStore.DEFAULT_DATABASE_NAME
 
@@ -197,7 +207,8 @@ interface SudoEmailClient : AutoCloseable {
         }
 
         /** A configuration item that is needed is missing */
-        class ConfigurationException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+        class ConfigurationException(message: String, cause: Throwable? = null) :
+            RuntimeException(message, cause)
 
         /**
          * Construct the [SudoEmailClient]. Will throw a [NullPointerException] if
@@ -208,12 +219,18 @@ interface SudoEmailClient : AutoCloseable {
             Objects.requireNonNull(context, "Context must be provided.")
             Objects.requireNonNull(sudoUserClient, "SudoUserClient must be provided.")
 
-            val appSyncClient = appSyncClient ?: ApiClientManager.getClient(this@Builder.context!!, this@Builder.sudoUserClient!!)
+            val appSyncClient = appSyncClient ?: ApiClientManager.getClient(
+                this@Builder.context!!,
+                this@Builder.sudoUserClient!!,
+            )
 
             val deviceKeyManager = DefaultDeviceKeyManager(
                 keyRingServiceName = "sudo-email",
                 userClient = sudoUserClient!!,
-                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(this.namespace, this.databaseName),
+                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(
+                    this.namespace,
+                    this.databaseName,
+                ),
             )
 
             val sealingService = DefaultSealingService(
@@ -243,7 +260,8 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailAddressException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+    sealed class EmailAddressException(message: String? = null, cause: Throwable? = null) :
+        RuntimeException(message, cause) {
         class FailedException(message: String? = null, cause: Throwable? = null) :
             EmailAddressException(message = message, cause = cause)
 
@@ -297,7 +315,8 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailFolderException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+    sealed class EmailFolderException(message: String? = null, cause: Throwable? = null) :
+        RuntimeException(message, cause) {
         class FailedException(message: String? = null, cause: Throwable? = null) :
             EmailFolderException(message = message, cause = cause)
 
@@ -309,12 +328,31 @@ interface SudoEmailClient : AutoCloseable {
     }
 
     /**
+     * Defines the exceptions for the email blocklist based methods.
+     *
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
+     */
+    sealed class EmailBlocklistException(message: String? = null, cause: Throwable? = null) :
+        RuntimeException(message, cause) {
+        class InvalidInputException(message: String? = null, cause: Throwable? = null) :
+            EmailBlocklistException(message = message, cause = cause)
+
+        class FailedException(message: String? = null, cause: Throwable? = null) :
+            EmailBlocklistException(message = message, cause = cause)
+
+        class UnknownException(cause: Throwable? = null) :
+            EmailBlocklistException(cause = cause)
+    }
+
+    /**
      * Defines the exceptions for the email message based methods.
      *
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailMessageException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+    sealed class EmailMessageException(message: String? = null, cause: Throwable? = null) :
+        RuntimeException(message, cause) {
         class FailedException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
 
@@ -352,7 +390,8 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailConfigurationException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+    sealed class EmailConfigurationException(message: String? = null, cause: Throwable? = null) :
+        RuntimeException(message, cause) {
         class FailedException(message: String? = null, cause: Throwable? = null) :
             EmailConfigurationException(message = message, cause = cause)
 
@@ -366,7 +405,10 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailCryptographicKeysException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+    sealed class EmailCryptographicKeysException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
         class SecureKeyArchiveException(message: String? = null, cause: Throwable? = null) :
             EmailCryptographicKeysException(message = message, cause = cause)
     }
@@ -770,6 +812,32 @@ interface SudoEmailClient : AutoCloseable {
      * Unsubscribe all subscribers from receiving notifications about modifications to [EmailMessage]s.
      */
     suspend fun unsubscribeAllFromEmailMessages()
+
+    /**
+     * Blocks the given email address(es) for the user identified
+     *
+     * @param input [BlockEmailAddressesInput] The parameters used to block email addresses
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email addresses that succeeded or failed to be blocked.
+     */
+    suspend fun blockEmailAddresses(input: BlockEmailAddressesInput): BatchOperationResult<String>
+
+    /**
+     * Unblocks the given email address(es) for the user identified
+     *
+     * @param input [UnblockEmailAddressesInput] The parameters used to unblock email addresses
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email addresses that succeeded or failed to be unblocked.
+     */
+    suspend fun unblockEmailAddresses(input: UnblockEmailAddressesInput): BatchOperationResult<String>
+
+    /**
+     * Get email address blocklist for given owner
+     *
+     * @param owner [String] The owner of the blocklist
+     * @return A list of the blocked addresses
+     */
+    suspend fun getEmailAddressBlocklist(owner: String): List<String>
 
     /**
      * Reset any internal state and cached content.

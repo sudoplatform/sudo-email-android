@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail.types.transformers
 
 import androidx.annotation.VisibleForTesting
 import com.amazonaws.util.Base64
+import com.sudoplatform.sudoemail.graphql.fragment.BlockedAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
@@ -97,10 +98,18 @@ internal class Unsealer(
      */
     fun unseal(value: EmailAddressWithoutFolders.Alias): String {
         val alias = value.fragments().sealedAttribute()
-        return unsealAlias(alias.algorithm(), alias.base64EncodedSealedData())
+        return unsealValue(alias.algorithm(), alias.base64EncodedSealedData())
     }
 
-    private fun unsealAlias(algorithm: String, base64EncodedSealedData: String): String {
+    /**
+     * Unseal the fields of the GraphQL [BlockedAddress.SealedValue] type
+     */
+    fun unseal(value: BlockedAddress.SealedValue): String {
+        val sealedValue = value.fragments().sealedAttribute()
+        return unsealValue(sealedValue.algorithm(), sealedValue.base64EncodedSealedData())
+    }
+
+    private fun unsealValue(algorithm: String, base64EncodedSealedData: String): String {
         if (!SymmetricKeyEncryptionAlgorithm.isAlgorithmSupported(algorithm)) {
             throw UnsealerException.UnsupportedAlgorithmException(algorithm)
         }

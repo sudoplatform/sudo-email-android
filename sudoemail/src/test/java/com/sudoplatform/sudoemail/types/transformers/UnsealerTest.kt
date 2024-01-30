@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.amazonaws.util.Base64
 import com.sudoplatform.sudoemail.BaseTests
+import com.sudoplatform.sudoemail.graphql.fragment.BlockedAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
@@ -75,7 +76,7 @@ class UnsealerTest : BaseTests() {
         )
     }
 
-    private val aliasUnsealer by before {
+    private val stringUnsealer by before {
         Unsealer(
             deviceKeyManager,
             keyInfo2,
@@ -103,8 +104,11 @@ class UnsealerTest : BaseTests() {
         return String(Base64.encode(data), Charsets.UTF_8)
     }
 
-    private fun sealAlias(value: String): String {
-        val encryptedMetadata = deviceKeyManager.encryptWithSymmetricKeyId(symmetricKeyId, value.toByteArray(Charsets.UTF_8))
+    private fun sealString(value: String): String {
+        val encryptedMetadata = deviceKeyManager.encryptWithSymmetricKeyId(
+            symmetricKeyId,
+            value.toByteArray(Charsets.UTF_8),
+        )
         return String(Base64.encode(encryptedMetadata), Charsets.UTF_8)
     }
 
@@ -146,13 +150,13 @@ class UnsealerTest : BaseTests() {
                     "unsupported-algorithm",
                     symmetricKeyId,
                     "json-string",
-                    sealAlias("alias"),
+                    sealString("alias"),
                 ),
             ),
         )
 
         shouldThrow<Unsealer.UnsealerException.UnsupportedAlgorithmException> {
-            aliasUnsealer.unseal(sealedAlias)
+            stringUnsealer.unseal(sealedAlias)
         }
     }
 
@@ -166,12 +170,31 @@ class UnsealerTest : BaseTests() {
                     SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
                     symmetricKeyId,
                     "json-string",
-                    sealAlias("alias"),
+                    sealString("alias"),
                 ),
             ),
         )
 
-        val alias = aliasUnsealer.unseal(sealedAlias)
+        val alias = stringUnsealer.unseal(sealedAlias)
         alias shouldBe "alias"
+    }
+
+    @Test
+    fun `unseal BlockedAddress SealedValue`() {
+        val sealedBlockedValue = BlockedAddress.SealedValue(
+            "SealedValue",
+            BlockedAddress.SealedValue.Fragments(
+                SealedAttribute(
+                    "SealedAttribute",
+                    SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                    symmetricKeyId,
+                    "string",
+                    sealString("dummyValue"),
+                ),
+            ),
+        )
+
+        val unsealed = stringUnsealer.unseal(sealedBlockedValue)
+        unsealed shouldBe "dummyValue"
     }
 }

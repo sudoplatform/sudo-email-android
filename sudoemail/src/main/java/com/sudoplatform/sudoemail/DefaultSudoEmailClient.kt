@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,11 @@ import com.apollographql.apollo.api.Error
 import com.apollographql.apollo.exception.ApolloException
 import com.sudoplatform.sudoemail.appsync.enqueue
 import com.sudoplatform.sudoemail.appsync.enqueueFirst
+import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
+import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
@@ -32,15 +34,20 @@ import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
+import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
+import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
+import com.sudoplatform.sudoemail.graphql.type.BlockedAddressHashAlgorithm
+import com.sudoplatform.sudoemail.graphql.type.BlockedEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessagesInput
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.EmailAddressMetadataUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressPublicKeyInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
+import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
@@ -67,6 +74,7 @@ import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
+import com.sudoplatform.sudoemail.types.inputs.BlockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
@@ -82,6 +90,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderId
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
@@ -95,6 +104,8 @@ import com.sudoplatform.sudoemail.types.transformers.EmailConfigurationTransform
 import com.sudoplatform.sudoemail.types.transformers.EmailFolderTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
+import com.sudoplatform.sudoemail.util.EmailAddressParser
+import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
@@ -107,7 +118,9 @@ import java.util.Date
 import java.util.UUID
 import java.util.concurrent.CancellationException
 import java.util.zip.GZIPInputStream
+import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput as BlockEmailAddressesRequest
 import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput as CheckEmailAddressAvailabilityRequest
+import com.sudoplatform.sudoemail.graphql.type.GetEmailAddressBlocklistInput as GetEmailAddressBlocklistRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesForSudoIdInput as ListEmailAddressesForSudoIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput as ListEmailAddressesRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput as ListEmailFoldersForEmailAddressIdRequest
@@ -116,6 +129,7 @@ import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderId
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput as LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput as ProvisionEmailAddressRequest
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
+import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput as UnblockEmailAddressesRequest
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput as UpdateEmailAddressMetadataRequest
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as UpdateEmailMessagesRequest
 
@@ -136,16 +150,31 @@ internal class DefaultSudoEmailClient(
     private val context: Context,
     private val appSyncClient: AWSAppSyncClient,
     private val sudoUserClient: SudoUserClient,
-    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
+    private val logger: Logger = Logger(
+        LogConstants.SUDOLOG_TAG,
+        AndroidUtilsLogDriver(LogLevel.INFO),
+    ),
     private val deviceKeyManager: DeviceKeyManager,
     private val sealingService: SealingService,
     private val region: String = Regions.US_EAST_1.name,
     private val emailBucket: String,
     private val transientBucket: String,
     @VisibleForTesting
-    private val s3TransientClient: S3Client = DefaultS3Client(context, sudoUserClient, region, transientBucket, logger),
+    private val s3TransientClient: S3Client = DefaultS3Client(
+        context,
+        sudoUserClient,
+        region,
+        transientBucket,
+        logger,
+    ),
     @VisibleForTesting
-    private val s3EmailClient: S3Client = DefaultS3Client(context, sudoUserClient, region, emailBucket, logger),
+    private val s3EmailClient: S3Client = DefaultS3Client(
+        context,
+        sudoUserClient,
+        region,
+        emailBucket,
+        logger,
+    ),
 ) : SudoEmailClient {
 
     companion object {
@@ -175,6 +204,9 @@ internal class DefaultSudoEmailClient(
         private const val S3_KEY_ID_ERROR_MSG = "No sealed keyId associated with s3 object"
         private const val S3_ALGORITHM_ERROR_MSG = "No sealed algorithm associated with s3 object"
         private const val S3_NOT_FOUND_ERROR_CODE = "404 Not Found"
+        private const val ADDRESS_BLOCKLIST_EMPTY_MSG = "At least one email address must be passed"
+        private const val ADDRESS_BLOCKLIST_DUPLICATE_MSG =
+            "Duplicate email address found. Please include each address only once"
 
         /** Errors returned from the service */
         private const val ERROR_TYPE = "errorType"
@@ -202,7 +234,8 @@ internal class DefaultSudoEmailClient(
     private val version: String = "6.0.0"
 
     /** This manages the subscriptions to email message creates and deletes */
-    private val subscriptions = SubscriptionService(appSyncClient, deviceKeyManager, sudoUserClient, logger)
+    private val subscriptions =
+        SubscriptionService(appSyncClient, deviceKeyManager, sudoUserClient, logger)
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun provisionEmailAddress(input: ProvisionEmailAddressInput): EmailAddress {
@@ -237,7 +270,8 @@ internal class DefaultSudoEmailClient(
                 throw interpretEmailAddressError(mutationResponse.errors().first())
             }
 
-            val result = mutationResponse.data()?.provisionEmailAddress()?.fragments()?.emailAddress()
+            val result =
+                mutationResponse.data()?.provisionEmailAddress()?.fragments()?.emailAddress()
             result?.let {
                 return EmailAddressTransformer.toEntity(deviceKeyManager, result)
             }
@@ -245,8 +279,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.ProvisionFailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.ProvisionFailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -270,16 +310,25 @@ internal class DefaultSudoEmailClient(
                 throw interpretEmailAddressError(mutationResponse.errors().first())
             }
 
-            val result = mutationResponse.data()?.deprovisionEmailAddress()?.fragments()?.emailAddressWithoutFolders()
+            val result = mutationResponse.data()?.deprovisionEmailAddress()?.fragments()
+                ?.emailAddressWithoutFolders()
             result?.let {
                 return EmailAddressTransformer.toEntity(deviceKeyManager, result)
             }
-            throw SudoEmailClient.EmailAddressException.DeprovisionFailedException(NO_EMAIL_ERROR_MSG)
+            throw SudoEmailClient.EmailAddressException.DeprovisionFailedException(
+                NO_EMAIL_ERROR_MSG,
+            )
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.DeprovisionFailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.DeprovisionFailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -308,12 +357,20 @@ internal class DefaultSudoEmailClient(
             }
 
             val result = mutationResponse.data()?.updateEmailAddressMetadata()
-            return result ?: throw SudoEmailClient.EmailAddressException.UpdateFailedException(NO_EMAIL_ERROR_MSG)
+            return result ?: throw SudoEmailClient.EmailAddressException.UpdateFailedException(
+                NO_EMAIL_ERROR_MSG,
+            )
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.UpdateFailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.UpdateFailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -325,7 +382,8 @@ internal class DefaultSudoEmailClient(
         var s3ObjectKey = ""
         try {
             val clientRefId = UUID.randomUUID().toString()
-            val objectId = "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
+            val objectId =
+                "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
             s3ObjectKey = s3TransientClient.upload(rfc822Data, objectId)
 
             val s3EmailObject = S3EmailObjectInput.builder()
@@ -355,8 +413,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailMessageException(e)
             }
         } finally {
@@ -375,10 +439,14 @@ internal class DefaultSudoEmailClient(
         val idSet = input.ids.toSet()
         try {
             if (idSet.size > ID_REQUEST_LIMIT) {
-                throw SudoEmailClient.EmailMessageException.LimitExceededException(LIMIT_EXCEEDED_ERROR_MSG)
+                throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                    LIMIT_EXCEEDED_ERROR_MSG,
+                )
             }
             if (idSet.isEmpty()) {
-                throw SudoEmailClient.EmailMessageException.InvalidArgumentException(INVALID_ARGUMENT_ERROR_MSG)
+                throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
+                    INVALID_ARGUMENT_ERROR_MSG,
+                )
             }
 
             val updateValuesInput = EmailMessageUpdateValuesInput.builder()
@@ -400,7 +468,8 @@ internal class DefaultSudoEmailClient(
                 logger.error("errors = ${mutationResponse.errors()}")
                 throw interpretEmailMessageError(mutationResponse.errors().first())
             }
-            val result = mutationResponse.data()?.updateEmailMessages()?.fragments()?.updateEmailMessagesResult()
+            val result = mutationResponse.data()?.updateEmailMessages()?.fragments()
+                ?.updateEmailMessagesResult()
                 ?: throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
             val successIds = result.successMessageIds()
             val failureIds = result.failedMessageIds()
@@ -419,8 +488,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -456,10 +531,14 @@ internal class DefaultSudoEmailClient(
     private suspend fun executeDeleteEmailMessages(idSet: Set<String>): DeleteEmailMessagesResult {
         try {
             if (idSet.size > ID_REQUEST_LIMIT) {
-                throw SudoEmailClient.EmailMessageException.LimitExceededException(LIMIT_EXCEEDED_ERROR_MSG)
+                throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                    LIMIT_EXCEEDED_ERROR_MSG,
+                )
             }
             if (idSet.isEmpty()) {
-                throw SudoEmailClient.EmailMessageException.InvalidArgumentException(INVALID_ARGUMENT_ERROR_MSG)
+                throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
+                    INVALID_ARGUMENT_ERROR_MSG,
+                )
             }
 
             val mutationInput = DeleteEmailMessagesInput.builder()
@@ -483,14 +562,23 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
     }
 
-    @Throws(SudoEmailClient.EmailMessageException::class, SudoEmailClient.EmailAddressException::class)
+    @Throws(
+        SudoEmailClient.EmailMessageException::class,
+        SudoEmailClient.EmailAddressException::class,
+    )
     override suspend fun createDraftEmailMessage(input: CreateDraftEmailMessageInput): String {
         throwIfEmailAddressNotFound(input.senderEmailAddressId)
 
@@ -502,7 +590,10 @@ internal class DefaultSudoEmailClient(
         }
     }
 
-    @Throws(SudoEmailClient.EmailMessageException::class, SudoEmailClient.EmailAddressException::class)
+    @Throws(
+        SudoEmailClient.EmailMessageException::class,
+        SudoEmailClient.EmailAddressException::class,
+    )
     override suspend fun updateDraftEmailMessage(input: UpdateDraftEmailMessageInput): String {
         this.getDraftEmailMessage(
             GetDraftEmailMessageInput(input.id, input.senderEmailAddressId),
@@ -515,11 +606,16 @@ internal class DefaultSudoEmailClient(
         }
     }
 
-    @Throws(SudoEmailClient.EmailAddressException::class, SudoEmailClient.EmailMessageException::class)
+    @Throws(
+        SudoEmailClient.EmailAddressException::class,
+        SudoEmailClient.EmailMessageException::class,
+    )
     override suspend fun deleteDraftEmailMessages(input: DeleteDraftEmailMessagesInput): BatchOperationResult<String> {
         val (ids, emailAddressId) = input
         if (ids.size > DRAFT_ID_REQUEST_LIMIT) {
-            throw SudoEmailClient.EmailMessageException.LimitExceededException(LIMIT_EXCEEDED_ERROR_MSG)
+            throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                LIMIT_EXCEEDED_ERROR_MSG,
+            )
         }
 
         throwIfEmailAddressNotFound(emailAddressId)
@@ -552,7 +648,9 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailCryptographicKeysException::class)
     override suspend fun importKeys(archiveData: ByteArray) {
         if (archiveData.isEmpty()) {
-            throw SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException(INVALID_ARGUMENT_ERROR_MSG)
+            throw SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException(
+                INVALID_ARGUMENT_ERROR_MSG,
+            )
         }
         try {
             deviceKeyManager.importKeys(archiveData)
@@ -581,12 +679,19 @@ internal class DefaultSudoEmailClient(
                 logger.error("errors = ${queryResponse.errors()}")
                 throw interpretEmailAddressError(queryResponse.errors().first())
             }
-            return queryResponse.data()?.checkEmailAddressAvailability()?.addresses() ?: return emptyList()
+            return queryResponse.data()?.checkEmailAddressAvailability()?.addresses()
+                ?: return emptyList()
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -609,8 +714,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -623,8 +734,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -669,7 +786,8 @@ internal class DefaultSudoEmailClient(
                 }
             }
             if (partials.isNotEmpty()) {
-                val listPartialResult = ListAPIResult.ListPartialResult(success, partials, newNextToken)
+                val listPartialResult =
+                    ListAPIResult.ListPartialResult(success, partials, newNextToken)
                 return ListAPIResult.Partial(listPartialResult)
             }
             val listSuccessResult = ListAPIResult.ListSuccessResult(success, newNextToken)
@@ -677,8 +795,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -726,7 +850,8 @@ internal class DefaultSudoEmailClient(
                 }
             }
             if (partials.isNotEmpty()) {
-                val listPartialResult = ListAPIResult.ListPartialResult(success, partials, newNextToken)
+                val listPartialResult =
+                    ListAPIResult.ListPartialResult(success, partials, newNextToken)
                 return ListAPIResult.Partial(listPartialResult)
             }
             val listSuccessResult = ListAPIResult.ListSuccessResult(success, newNextToken)
@@ -734,8 +859,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -765,13 +896,21 @@ internal class DefaultSudoEmailClient(
             val emailAddressesPublicInfo = queryResult?.items() ?: emptyList()
 
             return emailAddressesPublicInfo.map { publicInfo ->
-                EmailAddressPublicInfoTransformer.toEntity(publicInfo.fragments().emailAddressPublicInfo())
+                EmailAddressPublicInfoTransformer.toEntity(
+                    publicInfo.fragments().emailAddressPublicInfo(),
+                )
             }
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -798,14 +937,24 @@ internal class DefaultSudoEmailClient(
                 throw interpretEmailFolderError(queryResponse.errors().first())
             }
 
-            val result = queryResponse.data()?.listEmailFoldersForEmailAddressId() ?: return ListOutput(emptyList(), null)
+            val result =
+                queryResponse.data()?.listEmailFoldersForEmailAddressId() ?: return ListOutput(
+                    emptyList(),
+                    null,
+                )
             val emailFolders = EmailFolderTransformer.toEntity(result.items())
             return ListOutput(emailFolders, result.nextToken())
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailFolderException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailFolderException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailFolderException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailFolderException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailFolderException(e)
             }
         }
@@ -819,8 +968,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -857,6 +1012,7 @@ internal class DefaultSudoEmailClient(
                         }
                         bais.close()
                     }
+
                     "sudoplatform-crypto" -> {
                         decodedBytes = EmailMessageTransformer.toUnsealedRfc822Data(
                             deviceKeyManager,
@@ -865,6 +1021,7 @@ internal class DefaultSudoEmailClient(
                             decodedBytes,
                         )
                     }
+
                     "sudoplatform-binary-data" -> {} // no-op
                     else -> throw SudoEmailClient.EmailMessageException.UnsealingException("Invalid Content-Encoding value $value")
                 }
@@ -873,8 +1030,14 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(cause = e)
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(cause = e)
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -916,13 +1079,16 @@ internal class DefaultSudoEmailClient(
                     success.add(unsealerEmailMessage)
                 } catch (e: Exception) {
                     val partialEmailMessage =
-                        EmailMessageTransformer.toPartialEntity(sealedEmailMessage.fragments().sealedEmailMessage())
+                        EmailMessageTransformer.toPartialEntity(
+                            sealedEmailMessage.fragments().sealedEmailMessage(),
+                        )
                     val partialResult = PartialResult(partialEmailMessage, e)
                     partials.add(partialResult)
                 }
             }
             if (partials.isNotEmpty()) {
-                val listPartialResult = ListAPIResult.ListPartialResult(success, partials, newNextToken)
+                val listPartialResult =
+                    ListAPIResult.ListPartialResult(success, partials, newNextToken)
                 return ListAPIResult.Partial(listPartialResult)
             }
             val listSuccessResult = ListAPIResult.ListSuccessResult(success, newNextToken)
@@ -930,7 +1096,10 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(cause = e)
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -972,13 +1141,16 @@ internal class DefaultSudoEmailClient(
                     success.add(unsealerEmailMessage)
                 } catch (e: Exception) {
                     val partialEmailMessage =
-                        EmailMessageTransformer.toPartialEntity(sealedEmailMessage.fragments().sealedEmailMessage())
+                        EmailMessageTransformer.toPartialEntity(
+                            sealedEmailMessage.fragments().sealedEmailMessage(),
+                        )
                     val partialResult = PartialResult(partialEmailMessage, e)
                     partials.add(partialResult)
                 }
             }
             if (partials.isNotEmpty()) {
-                val listPartialResult = ListAPIResult.ListPartialResult(success, partials, newNextToken)
+                val listPartialResult =
+                    ListAPIResult.ListPartialResult(success, partials, newNextToken)
                 return ListAPIResult.Partial(listPartialResult)
             }
             val listSuccessResult = ListAPIResult.ListSuccessResult(success, newNextToken)
@@ -986,7 +1158,10 @@ internal class DefaultSudoEmailClient(
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(cause = e)
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1003,15 +1178,27 @@ internal class DefaultSudoEmailClient(
 
             val metadata = s3TransientClient.getObjectMetadata(s3Key)
             keyId = metadata.userMetadata["keyId"]
-                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(S3_KEY_ID_ERROR_MSG)
+                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                    S3_KEY_ID_ERROR_MSG,
+                )
             metadata.userMetadata["algorithm"]
-                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(S3_ALGORITHM_ERROR_MSG)
+                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                    S3_ALGORITHM_ERROR_MSG,
+                )
             updatedAt = metadata.lastModified
 
             val sealedRfc822Data = s3TransientClient.download(s3Key)
 
-            val unsealed = DraftEmailMessageTransformer.toDecodedAndDecryptedRfc822Data(this.sealingService, sealedRfc822Data, keyId)
-            return DraftEmailMessageWithContent(id = input.id, updatedAt = updatedAt, rfc822Data = unsealed)
+            val unsealed = DraftEmailMessageTransformer.toDecodedAndDecryptedRfc822Data(
+                this.sealingService,
+                sealedRfc822Data,
+                keyId,
+            )
+            return DraftEmailMessageWithContent(
+                id = input.id,
+                updatedAt = updatedAt,
+                rfc822Data = unsealed,
+            )
         } catch (e: Throwable) {
             logger.error(e.message)
             throw interpretEmailMessageException(e)
@@ -1051,13 +1238,17 @@ internal class DefaultSudoEmailClient(
                 throw interpretEmailConfigurationError(queryResponse.errors().first())
             }
 
-            val queryResult = queryResponse.data()?.emailConfig?.fragments()?.emailConfigurationData()
-                ?: throw SudoEmailClient.EmailConfigurationException.FailedException()
+            val queryResult =
+                queryResponse.data()?.emailConfig?.fragments()?.emailConfigurationData()
+                    ?: throw SudoEmailClient.EmailConfigurationException.FailedException()
             return EmailConfigurationTransformer.toEntity(queryResult)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
-                is ApolloException -> throw SudoEmailClient.EmailConfigurationException.FailedException(cause = e)
+                is ApolloException -> throw SudoEmailClient.EmailConfigurationException.FailedException(
+                    cause = e,
+                )
+
                 else -> throw interpretEmailConfigurationException(e)
             }
         }
@@ -1083,6 +1274,196 @@ internal class DefaultSudoEmailClient(
 
     override suspend fun unsubscribeAllFromEmailMessages() {
         subscriptions.unsubscribeAllEmailMessages()
+    }
+
+    override suspend fun blockEmailAddresses(input: BlockEmailAddressesInput): BatchOperationResult<String> {
+        if (input.addresses.isEmpty()) {
+            throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
+                ADDRESS_BLOCKLIST_EMPTY_MSG,
+            )
+        }
+
+        val symmetricKeyId = this.deviceKeyManager.getCurrentSymmetricKeyId()
+            ?: throw KeyNotFoundException("No symmetric key found")
+
+        val normalizedAddresses = HashSet<String>()
+        val hashedBlockedValues = mutableListOf<String>()
+        val sealedBlockedValues = mutableListOf<ByteArray>()
+        input.addresses.forEach { address ->
+            val normalized = EmailAddressParser.normalize(address)
+            if (!normalizedAddresses.add(normalized)) {
+                throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
+                    ADDRESS_BLOCKLIST_DUPLICATE_MSG,
+                )
+            }
+            sealedBlockedValues.add(
+                sealingService.sealString(
+                    symmetricKeyId,
+                    normalized.toByteArray(),
+                ),
+            )
+            hashedBlockedValues.add(StringHasher.hashString("${input.owner}|$normalized"))
+        }
+
+        val blockedAddresses = List(normalizedAddresses.size) { index ->
+            BlockedEmailAddressInput
+                .builder()
+                .hashAlgorithm(BlockedAddressHashAlgorithm.SHA256)
+                .hashedBlockedValue(hashedBlockedValues[index])
+                .sealedValue(
+                    SealedAttributeInput
+                        .builder()
+                        .keyId(symmetricKeyId)
+                        .algorithm(SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString())
+                        .plainTextType("string")
+                        .base64EncodedSealedData(String(Base64.encode(sealedBlockedValues[index])))
+                        .build(),
+                )
+                .build()
+        }
+
+        val blockEmailAddressesInput = BlockEmailAddressesRequest.builder()
+            .owner(input.owner)
+            .blockedAddresses(blockedAddresses)
+            .build()
+
+        val mutation = BlockEmailAddressesMutation.builder()
+            .input(blockEmailAddressesInput)
+            .build()
+
+        val response = appSyncClient.mutate(mutation)
+            .enqueue()
+
+        if (response.hasErrors()) {
+            logger.error("errors = ${response.errors()}")
+            throw interpretEmailBlocklistError(response.errors().first())
+        }
+
+        val result = response.data()?.blockEmailAddresses()?.fragments()?.blockAddressesResult()
+
+        return when {
+            result?.status() == BlockEmailAddressesBulkUpdateStatus.SUCCESS -> {
+                BatchOperationResult.SuccessOrFailureResult(BatchOperationStatus.SUCCESS)
+            }
+
+            result?.status() == BlockEmailAddressesBulkUpdateStatus.FAILED -> {
+                BatchOperationResult.SuccessOrFailureResult(BatchOperationStatus.FAILURE)
+            }
+
+            else -> {
+                BatchOperationResult.PartialResult(
+                    status = BatchOperationStatus.PARTIAL,
+                    successValues = result?.successAddresses()?.map {
+                        val index = hashedBlockedValues.indexOf(it)
+                        input.addresses[index]
+                    } ?: emptyList(),
+                    failureValues = result?.failedAddresses()?.map {
+                        val index = hashedBlockedValues.indexOf(it)
+                        input.addresses[index]
+                    } ?: emptyList(),
+                )
+            }
+        }
+    }
+
+    override suspend fun unblockEmailAddresses(input: UnblockEmailAddressesInput): BatchOperationResult<String> {
+        if (input.addresses.isEmpty()) {
+            throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
+                ADDRESS_BLOCKLIST_EMPTY_MSG,
+            )
+        }
+
+        val normalizedAddresses = HashSet<String>()
+        val hashedBlockedValues = mutableListOf<String>()
+        for (address in input.addresses) {
+            val normalized = EmailAddressParser.normalize(address)
+            if (!normalizedAddresses.add(normalized)) {
+                throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
+                    ADDRESS_BLOCKLIST_DUPLICATE_MSG,
+                )
+            }
+            hashedBlockedValues.add(StringHasher.hashString("${input.owner}|$normalized"))
+        }
+
+        val unblockEmailAddressesInput = UnblockEmailAddressesRequest.builder()
+            .owner(input.owner)
+            .unblockedAddresses(hashedBlockedValues)
+            .build()
+
+        val mutation = UnblockEmailAddressesMutation.builder()
+            .input(unblockEmailAddressesInput)
+            .build()
+
+        val response = appSyncClient.mutate(mutation)
+            .enqueue()
+
+        if (response.hasErrors()) {
+            logger.error("errors = ${response.errors()}")
+            throw interpretEmailBlocklistError(response.errors().first())
+        }
+
+        val result = response.data()?.unblockEmailAddresses()?.fragments()?.unblockAddressesResult()
+
+        return when {
+            result?.status() == BlockEmailAddressesBulkUpdateStatus.SUCCESS -> {
+                BatchOperationResult.SuccessOrFailureResult(BatchOperationStatus.SUCCESS)
+            }
+
+            result?.status() == BlockEmailAddressesBulkUpdateStatus.FAILED -> {
+                BatchOperationResult.SuccessOrFailureResult(BatchOperationStatus.FAILURE)
+            }
+
+            else -> {
+                BatchOperationResult.PartialResult(
+                    status = BatchOperationStatus.PARTIAL,
+                    successValues = result?.successAddresses()?.map {
+                        val index = hashedBlockedValues.indexOf(it)
+                        input.addresses[index]
+                    } ?: emptyList(),
+                    failureValues = result?.failedAddresses()?.map {
+                        val index = hashedBlockedValues.indexOf(it)
+                        input.addresses[index]
+                    } ?: emptyList(),
+                )
+            }
+        }
+    }
+
+    override suspend fun getEmailAddressBlocklist(owner: String): List<String> {
+        val getBlocklistInput = GetEmailAddressBlocklistRequest.builder()
+            .owner(owner)
+            .build()
+
+        val query = GetEmailAddressBlocklistQuery.builder()
+            .input(getBlocklistInput)
+            .build()
+
+        val response = appSyncClient.query(query)
+            .enqueueFirst()
+
+        if (response.hasErrors()) {
+            logger.error("errors = ${response.errors()}")
+            throw interpretEmailBlocklistError(response.errors().first())
+        }
+
+        val blockedAddresses = response.data()?.emailAddressBlocklist?.sealedBlockedAddresses()
+
+        if (blockedAddresses.isNullOrEmpty()) {
+            return emptyList()
+        }
+
+        val unsealedBlockedAddresses = mutableListOf<String>()
+
+        blockedAddresses.map {
+            unsealedBlockedAddresses.add(
+                sealingService.unsealString(
+                    it.fragments().sealedAttribute().keyId(),
+                    Base64.decode(it.fragments().sealedAttribute().base64EncodedSealedData()),
+                ).decodeToString(),
+            )
+        }
+
+        return unsealedBlockedAddresses.toList()
     }
 
     override fun close() {
@@ -1139,7 +1520,11 @@ internal class DefaultSudoEmailClient(
         }
     }
 
-    private suspend fun saveDraftEmailMessage(rfc822Data: ByteArray, senderEmailAddressId: String, id: String? = null): String {
+    private suspend fun saveDraftEmailMessage(
+        rfc822Data: ByteArray,
+        senderEmailAddressId: String,
+        id: String? = null,
+    ): String {
         val symmetricKeyId = this.deviceKeyManager.getCurrentSymmetricKeyId()
             ?: throw KeyNotFoundException(SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG)
 
@@ -1150,7 +1535,11 @@ internal class DefaultSudoEmailClient(
             "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
         )
 
-        val uploadData = DraftEmailMessageTransformer.toEncryptedAndEncodedRfc822Data(this.sealingService, rfc822Data, symmetricKeyId)
+        val uploadData = DraftEmailMessageTransformer.toEncryptedAndEncodedRfc822Data(
+            this.sealingService,
+            rfc822Data,
+            symmetricKeyId,
+        )
         s3TransientClient.upload(uploadData, s3Key, metadataObject)
         return draftId
     }
@@ -1168,7 +1557,10 @@ internal class DefaultSudoEmailClient(
         return "$keyPrefix/$emailMessageId-$keyId"
     }
 
-    private fun constructS3KeyForDraftEmailMessage(emailAddressId: String, draftEmailMessageId: String = ""): String {
+    private fun constructS3KeyForDraftEmailMessage(
+        emailAddressId: String,
+        draftEmailMessageId: String = "",
+    ): String {
         val keyPrefix = constructS3PrefixForEmailAddress(emailAddressId)
         val keySuffix = if (draftEmailMessageId.isNotEmpty()) "/$draftEmailMessageId" else ""
         return "$keyPrefix/draft$keySuffix"
@@ -1183,15 +1575,28 @@ internal class DefaultSudoEmailClient(
         if (error.contains(ERROR_INVALID_KEYRING)) {
             return SudoEmailClient.EmailAddressException.PublicKeyException(INVALID_KEYRING_MSG)
         } else if (error.contains(ERROR_INVALID_EMAIL) || error.contains(ERROR_INVALID_DOMAIN)) {
-            return SudoEmailClient.EmailAddressException.InvalidEmailAddressException(INVALID_EMAIL_ADDRESS_MSG)
+            return SudoEmailClient.EmailAddressException.InvalidEmailAddressException(
+                INVALID_EMAIL_ADDRESS_MSG,
+            )
         } else if (error.contains(ERROR_ADDRESS_NOT_FOUND)) {
-            return SudoEmailClient.EmailAddressException.EmailAddressNotFoundException(EMAIL_ADDRESS_NOT_FOUND_MSG)
+            return SudoEmailClient.EmailAddressException.EmailAddressNotFoundException(
+                EMAIL_ADDRESS_NOT_FOUND_MSG,
+            )
         } else if (error.contains(ERROR_ADDRESS_UNAVAILABLE)) {
-            return SudoEmailClient.EmailAddressException.UnavailableEmailAddressException(EMAIL_ADDRESS_UNAVAILABLE_MSG)
+            return SudoEmailClient.EmailAddressException.UnavailableEmailAddressException(
+                EMAIL_ADDRESS_UNAVAILABLE_MSG,
+            )
         } else if (error.contains(ERROR_UNAUTHORIZED_ADDRESS)) {
-            return SudoEmailClient.EmailAddressException.UnauthorizedEmailAddressException(EMAIL_ADDRESS_UNAUTHORIZED_MSG)
-        } else if (error.contains(ERROR_INSUFFICIENT_ENTITLEMENTS) || error.contains(ERROR_POLICY_FAILED)) {
-            return SudoEmailClient.EmailAddressException.InsufficientEntitlementsException(INSUFFICIENT_ENTITLEMENTS_MSG)
+            return SudoEmailClient.EmailAddressException.UnauthorizedEmailAddressException(
+                EMAIL_ADDRESS_UNAUTHORIZED_MSG,
+            )
+        } else if (error.contains(ERROR_INSUFFICIENT_ENTITLEMENTS) || error.contains(
+                ERROR_POLICY_FAILED,
+            )
+        ) {
+            return SudoEmailClient.EmailAddressException.InsufficientEntitlementsException(
+                INSUFFICIENT_ENTITLEMENTS_MSG,
+            )
         }
         return SudoEmailClient.EmailAddressException.FailedException(e.toString())
     }
@@ -1201,10 +1606,16 @@ internal class DefaultSudoEmailClient(
             is CancellationException,
             is SudoEmailClient.EmailAddressException,
             -> e
+
             is Unsealer.UnsealerException ->
-                SudoEmailClient.EmailAddressException.UnsealingException(UNSEAL_EMAIL_ADDRESS_ERROR_MSG, e)
+                SudoEmailClient.EmailAddressException.UnsealingException(
+                    UNSEAL_EMAIL_ADDRESS_ERROR_MSG,
+                    e,
+                )
+
             is DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException ->
                 SudoEmailClient.EmailAddressException.PublicKeyException(KEY_GENERATION_ERROR_MSG)
+
             else -> SudoEmailClient.EmailAddressException.UnknownException(e)
         }
     }
@@ -1218,6 +1629,7 @@ internal class DefaultSudoEmailClient(
             is CancellationException,
             is SudoEmailClient.EmailFolderException,
             -> e
+
             else -> SudoEmailClient.EmailFolderException.UnknownException(e)
         }
     }
@@ -1231,6 +1643,7 @@ internal class DefaultSudoEmailClient(
             is CancellationException,
             is SudoEmailClient.EmailConfigurationException,
             -> e
+
             else -> SudoEmailClient.EmailConfigurationException.UnknownException(e)
         }
     }
@@ -1238,13 +1651,21 @@ internal class DefaultSudoEmailClient(
     private fun interpretEmailMessageError(e: Error): SudoEmailClient.EmailMessageException {
         val error = e.customAttributes()[ERROR_TYPE]?.toString() ?: ""
         if (error.contains(ERROR_INVALID_EMAIL_CONTENTS)) {
-            return SudoEmailClient.EmailMessageException.InvalidMessageContentException(INVALID_MESSAGE_CONTENT_MSG)
+            return SudoEmailClient.EmailMessageException.InvalidMessageContentException(
+                INVALID_MESSAGE_CONTENT_MSG,
+            )
         } else if (error.contains(ERROR_UNAUTHORIZED_ADDRESS)) {
-            return SudoEmailClient.EmailMessageException.UnauthorizedAddressException(EMAIL_ADDRESS_UNAUTHORIZED_MSG)
+            return SudoEmailClient.EmailMessageException.UnauthorizedAddressException(
+                EMAIL_ADDRESS_UNAUTHORIZED_MSG,
+            )
         } else if (error.contains(ERROR_MESSAGE_NOT_FOUND)) {
-            return SudoEmailClient.EmailMessageException.EmailMessageNotFoundException(EMAIL_MESSAGE_NOT_FOUND_MSG)
+            return SudoEmailClient.EmailMessageException.EmailMessageNotFoundException(
+                EMAIL_MESSAGE_NOT_FOUND_MSG,
+            )
         } else if (error.contains(SERVICE_ERROR)) {
-            return SudoEmailClient.EmailMessageException.EmailMessageNotFoundException(SUDO_NOT_FOUND_MSG)
+            return SudoEmailClient.EmailMessageException.EmailMessageNotFoundException(
+                SUDO_NOT_FOUND_MSG,
+            )
         }
         return SudoEmailClient.EmailMessageException.FailedException(e.toString())
     }
@@ -1254,10 +1675,19 @@ internal class DefaultSudoEmailClient(
             is CancellationException,
             is SudoEmailClient.EmailMessageException,
             -> e
+
             is Unsealer.UnsealerException ->
-                SudoEmailClient.EmailMessageException.UnsealingException(UNSEAL_EMAIL_MSG_ERROR_MSG, e)
+                SudoEmailClient.EmailMessageException.UnsealingException(
+                    UNSEAL_EMAIL_MSG_ERROR_MSG,
+                    e,
+                )
+
             is DeviceKeyManager.DeviceKeyManagerException ->
-                SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException(KEY_ARCHIVE_ERROR_MSG, e)
+                SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException(
+                    KEY_ARCHIVE_ERROR_MSG,
+                    e,
+                )
+
             is AmazonS3Exception -> {
                 if (e.errorCode == S3_NOT_FOUND_ERROR_CODE) {
                     SudoEmailClient.EmailMessageException.EmailMessageNotFoundException()
@@ -1265,7 +1695,12 @@ internal class DefaultSudoEmailClient(
                     e
                 }
             }
+
             else -> SudoEmailClient.EmailMessageException.UnknownException(e)
         }
+    }
+
+    private fun interpretEmailBlocklistError(e: Error): SudoEmailClient.EmailBlocklistException {
+        return SudoEmailClient.EmailBlocklistException.FailedException(e.toString())
     }
 }
