@@ -106,7 +106,7 @@ class DeviceKeyManagerRoboTest : BaseTests() {
         newKeyPair shouldNotBe null
         newKeyPair shouldNotBe keyPair
 
-        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(newKeyPair!!.keyId)
+        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
         fetchedKeyPair shouldNotBe null
         fetchedKeyPair shouldNotBe keyPair
         fetchedKeyPair shouldBe newKeyPair
@@ -128,9 +128,10 @@ class DeviceKeyManagerRoboTest : BaseTests() {
 
         keyManager.generateSymmetricKey("symmetricKey")
         val symmetricKey = keyManager.getSymmetricKeyData("symmetricKey")
+        symmetricKey shouldNotBe null
         secretData = keyManager.encryptWithSymmetricKey("symmetricKey", clearData)
 
-        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData)
+        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, secretData)
         decryptedData shouldBe clearData
     }
 

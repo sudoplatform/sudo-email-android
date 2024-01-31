@@ -10,6 +10,7 @@ import androidx.annotation.VisibleForTesting
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudokeymanager.KeyManagerException
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
+import com.sudoplatform.sudokeymanager.KeyType
 import com.sudoplatform.sudokeymanager.SecureKeyArchive
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
@@ -72,8 +73,8 @@ internal class DefaultDeviceKeyManager(
             return KeyPair(
                 keyId = keyId,
                 keyRingId = getKeyRingId(),
-                publicKey = publicKey,
-                privateKey = privateKey,
+                publicKey = publicKey!!,
+                privateKey = privateKey!!,
             )
         } catch (e: Exception) {
             logger.error("error $e")
@@ -172,6 +173,9 @@ internal class DefaultDeviceKeyManager(
     override fun exportKeys(): ByteArray {
         val archive = SecureKeyArchive.getInstanceV3(keyManager)
         try {
+            val excludedKeyTypes: MutableSet<KeyType> = HashSet()
+            excludedKeyTypes.add(KeyType.PUBLIC_KEY)
+            archive.excludedKeyTypes = excludedKeyTypes
             archive.loadKeys()
             return archive.archive()
         } catch (e: Exception) {

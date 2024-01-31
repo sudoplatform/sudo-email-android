@@ -86,7 +86,7 @@ class UnsealerTest : BaseTests() {
     private fun seal(value: String): String {
         val encryptedSymmetricKeyBytes = keyManager.encryptWithPublicKey(
             publicKeyId,
-            keyManager.getSymmetricKeyData(symmetricKeyId),
+            keyManager.getSymmetricKeyData(symmetricKeyId)!!,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         encryptedSymmetricKeyBytes.size shouldBe Unsealer.KEY_SIZE_AES

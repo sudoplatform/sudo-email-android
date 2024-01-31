@@ -177,9 +177,9 @@ class DeviceKeyManagerTest {
             keyRingId shouldStartWith keyRingServiceName
             keyId.isBlank() shouldBe false
             publicKey shouldNotBe null
-            publicKey.size shouldBeGreaterThan 0
+            publicKey?.size?.shouldBeGreaterThan(0)
             privateKey shouldNotBe null
-            privateKey.size shouldBeGreaterThan 0
+            privateKey?.size?. shouldBeGreaterThan(0)
         }
 
         val newKeyPair = deviceKeyManager.generateKeyPair()
@@ -211,7 +211,7 @@ class DeviceKeyManagerTest {
         val symmetricKey = keyManager.getSymmetricKeyData("symmetricKey")
         val symmetricSecretData = keyManager.encryptWithSymmetricKey("symmetricKey", clearData)
 
-        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, symmetricSecretData)
+        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, symmetricSecretData)
         decryptedData shouldBe clearData
 
         // exportKeys and importKeys

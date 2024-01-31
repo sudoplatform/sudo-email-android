@@ -52,9 +52,9 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
-    fun getCurrentKeyPairShouldThrowIfKeyManagerThrows() {
+    fun generateKeyPairShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
-            on { getPassword(anyString()) } doThrow KeyManagerException("mock")
+            on { generateKeyPair(anyString(), anyBoolean()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
             deviceKeyManager.generateKeyPair()
@@ -79,16 +79,6 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
             deviceKeyManager.getKeyPairWithId("42")
-        }
-    }
-
-    @Test
-    fun generateNewCurrentKeyPairShouldThrowIfKeyManagerThrows() {
-        mockKeyManager.stub {
-            on { getPassword(anyString()) } doThrow KeyManagerException("mock")
-        }
-        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
-            deviceKeyManager.generateKeyPair()
         }
     }
 
