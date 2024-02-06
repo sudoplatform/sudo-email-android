@@ -1447,6 +1447,7 @@ internal class DefaultSudoEmailClient(
             .build()
 
         val response = appSyncClient.query(query)
+            .responseFetcher(CachePolicy.REMOTE_ONLY.toResponseFetcher())
             .enqueueFirst()
 
         if (response.hasErrors()) {
