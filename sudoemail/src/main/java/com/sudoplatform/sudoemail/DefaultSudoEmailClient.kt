@@ -74,7 +74,6 @@ import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
-import com.sudoplatform.sudoemail.types.inputs.BlockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
@@ -90,7 +89,6 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderId
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.types.inputs.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
@@ -111,6 +109,7 @@ import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.exceptions.AuthenticationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
@@ -1276,8 +1275,8 @@ internal class DefaultSudoEmailClient(
         subscriptions.unsubscribeAllEmailMessages()
     }
 
-    override suspend fun blockEmailAddresses(input: BlockEmailAddressesInput): BatchOperationResult<String> {
-        if (input.addresses.isEmpty()) {
+    override suspend fun blockEmailAddresses(addresses: List<String>): BatchOperationResult<String> {
+        if (addresses.isEmpty()) {
             throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
                 ADDRESS_BLOCKLIST_EMPTY_MSG,
             )
@@ -1286,10 +1285,13 @@ internal class DefaultSudoEmailClient(
         val symmetricKeyId = this.deviceKeyManager.getCurrentSymmetricKeyId()
             ?: throw KeyNotFoundException("No symmetric key found")
 
+        val owner = this.sudoUserClient.getSubject()
+            ?: throw AuthenticationException.NotSignedInException()
+
         val normalizedAddresses = HashSet<String>()
         val hashedBlockedValues = mutableListOf<String>()
         val sealedBlockedValues = mutableListOf<ByteArray>()
-        input.addresses.forEach { address ->
+        addresses.forEach { address ->
             val normalized = EmailAddressParser.normalize(address)
             if (!normalizedAddresses.add(normalized)) {
                 throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
@@ -1302,7 +1304,7 @@ internal class DefaultSudoEmailClient(
                     normalized.toByteArray(),
                 ),
             )
-            hashedBlockedValues.add(StringHasher.hashString("${input.owner}|$normalized"))
+            hashedBlockedValues.add(StringHasher.hashString("$owner|$normalized"))
         }
 
         val blockedAddresses = List(normalizedAddresses.size) { index ->
@@ -1323,7 +1325,7 @@ internal class DefaultSudoEmailClient(
         }
 
         val blockEmailAddressesInput = BlockEmailAddressesRequest.builder()
-            .owner(input.owner)
+            .owner(owner)
             .blockedAddresses(blockedAddresses)
             .build()
 
@@ -1355,38 +1357,41 @@ internal class DefaultSudoEmailClient(
                     status = BatchOperationStatus.PARTIAL,
                     successValues = result?.successAddresses()?.map {
                         val index = hashedBlockedValues.indexOf(it)
-                        input.addresses[index]
+                        addresses[index]
                     } ?: emptyList(),
                     failureValues = result?.failedAddresses()?.map {
                         val index = hashedBlockedValues.indexOf(it)
-                        input.addresses[index]
+                        addresses[index]
                     } ?: emptyList(),
                 )
             }
         }
     }
 
-    override suspend fun unblockEmailAddresses(input: UnblockEmailAddressesInput): BatchOperationResult<String> {
-        if (input.addresses.isEmpty()) {
+    override suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String> {
+        if (addresses.isEmpty()) {
             throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
                 ADDRESS_BLOCKLIST_EMPTY_MSG,
             )
         }
 
+        val owner = this.sudoUserClient.getSubject()
+            ?: throw AuthenticationException.NotSignedInException()
+
         val normalizedAddresses = HashSet<String>()
         val hashedBlockedValues = mutableListOf<String>()
-        for (address in input.addresses) {
+        for (address in addresses) {
             val normalized = EmailAddressParser.normalize(address)
             if (!normalizedAddresses.add(normalized)) {
                 throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
                     ADDRESS_BLOCKLIST_DUPLICATE_MSG,
                 )
             }
-            hashedBlockedValues.add(StringHasher.hashString("${input.owner}|$normalized"))
+            hashedBlockedValues.add(StringHasher.hashString("$owner|$normalized"))
         }
 
         val unblockEmailAddressesInput = UnblockEmailAddressesRequest.builder()
-            .owner(input.owner)
+            .owner(owner)
             .unblockedAddresses(hashedBlockedValues)
             .build()
 
@@ -1418,18 +1423,21 @@ internal class DefaultSudoEmailClient(
                     status = BatchOperationStatus.PARTIAL,
                     successValues = result?.successAddresses()?.map {
                         val index = hashedBlockedValues.indexOf(it)
-                        input.addresses[index]
+                        addresses[index]
                     } ?: emptyList(),
                     failureValues = result?.failedAddresses()?.map {
                         val index = hashedBlockedValues.indexOf(it)
-                        input.addresses[index]
+                        addresses[index]
                     } ?: emptyList(),
                 )
             }
         }
     }
 
-    override suspend fun getEmailAddressBlocklist(owner: String): List<String> {
+    override suspend fun getEmailAddressBlocklist(): List<String> {
+        val owner = this.sudoUserClient.getSubject()
+            ?: throw AuthenticationException.NotSignedInException()
+
         val getBlocklistInput = GetEmailAddressBlocklistRequest.builder()
             .owner(owner)
             .build()

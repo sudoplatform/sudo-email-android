@@ -14,12 +14,10 @@ import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.fragment.UnblockAddressesResult
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
-import com.sudoplatform.sudoemail.keys.KeyPair
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.sealing.SealingService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
-import com.sudoplatform.sudoemail.types.inputs.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.util.EmailAddressParser
 import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -37,10 +35,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
@@ -93,8 +88,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     private val mockUserClient by before {
         mock<SudoUserClient>().stub {
-            on { getSubject() } doReturn "subject"
-            on { getRefreshToken() } doReturn "refreshToken"
+            on { getSubject() } doReturn owner
         }
     }
 
@@ -105,29 +99,17 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
     }
 
     private val mockKeyManager by before {
-        mock<KeyManagerInterface>().stub {
-            on { getPassword(ArgumentMatchers.anyString()) } doReturn ByteArray(42)
-            on { getPublicKeyData(ArgumentMatchers.anyString()) } doReturn ByteArray(42)
-            on { getPrivateKeyData(ArgumentMatchers.anyString()) } doReturn ByteArray(42)
-        }
+        mock<KeyManagerInterface>()
     }
 
     private val mockDeviceKeyManager by before {
         mock<DeviceKeyManager>().stub {
-            on { generateKeyPair() } doReturn KeyPair(
-                keyId = "keyId",
-                keyRingId = "keyRingId",
-                publicKey = ByteArray(42),
-                privateKey = ByteArray(42),
-            )
             on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
         }
     }
 
     private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
-        }
+        mock<S3Client>()
     }
 
     private val mockSealingService by before {
@@ -176,11 +158,10 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         runBlocking<Unit> {
             callbackHolder.callback shouldBe null
             val addresses = emptyList<String>()
-            val input = UnblockEmailAddressesInput(owner, addresses)
 
             val deferredResult = async(Dispatchers.IO) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
-                    client.unblockEmailAddresses(input)
+                    client.unblockEmailAddresses(addresses)
                 }
             }
             deferredResult.start()
@@ -198,16 +179,16 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 "spammyMcSpamface$uuid@spambot.com",
                 "spammymcspamface$uuid@spambot.com",
             )
-            val input = UnblockEmailAddressesInput(owner, addresses)
 
             val deferredResult = async(Dispatchers.IO) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
-                    client.unblockEmailAddresses(input)
+                    client.unblockEmailAddresses(addresses)
                 }
             }
             deferredResult.start()
 
             delay(100L)
+            verify(mockUserClient).getSubject()
         }
 
     @Test
@@ -216,10 +197,8 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
             callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
 
-            val input = UnblockEmailAddressesInput(owner, addresses)
-
             val deferredResult = async(Dispatchers.IO) {
-                client.unblockEmailAddresses(input)
+                client.unblockEmailAddresses(addresses)
             }
             deferredResult.start()
 
@@ -250,6 +229,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                     it.variables().input().unblockedAddresses().size shouldBe addresses.size
                 },
             )
+            verify(mockUserClient).getSubject()
         }
 
     @Test
@@ -282,10 +262,8 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                     .build()
             }
 
-            val input = UnblockEmailAddressesInput(owner, addresses)
-
             val deferredResult = async(Dispatchers.IO) {
-                client.unblockEmailAddresses(input)
+                client.unblockEmailAddresses(addresses)
             }
             deferredResult.start()
 
@@ -316,6 +294,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                     it.variables().input().unblockedAddresses().size shouldBe addresses.size
                 },
             )
+            verify(mockUserClient).getSubject()
         }
 
     @Test
@@ -347,10 +326,8 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 .build()
         }
 
-        val input = UnblockEmailAddressesInput(owner, addresses)
-
         val deferredResult = async(Dispatchers.IO) {
-            client.unblockEmailAddresses(input)
+            client.unblockEmailAddresses(addresses)
         }
         deferredResult.start()
 
@@ -383,6 +360,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 it.variables().input().unblockedAddresses().size shouldBe addresses.size
             },
         )
+        verify(mockUserClient).getSubject()
     }
 
     @Test
@@ -405,11 +383,9 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                     .errors(listOf(error))
                     .build()
             }
-
-            val input = UnblockEmailAddressesInput(owner, addresses)
             val deferredResult = async(Dispatchers.IO) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
-                    client.unblockEmailAddresses(input)
+                    client.unblockEmailAddresses(addresses)
                 }
             }
             deferredResult.start()
@@ -431,5 +407,6 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                     it.variables().input().unblockedAddresses().size shouldBe addresses.size
                 },
             )
+            verify(mockUserClient).getSubject()
         }
 }

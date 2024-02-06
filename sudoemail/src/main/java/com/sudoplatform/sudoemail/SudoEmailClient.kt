@@ -31,7 +31,6 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
-import com.sudoplatform.sudoemail.types.inputs.BlockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
@@ -47,7 +46,6 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderId
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.types.inputs.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
@@ -816,28 +814,27 @@ interface SudoEmailClient : AutoCloseable {
     /**
      * Blocks the given email address(es) for the user identified
      *
-     * @param input [BlockEmailAddressesInput] The parameters used to block email addresses
+     * @param addresses [List<String>] The list of email addresses to block
      * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
      *  of email addresses that succeeded or failed to be blocked.
      */
-    suspend fun blockEmailAddresses(input: BlockEmailAddressesInput): BatchOperationResult<String>
+    suspend fun blockEmailAddresses(addresses: List<String>): BatchOperationResult<String>
 
     /**
      * Unblocks the given email address(es) for the user identified
      *
-     * @param input [UnblockEmailAddressesInput] The parameters used to unblock email addresses
+     * @param addresses [List<String>] The list of email addresses to unblock
      * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
      *  of email addresses that succeeded or failed to be unblocked.
      */
-    suspend fun unblockEmailAddresses(input: UnblockEmailAddressesInput): BatchOperationResult<String>
+    suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String>
 
     /**
      * Get email address blocklist for given owner
      *
-     * @param owner [String] The owner of the blocklist
      * @return A list of the blocked addresses
      */
-    suspend fun getEmailAddressBlocklist(owner: String): List<String>
+    suspend fun getEmailAddressBlocklist(): List<String>
 
     /**
      * Reset any internal state and cached content.

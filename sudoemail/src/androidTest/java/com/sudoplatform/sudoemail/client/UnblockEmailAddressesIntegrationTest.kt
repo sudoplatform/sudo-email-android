@@ -13,8 +13,6 @@ import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.inputs.BlockEmailAddressesInput
-import com.sudoplatform.sudoemail.types.inputs.UnblockEmailAddressesInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
@@ -48,13 +46,8 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         sudoClient.reset()
     }
 
-    fun blockAddresses(addresses: List<String>, owner: String) = runBlocking {
-        val input = BlockEmailAddressesInput(
-            owner,
-            addresses,
-        )
-
-        when (val result = emailClient.blockEmailAddresses(input)) {
+    private fun blockAddresses(addresses: List<String>) = runBlocking {
+        when (val result = emailClient.blockEmailAddresses(addresses)) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }
@@ -83,12 +76,8 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
             emailAddressToBlock shouldNotBe null
             emailAddressList.add(emailAddressToBlock)
 
-            val input = UnblockEmailAddressesInput(
-                receiverEmailAddress.owner,
-                emptyList(),
-            )
             shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
-                emailClient.unblockEmailAddresses(input)
+                emailClient.unblockEmailAddresses(emptyList())
             }
         }
 
@@ -109,15 +98,13 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         emailAddressToBlock shouldNotBe null
         emailAddressList.add(emailAddressToBlock)
 
-        val input = UnblockEmailAddressesInput(
-            receiverEmailAddress.owner,
-            listOf(
-                emailAddressToBlock.emailAddress.lowercase(),
-                emailAddressToBlock.emailAddress.uppercase(),
-            ),
-        )
         shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
-            emailClient.unblockEmailAddresses(input)
+            emailClient.unblockEmailAddresses(
+                listOf(
+                    emailAddressToBlock.emailAddress.lowercase(),
+                    emailAddressToBlock.emailAddress.uppercase(),
+                ),
+            )
         }
     }
 
@@ -138,12 +125,10 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         emailAddressToBlock shouldNotBe null
         emailAddressList.add(emailAddressToBlock)
 
-        val input = UnblockEmailAddressesInput(
-            receiverEmailAddress.owner,
-            listOf(emailAddressToBlock.emailAddress),
-        )
-
-        when (val result = emailClient.unblockEmailAddresses(input)) {
+        when (
+            val result =
+                emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
+        ) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }
@@ -171,14 +156,12 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         emailAddressToBlock shouldNotBe null
         emailAddressList.add(emailAddressToBlock)
 
-        blockAddresses(listOf(emailAddressToBlock.emailAddress), receiverEmailAddress.owner)
+        blockAddresses(listOf(emailAddressToBlock.emailAddress))
 
-        val input = UnblockEmailAddressesInput(
-            receiverEmailAddress.owner,
-            listOf(emailAddressToBlock.emailAddress),
-        )
-
-        when (val result = emailClient.unblockEmailAddresses(input)) {
+        when (
+            val result =
+                emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
+        ) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }
@@ -207,17 +190,16 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         emailAddressList.add(emailAddressToBlock)
 
         val spamAddress = "spammyMcSpamface${UUID.randomUUID()}@spambot.com"
-        blockAddresses(
-            listOf(emailAddressToBlock.emailAddress, spamAddress),
-            receiverEmailAddress.owner,
-        )
+        blockAddresses(listOf(emailAddressToBlock.emailAddress, spamAddress))
 
-        val input = UnblockEmailAddressesInput(
-            receiverEmailAddress.owner,
-            listOf(emailAddressToBlock.emailAddress, spamAddress),
-        )
-
-        when (val result = emailClient.unblockEmailAddresses(input)) {
+        when (
+            val result = emailClient.unblockEmailAddresses(
+                listOf(
+                    emailAddressToBlock.emailAddress,
+                    spamAddress,
+                ),
+            )
+        ) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }

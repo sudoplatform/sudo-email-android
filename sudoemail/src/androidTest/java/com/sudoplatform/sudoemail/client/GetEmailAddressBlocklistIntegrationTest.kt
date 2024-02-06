@@ -12,7 +12,6 @@ import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.inputs.BlockEmailAddressesInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
@@ -44,13 +43,8 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
         sudoClient.reset()
     }
 
-    fun blockAddresses(addresses: List<String>, owner: String) = runBlocking {
-        val input = BlockEmailAddressesInput(
-            owner,
-            addresses,
-        )
-
-        when (val result = emailClient.blockEmailAddresses(input)) {
+    private fun blockAddresses(addresses: List<String>) = runBlocking {
+        when (val result = emailClient.blockEmailAddresses(addresses)) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }
@@ -79,7 +73,7 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
             emailAddressToBlock shouldNotBe null
             emailAddressList.add(emailAddressToBlock)
 
-            val result = emailClient.getEmailAddressBlocklist(receiverEmailAddress.owner)
+            val result = emailClient.getEmailAddressBlocklist()
 
             result.size shouldBe 0
         }
@@ -101,9 +95,9 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
         emailAddressToBlock shouldNotBe null
         emailAddressList.add(emailAddressToBlock)
 
-        blockAddresses(listOf(emailAddressToBlock.emailAddress), receiverEmailAddress.owner)
+        blockAddresses(listOf(emailAddressToBlock.emailAddress))
 
-        val result = emailClient.getEmailAddressBlocklist(receiverEmailAddress.owner)
+        val result = emailClient.getEmailAddressBlocklist()
 
         result.size shouldBe 1
         result.first() shouldBe emailAddressToBlock.emailAddress
