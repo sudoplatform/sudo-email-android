@@ -19,6 +19,7 @@ import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -26,6 +27,7 @@ import org.junit.runner.RunWith
  * Test the operation of [SudoEmailClient.getEmailAddressBlocklist]
  */
 @RunWith(AndroidJUnit4::class)
+@Ignore("Until SDK get email address block list changes are done. Incompatible service side changes are already deplopyed.")
 class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()

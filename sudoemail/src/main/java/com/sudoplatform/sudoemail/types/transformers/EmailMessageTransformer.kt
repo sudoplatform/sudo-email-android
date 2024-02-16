@@ -7,6 +7,7 @@
 package com.sudoplatform.sudoemail.types.transformers
 
 import android.text.util.Rfc822Tokenizer
+import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
@@ -21,6 +22,8 @@ import com.sudoplatform.sudoemail.types.State
 /**
  * Data class used to deserialize the email message RFC822 header value.
  */
+
+@Keep
 internal data class EmailHeaderDetails(
     val from: List<EmailMessage.EmailAddress>,
     val to: List<EmailMessage.EmailAddress>,

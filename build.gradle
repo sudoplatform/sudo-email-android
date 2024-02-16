@@ -1,4 +1,7 @@
 buildscript {
+    ext {
+        agp_version = '8.1.1'
+    }
     ext.kotlin_version = '1.8.20'
     ext.aws_version = '2.72.0'
     ext.appsync_version = '3.4.0'
@@ -10,7 +13,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.0.2'
+        classpath "com.android.tools.build:gradle:$agp_version"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.owasp:dependency-check-gradle:8.2.1"
         classpath "org.jmailen.gradle:kotlinter-gradle:3.16.0"
