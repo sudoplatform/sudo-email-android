@@ -31,6 +31,7 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
+import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
@@ -821,7 +822,7 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun blockEmailAddresses(addresses: List<String>): BatchOperationResult<String>
 
     /**
-     * Unblocks the given email address(es) for the user identified
+     * Unblocks the given email address(es) for the logged in user
      *
      * @param addresses [List<String>] The list of email addresses to unblock
      * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
@@ -830,11 +831,20 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String>
 
     /**
+     * Unblocks the email addresses associated with the hashed values passed in for the logged in user
+     *
+     * @param hashedValues [List<String>] The list of hashedValues to unblock
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email addresses that succeeded or failed to be blocked.
+     */
+    suspend fun unblockEmailAddressesByHashedValue(hashedValues: List<String>): BatchOperationResult<String>
+
+    /**
      * Get email address blocklist for given owner
      *
      * @return A list of the blocked addresses
      */
-    suspend fun getEmailAddressBlocklist(): List<String>
+    suspend fun getEmailAddressBlocklist(): List<UnsealedBlockedAddress>
 
     /**
      * Reset any internal state and cached content.

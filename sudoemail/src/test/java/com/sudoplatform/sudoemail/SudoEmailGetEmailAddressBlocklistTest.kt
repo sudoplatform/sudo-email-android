@@ -12,12 +12,16 @@ import com.amazonaws.util.Base64
 import com.apollographql.apollo.api.Response
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
+import com.sudoplatform.sudoemail.graphql.fragment.GetEmailAddressBlocklistResponse
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.sealing.SealingService
+import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import io.kotlintest.matchers.beInstanceOf
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -30,10 +34,13 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doReturnConsecutively
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
@@ -51,23 +58,63 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             .owner(owner)
             .build()
     }
-    private val encodedData = String(Base64.encode("dummyEncodedData".toByteArray()))
+    private val mockData = listOf(
+        mapOf(
+            "sealedData" to String(Base64.encode("dummySealedData1".toByteArray())),
+            "unsealedData" to "dummyUnsealedData1".toByteArray(),
+            "hashedValue" to "hashedValue1",
+        ),
+        mapOf(
+            "sealedData" to String(Base64.encode("dummySealedData2".toByteArray())),
+            "unsealedData" to "dummyUnsealedData2".toByteArray(),
+            "hashedValue" to "hashedValue2",
+        ),
+    )
 
-    private val queryResult by before {
-        GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist(
-            "typename",
-            listOf(
-                GetEmailAddressBlocklistQuery.SealedBlockedAddress(
+    private val mockBlocklist by before {
+        listOf(
+            GetEmailAddressBlocklistResponse.BlockedAddress(
+                "typename",
+                GetEmailAddressBlocklistResponse.SealedValue(
                     "typename",
-                    GetEmailAddressBlocklistQuery.SealedBlockedAddress.Fragments(
+                    GetEmailAddressBlocklistResponse.SealedValue.Fragments(
                         SealedAttribute(
                             "typename",
                             "algorithm",
                             "keyId",
                             "string",
-                            encodedData,
+                            mockData[0]["sealedData"] as String,
                         ),
                     ),
+                ),
+                mockData[0]["hashedValue"] as String,
+            ),
+            GetEmailAddressBlocklistResponse.BlockedAddress(
+                "typename",
+                GetEmailAddressBlocklistResponse.SealedValue(
+                    "typename",
+                    GetEmailAddressBlocklistResponse.SealedValue.Fragments(
+                        SealedAttribute(
+                            "typename",
+                            "algorithm",
+                            "keyId",
+                            "string",
+                            mockData[1]["sealedData"] as String,
+                        ),
+                    ),
+                ),
+                mockData[1]["hashedValue"] as String,
+            ),
+        )
+    }
+
+    private val queryResult by before {
+        GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist(
+            "typename",
+            GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist.Fragments(
+                GetEmailAddressBlocklistResponse(
+                    "typename",
+                    mockBlocklist,
                 ),
             ),
         )
@@ -103,7 +150,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
     private val mockDeviceKeyManager by before {
         mock<DeviceKeyManager>().stub {
-            on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
+            on { symmetricKeyExists(any<String>()) } doReturn true
         }
     }
 
@@ -113,7 +160,15 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
     private val mockSealingService by before {
         mock<SealingService>().stub {
-            on { unsealString(any(), any()) } doReturn "unsealedString".toByteArray()
+            on {
+                unsealString(
+                    any(),
+                    any(),
+                )
+            } doReturnConsecutively listOf(
+                mockData[0]["unsealedData"] as ByteArray,
+                mockData[1]["unsealedData"] as ByteArray,
+            )
         }
     }
 
@@ -210,7 +265,12 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                     GetEmailAddressBlocklistQuery.Data(
                         GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist(
                             "typename",
-                            emptyList(),
+                            GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist.Fragments(
+                                GetEmailAddressBlocklistResponse(
+                                    "typename",
+                                    emptyList(),
+                                ),
+                            ),
                         ),
                     ),
                 ).build()
@@ -259,8 +319,13 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             val result = deferredResult.await()
             result shouldNotBe null
 
-            result.size shouldBe 1
-            result.first() shouldBe "unsealedString"
+            result.size shouldBe mockBlocklist.size
+
+            result.mapIndexed { index, unsealedBlockedAddress ->
+                unsealedBlockedAddress.hashedBlockedValue shouldBe mockData[index]["hashedValue"]
+                unsealedBlockedAddress.address shouldBe (mockData[index]["unsealedData"] as ByteArray).decodeToString()
+                unsealedBlockedAddress.status shouldBe UnsealedBlockedAddressStatus.Completed
+            }
 
             verify(mockAppSyncClient).query<
                 GetEmailAddressBlocklistQuery.Data,
@@ -271,14 +336,77 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                     it.variables().input().owner() shouldBe owner
                 },
             )
+            val argumentCaptor = argumentCaptor<ByteArray>()
+            verify(mockSealingService, times(2)).unsealString(
+                check {
+                    it shouldBe "keyId"
+                },
+                argumentCaptor.capture(),
+            )
+            argumentCaptor.firstValue shouldBe Base64.decode(mockData[0]["sealedData"] as String)
+            argumentCaptor.secondValue shouldBe Base64.decode(mockData[1]["sealedData"] as String)
+            verify(mockUserClient).getSubject()
+            verify(mockDeviceKeyManager, times(2)).symmetricKeyExists(any<String>())
+        }
+
+    @Test
+    fun `getEmailAddressBlocklist() returns with failed status and error type when necessary`() =
+        runBlocking<Unit> {
+            mockDeviceKeyManager.stub {
+                on { symmetricKeyExists(any<String>()) } doReturnConsecutively listOf(false, true)
+            }
+            mockSealingService.stub {
+                on {
+                    unsealString(
+                        any<String>(),
+                        any<ByteArray>(),
+                    )
+                } doReturn mockData[1]["unsealedData"] as ByteArray
+            }
+
+            callbackHolder shouldNotBe null
+
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailAddressBlocklist()
+            }
+            deferredResult.start()
+
+            delay(100L)
+            callbackHolder.callback shouldNotBe null
+            callbackHolder.callback?.onResponse(queryResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            result.size shouldBe mockBlocklist.size
+
+            result[0].address shouldBe ""
+            result[0].hashedBlockedValue shouldBe mockData[0]["hashedValue"]
+            result[0].status should beInstanceOf<UnsealedBlockedAddressStatus.Failed>()
+
+            result[1].address shouldBe (mockData[1]["unsealedData"] as ByteArray).decodeToString()
+            result[1].hashedBlockedValue shouldBe mockData[1]["hashedValue"]
+            result[1].status shouldBe UnsealedBlockedAddressStatus.Completed
+
+            verify(mockAppSyncClient).query<
+                GetEmailAddressBlocklistQuery.Data,
+                GetEmailAddressBlocklistQuery,
+                GetEmailAddressBlocklistQuery.Variables,
+                >(
+                check {
+                    it.variables().input().owner() shouldBe owner
+                },
+            )
+
+            val argumentCaptor = argumentCaptor<ByteArray>()
             verify(mockSealingService).unsealString(
                 check {
                     it shouldBe "keyId"
                 },
-                check {
-                    it shouldBe Base64.decode(encodedData)
-                },
+                argumentCaptor.capture(),
             )
+            argumentCaptor.firstValue shouldBe Base64.decode(mockData[1]["sealedData"] as String)
             verify(mockUserClient).getSubject()
+            verify(mockDeviceKeyManager, times(2)).symmetricKeyExists(any<String>())
         }
 }

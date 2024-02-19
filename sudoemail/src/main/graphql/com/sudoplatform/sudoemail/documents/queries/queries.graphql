@@ -116,8 +116,6 @@ query ListEmailMessagesForEmailFolderId(
 
 query GetEmailAddressBlocklist($input: GetEmailAddressBlocklistInput!) {
   getEmailAddressBlocklist(input: $input) {
-    sealedBlockedAddresses {
-      ...SealedAttribute
-    }
+    ...GetEmailAddressBlocklistResponse
   }
 }

@@ -19,7 +19,8 @@ internal interface DeviceKeyManager {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class DeviceKeyManagerException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
+    sealed class DeviceKeyManagerException(message: String? = null, cause: Throwable? = null) :
+        RuntimeException(message, cause) {
         class UserIdNotFoundException(message: String? = null, cause: Throwable? = null) :
             DeviceKeyManagerException(message = message, cause = cause)
 
@@ -90,6 +91,15 @@ internal interface DeviceKeyManager {
     fun getCurrentSymmetricKeyId(): String?
 
     /**
+     * Returns true if the key identifier returns a key, false otherwise.
+     *
+     * @return True if key exists, false otherwise
+     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
+     */
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    fun symmetricKeyExists(keyId: String): Boolean
+
+    /**
      * Decrypt the [data] with the private key [keyId] and [algorithm].
      *
      * @param data [ByteArray] Data to be decrypted.
@@ -99,7 +109,11 @@ internal interface DeviceKeyManager {
      * @throws [DeviceKeyManager.DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted
      */
     @Throws(DeviceKeyManagerException::class)
-    fun decryptWithPrivateKey(data: ByteArray, keyId: String, algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm): ByteArray
+    fun decryptWithPrivateKey(
+        data: ByteArray,
+        keyId: String,
+        algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
+    ): ByteArray
 
     /**
      * Decrypt the [data] with the symmetric key [key].

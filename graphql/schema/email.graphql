@@ -324,7 +324,7 @@ type BlockEmailAddressesBulkUpdateResult {
 }
 
 type GetEmailAddressBlocklistResponse {
-  sealedBlockedAddresses: [SealedAttribute!]!
+  blockedAddresses: [BlockedEmailAddress!]!
 }
 
 type Query {

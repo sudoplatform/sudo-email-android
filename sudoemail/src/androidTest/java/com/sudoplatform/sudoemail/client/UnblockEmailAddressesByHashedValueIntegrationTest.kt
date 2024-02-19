@@ -8,15 +8,16 @@ package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
+import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
+import io.kotlintest.shouldThrow
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -24,10 +25,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Test the operation of [SudoEmailClient.getEmailAddressBlocklist]
+ * Test the operation of [SudoEmailClient.unblockEmailAddressesByHashedValue]
  */
 @RunWith(AndroidJUnit4::class)
-class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
+class UnblockEmailAddressesByHashedValueIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()
 
@@ -38,7 +39,7 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runBlocking<Unit> {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
@@ -57,30 +58,15 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun getEmailAddressBlocklistReturnsEmptyArrayIfNoAddressesBlocked() =
+    fun unblockEmailAddressesThrowsAnErrorIfPassedAnEmptyAddressesArray() =
         runBlocking<Unit> {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
-            receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof)
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
-
-            val result = emailClient.getEmailAddressBlocklist()
-
-            result.size shouldBe 0
+            shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
+                emailClient.unblockEmailAddressesByHashedValue(emptyList())
+            }
         }
 
     @Test
-    fun getEmailAddressBlocklistReturnsUnsealedBlockedAddresses() = runBlocking<Unit> {
+    fun unblockingABlockedAddressShouldReturnSuccess() = runBlocking {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -98,11 +84,21 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
 
         blockAddresses(listOf(emailAddressToBlock.emailAddress))
 
-        val result = emailClient.getEmailAddressBlocklist()
+        val blocklist = emailClient.getEmailAddressBlocklist()
 
-        result.size shouldBe 1
-        result.first().address shouldBe emailAddressToBlock.emailAddress
-        result.first().status shouldBe UnsealedBlockedAddressStatus.Completed
-        result.first().hashedBlockedValue shouldNotBe null
+        val hashedValues = blocklist.map { it.hashedBlockedValue }
+
+        when (
+            val result =
+                emailClient.unblockEmailAddressesByHashedValue(hashedValues)
+        ) {
+            is BatchOperationResult.SuccessOrFailureResult -> {
+                result.status shouldBe BatchOperationStatus.SUCCESS
+            }
+
+            else -> {
+                fail("Unexpected BatchOperationResult")
+            }
+        }
     }
 }

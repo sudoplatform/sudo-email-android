@@ -25,7 +25,10 @@ internal class DefaultDeviceKeyManager(
     private val keyRingServiceName: String,
     private val userClient: SudoUserClient,
     private val keyManager: KeyManagerInterface,
-    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
+    private val logger: Logger = Logger(
+        LogConstants.SUDOLOG_TAG,
+        AndroidUtilsLogDriver(LogLevel.INFO),
+    ),
 ) : DeviceKeyManager {
 
     companion object {
@@ -40,7 +43,10 @@ internal class DefaultDeviceKeyManager(
                 ?: throw DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException("UserId not found")
             return "$keyRingServiceName.$userId"
         } catch (e: Exception) {
-            throw DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException("UserId could not be accessed", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException(
+                "UserId could not be accessed",
+                e,
+            )
         }
     }
 
@@ -57,7 +63,10 @@ internal class DefaultDeviceKeyManager(
                 privateKey = privateKey,
             )
         } catch (e: KeyManagerException) {
-            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException("KeyManager exception", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                "KeyManager exception",
+                e,
+            )
         }
     }
 
@@ -78,7 +87,10 @@ internal class DefaultDeviceKeyManager(
             )
         } catch (e: Exception) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException("Failed to generate key pair", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
+                "Failed to generate key pair",
+                e,
+            )
         }
     }
 
@@ -95,7 +107,10 @@ internal class DefaultDeviceKeyManager(
             return keyId
         } catch (e: Exception) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException("Failed to generate symmetric key", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
+                "Failed to generate symmetric key",
+                e,
+            )
         }
     }
 
@@ -108,7 +123,24 @@ internal class DefaultDeviceKeyManager(
             return symmetricKeyId
         } catch (e: KeyManagerException) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException("KeyManager exception", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                "KeyManager exception",
+                e,
+            )
+        }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun symmetricKeyExists(keyId: String): Boolean {
+        try {
+            val data = keyManager.getSymmetricKeyData(keyId)
+            return data != null
+        } catch (e: KeyManagerException) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                "KeyManager exception",
+                e,
+            )
         }
     }
 
@@ -122,7 +154,10 @@ internal class DefaultDeviceKeyManager(
             return keyManager.decryptWithPrivateKey(keyId, data, algorithm)
         } catch (e: KeyManagerException) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.DecryptionException("Failed to decrypt", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.DecryptionException(
+                "Failed to decrypt",
+                e,
+            )
         }
     }
 
@@ -132,7 +167,10 @@ internal class DefaultDeviceKeyManager(
             return keyManager.decryptWithSymmetricKey(key, data)
         } catch (e: KeyManagerException) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.DecryptionException("Failed to decrypt", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.DecryptionException(
+                "Failed to decrypt",
+                e,
+            )
         }
     }
 
@@ -142,7 +180,10 @@ internal class DefaultDeviceKeyManager(
             return keyManager.decryptWithSymmetricKey(keyId, data)
         } catch (e: KeyManagerException) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.DecryptionException("Failed to decrypt", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.DecryptionException(
+                "Failed to decrypt",
+                e,
+            )
         }
     }
 
@@ -152,7 +193,10 @@ internal class DefaultDeviceKeyManager(
             return keyManager.encryptWithSymmetricKey(keyId, data)
         } catch (e: KeyManagerException) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException(
+                "Failed to encrypt",
+                e,
+            )
         }
     }
 
@@ -165,7 +209,10 @@ internal class DefaultDeviceKeyManager(
             archive.saveKeys()
         } catch (e: Exception) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Failed to import keys", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException(
+                "Failed to import keys",
+                e,
+            )
         }
     }
 
@@ -180,7 +227,10 @@ internal class DefaultDeviceKeyManager(
             return archive.archive()
         } catch (e: Exception) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Failed to export keys", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException(
+                "Failed to export keys",
+                e,
+            )
         }
     }
 
@@ -190,7 +240,10 @@ internal class DefaultDeviceKeyManager(
             return keyManager.removeAllKeys()
         } catch (e: Exception) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.UnknownException("Failed to remove all keys", e)
+            throw DeviceKeyManager.DeviceKeyManagerException.UnknownException(
+                "Failed to remove all keys",
+                e,
+            )
         }
     }
 }

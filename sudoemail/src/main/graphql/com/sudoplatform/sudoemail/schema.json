@@ -1571,7 +1571,7 @@
         "description": null,
         "fields": [
           {
-            "name": "sealedBlockedAddresses",
+            "name": "blockedAddresses",
             "description": null,
             "args": [],
             "type": {
@@ -1585,7 +1585,7 @@
                   "name": null,
                   "ofType": {
                     "kind": "OBJECT",
-                    "name": "SealedAttribute",
+                    "name": "BlockedEmailAddress",
                     "ofType": null
                   }
                 }

@@ -61,21 +61,6 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun unblockEmailAddressesThrowsAnErrorIfPassedAnEmptyAddressesArray() =
         runBlocking<Unit> {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
-            receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof)
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
-
             shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
                 emailClient.unblockEmailAddresses(emptyList())
             }

@@ -48,6 +48,7 @@ import com.sudoplatform.sudoemail.graphql.type.EmailMessageUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressPublicKeyInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
+import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
@@ -74,6 +75,8 @@ import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
+import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
+import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
@@ -206,6 +209,10 @@ internal class DefaultSudoEmailClient(
         private const val ADDRESS_BLOCKLIST_EMPTY_MSG = "At least one email address must be passed"
         private const val ADDRESS_BLOCKLIST_DUPLICATE_MSG =
             "Duplicate email address found. Please include each address only once"
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        const val KEY_NOT_FOUND_ERROR = "Key not found"
+        const val DECODE_ERROR = "Could not decode"
 
         /** Errors returned from the service */
         private const val ERROR_TYPE = "errorType"
@@ -1434,7 +1441,55 @@ internal class DefaultSudoEmailClient(
         }
     }
 
-    override suspend fun getEmailAddressBlocklist(): List<String> {
+    override suspend fun unblockEmailAddressesByHashedValue(hashedValues: List<String>): BatchOperationResult<String> {
+        if (hashedValues.isEmpty()) {
+            throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
+                ADDRESS_BLOCKLIST_EMPTY_MSG,
+            )
+        }
+
+        val owner = this.sudoUserClient.getSubject()
+            ?: throw AuthenticationException.NotSignedInException()
+
+        val unblockEmailAddressesInput = UnblockEmailAddressesInput.builder()
+            .owner(owner)
+            .unblockedAddresses(hashedValues)
+            .build()
+
+        val mutation = UnblockEmailAddressesMutation.builder()
+            .input(unblockEmailAddressesInput)
+            .build()
+
+        val response = appSyncClient.mutate(mutation)
+            .enqueue()
+
+        if (response.hasErrors()) {
+            logger.error("errors = ${response.errors()}")
+            throw interpretEmailBlocklistError(response.errors().first())
+        }
+
+        val result = response.data()?.unblockEmailAddresses()?.fragments()?.unblockAddressesResult()
+
+        return when {
+            result?.status() == BlockEmailAddressesBulkUpdateStatus.SUCCESS -> {
+                BatchOperationResult.SuccessOrFailureResult(BatchOperationStatus.SUCCESS)
+            }
+
+            result?.status() == BlockEmailAddressesBulkUpdateStatus.FAILED -> {
+                BatchOperationResult.SuccessOrFailureResult(BatchOperationStatus.FAILURE)
+            }
+
+            else -> {
+                BatchOperationResult.PartialResult(
+                    status = BatchOperationStatus.PARTIAL,
+                    successValues = result?.successAddresses() ?: emptyList(),
+                    failureValues = result?.failedAddresses() ?: emptyList(),
+                )
+            }
+        }
+    }
+
+    override suspend fun getEmailAddressBlocklist(): List<UnsealedBlockedAddress> {
         val owner = this.sudoUserClient.getSubject()
             ?: throw AuthenticationException.NotSignedInException()
 
@@ -1455,21 +1510,53 @@ internal class DefaultSudoEmailClient(
             throw interpretEmailBlocklistError(response.errors().first())
         }
 
-        val blockedAddresses = response.data()?.emailAddressBlocklist?.sealedBlockedAddresses()
+        val blockedAddresses =
+            response.data()?.emailAddressBlocklist?.fragments()?.emailAddressBlocklistResponse?.blockedAddresses()
 
         if (blockedAddresses.isNullOrEmpty()) {
             return emptyList()
         }
 
-        val unsealedBlockedAddresses = mutableListOf<String>()
-
-        blockedAddresses.map {
-            unsealedBlockedAddresses.add(
-                sealingService.unsealString(
-                    it.fragments().sealedAttribute().keyId(),
-                    Base64.decode(it.fragments().sealedAttribute().base64EncodedSealedData()),
-                ).decodeToString(),
-            )
+        val unsealedBlockedAddresses = blockedAddresses.map {
+            val hashedValue = it.hashedBlockedValue()
+            var unsealedAddress = ""
+            if (deviceKeyManager.symmetricKeyExists(
+                    it.sealedValue().fragments().sealedAttribute().keyId(),
+                )
+            ) {
+                try {
+                    unsealedAddress = sealingService.unsealString(
+                        it.sealedValue().fragments().sealedAttribute().keyId(),
+                        Base64.decode(
+                            it.sealedValue().fragments().sealedAttribute()
+                                .base64EncodedSealedData(),
+                        ),
+                    ).decodeToString()
+                } catch (e: Throwable) {
+                    UnsealedBlockedAddress(
+                        address = unsealedAddress,
+                        hashedBlockedValue = hashedValue,
+                        status = UnsealedBlockedAddressStatus.Failed(
+                            SudoEmailClient.EmailBlocklistException.FailedException(DECODE_ERROR),
+                        ),
+                    )
+                }
+                UnsealedBlockedAddress(
+                    address = unsealedAddress,
+                    hashedBlockedValue = hashedValue,
+                    status = UnsealedBlockedAddressStatus.Completed,
+                )
+            } else {
+                UnsealedBlockedAddress(
+                    address = unsealedAddress,
+                    hashedBlockedValue = hashedValue,
+                    status = UnsealedBlockedAddressStatus.Failed(
+                        KeyNotFoundException(
+                            KEY_NOT_FOUND_ERROR,
+                        ),
+                    ),
+                )
+            }
         }
 
         return unsealedBlockedAddresses.toList()
