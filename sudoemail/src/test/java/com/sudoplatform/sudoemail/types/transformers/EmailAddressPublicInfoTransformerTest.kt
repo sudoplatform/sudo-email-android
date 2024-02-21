@@ -21,11 +21,11 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo as Ema
 class EmailAddressPublicInfoTransformerTest : BaseTests() {
 
     private val fragment by before {
-        EmailAddressPublicInfoFragment("typename", "emailAddress", "publicKey")
+        EmailAddressPublicInfoFragment("typename", "emailAddress", "keyId", "publicKey")
     }
 
     private val entity by before {
-        EmailAddressPublicInfo("emailAddress", "publicKey")
+        EmailAddressPublicInfo("emailAddress", "keyId", "publicKey")
     }
 
     @Test

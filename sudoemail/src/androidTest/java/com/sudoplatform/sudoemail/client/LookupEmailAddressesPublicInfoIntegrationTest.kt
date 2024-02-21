@@ -72,6 +72,7 @@ class LookupEmailAddressesPublicInfoIntegrationTest : BaseIntegrationTest() {
         retrievedPublicInfo.count() shouldBe 1
         with(retrievedPublicInfo[0]) {
             emailAddress shouldBe inputEmailAddress
+            keyId.shouldBeInstanceOf<String>()
             publicKey.shouldBeInstanceOf<String>()
         }
     }

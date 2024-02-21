@@ -213,8 +213,9 @@ $dokka.location:com.sudoplatform.sudoemail.types/EmailAddress/size/#/PointingToD
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddress/updatedAt/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address/updated-at.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddress/version/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address/version.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddressPublicInfo///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address-public-info/index.html
-$dokka.location:com.sudoplatform.sudoemail.types/EmailAddressPublicInfo/EmailAddressPublicInfo/#kotlin.String#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address-public-info/-email-address-public-info.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAddressPublicInfo/EmailAddressPublicInfo/#kotlin.String#kotlin.String#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address-public-info/-email-address-public-info.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddressPublicInfo/emailAddress/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address-public-info/email-address.html
+$dokka.location:com.sudoplatform.sudoemail.types/EmailAddressPublicInfo/keyId/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address-public-info/key-id.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAddressPublicInfo/publicKey/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-address-public-info/public-key.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/EmailAttachment/EmailAttachment/#kotlin.String#kotlin.String#kotlin.String#kotlin.Boolean#kotlin.ByteArray/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-email-attachment/-email-attachment.html

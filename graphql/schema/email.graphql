@@ -290,6 +290,7 @@ type EmailMessageConnection {
 
 type EmailAddressPublicInfo {
   emailAddress: String!
+  keyId: String!
   publicKey: String!
 }
 

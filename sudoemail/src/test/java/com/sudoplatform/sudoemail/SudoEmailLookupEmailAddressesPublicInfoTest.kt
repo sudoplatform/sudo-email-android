@@ -57,6 +57,7 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
         EmailAddressPublicInfo(
             "typename",
             "emailAddress",
+            "keyId",
             "publicKey",
         )
     }
@@ -175,6 +176,7 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
 
         with(result[0]) {
             emailAddress shouldBe "emailAddress"
+            keyId shouldBe "keyId"
             publicKey shouldBe "publicKey"
         }
 
