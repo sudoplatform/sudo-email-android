@@ -31,6 +31,7 @@ import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
@@ -89,6 +90,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
@@ -96,13 +98,13 @@ import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudoemail.types.toResponseFetcher
-import com.sudoplatform.sudoemail.types.transformers.DateRangeTransformer.toDateRangeInput
 import com.sudoplatform.sudoemail.types.transformers.DraftEmailMessageTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailAddressPublicInfoTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailAddressTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailAddressTransformer.toAliasInput
 import com.sudoplatform.sudoemail.types.transformers.EmailConfigurationTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailFolderTransformer
+import com.sudoplatform.sudoemail.types.transformers.EmailMessageDateRangeTransformer.toEmailMessageDateRangeInput
 import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
 import com.sudoplatform.sudoemail.util.EmailAddressParser
@@ -128,6 +130,7 @@ import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput as ListEm
 import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput as ListEmailFoldersForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailAddressIdInput as ListEmailMessagesForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderIdInput as ListEmailMessagesForEmailFolderIdRequest
+import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesInput as ListEmailMessagesRequest
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput as LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput as ProvisionEmailAddressRequest
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
@@ -218,6 +221,7 @@ internal class DefaultSudoEmailClient(
         private const val ERROR_TYPE = "errorType"
         private const val SERVICE_ERROR = "ServiceError"
         private const val ERROR_INVALID_KEYRING = "InvalidKeyRingId"
+        private const val ERROR_INVALID_ARGUMENT = "InvalidArgument"
         private const val ERROR_INVALID_EMAIL = "EmailValidation"
         private const val ERROR_POLICY_FAILED = "PolicyFailed"
         private const val ERROR_INVALID_EMAIL_CONTENTS = "InvalidEmailContents"
@@ -237,7 +241,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "6.0.0"
+    private val version: String = "9.0.0"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
@@ -1049,6 +1053,70 @@ internal class DefaultSudoEmailClient(
         }
     }
 
+    override suspend fun listEmailMessages(input: ListEmailMessagesInput): ListAPIResult<EmailMessage, PartialEmailMessage> {
+        try {
+            val queryInput = ListEmailMessagesRequest.builder()
+                .limit(input.limit)
+                .nextToken(input.nextToken)
+                .specifiedDateRange(input.dateRange.toEmailMessageDateRangeInput())
+                .sortOrder(input.sortOrder.toSortOrderInput(input.sortOrder))
+                .build()
+
+            val query = ListEmailMessagesQuery.builder()
+                .input(queryInput)
+                .build()
+
+            val queryResponse = appSyncClient.query(query)
+                .responseFetcher(input.cachePolicy.toResponseFetcher())
+                .enqueueFirst()
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors()}")
+                throw interpretEmailMessageError(queryResponse.errors().first())
+            }
+
+            val queryResult = queryResponse.data()?.listEmailMessages()
+            val sealedEmailMessages = queryResult?.items() ?: emptyList()
+            val newNextToken = queryResult?.nextToken()
+
+            val success: MutableList<EmailMessage> = mutableListOf()
+            val partials: MutableList<PartialResult<PartialEmailMessage>> = mutableListOf()
+            for (sealedEmailMessage in sealedEmailMessages) {
+                try {
+                    val unsealerEmailMessage =
+                        EmailMessageTransformer.toEntity(
+                            deviceKeyManager,
+                            sealedEmailMessage.fragments().sealedEmailMessage(),
+                        )
+                    success.add(unsealerEmailMessage)
+                } catch (e: Exception) {
+                    val partialEmailMessage =
+                        EmailMessageTransformer.toPartialEntity(
+                            sealedEmailMessage.fragments().sealedEmailMessage(),
+                        )
+                    val partialResult = PartialResult(partialEmailMessage, e)
+                    partials.add(partialResult)
+                }
+            }
+            if (partials.isNotEmpty()) {
+                val listPartialResult =
+                    ListAPIResult.ListPartialResult(success, partials, newNextToken)
+                return ListAPIResult.Partial(listPartialResult)
+            }
+            val listSuccessResult = ListAPIResult.ListSuccessResult(success, newNextToken)
+            return ListAPIResult.Success(listSuccessResult)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
+                else -> throw interpretEmailMessageException(e)
+            }
+        }
+    }
+
     override suspend fun listEmailMessagesForEmailAddressId(
         input: ListEmailMessagesForEmailAddressIdInput,
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
@@ -1057,7 +1125,7 @@ internal class DefaultSudoEmailClient(
                 .emailAddressId(input.emailAddressId)
                 .limit(input.limit)
                 .nextToken(input.nextToken)
-                .dateRange(input.dateRange.toDateRangeInput())
+                .specifiedDateRange(input.dateRange.toEmailMessageDateRangeInput())
                 .sortOrder(input.sortOrder.toSortOrderInput(input.sortOrder))
                 .build()
 
@@ -1068,6 +1136,11 @@ internal class DefaultSudoEmailClient(
             val queryResponse = appSyncClient.query(query)
                 .responseFetcher(input.cachePolicy.toResponseFetcher())
                 .enqueueFirst()
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors()}")
+                throw interpretEmailMessageError(queryResponse.errors().first())
+            }
 
             val queryResult = queryResponse.data()?.listEmailMessagesForEmailAddressId()
             val sealedEmailMessages = queryResult?.items() ?: emptyList()
@@ -1119,7 +1192,7 @@ internal class DefaultSudoEmailClient(
                 .folderId(input.folderId)
                 .limit(input.limit)
                 .nextToken(input.nextToken)
-                .dateRange(input.dateRange.toDateRangeInput())
+                .specifiedDateRange(input.dateRange.toEmailMessageDateRangeInput())
                 .sortOrder(input.sortOrder.toSortOrderInput(input.sortOrder))
                 .build()
 
@@ -1130,6 +1203,11 @@ internal class DefaultSudoEmailClient(
             val queryResponse = appSyncClient.query(query)
                 .responseFetcher(input.cachePolicy.toResponseFetcher())
                 .enqueueFirst()
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors()}")
+                throw interpretEmailMessageError(queryResponse.errors().first())
+            }
 
             val queryResult = queryResponse.data()?.listEmailMessagesForEmailFolderId()
             val sealedEmailMessages = queryResult?.items() ?: emptyList()
@@ -1749,6 +1827,10 @@ internal class DefaultSudoEmailClient(
         if (error.contains(ERROR_INVALID_EMAIL_CONTENTS)) {
             return SudoEmailClient.EmailMessageException.InvalidMessageContentException(
                 INVALID_MESSAGE_CONTENT_MSG,
+            )
+        } else if (error.contains(ERROR_INVALID_ARGUMENT)) {
+            return SudoEmailClient.EmailMessageException.InvalidArgumentException(
+                INVALID_ARGUMENT_ERROR_MSG,
             )
         } else if (error.contains(ERROR_UNAUTHORIZED_ADDRESS)) {
             return SudoEmailClient.EmailMessageException.UnauthorizedAddressException(

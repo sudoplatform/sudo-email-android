@@ -16,7 +16,8 @@ import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.ListAPIResult
-import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
@@ -185,29 +186,33 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         val ownershipProof = getOwnershipProof(sudo)
         ownershipProof shouldNotBe null
 
-        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        receiverEmailAddress shouldNotBe null
-        emailAddressList.add(receiverEmailAddress)
+        val senderReceiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        senderReceiverEmailAddress shouldNotBe null
+        emailAddressList.add(senderReceiverEmailAddress)
 
-        val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddressToBlock shouldNotBe null
-        emailAddressList.add(emailAddressToBlock)
+        val listFoldersInput = ListEmailFoldersForEmailAddressIdInput(senderReceiverEmailAddress.id)
+        val inboxFolder = emailClient.listEmailFoldersForEmailAddressId(listFoldersInput).items.find { it.folderName == "INBOX" }
 
         // Send message while unblocked
         sendEmailMessage(
             emailClient,
-            emailAddressToBlock,
-            toAddress = receiverEmailAddress.emailAddress,
-            body = "This message should go through",
+            senderReceiverEmailAddress,
+            body = "This message should go through & be returned as OOTO",
         )
 
         // Make sure message was received
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
-                val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = receiverEmailAddress.id,
-                )
-                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+                val listEmailMessagesInput = inboxFolder?.id?.let {
+                    ListEmailMessagesForEmailFolderIdInput(
+                        it,
+                    )
+                }
+                if (listEmailMessagesInput != null) {
+                    emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
+                } else {
+                    fail("Unexpected null for listEmailMessagesInput")
+                }
             }
         } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == 1 }
 
@@ -215,7 +220,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         when (
             val result = emailClient.blockEmailAddresses(
                 listOf(
-                    emailAddressToBlock.emailAddress,
+                    fromSimulatorAddress,
                 ),
             )
         ) {
@@ -231,9 +236,8 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         // Send another message
         sendEmailMessage(
             emailClient,
-            emailAddressToBlock,
-            toAddress = receiverEmailAddress.emailAddress,
-            body = "This message should get blocked",
+            senderReceiverEmailAddress,
+            body = "The OOTO response for this message should get blocked",
         )
 
         // Wait for messages to potentially arrive even though they shouldn't
@@ -243,11 +247,17 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
             Duration.TEN_SECONDS.multiply(6), // Wait 60 seconds for first poll
         ).untilCallTo {
             runBlocking {
-                val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = receiverEmailAddress.id,
-                    CachePolicy.REMOTE_ONLY,
-                )
-                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+                val listEmailMessagesInput = inboxFolder?.id?.let {
+                    ListEmailMessagesForEmailFolderIdInput(
+                        it,
+                        cachePolicy = CachePolicy.REMOTE_ONLY,
+                    )
+                }
+                if (listEmailMessagesInput != null) {
+                    emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
+                } else {
+                    fail("Unexpected null for listEmailMessagesInput")
+                }
             }
             // Should still have the original message, but not latest one
         } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == 1 }
@@ -255,7 +265,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         // Unblock the sender
         when (
             val unblockResult = emailClient.unblockEmailAddresses(
-                listOf(emailAddressToBlock.emailAddress),
+                listOf(fromSimulatorAddress),
             )
         ) {
             is BatchOperationResult.SuccessOrFailureResult -> {
@@ -270,18 +280,24 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         // Send one more message
         sendEmailMessage(
             emailClient,
-            emailAddressToBlock,
-            toAddress = receiverEmailAddress.emailAddress,
-            body = "This message should also go through",
+            senderReceiverEmailAddress,
+            body = "This message should also go through & be returned as OOTO",
         )
 
         // Check that it was received
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
-                val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = receiverEmailAddress.id,
-                )
-                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+                val listEmailMessagesInput = inboxFolder?.id?.let {
+                    ListEmailMessagesForEmailFolderIdInput(
+                        it,
+                        cachePolicy = CachePolicy.REMOTE_ONLY,
+                    )
+                }
+                if (listEmailMessagesInput != null) {
+                    emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
+                } else {
+                    fail("Unexpected null for listEmailMessagesInput")
+                }
             }
             // Should have original message plus last one
         } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == 2 }

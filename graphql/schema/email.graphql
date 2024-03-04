@@ -101,9 +101,16 @@ input ListEmailFoldersForEmailAddressIdInput {
   nextToken: String
 }
 
+input ListEmailMessagesInput {
+  specifiedDateRange: EmailMessageDateRangeInput
+  limit: Int
+  sortOrder: SortOrder
+  nextToken: String
+}
+
 input ListEmailMessagesForEmailAddressIdInput {
   emailAddressId: ID!
-  dateRange: DateRangeInput
+  specifiedDateRange: EmailMessageDateRangeInput
   limit: Int
   sortOrder: SortOrder
   nextToken: String
@@ -111,7 +118,7 @@ input ListEmailMessagesForEmailAddressIdInput {
 
 input ListEmailMessagesForEmailFolderIdInput {
   folderId: ID!
-  dateRange: DateRangeInput
+  specifiedDateRange: EmailMessageDateRangeInput
   limit: Int
   sortOrder: SortOrder
   nextToken: String
@@ -157,6 +164,11 @@ input OwnerInput {
 input DateRangeInput {
   startDateEpochMs: Float!
   endDateEpochMs: Float!
+}
+
+input EmailMessageDateRangeInput {
+  updatedAtEpochMs: DateRangeInput
+  sortDateEpochMs: DateRangeInput
 }
 
 input S3EmailObjectInput {
@@ -350,6 +362,10 @@ type Query {
   ): EmailFolderConnection!
 
   getEmailMessage(id: ID!): SealedEmailMessage
+
+  listEmailMessages(
+    input: ListEmailMessagesInput!
+  ): EmailMessageConnection!
 
   listEmailMessagesForEmailAddressId(
     input: ListEmailMessagesForEmailAddressIdInput!

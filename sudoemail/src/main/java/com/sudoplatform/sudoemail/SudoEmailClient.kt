@@ -44,6 +44,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
@@ -560,7 +561,7 @@ interface SudoEmailClient : AutoCloseable {
     /**
      * Import cryptographic keys from a key archive.
      *
-     * @param archiveData [Data] Key archive data to import the keys from.
+     * @param archiveData [ByteArray] Key archive data to import the keys from.
      *
      * @throws [EmailCryptographicKeysException]
      */
@@ -696,6 +697,31 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailMessageException::class)
     suspend fun getEmailMessageRfc822Data(input: GetEmailMessageRfc822DataInput): EmailMessageRfc822Data?
+
+    /**
+     * Get a list of all [EmailMessage]s for the user.
+     *
+     * This API returns a [ListAPIResult]:
+     * - On [ListAPIResult.Success] result, contains the list of requested [EmailMessage]s.
+     * - On [ListAPIResult.Partial] result, contains the list of [PartialEmailMessage]s representing
+     *     email messages that could not be unsealed successfully and the exception indicating why
+     *     the unsealing failed. An email message may fail to unseal if the client version is not up to
+     *     date or the required cryptographic key is missing from the client device.
+     *
+     * If no [EmailMessage]s can be found, the result will contain null for the nextToken field and
+     * contain an empty item list.
+     *
+     * @param input [ListEmailMessagesInput] Parameters used to retrieve a list of all email messages
+     *  for the user.
+     * @return A [ListAPIResult.Success] or a [ListAPIResult.Partial] result containing either a list of
+     *  [EmailMessage]s or [PartialEmailMessage]s respectively. Returns an empty list if no email messages can be found.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun listEmailMessages(
+        input: ListEmailMessagesInput,
+    ): ListAPIResult<EmailMessage, PartialEmailMessage>
 
     /**
      * Get a list of [EmailMessage]s for the specified email address identifier.

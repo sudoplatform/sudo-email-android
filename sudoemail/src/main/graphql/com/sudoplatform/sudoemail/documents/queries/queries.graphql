@@ -92,6 +92,15 @@ query GetEmailMessage($id: ID!) {
   }
 }
 
+query ListEmailMessages($input: ListEmailMessagesInput!) {
+  listEmailMessages(input: $input) {
+    items {
+      ...SealedEmailMessage
+    }
+    nextToken
+  }
+}
+
 query ListEmailMessagesForEmailAddressId(
   $input: ListEmailMessagesForEmailAddressIdInput!
 ) {

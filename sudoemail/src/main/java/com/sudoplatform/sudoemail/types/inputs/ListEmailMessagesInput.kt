@@ -12,22 +12,19 @@ import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.SortOrder
 
 /**
- * Input object containing an email address identifier and other properties used to list email messages
- * for an email address.
+ * Input object containing properties used to list all email messages for a user.
  *
- * @property folderId [String] The identifier of the email folder associated with the email messages.
  * @property dateRange [EmailMessageDateRange] Email messages matching the specified date range inclusive will be fetched.
  * @property cachePolicy [CachePolicy] Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
  *  be aware that this will only return cached results of identical API calls.
  * @property limit [Int] Number of email messages to return. If omitted the limit defaults to 10.
- * @property nextToken [String] A token generated from previous calls to [SudoEmailClient.listEmailMessagesForEmailFolderId].
+ * @property nextToken [String] A token generated from previous calls to [SudoEmailClient.listEmailMessages].
  *  This is to allow for pagination. This value should be generated from a previous
  *  pagination call, otherwise it will throw an exception. The same arguments should be
  *  supplied to this method if using a previously generated [nextToken].
  * @property sortOrder [SortOrder] The direction in which the email messages are sorted. Defaults to descending.
  */
-data class ListEmailMessagesForEmailFolderIdInput(
-    val folderId: String,
+data class ListEmailMessagesInput(
     val dateRange: EmailMessageDateRange? = null,
     val cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY,
     val limit: Int? = SudoEmailClient.DEFAULT_EMAIL_MESSAGE_LIMIT,

@@ -21,6 +21,7 @@ import com.sudoplatform.sudoemail.sealing.DefaultSealingService
 import com.sudoplatform.sudoemail.types.DateRange
 import com.sudoplatform.sudoemail.types.Direction
 import com.sudoplatform.sudoemail.types.EmailMessage
+import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
 import com.sudoplatform.sudoemail.types.State
@@ -219,7 +220,9 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             folderId = "folderId",
             limit = 1,
             nextToken = null,
-            dateRange = DateRange(Date(), Date()),
+            dateRange = EmailMessageDateRange(
+                sortDate = DateRange(Date(), Date()),
+            ),
             sortOrder = SortOrder.DESC,
         )
         val deferredResult = async(Dispatchers.IO) {
@@ -281,8 +284,12 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 1
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange()?.startDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
-                    it.variables().input().dateRange()?.endDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
@@ -303,7 +310,9 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             folderId = "folderId",
             limit = 1,
             nextToken = null,
-            dateRange = DateRange(Date(), Date()),
+            dateRange = EmailMessageDateRange(
+                sortDate = DateRange(Date(), Date()),
+            ),
             sortOrder = SortOrder.DESC,
         )
         val deferredResult = async(Dispatchers.IO) {
@@ -365,8 +374,12 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 1
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange()?.startDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
-                    it.variables().input().dateRange()?.endDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
@@ -387,7 +400,9 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             folderId = "folderId",
             limit = 1,
             nextToken = null,
-            dateRange = DateRange(Date(), Date()),
+            dateRange = EmailMessageDateRange(
+                sortDate = DateRange(Date(), Date()),
+            ),
             sortOrder = SortOrder.ASC,
         )
         val deferredResult = async(Dispatchers.IO) {
@@ -449,9 +464,103 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 1
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange()?.startDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
-                    it.variables().input().dateRange()?.endDateEpochMs()?.shouldBeLessThan(Date().time.toDouble())
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.ASC
+                },
+            )
+        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+    }
+
+    @Test
+    fun `listEmailMessagesForEmailFolderId() should return results when updatedAt date range is specified`() = runBlocking<Unit> {
+        mockKeyManager.stub {
+            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
+        }
+
+        queryHolder.callback shouldBe null
+
+        val input = ListEmailMessagesForEmailFolderIdInput(
+            folderId = "folderId",
+            limit = 1,
+            nextToken = null,
+            dateRange = EmailMessageDateRange(
+                updatedAt = DateRange(Date(), Date()),
+            ),
+            sortOrder = SortOrder.DESC,
+        )
+        val deferredResult = async(Dispatchers.IO) {
+            client.listEmailMessagesForEmailFolderId(
+                input,
+            )
+        }
+        deferredResult.start()
+
+        delay(100L)
+        queryHolder.callback shouldNotBe null
+        queryHolder.callback?.onResponse(queryResponse)
+
+        val result = deferredResult.await()
+        result shouldNotBe null
+
+        val listEmailMessages = deferredResult.await()
+        listEmailMessages shouldNotBe null
+
+        when (listEmailMessages) {
+            is ListAPIResult.Success -> {
+                listEmailMessages.result.items.isEmpty() shouldBe false
+                listEmailMessages.result.items.size shouldBe 1
+                listEmailMessages.result.nextToken shouldBe null
+
+                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                with(listEmailMessages.result.items[0]) {
+                    id shouldBe "id"
+                    owner shouldBe "owner"
+                    owners shouldBe emptyList()
+                    emailAddressId shouldBe "emailAddressId"
+                    clientRefId shouldBe "clientRefId"
+                    from.shouldContainExactlyInAnyOrder(addresses)
+                    to.shouldContainExactlyInAnyOrder(addresses)
+                    cc.isEmpty() shouldBe true
+                    replyTo.isEmpty() shouldBe true
+                    bcc.isEmpty() shouldBe true
+                    direction shouldBe Direction.INBOUND
+                    subject shouldBe "testSubject"
+                    hasAttachments shouldBe true
+                    seen shouldBe false
+                    state shouldBe State.DELIVERED
+                    createdAt shouldBe Date(1L)
+                    updatedAt shouldBe Date(1L)
+                }
+            }
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        verify(mockAppSyncClient)
+            .query<
+                ListEmailMessagesForEmailFolderIdQuery.Data,
+                ListEmailMessagesForEmailFolderIdQuery,
+                ListEmailMessagesForEmailFolderIdQuery.Variables,
+                >(
+                check {
+                    it.variables().input().folderId() shouldBe "folderId"
+                    it.variables().input().limit() shouldBe 1
+                    it.variables().input().nextToken() shouldBe null
+                    it.variables().input().specifiedDateRange()?.updatedAtEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
+                    it.variables().input().specifiedDateRange()?.updatedAtEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
+                        Date().time.toDouble(),
+                    )
+                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -520,7 +629,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                         it.variables().input().folderId() shouldBe "folderId"
                         it.variables().input().limit() shouldBe 10
                         it.variables().input().nextToken() shouldBe null
-                        it.variables().input().dateRange() shouldBe null
+                        it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                     },
                 )
@@ -613,7 +722,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe "dummyNextToken"
-                    it.variables().input().dateRange() shouldBe null
+                    it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
@@ -676,7 +785,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                         it.variables().input().folderId() shouldBe "folderId"
                         it.variables().input().limit() shouldBe 10
                         it.variables().input().nextToken() shouldBe null
-                        it.variables().input().dateRange() shouldBe null
+                        it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                     },
                 )
@@ -729,7 +838,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                         it.variables().input().folderId() shouldBe "folderId"
                         it.variables().input().limit() shouldBe 10
                         it.variables().input().nextToken() shouldBe null
-                        it.variables().input().dateRange() shouldBe null
+                        it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                     },
                 )
@@ -814,7 +923,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange() shouldBe null
+                    it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
@@ -863,7 +972,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange() shouldBe null
+                    it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
@@ -900,7 +1009,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange() shouldBe null
+                    it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
@@ -933,7 +1042,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     it.variables().input().folderId() shouldBe "folderId"
                     it.variables().input().limit() shouldBe 10
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().dateRange() shouldBe null
+                    it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
