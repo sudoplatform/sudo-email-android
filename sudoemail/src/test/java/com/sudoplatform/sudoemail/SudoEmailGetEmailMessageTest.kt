@@ -14,6 +14,7 @@ import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
+import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -107,6 +108,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
                         mockSeal(unsealedHeaderDetailsString),
                     ),
                     1.0,
+                    EmailMessageEncryptionStatus.UNENCRYPTED,
                 ),
             ),
         )
@@ -137,7 +139,12 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
     private val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doReturn ByteArray(42)
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn unsealedHeaderDetailsString.toByteArray()
+            on {
+                decryptWithSymmetricKey(
+                    any<ByteArray>(),
+                    any<ByteArray>(),
+                )
+            } doReturn unsealedHeaderDetailsString.toByteArray()
         }
     }
 
@@ -184,7 +191,13 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(
+            mockContext,
+            mockUserClient,
+            mockKeyManager,
+            mockAppSyncClient,
+            mockS3Client,
+        )
     }
 
     @Test
@@ -235,168 +248,172 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessage() should return results when hasAttachments is true`() = runBlocking<Unit> {
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
+    fun `getEmailMessage() should return results when hasAttachments is true`() =
+        runBlocking<Unit> {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
+            }
+
+            holder.callback shouldBe null
+
+            val input = GetEmailMessageInput(id = "emailMessageId")
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessage(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(response)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+            with(result!!) {
+                id shouldBe "id"
+                owner shouldBe "owner"
+                owners shouldBe emptyList()
+                emailAddressId shouldBe "emailAddressId"
+                clientRefId shouldBe "clientRefId"
+                from.shouldContainExactlyInAnyOrder(addresses)
+                to.shouldContainExactlyInAnyOrder(addresses)
+                cc.isEmpty() shouldBe true
+                replyTo.isEmpty() shouldBe true
+                bcc.isEmpty() shouldBe true
+                direction shouldBe Direction.INBOUND
+                subject shouldBe "testSubject"
+                hasAttachments shouldBe true
+                seen shouldBe false
+                state shouldBe State.DELIVERED
+                createdAt shouldBe Date(1L)
+                updatedAt shouldBe Date(1L)
+            }
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
-
-        holder.callback shouldBe null
-
-        val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(response)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-        with(result!!) {
-            id shouldBe "id"
-            owner shouldBe "owner"
-            owners shouldBe emptyList()
-            emailAddressId shouldBe "emailAddressId"
-            clientRefId shouldBe "clientRefId"
-            from.shouldContainExactlyInAnyOrder(addresses)
-            to.shouldContainExactlyInAnyOrder(addresses)
-            cc.isEmpty() shouldBe true
-            replyTo.isEmpty() shouldBe true
-            bcc.isEmpty() shouldBe true
-            direction shouldBe Direction.INBOUND
-            subject shouldBe "testSubject"
-            hasAttachments shouldBe true
-            seen shouldBe false
-            state shouldBe State.DELIVERED
-            createdAt shouldBe Date(1L)
-            updatedAt shouldBe Date(1L)
-        }
-
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
 
     @Test
-    fun `getEmailMessage() should return results when hasAttachments is unset`() = runBlocking<Unit> {
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
+    fun `getEmailMessage() should return results when hasAttachments is unset`() =
+        runBlocking<Unit> {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
+            }
+
+            holder.callback shouldBe null
+
+            val input = GetEmailMessageInput(id = "emailMessageId")
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessage(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(response)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+            with(result!!) {
+                id shouldBe "id"
+                owner shouldBe "owner"
+                owners shouldBe emptyList()
+                emailAddressId shouldBe "emailAddressId"
+                clientRefId shouldBe "clientRefId"
+                from.shouldContainExactlyInAnyOrder(addresses)
+                to.shouldContainExactlyInAnyOrder(addresses)
+                cc.isEmpty() shouldBe true
+                replyTo.isEmpty() shouldBe true
+                bcc.isEmpty() shouldBe true
+                direction shouldBe Direction.INBOUND
+                subject shouldBe "testSubject"
+                hasAttachments shouldBe false
+                seen shouldBe false
+                state shouldBe State.DELIVERED
+                createdAt shouldBe Date(1L)
+                updatedAt shouldBe Date(1L)
+            }
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
-
-        holder.callback shouldBe null
-
-        val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(response)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-        with(result!!) {
-            id shouldBe "id"
-            owner shouldBe "owner"
-            owners shouldBe emptyList()
-            emailAddressId shouldBe "emailAddressId"
-            clientRefId shouldBe "clientRefId"
-            from.shouldContainExactlyInAnyOrder(addresses)
-            to.shouldContainExactlyInAnyOrder(addresses)
-            cc.isEmpty() shouldBe true
-            replyTo.isEmpty() shouldBe true
-            bcc.isEmpty() shouldBe true
-            direction shouldBe Direction.INBOUND
-            subject shouldBe "testSubject"
-            hasAttachments shouldBe false
-            seen shouldBe false
-            state shouldBe State.DELIVERED
-            createdAt shouldBe Date(1L)
-            updatedAt shouldBe Date(1L)
-        }
-
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
 
     @Test
-    fun `getEmailMessage() should return null result when query result data is null`() = runBlocking<Unit> {
-        holder.callback shouldBe null
+    fun `getEmailMessage() should return null result when query result data is null`() =
+        runBlocking<Unit> {
+            holder.callback shouldBe null
 
-        val responseWithNullResult by before {
-            Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
-                .data(GetEmailMessageQuery.Data(null))
-                .build()
+            val responseWithNullResult by before {
+                Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
+                    .data(GetEmailMessageQuery.Data(null))
+                    .build()
+            }
+
+            val input = GetEmailMessageInput(id = "emailMessageId")
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessage(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(responseWithNullResult)
+
+            val result = deferredResult.await()
+            result shouldBe null
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
         }
-
-        val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(responseWithNullResult)
-
-        val result = deferredResult.await()
-        result shouldBe null
-
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
-        )
-    }
 
     @Test
-    fun `getEmailMessage() should return null result when query response is null`() = runBlocking<Unit> {
-        holder.callback shouldBe null
+    fun `getEmailMessage() should return null result when query response is null`() =
+        runBlocking<Unit> {
+            holder.callback shouldBe null
 
-        val nullResponse by before {
-            Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
-                .data(null)
-                .build()
+            val nullResponse by before {
+                Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
+                    .data(null)
+                    .build()
+            }
+
+            val input = GetEmailMessageInput(id = "emailMessageId")
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessage(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(nullResponse)
+
+            val result = deferredResult.await()
+            result shouldBe null
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
         }
-
-        val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(nullResponse)
-
-        val result = deferredResult.await()
-        result shouldBe null
-
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
-        )
-    }
 
     @Test
     fun `getEmailMessage() should throw when http error occurs`() = runBlocking<Unit> {

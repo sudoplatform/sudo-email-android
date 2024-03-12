@@ -12,7 +12,6 @@ import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
 import io.kotlintest.shouldBe
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.lang.AssertionError
 import java.util.Date
 
 /**
@@ -70,6 +69,7 @@ class ParcelTest {
             updatedAt = Date(43L),
             size = 0.0,
             hasAttachments = false,
+            encryptionStatus = EncryptionStatus.UNENCRYPTED,
         )
 
         val bundle = Bundle()

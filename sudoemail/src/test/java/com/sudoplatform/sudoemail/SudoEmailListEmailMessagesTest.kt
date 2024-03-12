@@ -14,6 +14,7 @@ import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
+import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -121,6 +122,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                         mockSeal(unsealedHeaderDetailsString),
                     ),
                     1.0,
+                    EmailMessageEncryptionStatus.UNENCRYPTED,
                 ),
             ),
         )
@@ -159,7 +161,12 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
     private val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doReturn ByteArray(42)
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn unsealedHeaderDetailsString.toByteArray()
+            on {
+                decryptWithSymmetricKey(
+                    any<ByteArray>(),
+                    any<ByteArray>(),
+                )
+            } doReturn unsealedHeaderDetailsString.toByteArray()
         }
     }
 
@@ -206,7 +213,13 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(
+            mockContext,
+            mockUserClient,
+            mockKeyManager,
+            mockAppSyncClient,
+            mockS3Client,
+        )
     }
 
     @Test
@@ -263,6 +276,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     updatedAt shouldBe Date(1L)
                 }
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -277,12 +291,14 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                 check {
                     it.variables().input().limit() shouldBe 1
                     it.variables().input().nextToken() shouldBe null
-                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
-                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                        ?.startDateEpochMs()?.shouldBeLessThan(
+                            Date().time.toDouble(),
+                        )
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()
+                        ?.shouldBeLessThan(
+                            Date().time.toDouble(),
+                        )
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
                 },
             )
@@ -291,265 +307,278 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailMessages() should return results when hasAttachments is true`() = runBlocking<Unit> {
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
-        }
+    fun `listEmailMessages() should return results when hasAttachments is true`() =
+        runBlocking<Unit> {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
+            }
 
-        queryHolder.callback shouldBe null
+            queryHolder.callback shouldBe null
 
-        val input = ListEmailMessagesInput(
-            limit = 1,
-            nextToken = null,
-            dateRange = EmailMessageDateRange(
-                sortDate = DateRange(Date(), Date()),
-            ),
-            sortOrder = SortOrder.DESC,
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
+            val input = ListEmailMessagesInput(
+                limit = 1,
+                nextToken = null,
+                dateRange = EmailMessageDateRange(
+                    sortDate = DateRange(Date(), Date()),
+                ),
+                sortOrder = SortOrder.DESC,
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessages(input)
+            }
+            deferredResult.start()
 
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(queryResponse)
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(queryResponse)
 
-        val result = deferredResult.await()
-        result shouldNotBe null
+            val result = deferredResult.await()
+            result shouldNotBe null
 
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
 
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
 
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners shouldBe emptyList()
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.isEmpty() shouldBe true
-                    replyTo.isEmpty() shouldBe true
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe true
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners shouldBe emptyList()
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.isEmpty() shouldBe true
+                        replyTo.isEmpty() shouldBe true
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe true
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
 
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesQuery.Data,
-                ListEmailMessagesQuery,
-                ListEmailMessagesQuery.Variables,
-                >(
-                check {
-                    it.variables().input().limit() shouldBe 1
-                    it.variables().input().nextToken() shouldBe null
-                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
-                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                },
-            )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesQuery.Data,
+                    ListEmailMessagesQuery,
+                    ListEmailMessagesQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().limit() shouldBe 1
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                            ?.startDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                            ?.endDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
 
     @Test
-    fun `listEmailMessages() should return results when hasAttachments is unset`() = runBlocking<Unit> {
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
-        }
+    fun `listEmailMessages() should return results when hasAttachments is unset`() =
+        runBlocking<Unit> {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
+            }
 
-        queryHolder.callback shouldBe null
+            queryHolder.callback shouldBe null
 
-        val input = ListEmailMessagesInput(
-            limit = 1,
-            nextToken = null,
-            dateRange = EmailMessageDateRange(
-                sortDate = DateRange(Date(), Date()),
-            ),
-            sortOrder = SortOrder.ASC,
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
+            val input = ListEmailMessagesInput(
+                limit = 1,
+                nextToken = null,
+                dateRange = EmailMessageDateRange(
+                    sortDate = DateRange(Date(), Date()),
+                ),
+                sortOrder = SortOrder.ASC,
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessages(input)
+            }
+            deferredResult.start()
 
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(queryResponse)
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(queryResponse)
 
-        val result = deferredResult.await()
-        result shouldNotBe null
+            val result = deferredResult.await()
+            result shouldNotBe null
 
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
 
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
 
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners shouldBe emptyList()
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.isEmpty() shouldBe true
-                    replyTo.isEmpty() shouldBe true
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe false
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners shouldBe emptyList()
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.isEmpty() shouldBe true
+                        replyTo.isEmpty() shouldBe true
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe false
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
 
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesQuery.Data,
-                ListEmailMessagesQuery,
-                ListEmailMessagesQuery.Variables,
-                >(
-                check {
-                    it.variables().input().limit() shouldBe 1
-                    it.variables().input().nextToken() shouldBe null
-                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
-                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.ASC
-                },
-            )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesQuery.Data,
+                    ListEmailMessagesQuery,
+                    ListEmailMessagesQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().limit() shouldBe 1
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                            ?.startDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                            ?.endDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.ASC
+                    },
+                )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
 
     @Test
-    fun `listEmailMessages() should return results when updatedAt date range is specified`() = runBlocking<Unit> {
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
-        }
+    fun `listEmailMessages() should return results when updatedAt date range is specified`() =
+        runBlocking<Unit> {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
+            }
 
-        queryHolder.callback shouldBe null
+            queryHolder.callback shouldBe null
 
-        val input = ListEmailMessagesInput(
-            limit = 1,
-            nextToken = null,
-            dateRange = EmailMessageDateRange(
-                updatedAt = DateRange(Date(), Date()),
-            ),
-            sortOrder = SortOrder.DESC,
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
+            val input = ListEmailMessagesInput(
+                limit = 1,
+                nextToken = null,
+                dateRange = EmailMessageDateRange(
+                    updatedAt = DateRange(Date(), Date()),
+                ),
+                sortOrder = SortOrder.DESC,
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessages(input)
+            }
+            deferredResult.start()
 
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(queryResponse)
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(queryResponse)
 
-        val result = deferredResult.await()
-        result shouldNotBe null
+            val result = deferredResult.await()
+            result shouldNotBe null
 
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
 
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
 
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners shouldBe emptyList()
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.isEmpty() shouldBe true
-                    replyTo.isEmpty() shouldBe true
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe true
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners shouldBe emptyList()
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.isEmpty() shouldBe true
+                        replyTo.isEmpty() shouldBe true
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe true
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
+
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesQuery.Data,
+                    ListEmailMessagesQuery,
+                    ListEmailMessagesQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().limit() shouldBe 1
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().specifiedDateRange()?.updatedAtEpochMs()
+                            ?.startDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().specifiedDateRange()?.updatedAtEpochMs()
+                            ?.endDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
 
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesQuery.Data,
-                ListEmailMessagesQuery,
-                ListEmailMessagesQuery.Variables,
-                >(
-                check {
-                    it.variables().input().limit() shouldBe 1
-                    it.variables().input().nextToken() shouldBe null
-                    it.variables().input().specifiedDateRange()?.updatedAtEpochMs()?.startDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
-                    it.variables().input().specifiedDateRange()?.updatedAtEpochMs()?.endDateEpochMs()?.shouldBeLessThan(
-                        Date().time.toDouble(),
-                    )
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                },
-            )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
-
     @Test
-    fun `listEmailMessages() should return success result using default inputs when no error present`() = runBlocking<Unit>
+    fun `listEmailMessages() should return success result using default inputs when no error present`() =
+        runBlocking<Unit>
         {
             queryHolder.callback shouldBe null
 
@@ -593,6 +622,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                         updatedAt shouldBe Date(1L)
                     }
                 }
+
                 else -> {
                     fail("Unexpected ListAPIResult")
                 }
@@ -616,97 +646,100 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `listEmailMessages() should return success result when populating nextToken`() = runBlocking<Unit> {
-        queryHolder.callback shouldBe null
+    fun `listEmailMessages() should return success result when populating nextToken`() =
+        runBlocking<Unit> {
+            queryHolder.callback shouldBe null
 
-        val queryResultWithNextToken by before {
-            ListEmailMessagesQuery.ListEmailMessages(
-                "typename",
-                listOf(queryResultItem),
-                "dummyNextToken",
+            val queryResultWithNextToken by before {
+                ListEmailMessagesQuery.ListEmailMessages(
+                    "typename",
+                    listOf(queryResultItem),
+                    "dummyNextToken",
+                )
+            }
+            val queryInput by before {
+                ListEmailMessagesRequest.builder()
+                    .nextToken("dummyNextToken")
+                    .build()
+            }
+            val responseWithNextToken by before {
+                Response.builder<ListEmailMessagesQuery.Data>(
+                    ListEmailMessagesQuery(
+                        queryInput,
+                    ),
+                )
+                    .data(ListEmailMessagesQuery.Data(queryResultWithNextToken))
+                    .build()
+            }
+
+            val input = ListEmailMessagesInput(
+                nextToken = "dummyNextToken",
             )
-        }
-        val queryInput by before {
-            ListEmailMessagesRequest.builder()
-                .nextToken("dummyNextToken")
-                .build()
-        }
-        val responseWithNextToken by before {
-            Response.builder<ListEmailMessagesQuery.Data>(
-                ListEmailMessagesQuery(
-                    queryInput,
-                ),
-            )
-                .data(ListEmailMessagesQuery.Data(queryResultWithNextToken))
-                .build()
-        }
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessages(input)
+            }
+            deferredResult.start()
 
-        val input = ListEmailMessagesInput(
-            nextToken = "dummyNextToken",
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(responseWithNextToken)
 
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(responseWithNextToken)
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
 
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe "dummyNextToken"
 
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe "dummyNextToken"
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners shouldBe emptyList()
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.shouldContainExactlyInAnyOrder(addresses)
+                        replyTo.shouldContainExactlyInAnyOrder(addresses)
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe false
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                    }
+                }
 
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners shouldBe emptyList()
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.shouldContainExactlyInAnyOrder(addresses)
-                    replyTo.shouldContainExactlyInAnyOrder(addresses)
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe false
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
+
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesQuery.Data,
+                    ListEmailMessagesQuery,
+                    ListEmailMessagesQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().limit() shouldBe 10
+                        it.variables().input().nextToken() shouldBe "dummyNextToken"
+                        it.variables().input().specifiedDateRange() shouldBe null
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
 
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesQuery.Data,
-                ListEmailMessagesQuery,
-                ListEmailMessagesQuery.Variables,
-                >(
-                check {
-                    it.variables().input().limit() shouldBe 10
-                    it.variables().input().nextToken() shouldBe "dummyNextToken"
-                    it.variables().input().specifiedDateRange() shouldBe null
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                },
-            )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
-
     @Test
-    fun `listEmailMessages() should return success empty list result when query result data is empty`() = runBlocking<Unit>
+    fun `listEmailMessages() should return success empty list result when query result data is empty`() =
+        runBlocking<Unit>
         {
             queryHolder.callback shouldBe null
 
@@ -743,6 +776,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     listEmailMessages.result.items.size shouldBe 0
                     listEmailMessages.result.nextToken shouldBe null
                 }
+
                 else -> {
                     fail("Unexpected ListAPIResult")
                 }
@@ -764,7 +798,8 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `listEmailMessages() should return success empty list result when query result data is null`() = runBlocking<Unit>
+    fun `listEmailMessages() should return success empty list result when query result data is null`() =
+        runBlocking<Unit>
         {
             queryHolder.callback shouldBe null
 
@@ -793,6 +828,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     listEmailMessages.result.items.size shouldBe 0
                     listEmailMessages.result.nextToken shouldBe null
                 }
+
                 else -> {
                     fail("Unexpected ListAPIResult")
                 }
@@ -814,53 +850,57 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `listEmailMessages() should return partial results when unsealing fails`() = runBlocking<Unit> {
-        mockKeyManager.stub {
-            on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("KeyManagerException")
-        }
+    fun `listEmailMessages() should return partial results when unsealing fails`() =
+        runBlocking<Unit> {
+            mockKeyManager.stub {
+                on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException(
+                    "KeyManagerException",
+                )
+            }
 
-        val input = ListEmailMessagesInput()
-        val deferredResult = async(Dispatchers.IO) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
+            val input = ListEmailMessagesInput()
+            val deferredResult = async(Dispatchers.IO) {
+                client.listEmailMessages(input)
+            }
+            deferredResult.start()
 
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(queryResponse)
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(queryResponse)
 
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
 
-        when (listEmailMessages) {
-            is ListAPIResult.Partial -> {
-                listEmailMessages.result.items.isEmpty() shouldBe true
-                listEmailMessages.result.items.size shouldBe 0
-                listEmailMessages.result.failed.isEmpty() shouldBe false
-                listEmailMessages.result.failed.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
+            when (listEmailMessages) {
+                is ListAPIResult.Partial -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe true
+                    listEmailMessages.result.items.size shouldBe 0
+                    listEmailMessages.result.failed.isEmpty() shouldBe false
+                    listEmailMessages.result.failed.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
 
-                with(listEmailMessages.result.failed[0].partial) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners shouldBe emptyList()
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    direction shouldBe Direction.INBOUND
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
+                    with(listEmailMessages.result.failed[0].partial) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners shouldBe emptyList()
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        direction shouldBe Direction.INBOUND
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
 
-        verify(mockAppSyncClient).query(any<ListEmailMessagesQuery>())
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-    }
+            verify(mockAppSyncClient).query(any<ListEmailMessagesQuery>())
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+        }
 
     @Test
     fun `listEmailMessages() should throw when unsealing fails`() = runBlocking<Unit> {
@@ -974,32 +1014,33 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailMessages() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockAppSyncClient.stub {
-            on { query(any<ListEmailMessagesQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        val input = ListEmailMessagesInput()
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<CancellationException> {
-                client.listEmailMessages(input)
+    fun `listEmailMessages() should not block coroutine cancellation exception`() =
+        runBlocking<Unit> {
+            mockAppSyncClient.stub {
+                on { query(any<ListEmailMessagesQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
             }
-        }
-        deferredResult.start()
-        delay(100L)
 
-        verify(mockAppSyncClient)
-            .query<
-                ListEmailMessagesQuery.Data,
-                ListEmailMessagesQuery,
-                ListEmailMessagesQuery.Variables,
-                >(
-                check {
-                    it.variables().input().limit() shouldBe 10
-                    it.variables().input().nextToken() shouldBe null
-                    it.variables().input().specifiedDateRange() shouldBe null
-                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                },
-            )
-    }
+            val input = ListEmailMessagesInput()
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<CancellationException> {
+                    client.listEmailMessages(input)
+                }
+            }
+            deferredResult.start()
+            delay(100L)
+
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesQuery.Data,
+                    ListEmailMessagesQuery,
+                    ListEmailMessagesQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().limit() shouldBe 10
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().specifiedDateRange() shouldBe null
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+        }
 }

@@ -1499,6 +1499,29 @@
       },
       {
         "kind": "ENUM",
+        "name": "EmailMessageEncryptionStatus",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "ENCRYPTED",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "UNENCRYPTED",
+            "description": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
         "name": "EmailMessageState",
         "description": null,
         "fields": null,
@@ -3704,6 +3727,18 @@
                 "name": "ID",
                 "ofType": null
               }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "encryptionStatus",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "EmailMessageEncryptionStatus",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null

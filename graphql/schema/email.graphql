@@ -37,6 +37,11 @@ enum EmailMessageDirection {
   OUTBOUND
 }
 
+enum EmailMessageEncryptionStatus {
+  ENCRYPTED
+  UNENCRYPTED
+}
+
 enum UpdateEmailMessagesStatus {
   SUCCESS
   PARTIAL
@@ -268,6 +273,7 @@ type SealedEmailMessage {
   clientRefId: String
   rfc822Header: SealedAttribute!
   size: Float!
+  encryptionStatus: EmailMessageEncryptionStatus
 }
 
 type UpdateEmailMessagesResult {

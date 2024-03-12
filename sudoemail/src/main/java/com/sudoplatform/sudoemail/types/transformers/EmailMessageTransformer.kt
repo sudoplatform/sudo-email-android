@@ -11,10 +11,12 @@ import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
+import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.Direction
 import com.sudoplatform.sudoemail.types.EmailMessage
+import com.sudoplatform.sudoemail.types.EncryptionStatus
 import com.sudoplatform.sudoemail.types.Owner
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.State
@@ -51,11 +53,17 @@ internal object EmailMessageTransformer {
         deviceKeyManager: DeviceKeyManager,
         sealedEmailMessage: SealedEmailMessage,
     ): EmailMessage {
-        val keyInfo = KeyInfo(sealedEmailMessage.rfc822Header().keyId(), KeyType.PRIVATE_KEY, sealedEmailMessage.rfc822Header().algorithm())
+        val keyInfo = KeyInfo(
+            sealedEmailMessage.rfc822Header().keyId(),
+            KeyType.PRIVATE_KEY,
+            sealedEmailMessage.rfc822Header().algorithm(),
+        )
         val unsealer = Unsealer(deviceKeyManager, keyInfo)
 
-        val unsealedRfc822HeaderString = unsealer.unseal(sealedEmailMessage.rfc822Header().base64EncodedSealedData())
-        val unsealedRfc822Header = Gson().fromJson(unsealedRfc822HeaderString, EmailHeaderDetails::class.java)
+        val unsealedRfc822HeaderString =
+            unsealer.unseal(sealedEmailMessage.rfc822Header().base64EncodedSealedData())
+        val unsealedRfc822Header =
+            Gson().fromJson(unsealedRfc822HeaderString, EmailHeaderDetails::class.java)
 
         return EmailMessage(
             id = sealedEmailMessage.id(),
@@ -80,6 +88,8 @@ internal object EmailMessageTransformer {
             replyTo = unsealedRfc822Header.replyTo,
             subject = unsealedRfc822Header.subject,
             hasAttachments = unsealedRfc822Header.hasAttachments,
+            encryptionStatus = sealedEmailMessage.encryptionStatus()
+                ?.toEmailMessageEncryptionStatus() ?: EncryptionStatus.UNENCRYPTED,
         )
     }
 
@@ -108,6 +118,9 @@ internal object EmailMessageTransformer {
             createdAt = sealedEmailMessage.createdAtEpochMs().toDate(),
             updatedAt = sealedEmailMessage.updatedAtEpochMs().toDate(),
             size = sealedEmailMessage.size(),
+            encryptionStatus = sealedEmailMessage.encryptionStatus()
+                ?.toEmailMessageEncryptionStatus()
+                ?: EncryptionStatus.UNENCRYPTED,
         )
     }
 
@@ -149,6 +162,15 @@ internal object EmailMessageTransformer {
         return State.UNKNOWN
     }
 
+    private fun EmailMessageEncryptionStatus.toEmailMessageEncryptionStatus(): EncryptionStatus {
+        for (value in EncryptionStatus.values()) {
+            if (value.name == this.name) {
+                return value
+            }
+        }
+        return EncryptionStatus.UNKNOWN
+    }
+
     /**
      * Transform a string that might contain an RFC822 email address and display
      * name into an [EmailMessage.EmailAddress].
@@ -160,9 +182,11 @@ internal object EmailMessageTransformer {
                 address.isNullOrBlank() -> {
                     null
                 }
+
                 it.name.isNullOrBlank() -> {
                     EmailMessage.EmailAddress(address)
                 }
+
                 else -> {
                     EmailMessage.EmailAddress(address, it.name)
                 }

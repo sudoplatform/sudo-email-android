@@ -15,4 +15,7 @@ package com.sudoplatform.sudoemail.types
 enum class EncryptionStatus {
     ENCRYPTED,
     UNENCRYPTED,
+
+    /** API Evolution - if this occurs, it may mean you need to update the library. */
+    UNKNOWN,
 }

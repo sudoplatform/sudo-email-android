@@ -15,6 +15,7 @@ import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
+import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -101,6 +102,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
                         mockSeal(unsealedHeaderDetailsString),
                     ),
                     1.0,
+                    EmailMessageEncryptionStatus.UNENCRYPTED,
                 ),
             ),
         )
@@ -130,7 +132,12 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
     private val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doReturn ByteArray(42)
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn unsealedHeaderDetailsString.toByteArray()
+            on {
+                decryptWithSymmetricKey(
+                    any<ByteArray>(),
+                    any<ByteArray>(),
+                )
+            } doReturn unsealedHeaderDetailsString.toByteArray()
         }
     }
 
@@ -180,145 +187,175 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
-    }
-
-    @Test
-    fun `getEmailMessageRfc822Data() should return results when no error present`() = runBlocking<Unit> {
-        holder.callback shouldBe null
-
-        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessageRfc822Data(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(response)
-
-        val result = deferredResult.await()
-        result?.id shouldBe "emailMessageId"
-        result?.rfc822Data shouldBe unsealedHeaderDetailsString.toByteArray()
-
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-        verify(mockS3Client).download(anyString())
-        verify(mockS3Client).getObjectMetadata(anyString())
-    }
-
-    @Test
-    fun `getEmailMessageRfc822Data() should decompress data when appropriate`() = runBlocking<Unit> {
-        holder.callback shouldBe null
-        mockRfc822Metadata.contentEncoding = "sudoplatform-compression, sudoplatform-crypto, sudoplatform-binary-data"
-        val bos = ByteArrayOutputStream()
-        GZIPOutputStream(bos).bufferedWriter(Charsets.UTF_8).use { it.write(unsealedHeaderDetailsString) }
-        val compressedBytes = bos.toByteArray()
-        val encodedBytes = com.amazonaws.util.Base64.encode(compressedBytes)
-
-        mockS3Client.stub {
-            onBlocking { getObjectMetadata(anyString()) } doReturn mockRfc822Metadata
-        }
-
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn encodedBytes
-        }
-
-        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessageRfc822Data(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(response)
-
-        val result = deferredResult.await()
-        result?.id shouldBe "emailMessageId"
-        result?.rfc822Data?.toString(Charsets.UTF_8) shouldBe unsealedHeaderDetailsString
-
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-        verify(mockS3Client).download(anyString())
-        verify(mockS3Client).getObjectMetadata(anyString())
-    }
-
-    @Test
-    fun `getEmailMessageRfc822Data() should return null result when query result data is null`() = runBlocking<Unit> {
-        holder.callback shouldBe null
-
-        val responseWithNullResult by before {
-            Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
-                .data(GetEmailMessageQuery.Data(null))
-                .build()
-        }
-
-        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessageRfc822Data(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(responseWithNullResult)
-
-        val result = deferredResult.await()
-        result shouldBe null
-
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
+        verifyNoMoreInteractions(
+            mockContext,
+            mockUserClient,
+            mockKeyManager,
+            mockAppSyncClient,
+            mockS3Client,
         )
     }
 
     @Test
-    fun `getEmailMessageRfc822Data() should return null result when query response is null`() = runBlocking<Unit> {
-        holder.callback shouldBe null
+    fun `getEmailMessageRfc822Data() should return results when no error present`() =
+        runBlocking<Unit> {
+            holder.callback shouldBe null
 
-        val nullResponse by before {
-            Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
-                .data(null)
-                .build()
+            val input = GetEmailMessageRfc822DataInput(
+                id = "emailMessageId",
+                emailAddressId = "emailAddressId",
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessageRfc822Data(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(response)
+
+            val result = deferredResult.await()
+            result?.id shouldBe "emailMessageId"
+            result?.rfc822Data shouldBe unsealedHeaderDetailsString.toByteArray()
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+            verify(mockS3Client).download(anyString())
+            verify(mockS3Client).getObjectMetadata(anyString())
         }
 
-        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
-            client.getEmailMessageRfc822Data(input)
+    @Test
+    fun `getEmailMessageRfc822Data() should decompress data when appropriate`() =
+        runBlocking<Unit> {
+            holder.callback shouldBe null
+            mockRfc822Metadata.contentEncoding =
+                "sudoplatform-compression, sudoplatform-crypto, sudoplatform-binary-data"
+            val bos = ByteArrayOutputStream()
+            GZIPOutputStream(bos).bufferedWriter(Charsets.UTF_8)
+                .use { it.write(unsealedHeaderDetailsString) }
+            val compressedBytes = bos.toByteArray()
+            val encodedBytes = com.amazonaws.util.Base64.encode(compressedBytes)
+
+            mockS3Client.stub {
+                onBlocking { getObjectMetadata(anyString()) } doReturn mockRfc822Metadata
+            }
+
+            mockKeyManager.stub {
+                on {
+                    decryptWithSymmetricKey(
+                        any<ByteArray>(),
+                        any<ByteArray>(),
+                    )
+                } doReturn encodedBytes
+            }
+
+            val input = GetEmailMessageRfc822DataInput(
+                id = "emailMessageId",
+                emailAddressId = "emailAddressId",
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessageRfc822Data(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(response)
+
+            val result = deferredResult.await()
+            result?.id shouldBe "emailMessageId"
+            result?.rfc822Data?.toString(Charsets.UTF_8) shouldBe unsealedHeaderDetailsString
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+            verify(mockS3Client).download(anyString())
+            verify(mockS3Client).getObjectMetadata(anyString())
         }
-        deferredResult.start()
 
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(nullResponse)
+    @Test
+    fun `getEmailMessageRfc822Data() should return null result when query result data is null`() =
+        runBlocking<Unit> {
+            holder.callback shouldBe null
 
-        val result = deferredResult.await()
-        result shouldBe null
+            val responseWithNullResult by before {
+                Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
+                    .data(GetEmailMessageQuery.Data(null))
+                    .build()
+            }
 
-        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
-            check {
-                it.variables().id() shouldBe "emailMessageId"
-            },
-        )
-    }
+            val input = GetEmailMessageRfc822DataInput(
+                id = "emailMessageId",
+                emailAddressId = "emailAddressId",
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessageRfc822Data(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(responseWithNullResult)
+
+            val result = deferredResult.await()
+            result shouldBe null
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
+        }
+
+    @Test
+    fun `getEmailMessageRfc822Data() should return null result when query response is null`() =
+        runBlocking<Unit> {
+            holder.callback shouldBe null
+
+            val nullResponse by before {
+                Response.builder<GetEmailMessageQuery.Data>(GetEmailMessageQuery("emailMessageId"))
+                    .data(null)
+                    .build()
+            }
+
+            val input = GetEmailMessageRfc822DataInput(
+                id = "emailMessageId",
+                emailAddressId = "emailAddressId",
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                client.getEmailMessageRfc822Data(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(nullResponse)
+
+            val result = deferredResult.await()
+            result shouldBe null
+
+            verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+                check {
+                    it.variables().id() shouldBe "emailMessageId"
+                },
+            )
+        }
 
     @Test
     fun `getEmailMessageRfc822Data() should throw when http error occurs`() = runBlocking<Unit> {
         holder.callback shouldBe null
 
-        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
+        val input =
+            GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                 client.getEmailMessageRfc822Data(input)
@@ -360,7 +397,8 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
             on { query(any<GetEmailMessageQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
         }
 
-        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
+        val input =
+            GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.getEmailMessageRfc822Data(input)
@@ -379,24 +417,28 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessageRfc822Data() should not suppress CancellationException`() = runBlocking<Unit> {
-        holder.callback shouldBe null
+    fun `getEmailMessageRfc822Data() should not suppress CancellationException`() =
+        runBlocking<Unit> {
+            holder.callback shouldBe null
 
-        mockAppSyncClient.stub {
-            on { query(any<GetEmailMessageQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        val input = GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<CancellationException> {
-                client.getEmailMessageRfc822Data(input)
+            mockAppSyncClient.stub {
+                on { query(any<GetEmailMessageQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
             }
+
+            val input = GetEmailMessageRfc822DataInput(
+                id = "emailMessageId",
+                emailAddressId = "emailAddressId",
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<CancellationException> {
+                    client.getEmailMessageRfc822Data(input)
+                }
+            }
+            deferredResult.start()
+            delay(100L)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailMessageQuery>())
         }
-        deferredResult.start()
-        delay(100L)
-
-        deferredResult.await()
-
-        verify(mockAppSyncClient).query(any<GetEmailMessageQuery>())
-    }
 }
