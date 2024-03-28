@@ -137,10 +137,27 @@ input DeprovisionEmailAddressInput {
   emailAddressId: ID!
 }
 
+input Rfc822HeaderInput {
+  from: String!
+  to: [String!]!
+  cc: [String!]!
+  bcc: [String!]!
+  replyTo: [String!]!
+  subject: String
+  hasAttachments: Boolean
+}
+
 input SendEmailMessageInput {
   emailAddressId: ID!
   message: S3EmailObjectInput!
   clientRefId: String
+}
+
+input SendEncryptedEmailMessageInput {
+  emailAddressId: ID!
+  message: S3EmailObjectInput!
+  clientRefId: String
+  rfc822Header: Rfc822HeaderInput!
 }
 
 input DeleteEmailMessagesInput {
@@ -408,6 +425,8 @@ type Mutation {
   deprovisionEmailAddress(input: DeprovisionEmailAddressInput!): EmailAddress!
 
   sendEmailMessage(input: SendEmailMessageInput!): ID!
+
+  sendEncryptedEmailMessage(input: SendEncryptedEmailMessageInput!): ID!
 
   deleteEmailMessages(input: DeleteEmailMessagesInput!): [ID!]!
 

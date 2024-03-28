@@ -14,14 +14,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Test the correct operation of the [Rfc822MessageParser] encoding and parsing.
+ * Test the correct operation of the [Rfc822MessageDataProcessor] encoding and parsing.
  */
 @RunWith(AndroidJUnit4::class)
-class Rfc822MessageParserTest {
+class Rfc822MessageDataProcessorTest {
 
     @Test
     fun shouldBeAbleToParseMessage() {
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = "Foo Bar <foo@bar.com>",
             to = listOf("Ted Bear <ted.bear@toys.org>"),
             cc = listOf("Andy Pandy <andy.pandy@toys.org>"),
@@ -31,7 +31,7 @@ class Rfc822MessageParserTest {
             encryptionStatus = EncryptionStatus.UNENCRYPTED,
         )
 
-        val message = Rfc822MessageParser.parseRfc822Data(rfc822Data)
+        val message = Rfc822MessageDataProcessor().parseInternetMessageData(rfc822Data)
         with(message) {
             from shouldContainExactlyInAnyOrder listOf("Foo Bar <foo@bar.com>")
             to shouldContainExactlyInAnyOrder listOf("Ted Bear <ted.bear@toys.org>")
@@ -44,7 +44,7 @@ class Rfc822MessageParserTest {
 
     @Test
     fun shouldBeAbleToParseMessageWithNullFields() {
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = "Foo Bar <foo@bar.com>",
             to = listOf("Ted Bear <ted.bear@toys.org>"),
             cc = null,
@@ -54,7 +54,7 @@ class Rfc822MessageParserTest {
             encryptionStatus = EncryptionStatus.UNENCRYPTED,
         )
 
-        val message = Rfc822MessageParser.parseRfc822Data(rfc822Data)
+        val message = Rfc822MessageDataProcessor().parseInternetMessageData(rfc822Data)
         with(message) {
             from shouldContainExactlyInAnyOrder listOf("Foo Bar <foo@bar.com>")
             to shouldContainExactlyInAnyOrder listOf("Ted Bear <ted.bear@toys.org>")
@@ -67,7 +67,7 @@ class Rfc822MessageParserTest {
 
     @Test
     fun shouldBeAbleToParseBodyCorrectlyForEncryptedMessage() {
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = "Foo Bar <foo@bar.com>",
             to = listOf("Ted Bear <ted.bear@toys.org>"),
             cc = listOf("Andy Pandy <andy.pandy@toys.org>"),
@@ -77,7 +77,7 @@ class Rfc822MessageParserTest {
             encryptionStatus = EncryptionStatus.ENCRYPTED,
         )
 
-        val message = Rfc822MessageParser.parseRfc822Data(rfc822Data)
+        val message = Rfc822MessageDataProcessor().parseInternetMessageData(rfc822Data)
         with(message) {
             from shouldContainExactlyInAnyOrder listOf("Foo Bar <foo@bar.com>")
             to shouldContainExactlyInAnyOrder listOf("Ted Bear <ted.bear@toys.org>")

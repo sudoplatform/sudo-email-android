@@ -17,10 +17,12 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.S3Exception
-import com.sudoplatform.sudoemail.sealing.DefaultSealingService
+import com.sudoplatform.sudoemail.secure.DefaultSealingService
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.fail
@@ -161,8 +163,16 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         }
     }
 
+    private val mockEmailMessageProcessor by before {
+        mock<Rfc822MessageDataProcessor>()
+    }
+
     private val mockSealingService by before {
         DefaultSealingService(mockDeviceKeyManager, mockLogger)
+    }
+
+    private val mockEmailCryptoService by before {
+        mock<EmailCryptoService>()
     }
 
     private val client by before {
@@ -172,7 +182,9 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             mockUserClient,
             mockLogger,
             mockDeviceKeyManager,
+            mockEmailMessageProcessor,
             mockSealingService,
+            mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -188,7 +200,14 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(
+            mockUserClient,
+            mockKeyManager,
+            mockAppSyncClient,
+            mockS3Client,
+            mockEmailMessageProcessor,
+            mockEmailCryptoService,
+        )
     }
 
     @Test

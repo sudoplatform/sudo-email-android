@@ -17,10 +17,12 @@ import com.sudoplatform.sudoemail.graphql.type.EmailMessageUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.sealing.DefaultSealingService
+import com.sudoplatform.sudoemail.secure.DefaultSealingService
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
@@ -123,11 +125,19 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
         mock<S3Client>()
     }
 
+    private val mockEmailMessageProcessor by before {
+        mock<Rfc822MessageDataProcessor>()
+    }
+
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
             mockLogger,
         )
+    }
+
+    private val mockEmailCryptoService by before {
+        mock<EmailCryptoService>()
     }
 
     private val client by before {
@@ -137,7 +147,9 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             mockUserClient,
             mockLogger,
             mockDeviceKeyManager,
+            mockEmailMessageProcessor,
             mockSealingService,
+            mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -153,7 +165,14 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(
+            mockUserClient,
+            mockKeyManager,
+            mockAppSyncClient,
+            mockS3Client,
+            mockEmailMessageProcessor,
+            mockEmailCryptoService,
+        )
     }
 
     @Test

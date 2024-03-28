@@ -13,7 +13,7 @@ import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageParser
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -82,7 +82,7 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
             ?: throw AssertionError("should not be null")
         result.id shouldBe emailId
 
-        val simplifiedMessage = Rfc822MessageParser.parseRfc822Data(result.rfc822Data)
+        val simplifiedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(result.rfc822Data)
         with(simplifiedMessage) {
             to.shouldContainExactlyInAnyOrder(emailMessage.to.map { it.emailAddress })
             from.shouldContainExactlyInAnyOrder(emailMessage.from.map { it.emailAddress })

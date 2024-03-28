@@ -7,7 +7,7 @@
 package com.sudoplatform.sudoemail.types.transformers
 
 import com.amazonaws.util.Base64
-import com.sudoplatform.sudoemail.sealing.SealingService
+import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.DraftEmailMessage
 
 /**

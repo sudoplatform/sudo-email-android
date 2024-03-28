@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.sudoplatform.sudoemail.sealing
+package com.sudoplatform.sudoemail.secure
 
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 

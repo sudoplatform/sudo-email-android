@@ -15,7 +15,7 @@ import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageParser
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
@@ -90,7 +90,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
             subject = "Test Draft",

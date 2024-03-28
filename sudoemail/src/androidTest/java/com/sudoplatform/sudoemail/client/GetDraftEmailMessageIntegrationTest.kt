@@ -13,7 +13,7 @@ import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageParser
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.shouldBe
@@ -95,7 +95,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
             subject = "Test Draft",
@@ -112,7 +112,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         val draftEmailMessage = emailClient.getDraftEmailMessage(input)
 
         draftEmailMessage.id shouldBe draftId
-        val parsedMessage = Rfc822MessageParser.parseRfc822Data(draftEmailMessage.rfc822Data)
+        val parsedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(draftEmailMessage.rfc822Data)
 
         parsedMessage.to shouldContain emailAddress.emailAddress
         parsedMessage.from shouldContain emailAddress.emailAddress

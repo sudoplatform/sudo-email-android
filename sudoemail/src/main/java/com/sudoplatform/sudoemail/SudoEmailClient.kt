@@ -14,7 +14,8 @@ import com.sudoplatform.sudoconfigmanager.DefaultSudoConfigManager
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
-import com.sudoplatform.sudoemail.sealing.DefaultSealingService
+import com.sudoplatform.sudoemail.secure.DefaultEmailCryptoService
+import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.types.BatchOperationResult
@@ -27,6 +28,7 @@ import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
+import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
@@ -39,6 +41,7 @@ import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
+import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageWithBodyInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
@@ -51,6 +54,7 @@ import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -233,7 +237,14 @@ interface SudoEmailClient : AutoCloseable {
                 ),
             )
 
+            val emailMessageDataProcessor = Rfc822MessageDataProcessor()
+
             val sealingService = DefaultSealingService(
+                deviceKeyManager = deviceKeyManager,
+                logger = logger,
+            )
+
+            val emailCryptoService = DefaultEmailCryptoService(
                 deviceKeyManager = deviceKeyManager,
                 logger = logger,
             )
@@ -249,7 +260,9 @@ interface SudoEmailClient : AutoCloseable {
                 region = region,
                 emailBucket = emailBucket,
                 transientBucket = transientBucket,
+                emailMessageDataProcessor = emailMessageDataProcessor,
                 sealingService = sealingService,
+                emailCryptoService = emailCryptoService,
             )
         }
     }
@@ -449,6 +462,9 @@ interface SudoEmailClient : AutoCloseable {
 
     /**
      * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
+     *
+     * Email messages sent to in-network recipients (i.e. email addresses that exist within the Sudo Platform)
+     * will be sent end-to-end encrypted.
      *
      * @param input [SendEmailMessageInput] Parameters used to send an email message.
      * @return The identifier of the [EmailMessage] that is being sent.
@@ -697,6 +713,15 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailMessageException::class)
     suspend fun getEmailMessageRfc822Data(input: GetEmailMessageRfc822DataInput): EmailMessageRfc822Data?
+
+    /**
+     * Get the body and attachment data of an [EmailMessage].
+     *
+     * @param input [GetEmailMessageWithBodyInput] Parameters used to retrieve the data of the email message.
+     * @returns The data associated with the [EmailMessage] or null if the email message cannot be found.
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun getEmailMessageWithBody(input: GetEmailMessageWithBodyInput): EmailMessageWithBody?
 
     /**
      * Get a list of all [EmailMessage]s for the user.

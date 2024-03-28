@@ -64,7 +64,7 @@ internal class Unsealer(
                 }
                 val aesEncrypted = data.copyOfRange(0, BLOCK_SIZE_RSA)
                 val cipherData = data.copyOfRange(KEY_SIZE_AES, data.size)
-                val aesDecrypted = deviceKeyManager.decryptWithPrivateKey(aesEncrypted, keyInfo.keyId, algorithm)
+                val aesDecrypted = deviceKeyManager.decryptWithKeyPairId(aesEncrypted, keyInfo.keyId, algorithm)
                 String(deviceKeyManager.decryptWithSymmetricKey(aesDecrypted, cipherData), Charsets.UTF_8)
             }
             KeyType.SYMMETRIC_KEY -> {
@@ -89,7 +89,7 @@ internal class Unsealer(
         }
         val encryptedSymmetricKey = valueBytes.copyOfRange(0, KEY_SIZE_AES)
         val encryptedData = valueBytes.copyOfRange(KEY_SIZE_AES, valueBytes.size)
-        val symmetricKey = deviceKeyManager.decryptWithPrivateKey(encryptedSymmetricKey, keyInfo.keyId, algorithm)
+        val symmetricKey = deviceKeyManager.decryptWithKeyPairId(encryptedSymmetricKey, keyInfo.keyId, algorithm)
         return deviceKeyManager.decryptWithSymmetricKey(symmetricKey, encryptedData)
     }
 

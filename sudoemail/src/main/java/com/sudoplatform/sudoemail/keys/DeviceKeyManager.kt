@@ -47,7 +47,7 @@ internal interface DeviceKeyManager {
      * Returns the key ring id associated with the owner's service.
      *
      * @return The identifier of the key ring associated with the owner's service.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException] if the user Id cannot be found.
+     * @throws [DeviceKeyManagerException.UserIdNotFoundException] if the user Id cannot be found.
      */
     @Throws(DeviceKeyManagerException::class)
     fun getKeyRingId(): String
@@ -65,16 +65,25 @@ internal interface DeviceKeyManager {
      * Returns a new [KeyPair].
      *
      * @return The generated [KeyPair].
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException] if unable to generate the [KeyPair].
+     * @throws [DeviceKeyManagerException.KeyGenerationException] if unable to generate the [KeyPair].
      */
     @Throws(DeviceKeyManagerException::class)
     fun generateKeyPair(): KeyPair
 
     /**
+     * Generate a random symmetric key which is not persisted in the Android key store.
+     *
+     * @return The generated random symmetric key.
+     * @throws [DeviceKeyManagerException.KeyGenerationException] if unable to generate the symmetric key.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun generateRandomSymmetricKey(): ByteArray
+
+    /**
      * Generate a new symmetric key.
      *
      * @return The generated symmetric key identifier.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException] if unable to generate the symmetric key.
+     * @throws [DeviceKeyManagerException.KeyGenerationException] if unable to generate the symmetric key.
      */
     @Throws(DeviceKeyManagerException::class)
     fun generateNewCurrentSymmetricKey(): String
@@ -85,31 +94,58 @@ internal interface DeviceKeyManager {
      * to call [generateNewCurrentSymmetricKey] if a current symmetric key is required.
      *
      * @return The current symmetric key identifier in use or null.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
+     * @throws [DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
      */
     @Throws(DeviceKeyManagerException::class)
     fun getCurrentSymmetricKeyId(): String?
 
     /**
+     * Returns the symmetric key used by this service.
+     *
+     * @param keyId [String] Identifier of the symmetric key to retrieve.
+     * @return The symmetric key data in bytes or null if the key cannot be found.
+     * @throws [DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun getSymmetricKeyData(keyId: String): ByteArray?
+
+    /**
      * Returns true if the key identifier returns a key, false otherwise.
      *
      * @return True if key exists, false otherwise
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
+     * @throws [DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
      */
-    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    @Throws(DeviceKeyManagerException::class)
     fun symmetricKeyExists(keyId: String): Boolean
 
     /**
-     * Decrypt the [data] with the private key [keyId] and [algorithm].
+     * Returns true if the key identifier returns a private key, false otherwise.
+     *
+     * @return True if private key exists, false otherwise
+     * @throws [DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun privateKeyExists(keyId: String): Boolean
+
+    /**
+     * Creates random data of size specified by [size] input.
+     *
+     * @param size [Int] The size (in bytes) of the random data to create.
+     * @return The random data.
+     */
+    fun createRandomData(size: Int): ByteArray
+
+    /**
+     * Decrypt the [data] with the private key identified by [keyId] and [algorithm].
      *
      * @param data [ByteArray] Data to be decrypted.
      * @param keyId [String] Key to use to decrypt the [data].
      * @param algorithm [KeyManagerInterface.PublicKeyEncryptionAlgorithm] Algorithm to use to decrypt the [data].
      * @return The decrypted data.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted
+     * @throws [DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted
      */
     @Throws(DeviceKeyManagerException::class)
-    fun decryptWithPrivateKey(
+    fun decryptWithKeyPairId(
         data: ByteArray,
         keyId: String,
         algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
@@ -120,11 +156,28 @@ internal interface DeviceKeyManager {
      *
      * @param key [ByteArray] Key to use to decrypt the [data].
      * @param data [ByteArray] Data to be decrypted.
+     * @param initVector [ByteArray] The initialization vector.
      * @return The decrypted data.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted
+     * @throws [DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted
      */
     @Throws(DeviceKeyManagerException::class)
-    fun decryptWithSymmetricKey(key: ByteArray, data: ByteArray): ByteArray
+    fun decryptWithSymmetricKey(
+        key: ByteArray,
+        data: ByteArray,
+        initVector: ByteArray? = null,
+    ): ByteArray
+
+    /**
+     * Encrypt the [data] with the public key identified by [keyId].
+     *
+     * @param keyId [String] Key identifier belonging to the public key used to encrypt the [data].
+     * @param data [ByteArray] Data to be encrypted.
+     * @param algorithm [KeyManagerInterface.PublicKeyEncryptionAlgorithm] Algorithm to use to encrypt the [data].
+     * @return The encrypted data.
+     * @throws [DeviceKeyManagerException.EncryptionException] if the data cannot be encrypted.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun encryptWithKeyPairId(keyId: String, data: ByteArray, algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm): ByteArray
 
     /**
      * Decrypt the [data] with the symmetric key [keyId].
@@ -132,7 +185,7 @@ internal interface DeviceKeyManager {
      * @param keyId [String] Key identifier belonging to the symmetric key used to decrypt the [data].
      * @param data [ByteArray] Data to be decrypted.
      * @return the decrypted data.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted.
+     * @throws [DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted.
      */
     @Throws(DeviceKeyManagerException::class)
     fun decryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray
@@ -142,17 +195,38 @@ internal interface DeviceKeyManager {
      *
      * @param keyId [String] Key identifier belonging to the symmetric key used to encrypt the [data].
      * @param data [ByteArray] Data to be encrypted.
+     * @param initVector [ByteArray] The initialization vector. Must be 128 bit in size for AES-CBC and 96 for AES-GCM.
      * @return The encrypted data.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.EncryptionException] if the data cannot be encrypted.
+     * @throws [DeviceKeyManagerException.EncryptionException] if the data cannot be encrypted.
      */
     @Throws(DeviceKeyManagerException::class)
-    fun encryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray
+    fun encryptWithSymmetricKeyId(
+        keyId: String,
+        data: ByteArray,
+        initVector: ByteArray? = null,
+    ): ByteArray
+
+    /**
+     * Encrypt the [data] with the symmetric [key].
+     *
+     * @param key [ByteArray] The symmetric key used to encrypt the [data].
+     * @param data [ByteArray] Data to be encrypted.
+     * @param initVector [ByteArray] The initialization vector. Must be 128 bit in size for AES-CBC and 96 for AES-GCM.
+     * @return The encrypted data.
+     * @throws [DeviceKeyManagerException.EncryptionException] if the data cannot be encrypted.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun encryptWithSymmetricKey(
+        key: ByteArray,
+        data: ByteArray,
+        initVector: ByteArray? = null,
+    ): ByteArray
 
     /**
      * Import keys from a key archive
      *
      * @param archiveData [ByteArray] Key archive data to import the keys from.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException]
+     * @throws [DeviceKeyManagerException.SecureKeyArchiveException]
      */
     @Throws(DeviceKeyManagerException::class)
     fun importKeys(archiveData: ByteArray)
@@ -161,7 +235,7 @@ internal interface DeviceKeyManager {
      * Export keys to a key archive.
      *
      * @return The key archive data.
-     * @throws [DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException]
+     * @throws [DeviceKeyManagerException.SecureKeyArchiveException]
      */
     fun exportKeys(): ByteArray
 

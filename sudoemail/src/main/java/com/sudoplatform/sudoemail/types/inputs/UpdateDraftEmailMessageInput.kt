@@ -34,16 +34,16 @@ data class UpdateDraftEmailMessageInput(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as SendEmailMessageInput
+        other as UpdateDraftEmailMessageInput
 
+        if (id != other.id) return false
         if (!rfc822Data.contentEquals(other.rfc822Data)) return false
-        if (senderEmailAddressId != other.senderEmailAddressId) return false
-
-        return true
+        return senderEmailAddressId == other.senderEmailAddressId
     }
 
     override fun hashCode(): Int {
-        var result = rfc822Data.contentHashCode()
+        var result = id.hashCode()
+        result = 31 * result + rfc822Data.contentHashCode()
         result = 31 * result + senderEmailAddressId.hashCode()
         return result
     }

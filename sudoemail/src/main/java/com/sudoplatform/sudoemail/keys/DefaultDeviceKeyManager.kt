@@ -95,6 +95,26 @@ internal class DefaultDeviceKeyManager(
     }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun generateRandomSymmetricKey(): ByteArray {
+        val keyId = UUID.randomUUID().toString()
+        try {
+            keyManager.generateSymmetricKey(keyId)
+            val symmetricKey = keyManager.getSymmetricKeyData(keyId)
+                ?: throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
+                    "Failed to generate symmetric key",
+                )
+            keyManager.deleteSymmetricKey(keyId)
+            return symmetricKey
+        } catch (e: Exception) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
+                "Failed to generate symmetric key",
+                e,
+            )
+        }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
     override fun generateNewCurrentSymmetricKey(): String {
         val keyId = UUID.randomUUID().toString()
         try {
@@ -145,7 +165,35 @@ internal class DefaultDeviceKeyManager(
     }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    override fun decryptWithPrivateKey(
+    override fun privateKeyExists(keyId: String): Boolean {
+        try {
+            val data = keyManager.getPrivateKeyData(keyId)
+            return data != null
+        } catch (e: KeyManagerException) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                "KeyManager exception",
+                e,
+            )
+        }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun getSymmetricKeyData(keyId: String): ByteArray? {
+        try {
+            return keyManager.getSymmetricKeyData(keyId)
+        } catch (e: KeyManagerException) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException("KeyManager exception", e)
+        }
+    }
+
+    override fun createRandomData(size: Int): ByteArray {
+        return keyManager.createRandomData(size)
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun decryptWithKeyPairId(
         data: ByteArray,
         keyId: String,
         algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
@@ -162,9 +210,27 @@ internal class DefaultDeviceKeyManager(
     }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    override fun decryptWithSymmetricKey(key: ByteArray, data: ByteArray): ByteArray {
+    override fun encryptWithKeyPairId(
+        keyId: String,
+        data: ByteArray,
+        algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
+    ): ByteArray {
         try {
-            return keyManager.decryptWithSymmetricKey(key, data)
+            return keyManager.encryptWithPublicKey(keyId, data, algorithm)
+        } catch (e: KeyManagerException) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)
+        }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun decryptWithSymmetricKey(key: ByteArray, data: ByteArray, initVector: ByteArray?): ByteArray {
+        return try {
+            if (initVector != null) {
+                keyManager.decryptWithSymmetricKey(key, data, initVector)
+            } else {
+                keyManager.decryptWithSymmetricKey(key, data)
+            }
         } catch (e: KeyManagerException) {
             logger.error("error $e")
             throw DeviceKeyManager.DeviceKeyManagerException.DecryptionException(
@@ -188,15 +254,38 @@ internal class DefaultDeviceKeyManager(
     }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    override fun encryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray {
-        try {
-            return keyManager.encryptWithSymmetricKey(keyId, data)
+    override fun encryptWithSymmetricKeyId(
+        keyId: String,
+        data: ByteArray,
+        initVector: ByteArray?,
+    ): ByteArray {
+        return try {
+            if (initVector != null) {
+                keyManager.encryptWithSymmetricKey(keyId, data, initVector)
+            } else {
+                keyManager.encryptWithSymmetricKey(keyId, data)
+            }
         } catch (e: KeyManagerException) {
             logger.error("error $e")
-            throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException(
-                "Failed to encrypt",
-                e,
-            )
+            throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)
+        }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun encryptWithSymmetricKey(
+        key: ByteArray,
+        data: ByteArray,
+        initVector: ByteArray?,
+    ): ByteArray {
+        return try {
+            if (initVector != null) {
+                keyManager.encryptWithSymmetricKey(key, data, initVector)
+            } else {
+                keyManager.encryptWithSymmetricKey(key, data)
+            }
+        } catch (e: KeyManagerException) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)
         }
     }
 

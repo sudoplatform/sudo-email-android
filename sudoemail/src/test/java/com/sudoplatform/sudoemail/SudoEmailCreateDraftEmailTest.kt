@@ -16,8 +16,10 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.sealing.SealingService
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.matchers.string.shouldContain
@@ -171,10 +173,18 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         }
     }
 
+    private val mockEmailMessageProcessor by before {
+        mock<Rfc822MessageDataProcessor>()
+    }
+
     private val mockSealingService by before {
         mock<SealingService>().stub {
             on { sealString(any(), any()) } doReturn "sealString".toByteArray()
         }
+    }
+
+    private val mockEmailCryptoService by before {
+        mock<EmailCryptoService>()
     }
 
     private val client by before {
@@ -184,7 +194,9 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             mockUserClient,
             mockLogger,
             mockDeviceKeyManager,
+            mockEmailMessageProcessor,
             mockSealingService,
+            mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -200,7 +212,16 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(
+            mockUserClient,
+            mockKeyManager,
+            mockDeviceKeyManager,
+            mockAppSyncClient,
+            mockS3Client,
+            mockEmailMessageProcessor,
+            mockSealingService,
+            mockEmailCryptoService,
+        )
     }
 
     @Test

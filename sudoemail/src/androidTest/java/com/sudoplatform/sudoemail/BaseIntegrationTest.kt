@@ -12,11 +12,13 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailFolder
+import com.sudoplatform.sudoemail.types.EmailMessage
+import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageParser
 import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
 import com.sudoplatform.sudoentitlementsadmin.SudoEntitlementsAdminClient
 import com.sudoplatform.sudoentitlementsadmin.types.Entitlement
@@ -46,7 +48,7 @@ abstract class BaseIntegrationTest {
 
     companion object {
 
-        val context: Context = ApplicationProvider.getApplicationContext<Context>()
+        val context: Context = ApplicationProvider.getApplicationContext()
 
         private const val verbose = false
         private val logLevel = if (verbose) LogLevel.VERBOSE else LogLevel.INFO
@@ -252,8 +254,13 @@ abstract class BaseIntegrationTest {
     protected suspend fun sendEmailMessage(
         client: SudoEmailClient,
         fromAddress: EmailAddress,
-        toAddress: String = toSimulatorAddress,
+        toAddresses: List<String> = listOf(toSimulatorAddress),
+        ccAddresses: List<String> = emptyList(),
+        bccAddresses: List<String> = emptyList(),
+        replyToAddresses: List<String> = emptyList(),
         body: String? = null,
+        attachments: List<EmailAttachment> = emptyList(),
+        inlineAttachments: List<EmailAttachment> = emptyList(),
     ): String {
         val messageSubject = "Hello ${UUID.randomUUID()}"
         val emailBody = body ?: buildString {
@@ -261,13 +268,21 @@ abstract class BaseIntegrationTest {
                 appendLine("Body of message ${UUID.randomUUID()}")
             }
         }
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
-            from = fromAddress.emailAddress,
-            to = listOf(toAddress),
-            subject = messageSubject,
-            body = emailBody,
+        val emailMessageHeader = InternetMessageFormatHeader(
+            EmailMessage.EmailAddress(fromAddress.emailAddress),
+            toAddresses.map { EmailMessage.EmailAddress(it) },
+            ccAddresses.map { EmailMessage.EmailAddress(it) },
+            bccAddresses.map { EmailMessage.EmailAddress(it) },
+            replyToAddresses.map { EmailMessage.EmailAddress(it) },
+            messageSubject,
         )
-        val sendEmailMessageInput = SendEmailMessageInput(rfc822Data, fromAddress.id)
+        val sendEmailMessageInput = SendEmailMessageInput(
+            fromAddress.id,
+            emailMessageHeader,
+            emailBody,
+            attachments,
+            inlineAttachments,
+        )
         return client.sendEmailMessage(sendEmailMessageInput)
     }
 

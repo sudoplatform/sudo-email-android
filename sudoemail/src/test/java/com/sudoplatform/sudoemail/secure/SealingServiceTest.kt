@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.sudoplatform.sudoemail.sealing
+package com.sudoplatform.sudoemail.secure
 
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
@@ -13,6 +13,7 @@ import io.kotlintest.shouldThrow
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -28,7 +29,7 @@ class SealingServiceTest : BaseTests() {
 
     private val mockDeviceKeyManager by before {
         mock<DeviceKeyManager>().stub {
-            on { encryptWithSymmetricKeyId(anyString(), any()) } doReturn ByteArray(42)
+            on { encryptWithSymmetricKeyId(anyString(), any(), eq(null)) } doReturn ByteArray(42)
         }
     }
 
@@ -56,6 +57,7 @@ class SealingServiceTest : BaseTests() {
                 encryptWithSymmetricKeyId(
                     anyString(),
                     any(),
+                    eq(null),
                 )
             } doThrow DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Bad")
         }

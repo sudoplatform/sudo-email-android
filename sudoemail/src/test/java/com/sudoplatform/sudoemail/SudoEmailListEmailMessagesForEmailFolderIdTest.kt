@@ -18,7 +18,8 @@ import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.sealing.DefaultSealingService
+import com.sudoplatform.sudoemail.secure.DefaultSealingService
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.DateRange
 import com.sudoplatform.sudoemail.types.Direction
 import com.sudoplatform.sudoemail.types.EmailMessage
@@ -28,6 +29,7 @@ import com.sudoplatform.sudoemail.types.SortOrder
 import com.sudoplatform.sudoemail.types.State
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerException
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
@@ -188,11 +190,19 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         mock<S3Client>()
     }
 
+    private val mockEmailMessageProcessor by before {
+        mock<Rfc822MessageDataProcessor>()
+    }
+
     private val mockSealingService by before {
         DefaultSealingService(
             mockDeviceKeyManager,
             mockLogger,
         )
+    }
+
+    private val mockEmailCryptoService by before {
+        mock<EmailCryptoService>()
     }
 
     private val client by before {
@@ -202,7 +212,9 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             mockUserClient,
             mockLogger,
             mockDeviceKeyManager,
+            mockEmailMessageProcessor,
             mockSealingService,
+            mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -220,10 +232,11 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
     fun fini() {
         verifyNoMoreInteractions(
             mockContext,
-            mockUserClient,
             mockKeyManager,
             mockAppSyncClient,
             mockS3Client,
+            mockEmailMessageProcessor,
+            mockEmailCryptoService,
         )
     }
 

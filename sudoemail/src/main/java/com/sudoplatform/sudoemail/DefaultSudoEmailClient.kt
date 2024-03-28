@@ -35,6 +35,7 @@ import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
+import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
@@ -45,8 +46,10 @@ import com.sudoplatform.sudoemail.graphql.type.BlockedEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessagesInput
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.EmailAddressMetadataUpdateValuesInput
+import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressPublicKeyInput
+import com.sudoplatform.sudoemail.graphql.type.Rfc822HeaderInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
@@ -55,7 +58,10 @@ import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.sealing.SealingService
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
+import com.sudoplatform.sudoemail.secure.types.SecurePackage
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.SubscriptionService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
@@ -70,6 +76,9 @@ import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
+import com.sudoplatform.sudoemail.types.EmailMessageWithBody
+import com.sudoplatform.sudoemail.types.EncryptionStatus
+import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
@@ -85,6 +94,7 @@ import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
+import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageWithBodyInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
@@ -108,6 +118,7 @@ import com.sudoplatform.sudoemail.types.transformers.EmailMessageDateRangeTransf
 import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
 import com.sudoplatform.sudoemail.util.EmailAddressParser
+import com.sudoplatform.sudoemail.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
@@ -134,6 +145,7 @@ import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesInput as ListEma
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput as LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput as ProvisionEmailAddressRequest
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
+import com.sudoplatform.sudoemail.graphql.type.SendEncryptedEmailMessageInput as SendEncryptedEmailMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput as UnblockEmailAddressesRequest
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput as UpdateEmailAddressMetadataRequest
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as UpdateEmailMessagesRequest
@@ -160,7 +172,9 @@ internal class DefaultSudoEmailClient(
         AndroidUtilsLogDriver(LogLevel.INFO),
     ),
     private val deviceKeyManager: DeviceKeyManager,
+    private val emailMessageDataProcessor: EmailMessageDataProcessor,
     private val sealingService: SealingService,
+    private val emailCryptoService: EmailCryptoService,
     private val region: String = Regions.US_EAST_1.name,
     private val emailBucket: String,
     private val transientBucket: String,
@@ -187,6 +201,11 @@ internal class DefaultSudoEmailClient(
         private const val ID_REQUEST_LIMIT = 100
         private const val DRAFT_ID_REQUEST_LIMIT = 10
 
+        /** Content encoding values for email message data. */
+        private const val CRYPTO_CONTENT_ENCODING = "sudoplatform-crypto"
+        private const val BINARY_DATA_CONTENT_ENCODING = "sudoplatform-binary-data"
+        private const val COMPRESSION_CONTENT_ENCODING = "sudoplatform-compression"
+
         /** Exception messages */
         private const val UNSEAL_EMAIL_ADDRESS_ERROR_MSG = "Unable to unseal email address data"
         private const val UNSEAL_EMAIL_MSG_ERROR_MSG = "Unable to unseal email message data"
@@ -212,6 +231,8 @@ internal class DefaultSudoEmailClient(
         private const val ADDRESS_BLOCKLIST_EMPTY_MSG = "At least one email address must be passed"
         private const val ADDRESS_BLOCKLIST_DUPLICATE_MSG =
             "Duplicate email address found. Please include each address only once"
+        private const val KEY_ATTACHMENTS_NOT_FOUND_ERROR_MSG = "Key attachments could not be found"
+        private const val BODY_ATTACHMENT_NOT_FOUND_ERROR_MSG = "Body attachments could not be found"
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         const val KEY_NOT_FOUND_ERROR = "Key not found"
@@ -241,7 +262,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "9.0.0"
+    private val version: String = "10.0.0"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
@@ -388,14 +409,157 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun sendEmailMessage(input: SendEmailMessageInput): String {
-        val (rfc822Data, senderEmailAddressId) = input
-        var s3ObjectKey = ""
+        val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments) = input
+        val s3ObjectKey: String
         try {
-            val clientRefId = UUID.randomUUID().toString()
-            val objectId =
-                "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
-            s3ObjectKey = s3TransientClient.upload(rfc822Data, objectId)
+            // Check whether recipient addresses and associated public keys exist in the platform
+            val allRecipients = mutableListOf<EmailMessage.EmailAddress>().apply {
+                addAll(emailMessageHeader.to)
+                addAll(emailMessageHeader.cc)
+                addAll(emailMessageHeader.bcc)
+            }.map { it.emailAddress }
+            val lookupPublicInfoInput = LookupEmailAddressesPublicInfoInput(
+                emailAddresses = allRecipients,
+            )
+            val emailAddressesPublicInfo = lookupEmailAddressesPublicInfo(lookupPublicInfoInput)
 
+            // Identify whether all addresses are in-network or not
+            val isInNetworkAddresses = allRecipients.all { recipient ->
+                emailAddressesPublicInfo.any { info -> info.emailAddress == recipient }
+            }
+
+            if (isInNetworkAddresses) {
+                val clientRefId = UUID.randomUUID().toString()
+                val objectId = "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
+
+                // Process encrypted email message
+                val encryptionStatus = EncryptionStatus.ENCRYPTED
+                val rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
+                    from = emailMessageHeader.from.emailAddress,
+                    to = emailMessageHeader.to.map { it.toString() },
+                    cc = emailMessageHeader.cc.map { it.toString() },
+                    bcc = emailMessageHeader.bcc.map { it.toString() },
+                    subject = emailMessageHeader.subject,
+                    body,
+                    attachments,
+                    inlineAttachments,
+                )
+                val keyIds = emailAddressesPublicInfo.map { it.keyId }.toSet()
+                val hasAttachments = attachments.isNotEmpty() || inlineAttachments.isNotEmpty()
+                val encryptedEmailMessage = emailCryptoService.encrypt(rfc822Data, keyIds)
+                val secureAttachments = encryptedEmailMessage.toList()
+
+                // Encode the RFC 822 data with the secureAttachments
+                val encryptedRfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
+                    from = emailMessageHeader.from.emailAddress,
+                    to = emailMessageHeader.to.map { it.toString() },
+                    cc = emailMessageHeader.cc.map { it.toString() },
+                    bcc = emailMessageHeader.bcc.map { it.toString() },
+                    subject = emailMessageHeader.subject,
+                    body,
+                    secureAttachments,
+                    inlineAttachments,
+                    encryptionStatus,
+                )
+                s3ObjectKey = s3TransientClient.upload(encryptedRfc822Data, objectId)
+                return sendInNetworkEmailMessage(senderEmailAddressId, s3ObjectKey, emailMessageHeader, hasAttachments)
+            } else {
+                val clientRefId = UUID.randomUUID().toString()
+                val objectId = "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
+
+                // Process non-encrypted email message
+                val encryptionStatus = EncryptionStatus.UNENCRYPTED
+                val rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
+                    from = emailMessageHeader.from.emailAddress,
+                    to = emailMessageHeader.to.map { it.toString() },
+                    cc = emailMessageHeader.cc.map { it.toString() },
+                    bcc = emailMessageHeader.bcc.map { it.toString() },
+                    subject = emailMessageHeader.subject,
+                    body,
+                    attachments,
+                    inlineAttachments,
+                    encryptionStatus,
+                )
+                s3ObjectKey = s3TransientClient.upload(rfc822Data, objectId)
+                return sendOutOfNetworkEmailMessage(senderEmailAddressId, s3ObjectKey)
+            }
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
+                    cause = e,
+                )
+                else -> throw interpretEmailMessageException(e)
+            }
+        }
+    }
+
+    private suspend fun sendInNetworkEmailMessage(
+        senderEmailAddressId: String,
+        s3ObjectKey: String,
+        emailMessageHeader: InternetMessageFormatHeader,
+        hasAttachments: Boolean,
+    ): String {
+        try {
+            val s3EmailObjectInput = S3EmailObjectInput.builder()
+                .key(s3ObjectKey)
+                .region(region)
+                .bucket(transientBucket)
+                .build()
+            val rfc822HeaderInput = Rfc822HeaderInput.builder()
+                .from(emailMessageHeader.from.toString())
+                .to(emailMessageHeader.to.map { it.toString() })
+                .cc(emailMessageHeader.cc.map { it.toString() })
+                .bcc(emailMessageHeader.bcc.map { it.toString() })
+                .replyTo(emailMessageHeader.replyTo.map { it.toString() })
+                .subject(emailMessageHeader.subject)
+                .hasAttachments(hasAttachments)
+                .build()
+
+            val mutationInput = SendEncryptedEmailMessageRequest.builder()
+                .emailAddressId(senderEmailAddressId)
+                .message(s3EmailObjectInput)
+                .rfc822Header(rfc822HeaderInput)
+                .build()
+            val mutation = SendEncryptedEmailMessageMutation.builder()
+                .input(mutationInput)
+                .build()
+            val mutationResponse = appSyncClient.mutate(mutation)
+                .enqueue()
+            if (mutationResponse.hasErrors()) {
+                logger.error("errors = ${mutationResponse.errors()}")
+                throw interpretEmailMessageError(mutationResponse.errors().first())
+            }
+
+            return mutationResponse.data()?.sendEncryptedEmailMessage()
+                ?: throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
+                    cause = e,
+                )
+                else -> throw interpretEmailMessageException(e)
+            }
+        } finally {
+            try {
+                if (s3ObjectKey.isNotBlank()) {
+                    s3TransientClient.delete(s3ObjectKey)
+                }
+            } catch (e: Throwable) {
+                logger.error("$e")
+            }
+        }
+    }
+
+    private suspend fun sendOutOfNetworkEmailMessage(senderEmailAddressId: String, s3ObjectKey: String): String {
+        try {
             val s3EmailObject = S3EmailObjectInput.builder()
                 .key(s3ObjectKey)
                 .region(region)
@@ -426,11 +590,9 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
-
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
                     cause = e,
                 )
-
                 else -> throw interpretEmailMessageException(e)
             }
         } finally {
@@ -975,6 +1137,93 @@ internal class DefaultSudoEmailClient(
         try {
             val result = retrieveEmailMessage(input) ?: return null
             return EmailMessageTransformer.toEntity(deviceKeyManager, result)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
+                    cause = e,
+                )
+
+                else -> throw interpretEmailMessageException(e)
+            }
+        }
+    }
+
+    @Throws(SudoEmailClient.EmailMessageException::class)
+    override suspend fun getEmailMessageWithBody(input: GetEmailMessageWithBodyInput): EmailMessageWithBody? {
+        try {
+            val getEmailMessageInput = GetEmailMessageInput(input.id)
+            val emailMessage = retrieveEmailMessage(getEmailMessageInput) ?: return null
+
+            val s3Key = constructS3KeyForEmailMessage(
+                input.emailAddressId,
+                input.id,
+                emailMessage.rfc822Header().keyId(),
+            )
+            val sealedRfc822Data = s3EmailClient.download(s3Key)
+            val rfc822Metadata = s3EmailClient.getObjectMetadata(s3Key)
+            val contentEncodingValues = (
+                if (rfc822Metadata.contentEncoding != null) {
+                    rfc822Metadata.contentEncoding.split(',')
+                } else {
+                    listOf(CRYPTO_CONTENT_ENCODING, BINARY_DATA_CONTENT_ENCODING)
+                }
+                ).reversed()
+            var decodedBytes = sealedRfc822Data
+            for (value in contentEncodingValues) {
+                when (value.trim().lowercase()) {
+                    COMPRESSION_CONTENT_ENCODING -> {
+                        decodedBytes = Base64.decode(decodedBytes)
+                        val bais = ByteArrayInputStream(decodedBytes)
+                        decodedBytes = withContext(Dispatchers.IO) {
+                            GZIPInputStream(bais).readBytes()
+                        }
+                        bais.close()
+                    }
+
+                    CRYPTO_CONTENT_ENCODING -> {
+                        decodedBytes = EmailMessageTransformer.toUnsealedRfc822Data(
+                            deviceKeyManager,
+                            emailMessage.rfc822Header().keyId(),
+                            emailMessage.rfc822Header().algorithm(),
+                            decodedBytes,
+                        )
+                    }
+
+                    BINARY_DATA_CONTENT_ENCODING -> {} // no-op
+                    else -> throw SudoEmailClient.EmailMessageException.UnsealingException("Invalid Content-Encoding value $value")
+                }
+            }
+            var parsedMessage = emailMessageDataProcessor.parseInternetMessageData(decodedBytes)
+            if (emailMessage.encryptionStatus() == EmailMessageEncryptionStatus.ENCRYPTED) {
+                val keyAttachments = parsedMessage.attachments.filter {
+                    it.contentId.contains(SecureEmailAttachmentType.KEY_EXCHANGE.contentId) &&
+                        it.mimeType.contains(SecureEmailAttachmentType.KEY_EXCHANGE.mimeType)
+                }
+                if (keyAttachments.isEmpty()) {
+                    throw SudoEmailClient.EmailMessageException.FailedException(KEY_ATTACHMENTS_NOT_FOUND_ERROR_MSG)
+                }
+                val bodyAttachment = parsedMessage.attachments.filter {
+                    it.contentId.contains(SecureEmailAttachmentType.BODY.contentId) &&
+                        it.mimeType.contains(SecureEmailAttachmentType.BODY.mimeType)
+                }
+                if (bodyAttachment.isEmpty()) {
+                    throw SudoEmailClient.EmailMessageException.FailedException(BODY_ATTACHMENT_NOT_FOUND_ERROR_MSG)
+                }
+                val securePackage = SecurePackage(keyAttachments.toSet(), bodyAttachment.first())
+                val unencryptedMessage = emailCryptoService.decrypt(securePackage)
+                parsedMessage = emailMessageDataProcessor.parseInternetMessageData(unencryptedMessage)
+            }
+            return EmailMessageWithBody(
+                input.id,
+                parsedMessage.body ?: "",
+                parsedMessage.attachments,
+                parsedMessage.inlineAttachments,
+            )
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {

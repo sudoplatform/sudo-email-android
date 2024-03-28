@@ -17,11 +17,13 @@ import com.sudoplatform.sudoemail.graphql.type.BlockedAddressHashAlgorithm
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.sealing.SealingService
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.util.EmailAddressParser
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
@@ -43,6 +45,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
@@ -144,10 +147,18 @@ class SudoEmailBlockAddressesTest : BaseTests() {
         mock<S3Client>()
     }
 
+    private val mockEmailMessageProcessor by before {
+        mock<Rfc822MessageDataProcessor>()
+    }
+
     private val mockSealingService by before {
         mock<SealingService>().stub {
             on { sealString(any(), any()) } doReturn "sealString".toByteArray()
         }
+    }
+
+    private val mockEmailCryptoService by before {
+        mock<EmailCryptoService>()
     }
 
     private val client by before {
@@ -157,7 +168,9 @@ class SudoEmailBlockAddressesTest : BaseTests() {
             mockUserClient,
             mockLogger,
             mockDeviceKeyManager,
+            mockEmailMessageProcessor,
             mockSealingService,
+            mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
@@ -181,15 +194,18 @@ class SudoEmailBlockAddressesTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
+            mockDeviceKeyManager,
             mockAppSyncClient,
             mockS3Client,
-            mockDeviceKeyManager,
+            mockEmailMessageProcessor,
+            mockSealingService,
+            mockEmailCryptoService,
         )
     }
 
     @Test
     fun `blockEmailAddresses() should throw an InvalidInputException if passed an empty array`() =
-        runBlocking<Unit> {
+        runBlocking {
             callbackHolder.callback shouldBe null
             val addresses = emptyList<String>()
 
@@ -223,6 +239,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
 
             delay(100L)
             verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSealingService).sealString(any(), any())
             verify(mockUserClient).getSubject()
         }
 
@@ -264,6 +281,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
             },
         )
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockSealingService, times(2)).sealString(any(), any())
         verify(mockUserClient).getSubject()
     }
 
@@ -326,6 +344,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
                 },
             )
             verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSealingService, times(2)).sealString(any(), any())
             verify(mockUserClient).getSubject()
         }
 
@@ -393,6 +412,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
             },
         )
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockSealingService, times(2)).sealString(any(), any())
         verify(mockUserClient).getSubject()
     }
 
@@ -438,6 +458,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
                 },
             )
             verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSealingService, times(2)).sealString(any(), any())
             verify(mockUserClient).getSubject()
         }
 }

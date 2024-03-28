@@ -12,7 +12,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageParser
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.string.shouldMatch
 import io.kotlintest.shouldNotBe
@@ -57,7 +57,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
         )
@@ -81,7 +81,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
         )

@@ -113,13 +113,16 @@ class DeviceKeyManagerRoboTest : BaseTests() {
 
         deviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
 
+        val privateKeyExists = deviceKeyManager.privateKeyExists(newKeyPair.keyId)
+        privateKeyExists shouldBe true
+
         val clearData = "hello world".toByteArray()
-        var secretData = keyManager.encryptWithPublicKey(
+        var secretData = deviceKeyManager.encryptWithKeyPairId(
             newKeyPair.keyId,
             clearData,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
-        var decryptedData = deviceKeyManager.decryptWithPrivateKey(
+        var decryptedData = deviceKeyManager.decryptWithKeyPairId(
             secretData,
             newKeyPair.keyId,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
@@ -127,12 +130,24 @@ class DeviceKeyManagerRoboTest : BaseTests() {
         decryptedData shouldBe clearData
 
         keyManager.generateSymmetricKey("symmetricKey")
-        val symmetricKey = keyManager.getSymmetricKeyData("symmetricKey")
+        val symmetricKey = deviceKeyManager.getSymmetricKeyData("symmetricKey")
         symmetricKey shouldNotBe null
-        secretData = keyManager.encryptWithSymmetricKey("symmetricKey", clearData)
+        secretData = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
 
         decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, secretData)
         decryptedData shouldBe clearData
+
+        // Encrypt/decrypt with IV
+        val randomData = deviceKeyManager.createRandomData(16)
+        randomData shouldNotBe null
+
+        val symmetricKeyExists = deviceKeyManager.symmetricKeyExists("symmetricKey")
+        symmetricKeyExists shouldBe true
+
+        val clearData2 = "hello world2".toByteArray()
+        val secretData2 = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData2, randomData)
+        val decryptedData2 = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData2, randomData)
+        decryptedData2 shouldBe clearData2
     }
 
     @Test

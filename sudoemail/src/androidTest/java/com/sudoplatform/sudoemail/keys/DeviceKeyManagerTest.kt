@@ -41,7 +41,7 @@ class DeviceKeyManagerTest {
 
     private val keyRingServiceName = "sudo-email"
 
-    val context: Context = ApplicationProvider.getApplicationContext<Context>()
+    private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val userClient by lazy {
         SudoUserClient.builder(BaseIntegrationTest.context)
@@ -177,29 +177,32 @@ class DeviceKeyManagerTest {
             keyRingId shouldStartWith keyRingServiceName
             keyId.isBlank() shouldBe false
             publicKey shouldNotBe null
-            publicKey?.size?.shouldBeGreaterThan(0)
+            publicKey.size.shouldBeGreaterThan(0)
             privateKey shouldNotBe null
-            privateKey?.size?. shouldBeGreaterThan(0)
+            privateKey.size.shouldBeGreaterThan(0)
         }
 
         val newKeyPair = deviceKeyManager.generateKeyPair()
         newKeyPair shouldNotBe null
         newKeyPair shouldNotBe keyPair
 
-        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(newKeyPair!!.keyId)
+        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
         fetchedKeyPair shouldNotBe null
         fetchedKeyPair shouldNotBe keyPair
         fetchedKeyPair shouldBe newKeyPair
 
         deviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
 
+        val privateKeyExists = deviceKeyManager.privateKeyExists(newKeyPair.keyId)
+        privateKeyExists shouldBe true
+
         val clearData = "hello world".toByteArray()
-        var secretData = keyManager.encryptWithPublicKey(
+        val secretData = deviceKeyManager.encryptWithKeyPairId(
             newKeyPair.keyId,
             clearData,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
-        var decryptedData = deviceKeyManager.decryptWithPrivateKey(
+        var decryptedData = deviceKeyManager.decryptWithKeyPairId(
             secretData,
             newKeyPair.keyId,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
@@ -208,11 +211,23 @@ class DeviceKeyManagerTest {
 
         keyManager.deleteSymmetricKey("symmetricKey")
         keyManager.generateSymmetricKey("symmetricKey")
-        val symmetricKey = keyManager.getSymmetricKeyData("symmetricKey")
-        val symmetricSecretData = keyManager.encryptWithSymmetricKey("symmetricKey", clearData)
+        val symmetricKey = deviceKeyManager.getSymmetricKeyData("symmetricKey")
+        val symmetricSecretData = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
 
         decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, symmetricSecretData)
         decryptedData shouldBe clearData
+
+        // Encrypt/decrypt with IV
+        val randomData = deviceKeyManager.createRandomData(16)
+        randomData shouldNotBe null
+
+        val symmetricKeyExists = deviceKeyManager.symmetricKeyExists("symmetricKey")
+        symmetricKeyExists shouldBe true
+
+        val clearData2 = "hello world2".toByteArray()
+        val secretData2 = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData2, randomData)
+        val decryptedData2 = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData2, randomData)
+        decryptedData2 shouldBe clearData2
 
         // exportKeys and importKeys
         val exportedKeys = deviceKeyManager.exportKeys()
@@ -226,7 +241,7 @@ class DeviceKeyManagerTest {
             )
         }
         deviceKeyManager.importKeys(exportedKeys)
-        decryptedData = deviceKeyManager.decryptWithPrivateKey(
+        decryptedData = deviceKeyManager.decryptWithKeyPairId(
             secretData,
             newKeyPair.keyId,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,

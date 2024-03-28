@@ -15,9 +15,11 @@ import com.sudoplatform.sudoemail.graphql.fragment.UnblockAddressesResult
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.sealing.SealingService
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.fail
@@ -108,8 +110,16 @@ class SudoEmailUnblockEmailAddressesByHashedValueTest : BaseTests() {
         mock<S3Client>()
     }
 
+    private val mockEmailMessageProcessor by before {
+        mock<Rfc822MessageDataProcessor>()
+    }
+
     private val mockSealingService by before {
         mock<SealingService>()
+    }
+
+    private val mockEmailCryptoService by before {
+        mock<EmailCryptoService>()
     }
 
     private val client by before {
@@ -119,7 +129,9 @@ class SudoEmailUnblockEmailAddressesByHashedValueTest : BaseTests() {
             mockUserClient,
             mockLogger,
             mockDeviceKeyManager,
+            mockEmailMessageProcessor,
             mockSealingService,
+            mockEmailCryptoService,
             "region",
             "emailBucket",
             "transientBucket",
@@ -143,9 +155,12 @@ class SudoEmailUnblockEmailAddressesByHashedValueTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
+            mockDeviceKeyManager,
             mockAppSyncClient,
             mockS3Client,
-            mockDeviceKeyManager,
+            mockEmailMessageProcessor,
+            mockSealingService,
+            mockEmailCryptoService,
         )
     }
 

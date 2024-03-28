@@ -7,7 +7,6 @@
 package com.sudoplatform.sudoemail.types
 
 import android.os.Parcelable
-import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import kotlinx.parcelize.Parcelize
 import java.util.Date
 
@@ -25,19 +24,21 @@ data class DraftEmailMessageWithContent(
     override val updatedAt: Date,
     val rfc822Data: ByteArray,
 ) : Parcelable, DraftEmailMessage {
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as SendEmailMessageInput
+        other as DraftEmailMessageWithContent
 
-        if (!rfc822Data.contentEquals(other.rfc822Data)) return false
-
-        return true
+        if (id != other.id) return false
+        if (updatedAt != other.updatedAt) return false
+        return rfc822Data.contentEquals(other.rfc822Data)
     }
 
     override fun hashCode(): Int {
-        return rfc822Data.contentHashCode()
+        var result = id.hashCode()
+        result = 31 * result + updatedAt.hashCode()
+        result = 31 * result + rfc822Data.contentHashCode()
+        return result
     }
 }

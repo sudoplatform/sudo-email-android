@@ -13,7 +13,7 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageParser
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
@@ -55,7 +55,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
             subject = "Test Draft",
@@ -72,13 +72,13 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         val draftEmailMessage = emailClient.getDraftEmailMessage(input)
 
         draftEmailMessage.id shouldBe draftId
-        val parsedMessage = Rfc822MessageParser.parseRfc822Data(draftEmailMessage.rfc822Data)
+        val parsedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(draftEmailMessage.rfc822Data)
 
         parsedMessage.to shouldContain emailAddress.emailAddress
         parsedMessage.from shouldContain emailAddress.emailAddress
         parsedMessage.subject shouldBe "Test Draft"
 
-        val updatedRfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val updatedRfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = parsedMessage.from[0],
             to = listOf(parsedMessage.to[0]),
             subject = "Test Draft updated",
@@ -98,7 +98,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         updatedDraftMessage.id shouldBe draftId
         updatedDraftMessage.updatedAt.time shouldBeGreaterThan draftEmailMessage.updatedAt.time
 
-        val parsedUpdatedDraftEmailMessage = Rfc822MessageParser.parseRfc822Data(updatedDraftMessage.rfc822Data)
+        val parsedUpdatedDraftEmailMessage = Rfc822MessageDataProcessor().parseInternetMessageData(updatedDraftMessage.rfc822Data)
 
         parsedUpdatedDraftEmailMessage.to shouldContain emailAddress.emailAddress
         parsedUpdatedDraftEmailMessage.from shouldContain emailAddress.emailAddress

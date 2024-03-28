@@ -93,6 +93,16 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
+    fun generateRandomSymmetricKeyShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { generateSymmetricKey(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
+            deviceKeyManager.generateRandomSymmetricKey()
+        }
+    }
+
+    @Test
     fun generateNewCurrentSymmetricKeyShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
             on { deletePassword(anyString()) } doThrow KeyManagerException("mock")
@@ -103,14 +113,58 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
-    fun decryptWithPrivateKeyShouldThrowIfKeyManagerThrows() {
+    fun symmetricKeyExistsShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { getSymmetricKeyData(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            deviceKeyManager.symmetricKeyExists("42")
+        }
+    }
+
+    @Test
+    fun privateKeyExistsShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { getPrivateKeyData(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            deviceKeyManager.privateKeyExists("42")
+        }
+    }
+
+    @Test
+    fun getSymmetricKeyDataShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { getSymmetricKeyData(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            deviceKeyManager.getSymmetricKeyData("42")
+        }
+    }
+
+    @Test
+    fun decryptWithKeyPairIdShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
-            deviceKeyManager.decryptWithPrivateKey(
+            deviceKeyManager.decryptWithKeyPairId(
                 ByteArray(42),
                 "42",
+                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+            )
+        }
+    }
+
+    @Test
+    fun encryptWithKeyPairIdShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { encryptWithPublicKey(anyString(), any(), any()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
+            deviceKeyManager.encryptWithKeyPairId(
+                "42",
+                ByteArray(42),
                 KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
             )
         }
@@ -123,6 +177,20 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
             deviceKeyManager.decryptWithSymmetricKey(
+                ByteArray(42),
+                ByteArray(42),
+            )
+        }
+    }
+
+    @Test
+    fun decryptWithSymmetricKeyWithIVShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
+            deviceKeyManager.decryptWithSymmetricKey(
+                ByteArray(42),
                 ByteArray(42),
                 ByteArray(42),
             )
@@ -150,6 +218,47 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
             deviceKeyManager.encryptWithSymmetricKeyId(
                 "42",
+                ByteArray(42),
+            )
+        }
+    }
+
+    @Test
+    fun encryptWithSymmetricKeyIdWithIVShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { encryptWithSymmetricKey(anyString(), any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
+            deviceKeyManager.encryptWithSymmetricKeyId(
+                "42",
+                ByteArray(42),
+                ByteArray(42),
+            )
+        }
+    }
+
+    @Test
+    fun encryptWithSymmetricKeyShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { encryptWithSymmetricKey(any<ByteArray>(), any()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
+            deviceKeyManager.encryptWithSymmetricKey(
+                ByteArray(42),
+                ByteArray(42),
+            )
+        }
+    }
+
+    @Test
+    fun encryptWithSymmetricKeyWithIVShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { encryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
+            deviceKeyManager.encryptWithSymmetricKey(
+                ByteArray(42),
+                ByteArray(42),
                 ByteArray(42),
             )
         }

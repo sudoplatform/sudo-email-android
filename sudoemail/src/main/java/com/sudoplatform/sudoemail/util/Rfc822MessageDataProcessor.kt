@@ -7,6 +7,7 @@
 package com.sudoplatform.sudoemail.util
 
 import android.os.Parcelable
+import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EncryptionStatus
 import jakarta.activation.DataHandler
@@ -34,6 +35,8 @@ data class SimplifiedEmailMessage(
     val bcc: List<String>,
     val subject: String?,
     val body: String?,
+    val attachments: List<EmailAttachment> = emptyList(),
+    val inlineAttachments: List<EmailAttachment> = emptyList(),
 ) : Parcelable
 
 private const val EMAIL_HEADER_NAME_ENCRYPTION = "X-Sudoplatform-Encryption"
@@ -42,23 +45,24 @@ private const val PLATFORM_ENCRYPTION = "sudoplatform"
 private const val CANNED_TEXT_BODY = "Encrypted message attached"
 
 /**
- * A class which handles the encoding and parsing of the RFC 822 compatible email message content.
+ * A class which handles the processing of email message data which includes the encoding and
+ * parsing of the RFC 822 compatible email message content.
  */
-object Rfc822MessageParser {
+class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
 
     private val session = Session.getInstance(Properties())
 
     @Throws(MessagingException::class, IOException::class)
-    fun encodeToRfc822Data(
+    override fun encodeToInternetMessageData(
         from: String,
         to: List<String>,
-        cc: List<String>? = null,
-        bcc: List<String>? = null,
-        subject: String? = null,
-        body: String? = null,
-        attachments: List<EmailAttachment>? = null,
-        inlineAttachments: List<EmailAttachment>? = null,
-        encryptionStatus: EncryptionStatus = EncryptionStatus.UNENCRYPTED,
+        cc: List<String>?,
+        bcc: List<String>?,
+        subject: String?,
+        body: String?,
+        attachments: List<EmailAttachment>?,
+        inlineAttachments: List<EmailAttachment>?,
+        encryptionStatus: EncryptionStatus,
     ): ByteArray {
         val message = MimeMessage(session)
         message.setFrom(InternetAddress(from))
@@ -86,6 +90,7 @@ object Rfc822MessageParser {
                 messageBodyPart.setText(CANNED_TEXT_BODY, "UTF-8")
                 topMultiPart.addBodyPart(messageBodyPart)
             }
+
             else -> {
                 messageBodyPart.setText(bodyText, "UTF-8")
                 messageBodyPart.setHeader("Content-Transfer-Encoding", "QUOTED-PRINTABLE")
@@ -125,11 +130,8 @@ object Rfc822MessageParser {
         return byteOutputStream.toByteArray()
     }
 
-    /**
-     * Parse and RFC 822 compatible email message.
-     */
     @Throws(MessagingException::class, IOException::class)
-    fun parseRfc822Data(rfc822Data: ByteArray): SimplifiedEmailMessage {
+    override fun parseInternetMessageData(rfc822Data: ByteArray): SimplifiedEmailMessage {
         val rfc822Input = ByteArrayInputStream(rfc822Data)
         val javaMailMessage = LocalMimeMessage(session, rfc822Input)
         return toSimplifiedEmailMessage(javaMailMessage)
@@ -171,6 +173,24 @@ object Rfc822MessageParser {
                         if (bodyPart.contentType.contains("text/plain")) {
                             appendLine("    Content: ${bodyPart.content}")
                         }
+                        val disposition = bodyPart.disposition
+                        if (disposition != null && (disposition.equals(Part.ATTACHMENT, true))) {
+                            val attachmentDateSource = bodyPart.dataHandler.dataSource
+                            val contentId = bodyPart.getHeader("Content-ID")
+                            appendLine("    Attachment: ${bodyPart.fileName}")
+                            appendLine("    Content-Disposition: ${bodyPart.disposition}")
+                            appendLine("    Content-Type: ${bodyPart.contentType}")
+                            appendLine("    Content-ID: $contentId")
+                        }
+                        if (disposition != null && (bodyPart.disposition.equals(Part.INLINE, true))) {
+                            val contentId = bodyPart.getHeader("Content-ID")
+                            if (contentId != null) {
+                                appendLine("    Inline Attachment: ${bodyPart.fileName}")
+                                appendLine("    Content-Disposition: ${bodyPart.disposition}")
+                                appendLine("    Content-Type: ${bodyPart.contentType}")
+                                appendLine("    Content-ID: $contentId")
+                            }
+                        }
                         appendLine("  ]")
                     }
                     appendLine("]")
@@ -187,6 +207,8 @@ object Rfc822MessageParser {
         val bcc = message.getRecipients(Message.RecipientType.BCC)?.map { it.toString() } ?: emptyList()
 
         val body: String
+        val attachments: MutableList<EmailAttachment> = mutableListOf()
+        val inlineAttachments: MutableList<EmailAttachment> = mutableListOf()
         if (message.isMimeType("text/plain")) {
             body = buildString { append(message) }
         } else {
@@ -204,6 +226,24 @@ object Rfc822MessageParser {
                                 append(mimeBodyPart.content)
                             }
                         }
+                    } else if (
+                        bodyPart.isMimeType(SecureEmailAttachmentType.KEY_EXCHANGE.mimeType) ||
+                        bodyPart.isMimeType(SecureEmailAttachmentType.BODY.mimeType)
+                    ) {
+                        val secureAttachmentPart = multipart.getBodyPart(i)
+                        val disposition = secureAttachmentPart.disposition
+                        if (disposition != null) {
+                            var contentId = secureAttachmentPart.getHeader("Content-ID").first()
+                            contentId = contentId.replace("<", "").replace(">", "")
+                            val attachment = EmailAttachment(
+                                secureAttachmentPart.fileName,
+                                contentId,
+                                secureAttachmentPart.contentType,
+                                false,
+                                secureAttachmentPart.inputStream.readBytes(),
+                            )
+                            attachments.add(attachment)
+                        }
                     }
                 }
             }
@@ -215,6 +255,8 @@ object Rfc822MessageParser {
             bcc,
             message.subject,
             body,
+            attachments.toList(),
+            inlineAttachments.toList(),
         )
     }
 }

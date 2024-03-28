@@ -12,7 +12,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageParser
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -92,7 +92,7 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         val createdDraftIds = mutableListOf<String>()
 
         for (i in 0 until 2) {
-            val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+            val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
                 to = listOf(emailAddress.emailAddress),
                 subject = "Draft $i",
@@ -122,7 +122,7 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         emailAddressList.add(emailAddress)
 
         for (i in 0 until 2) {
-            val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+            val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
                 to = listOf(emailAddress.emailAddress),
                 subject = "Draft $i",
@@ -135,7 +135,7 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
 
         result.size shouldBe 2
 
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
             subject = "New Draft",
@@ -165,7 +165,7 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         emailAddressList.add(emailAddress2)
 
         for (i in 0 until 2) {
-            val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+            val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
                 to = listOf(emailAddress.emailAddress),
                 subject = "Draft $i",
@@ -174,7 +174,7 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
             emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
         }
 
-        val rfc822Data = Rfc822MessageParser.encodeToRfc822Data(
+        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress2.emailAddress,
             to = listOf(emailAddress2.emailAddress),
             subject = "Not yours",
