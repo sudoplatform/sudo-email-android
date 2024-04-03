@@ -15,6 +15,7 @@ import com.sudoplatform.sudokeymanager.SecureKeyArchive
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
+import com.sudoplatform.sudouser.PublicKey
 import com.sudoplatform.sudouser.SudoUserClient
 import java.util.UUID
 
@@ -62,6 +63,18 @@ internal class DefaultDeviceKeyManager(
                 publicKey = publicKey,
                 privateKey = privateKey,
             )
+        } catch (e: KeyManagerException) {
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                "KeyManager exception",
+                e,
+            )
+        }
+    }
+
+    override fun getPublicKeyWithId(keyId: String): PublicKey? {
+        try {
+            val publicKey = keyManager.getPublicKey(keyId) ?: return null
+            return PublicKey(keyId, publicKey.encoded)
         } catch (e: KeyManagerException) {
             throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
                 "KeyManager exception",

@@ -111,6 +111,9 @@ class DeviceKeyManagerRoboTest : BaseTests() {
         fetchedKeyPair shouldNotBe keyPair
         fetchedKeyPair shouldBe newKeyPair
 
+        val fetchedPublicKey = deviceKeyManager.getPublicKeyWithId(keyPair.keyId)
+        fetchedPublicKey shouldNotBe null
+
         deviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
 
         val privateKeyExists = deviceKeyManager.privateKeyExists(newKeyPair.keyId)

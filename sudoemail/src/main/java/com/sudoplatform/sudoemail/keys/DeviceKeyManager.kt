@@ -7,6 +7,7 @@
 package com.sudoplatform.sudoemail.keys
 
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
+import com.sudoplatform.sudouser.PublicKey
 
 /**
  * Responsible for managing the local storage and lifecycle of key pairs associated with the email service.
@@ -60,6 +61,16 @@ internal interface DeviceKeyManager {
      */
     @Throws(DeviceKeyManagerException::class)
     fun getKeyPairWithId(id: String): KeyPair?
+
+    /**
+     * Returns the [PublicKey] with the identifier [keyId] if it exists.
+     *
+     * @param keyId [String] Identifier of the Public Key to retrieve.
+     * @return The [PublicKey] that matches [keyId] if it exists, null if it does not.
+     * @throws [DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException] if key operation fails.
+     */
+    @Throws(DeviceKeyManagerException::class)
+    fun getPublicKeyWithId(keyId: String): PublicKey?
 
     /**
      * Returns a new [KeyPair].

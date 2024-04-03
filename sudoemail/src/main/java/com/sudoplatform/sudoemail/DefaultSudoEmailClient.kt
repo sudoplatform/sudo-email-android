@@ -55,6 +55,7 @@ import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
+import com.sudoplatform.sudoemail.keys.KeyPair
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -225,6 +226,7 @@ internal class DefaultSudoEmailClient(
         private const val LIMIT_EXCEEDED_ERROR_MSG = "Input cannot exceed $ID_REQUEST_LIMIT"
         private const val INVALID_ARGUMENT_ERROR_MSG = "Invalid input"
         private const val SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG = "Symmetric key not found"
+        private const val PUBLIC_KEY_NOT_FOUND_ERROR_MSG = "Public Key not found"
         private const val S3_KEY_ID_ERROR_MSG = "No sealed keyId associated with s3 object"
         private const val S3_ALGORITHM_ERROR_MSG = "No sealed algorithm associated with s3 object"
         private const val S3_NOT_FOUND_ERROR_CODE = "404 Not Found"
@@ -276,13 +278,19 @@ internal class DefaultSudoEmailClient(
             if (symmetricKeyId == null) {
                 this.deviceKeyManager.generateNewCurrentSymmetricKey()
             }
-            val keyPair = this.deviceKeyManager.generateKeyPair()
 
+            val keyPair: KeyPair = if (input.keyId != null) {
+                val id = input.keyId.toString()
+                this.deviceKeyManager.getKeyPairWithId(id) ?: throw KeyNotFoundException(PUBLIC_KEY_NOT_FOUND_ERROR_MSG)
+            } else {
+                this.deviceKeyManager.generateKeyPair()
+            }
             val keyInput = ProvisionEmailAddressPublicKeyInput.builder()
                 .keyId(keyPair.keyId)
                 .publicKey(Base64.encodeAsString(*keyPair.publicKey))
                 .algorithm("RSAEncryptionOAEPAESCBC")
                 .build()
+
             val mutationInput = ProvisionEmailAddressRequest.builder()
                 .emailAddress(input.emailAddress)
                 .ownershipProofTokens(listOf(input.ownershipProofToken))
@@ -378,7 +386,6 @@ internal class DefaultSudoEmailClient(
             val mutation = UpdateEmailAddressMetadataMutation.builder()
                 .input(mutationInput)
                 .build()
-
             val mutationResponse = appSyncClient.mutate(mutation)
                 .enqueue()
 
@@ -1617,7 +1624,7 @@ internal class DefaultSudoEmailClient(
         }
 
         val symmetricKeyId = this.deviceKeyManager.getCurrentSymmetricKeyId()
-            ?: throw KeyNotFoundException("No symmetric key found")
+            ?: throw KeyNotFoundException(SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG)
 
         val owner = this.sudoUserClient.getSubject()
             ?: throw AuthenticationException.NotSignedInException()
@@ -2028,6 +2035,7 @@ internal class DefaultSudoEmailClient(
         return when (e) {
             is CancellationException,
             is SudoEmailClient.EmailAddressException,
+            is KeyNotFoundException,
             -> e
 
             is Unsealer.UnsealerException ->

@@ -83,6 +83,16 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     }
 
     @Test
+    fun getPublicKeyWithIdShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { getPublicKey(anyString()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            deviceKeyManager.getPublicKeyWithId("notAnId")
+        }
+    }
+
+    @Test
     fun getCurrentSymmetricKeyIdShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
             on { getPassword(anyString()) } doThrow KeyManagerException("mock")

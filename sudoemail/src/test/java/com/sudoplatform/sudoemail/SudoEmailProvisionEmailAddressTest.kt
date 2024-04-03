@@ -24,6 +24,7 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
+import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -426,6 +427,31 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             },
         )
         verify(mockDeviceKeyManager).generateKeyPair()
+        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+    }
+
+    @Test
+    fun `provisionEmailAddress() should throw if key manager returns null key pair`() = runBlocking<Unit> {
+        mockDeviceKeyManager.stub {
+            on { getKeyPairWithId(anyString()) } doReturn null
+        }
+
+        val input = ProvisionEmailAddressInput(
+            "example@sudoplatform.com",
+            "ownershipProofToken",
+            keyId = "invalidKeyId",
+        )
+        val deferredResult = async(Dispatchers.IO) {
+            shouldThrow<KeyNotFoundException> {
+                client.provisionEmailAddress(input)
+            }
+        }
+        deferredResult.start()
+        delay(100L)
+
+        deferredResult.await()
+
+        verify(mockDeviceKeyManager).getKeyPairWithId(anyString())
         verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
     }
 

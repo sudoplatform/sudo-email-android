@@ -13,9 +13,11 @@ package com.sudoplatform.sudoemail.types.inputs
  * @property ownershipProofToken [String] Proof of sudo ownership for provisioning an email address.
  *  The ownership proof must contain an audience of "sudoplatform.email.email-address".
  * @property alias [String] An optional user defined alias name for the the email address.
+ * @property keyId [String] An optional id of the Public Key to provision the email address with.
  */
 data class ProvisionEmailAddressInput(
     val emailAddress: String,
     val ownershipProofToken: String,
     val alias: String? = null,
+    val keyId: String? = null,
 )

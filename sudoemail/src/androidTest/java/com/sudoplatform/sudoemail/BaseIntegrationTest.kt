@@ -237,6 +237,7 @@ abstract class BaseIntegrationTest {
         ownershipProofToken: String,
         address: String? = null,
         alias: String? = null,
+        keyId: String? = null,
     ): EmailAddress {
         val emailDomains = client.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
         emailDomains.size shouldBeGreaterThanOrEqual 1
@@ -247,6 +248,7 @@ abstract class BaseIntegrationTest {
             emailAddress = emailAddress,
             ownershipProofToken = ownershipProofToken,
             alias = alias,
+            keyId = keyId,
         )
         return client.provisionEmailAddress(provisionInput)
     }
