@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail
 
 import android.content.Context
 import android.net.Uri
+import android.os.StrictMode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.sudoplatform.sudoemail.types.CachePolicy
@@ -164,11 +165,19 @@ abstract class BaseIntegrationTest {
         @BeforeClass @JvmStatic
         fun init() {
             Timber.plant(Timber.DebugTree())
-
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .build(),
+            )
             if (verbose) {
                 Logger.getLogger("com.amazonaws").level = java.util.logging.Level.FINEST
                 Logger.getLogger("org.apache.http").level = java.util.logging.Level.FINEST
             }
+
+            sudoClient.reset()
+            userClient.reset()
 
             sudoClient.generateEncryptionKey()
             emailClient = SudoEmailClient.builder()

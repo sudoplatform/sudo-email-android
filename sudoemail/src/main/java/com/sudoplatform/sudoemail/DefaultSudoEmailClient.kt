@@ -1185,11 +1185,12 @@ internal class DefaultSudoEmailClient(
                 when (value.trim().lowercase()) {
                     COMPRESSION_CONTENT_ENCODING -> {
                         decodedBytes = Base64.decode(decodedBytes)
-                        val bais = ByteArrayInputStream(decodedBytes)
-                        decodedBytes = withContext(Dispatchers.IO) {
-                            GZIPInputStream(bais).readBytes()
+                        val unzippedInputStream = GZIPInputStream(ByteArrayInputStream(decodedBytes))
+                        unzippedInputStream.use {
+                            decodedBytes = withContext(Dispatchers.IO) {
+                                unzippedInputStream.readBytes()
+                            }
                         }
-                        bais.close()
                     }
 
                     CRYPTO_CONTENT_ENCODING -> {
@@ -1272,11 +1273,12 @@ internal class DefaultSudoEmailClient(
                 when (value.trim().lowercase()) {
                     "sudoplatform-compression" -> {
                         decodedBytes = Base64.decode(decodedBytes)
-                        val bais = ByteArrayInputStream(decodedBytes)
-                        decodedBytes = withContext(Dispatchers.IO) {
-                            GZIPInputStream(bais).readBytes()
+                        val unzippedInputStream = GZIPInputStream(ByteArrayInputStream(decodedBytes))
+                        unzippedInputStream.use {
+                            decodedBytes = withContext(Dispatchers.IO) {
+                                unzippedInputStream.readBytes()
+                            }
                         }
-                        bais.close()
                     }
 
                     "sudoplatform-crypto" -> {

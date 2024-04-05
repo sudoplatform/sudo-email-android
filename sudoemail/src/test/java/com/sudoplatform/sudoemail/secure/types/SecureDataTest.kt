@@ -1,0 +1,54 @@
+/*
+ * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.sudoplatform.sudoemail.secure.types
+
+import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
+import okio.ByteString.Companion.toByteString
+import org.junit.Test
+import java.util.Base64
+
+/**
+ * Test the correct operation of the methods for the [SecureData] type.
+ */
+class SecureDataTest {
+
+    private val encryptedDataString = "encryptedData"
+    private val initVectorDataString = "initVectorData"
+
+    @Test
+    fun `toJson() should encode SecureData correctly`() {
+        val encryptedData = Base64.getEncoder().encodeToString(encryptedDataString.toByteArray())
+        val initVectorData = Base64.getEncoder().encodeToString(initVectorDataString.toByteArray())
+
+        val secureData = SecureData(encryptedDataString.toByteArray().toByteString(), initVectorDataString.toByteArray().toByteString())
+
+        val encodedSecureData = secureData.toJson()
+        encodedSecureData shouldBe
+            """{"${SecureData.ENCRYPTED_DATA_JSON}":"$encryptedData","${SecureData.INIT_VECTOR_DATA_JSON}":"$initVectorData"}"""
+                .trimIndent()
+    }
+
+    @Test
+    fun `fromJson() should decode to SecureData correctly`() {
+        val encryptedData = Base64.getEncoder().encodeToString(encryptedDataString.toByteArray())
+        val initVectorData = Base64.getEncoder().encodeToString(initVectorDataString.toByteArray())
+
+        val jsonString = """{
+            "encryptedData": "$encryptedData",
+            "initVectorData": "$initVectorData"
+        }"""
+        val jsonData = jsonString.toByteArray().toByteString()
+
+        val secureData = SecureData.fromJson(jsonData)
+        with(secureData) {
+            shouldNotBe(null)
+            secureData.encryptedData.utf8() shouldBe "encryptedData"
+            secureData.initVectorData.utf8() shouldBe "initVectorData"
+        }
+    }
+}

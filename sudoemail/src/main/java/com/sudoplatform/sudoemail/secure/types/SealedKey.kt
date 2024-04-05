@@ -34,7 +34,7 @@ internal data class SealedKey(
     var encryptedKey: ByteString = ByteString.EMPTY
 
     /**
-     * Encode the [SecureData] object as a JSON object.
+     * Encode the [SealedKey] object as a JSON object.
      *
      * @return The JSON encoded version of this object.
      */
