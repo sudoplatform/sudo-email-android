@@ -8,6 +8,8 @@ package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
+import com.amazonaws.services.s3.model.AmazonS3Exception
+import com.amazonaws.services.s3.model.ObjectMetadata
 import com.apollographql.apollo.api.Response
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
@@ -16,17 +18,12 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.s3.S3Exception
-import com.sudoplatform.sudoemail.secure.DefaultSealingService
+import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.types.BatchOperationResult
-import com.sudoplatform.sudoemail.types.BatchOperationStatus
-import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import io.kotlintest.fail
-import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -35,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -43,19 +41,40 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
+import java.util.Date
 
 /**
- * Test the correct operation of [SudoEmailClient.deleteDraftEmailMessages]
+ * Test the correct operation of [SudoEmailClient.listDraftEmailMessagesForEmailAddressId]
  * using mocks and spies.
  */
 @RunWith(RobolectricTestRunner::class)
-class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
+class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
+
+    private fun mockSeal(value: String): String {
+        val valueBytes = value.toByteArray()
+        val data = ByteArray(256)
+        valueBytes.copyInto(data)
+        return Base64.encodeBase64String(data)
+    }
+
+    private val unsealedHeaderDetailsString =
+        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
+            "[{\"emailAddress\":\"foobar@unittest.org\"}],\"replyTo\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"subject\":" +
+            "\"testSubject\",\"hasAttachments\":false}"
+
+    private val mockUserMetadata = listOf(
+        "keyId" to "keyId",
+        "algorithm" to "algorithm",
+    ).toMap()
+
+    private val mockS3ObjectMetadata = ObjectMetadata()
 
     private val owners by before {
         listOf(EmailAddressWithoutFolders.Owner("typename", "ownerId", "issuer"))
@@ -120,12 +139,12 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         )
     }
 
-    private val input by before {
+    private val mockEmailAddressIdInput by before {
         "emailAddressId"
     }
 
     private val emailAddressQueryResponse by before {
-        Response.builder<GetEmailAddressQuery.Data>(GetEmailAddressQuery(input))
+        Response.builder<GetEmailAddressQuery.Data>(GetEmailAddressQuery(mockEmailAddressIdInput))
             .data(GetEmailAddressQuery.Data(emailAddressResult))
             .build()
     }
@@ -142,12 +161,18 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
 
     private val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
-            on { encryptWithSymmetricKey(anyString(), any()) } doReturn ByteArray(42)
+            on { decryptWithPrivateKey(anyString(), any(), any()) } doReturn ByteArray(42)
+            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn unsealedHeaderDetailsString.toByteArray()
         }
     }
 
     private val mockDeviceKeyManager by before {
-        DefaultDeviceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
+        DefaultDeviceKeyManager(
+            "keyRingService",
+            mockUserClient,
+            mockKeyManager,
+            mockLogger,
+        )
     }
 
     private val mockAppSyncClient by before {
@@ -156,11 +181,29 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         }
     }
 
+    private val timestamp by before {
+        Date()
+    }
+
+    private val mockDownloadResponse by before {
+        mockSeal("42").toByteArray(Charsets.UTF_8)
+    }
+
+    private val mockListObjectsResponse: List<S3ClientListOutput> by before {
+        listOf(S3ClientListOutput("id1", Date()), S3ClientListOutput("id2", Date()))
+    }
+
     private val mockS3Client by before {
         mock<S3Client>().stub {
             onBlocking {
-                delete(any())
-            } doReturn Unit
+                download(any())
+            } doReturn mockDownloadResponse
+            onBlocking {
+                getObjectMetadata(any())
+            } doReturn mockS3ObjectMetadata
+            onBlocking {
+                list(any(), any())
+            } doReturn mockListObjectsResponse
         }
     }
 
@@ -169,7 +212,9 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
     }
 
     private val mockSealingService by before {
-        DefaultSealingService(mockDeviceKeyManager, mockLogger)
+        mock<SealingService>().stub {
+            on { unsealString(any(), any()) } doReturn unsealedHeaderDetailsString.toByteArray()
+        }
     }
 
     private val mockEmailCryptoService by before {
@@ -197,6 +242,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
     @Before
     fun init() {
         holder.callback = null
+        mockS3ObjectMetadata.lastModified = timestamp
+        mockS3ObjectMetadata.userMetadata = mockUserMetadata
     }
 
     @After
@@ -207,12 +254,53 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             mockAppSyncClient,
             mockS3Client,
             mockEmailMessageProcessor,
+            mockSealingService,
             mockEmailCryptoService,
         )
     }
 
     @Test
-    fun `deleteDraftEmailMessages() should throw an error if email address not found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessagesForEmailAddressId() should return results when no error present`() = runBlocking<Unit> {
+        holder.callback shouldBe null
+
+        val emailAddressId = "emailAddressId"
+
+        val deferredResult = async(Dispatchers.IO) {
+            client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+        }
+
+        deferredResult.start()
+        delay(100L)
+
+        holder.callback shouldNotBe null
+        holder.callback?.onResponse(emailAddressQueryResponse)
+
+        val result = deferredResult.await()
+
+        result.size shouldBe 2
+        result[0].id shouldBe "id1"
+        result[0].updatedAt.time shouldBe timestamp.time
+        result[0].rfc822Data shouldNotBe null
+        result[1].id shouldBe "id2"
+        result[1].updatedAt.time shouldBe timestamp.time
+        result[1].rfc822Data shouldNotBe null
+
+        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockS3Client, times(2)).getObjectMetadata(anyString())
+        verify(mockS3Client, times(2)).download(anyString())
+        verify(mockS3Client).list(
+            check {
+                it shouldBe "transientBucket"
+            },
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockSealingService, times(2)).unsealString(anyString(), any())
+    }
+
+    @Test
+    fun `listDraftEmailMessagesForEmailAddressId() should throw an error if sender address not found`() = runBlocking<Unit> {
         holder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -222,7 +310,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         )
 
         val mockQuery by before {
-            GetEmailAddressQuery(input)
+            GetEmailAddressQuery(mockEmailAddressIdInput)
         }
 
         val nullEmailResponse by before {
@@ -232,15 +320,12 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 .build()
         }
 
-        val draftIds = listOf("mock-draft-id-1", "mock-draft-id-2")
-        val emailAddressId = "mock-email-address-id"
-        val deleteDraftEmailMessagesInput = DeleteDraftEmailMessagesInput(draftIds, emailAddressId)
-
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                client.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
+                client.listDraftEmailMessagesForEmailAddressId(mockEmailAddressIdInput)
             }
         }
+
         deferredResult.start()
         delay(100L)
 
@@ -253,164 +338,78 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `deleteDraftEmailMessages() should throw an error if input size exceeds rate limit`() = runBlocking<Unit> {
-        val draftIds = (0..11).map { i -> "mock-draft-id-$i" }
-        val emailAddressId = "mock-email-address-id"
-        val deleteDraftEmailMessagesInput = DeleteDraftEmailMessagesInput(draftIds, emailAddressId)
+    fun `listDraftEmailMessagesForEmailAddressId() should return an empty list if no drafts found`() = runBlocking<Unit> {
+        holder.callback shouldBe null
+
+        val emailAddressId = "emailAddressId"
+
+        mockS3Client.stub {
+            onBlocking {
+                list(anyString(), anyString())
+            } doReturn emptyList()
+        }
 
         val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-                client.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
-            }
+            client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
         }
+
         deferredResult.start()
         delay(100L)
+
+        holder.callback shouldNotBe null
+        holder.callback?.onResponse(emailAddressQueryResponse)
+
+        val result = deferredResult.await()
+        result.size shouldBe 0
+
+        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockS3Client).list(
+            check {
+                it shouldBe "transientBucket"
+            },
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+    }
+
+    @Test
+    fun `listDraftEmailMessagesForEmailAddressId() should throw an error if draft message is not found`() = runBlocking<Unit> {
+        holder.callback shouldBe null
+
+        val emailAddressId = "emailAddressId"
+
+        val error = AmazonS3Exception("Not found")
+        error.errorCode = "404 Not Found"
+        mockS3Client.stub {
+            onBlocking {
+                download(anyString())
+            } doThrow error
+        }
+
+        val deferredResult = async(Dispatchers.IO) {
+            shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
+                client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+            }
+        }
+
+        deferredResult.start()
+        delay(100L)
+
+        holder.callback shouldNotBe null
+        holder.callback?.onResponse(emailAddressQueryResponse)
+
         deferredResult.await()
-    }
-
-    @Test
-    fun `deleteDraftEmailMessages() should return success result if all operations succeeded`() = runBlocking {
-        holder.callback shouldBe null
-
-        val draftIds = listOf("mock-draft-id-1", "mock-draft-id-2")
-        val emailAddressId = "mock-email-address-id"
-        val deleteDraftEmailMessagesInput = DeleteDraftEmailMessagesInput(draftIds, emailAddressId)
-
-        val deferredResult = async(Dispatchers.IO) {
-            client.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
-        }
-
-        deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(emailAddressQueryResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        when (result) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
 
         verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
-        // S3 client delete method is called once per draft id
-        verify(mockS3Client).delete(
+        verify(mockS3Client).getObjectMetadata(anyString())
+        verify(mockS3Client).download(anyString())
+        verify(mockS3Client).list(
             check {
-                it shouldContain "$emailAddressId/draft/${draftIds[0]}"
+                it shouldBe "transientBucket"
             },
-        )
-        verify(mockS3Client).delete(
             check {
-                it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-            },
-        )
-    }
-
-    @Test
-    fun `deleteDraftEmailMessages() should return partial result if some operations failed`() = runBlocking {
-        holder.callback shouldBe null
-
-        val draftIds = listOf("mock-success-draft-id", "mock-failure-draft-id")
-        val emailAddressId = "mock-email-address-id"
-        val deleteDraftEmailMessagesInput = DeleteDraftEmailMessagesInput(draftIds, emailAddressId)
-
-        // Throw an exception from internal S3 client to provoke failure
-        whenever(
-            mockS3Client.delete(
-                check {
-                    it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-                },
-            ),
-        ).thenThrow(S3Exception.DeleteException("S3 delete failed"))
-
-        val deferredResult = async(Dispatchers.IO) {
-            client.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
-        }
-
-        deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(emailAddressQueryResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        when (result) {
-            is BatchOperationResult.PartialResult -> {
-                result.status shouldBe BatchOperationStatus.PARTIAL
-                result.successValues shouldContain draftIds[0]
-                result.failureValues shouldContain draftIds[1]
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
-
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
-        // S3 client delete method is called once per draft id
-        verify(mockS3Client).delete(
-            check {
-                it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-            },
-        )
-        verify(mockS3Client).delete(
-            check {
-                it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-            },
-        )
-    }
-
-    @Test
-    fun `deleteDraftEmailMessages() should return failure result if all operations failed`() = runBlocking {
-        holder.callback shouldBe null
-
-        val draftIds = listOf("mock-success-draft-id", "mock-failure-draft-id")
-        val emailAddressId = "mock-email-address-id"
-        val deleteDraftEmailMessagesInput = DeleteDraftEmailMessagesInput(draftIds, emailAddressId)
-
-        // Throw an exception from internal S3 client to provoke failure
-        whenever(mockS3Client.delete(any()))
-            .thenThrow(S3Exception.DeleteException("S3 delete failed"))
-
-        val deferredResult = async(Dispatchers.IO) {
-            client.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
-        }
-
-        deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(emailAddressQueryResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        when (result) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.FAILURE
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
-
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
-        // S3 client delete method is called once per draft id
-        verify(mockS3Client).delete(
-            check {
-                it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-            },
-        )
-        verify(mockS3Client).delete(
-            check {
-                it shouldContain "$emailAddressId/draft/${draftIds[1]}"
+                it shouldContain emailAddressId
             },
         )
     }

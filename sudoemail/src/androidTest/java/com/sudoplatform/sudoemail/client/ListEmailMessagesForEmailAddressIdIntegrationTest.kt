@@ -19,6 +19,7 @@ import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
+import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoprofiles.Sudo
@@ -103,6 +104,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
                 }
             } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
+        var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount * 2
 
         when (listEmailMessages) {
             is ListAPIResult.Success -> {

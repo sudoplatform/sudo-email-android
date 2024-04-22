@@ -18,6 +18,7 @@ import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EncryptionStatus
 import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.ListAPIResult
+import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
@@ -37,6 +38,7 @@ import org.awaitility.kotlin.untilCallTo
 import org.awaitility.kotlin.withPollInterval
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -82,6 +84,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -114,6 +117,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 outbound.size shouldBe messageCount
                 inbound.size shouldBe messageCount
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -148,6 +152,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -188,6 +193,8 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                     emailClient.listEmailMessages(listEmailMessagesInput)
                 }
             } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
+        var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount * 2
 
         when (listEmailMessages) {
             is ListAPIResult.Success -> {
@@ -200,6 +207,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 outbound.size shouldBe messageCount
                 inbound.size shouldBe messageCount
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -283,6 +291,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -324,6 +333,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -332,7 +342,11 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(emailClient, emailAddress, listOf(receiverEmailAddress.emailAddress))
+            emailId = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(receiverEmailAddress.emailAddress),
+            )
             emailId.isBlank() shouldBe false
         }
 
@@ -344,6 +358,8 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                     emailClient.listEmailMessages(listEmailMessagesInput)
                 }
             } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
+        var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
 
         when (listEmailMessages) {
             is ListAPIResult.Success -> {
@@ -356,6 +372,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 outbound.size shouldBe messageCount
                 inbound.size shouldBe messageCount
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -394,6 +411,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -447,6 +465,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 outbound.size shouldBe messageCount
                 inbound.size shouldBe messageCount
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -489,6 +508,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -521,6 +541,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -530,7 +551,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             ?: fail("Email message could not be found")
         with(retrievedEmailMessage) {
             from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.map { it.emailAddress } shouldContain(receiverEmailAddress.emailAddress)
+            to.map { it.emailAddress } shouldContain (receiverEmailAddress.emailAddress)
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
             encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
@@ -563,6 +584,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -593,6 +615,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -628,6 +651,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -657,6 +681,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.isEmpty() shouldBe false
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -670,6 +695,52 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
             encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
+        }
+    }
+
+    @Test
+    @Ignore("Ignore as this depends on the amount of memory on the simulator")
+    fun sendEncryptedEmailShouldThrowIfMessageIsTooLarge() = runBlocking<Unit> {
+        val configurationData = emailClient.getConfigurationData()
+        val emailMessageMaxOutboundMessageSize =
+            configurationData.emailMessageMaxOutboundMessageSize
+        val attachment = EmailAttachment(
+            fileName = "large-attachment.txt",
+            contentId = "",
+            mimeType = "text/plain",
+            inlineAttachment = false,
+            data = ByteArray(emailMessageMaxOutboundMessageSize),
+        )
+
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(emailAddress.emailAddress),
+                attachments = listOf(attachment),
+            )
         }
     }
 }

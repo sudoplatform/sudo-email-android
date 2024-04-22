@@ -10,10 +10,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.apollographql.apollo.api.Response
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.graphql.fragment.EmailConfigurationData
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.graphql.type.Rfc822HeaderInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
@@ -137,7 +139,11 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     }
 
     private val sendEncryptedMutationResponse by before {
-        Response.builder<SendEncryptedEmailMessageMutation.Data>(SendEncryptedEmailMessageMutation(sendEncryptedInput))
+        Response.builder<SendEncryptedEmailMessageMutation.Data>(
+            SendEncryptedEmailMessageMutation(
+                sendEncryptedInput,
+            ),
+        )
             .data(SendEncryptedEmailMessageMutation.Data(sendEncryptedMutationResult))
             .build()
     }
@@ -203,9 +209,33 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             .build()
     }
 
+    private val getConfigDataQueryResult by before {
+        GetEmailConfigQuery.GetEmailConfig(
+            "typeName",
+            GetEmailConfigQuery.GetEmailConfig.Fragments(
+                EmailConfigurationData(
+                    "typename",
+                    10,
+                    5,
+                    200,
+                    100,
+                    5,
+                    10,
+                ),
+            ),
+        )
+    }
+
+    private val getConfigDataQueryResponse by before {
+        Response.builder<GetEmailConfigQuery.Data>(GetEmailConfigQuery())
+            .data(GetEmailConfigQuery.Data(getConfigDataQueryResult))
+            .build()
+    }
+
     private val sendHolder = CallbackHolder<SendEmailMessageMutation.Data>()
     private val sendEncryptedHolder = CallbackHolder<SendEncryptedEmailMessageMutation.Data>()
     private val lookupPublicInfoHolder = CallbackHolder<LookupEmailAddressesPublicInfoQuery.Data>()
+    private val getConfigDataHolder = CallbackHolder<GetEmailConfigQuery.Data>()
 
     private val context by before {
         InstrumentationRegistry.getInstrumentation().targetContext
@@ -223,6 +253,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             on { mutate(any<SendEmailMessageMutation>()) } doReturn sendHolder.mutationOperation
             on { mutate(any<SendEncryptedEmailMessageMutation>()) } doReturn sendEncryptedHolder.mutationOperation
             on { query(any<LookupEmailAddressesPublicInfoQuery>()) } doReturn lookupPublicInfoHolder.queryOperation
+            on { query(any<GetEmailConfigQuery>()) } doReturn getConfigDataHolder.queryOperation
         }
     }
 
@@ -276,7 +307,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private val mockEmailCryptoService by before {
         mock<EmailCryptoService>().stub {
-            onBlocking { encrypt(any<ByteArray>(), any()) } doReturn SecurePackage(setOf(emailAttachment), emailAttachment)
+            onBlocking { encrypt(any<ByteArray>(), any()) } doReturn SecurePackage(
+                setOf(
+                    emailAttachment,
+                ),
+                emailAttachment,
+            )
         }
     }
 
@@ -318,617 +354,884 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `sendEmailMessage() should return results for non-E2E encrypted send when no error present`() = runBlocking {
-        val lookupPublicInfoQueryResult by before {
-            LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                "typename",
+    fun `sendEmailMessage() should return results for non-E2E encrypted send when no error present`() =
+        runBlocking {
+            val lookupPublicInfoQueryResult by before {
+                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
+                    "typename",
+                    emptyList(),
+                )
+            }
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
+                    .build()
+            }
+
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
+            lookupPublicInfoHolder.callback = null
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
                 emptyList(),
             )
-        }
-        val lookupPublicInfoResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-            )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                .build()
-        }
-
-        sendHolder.callback = null
-        sendEncryptedHolder.callback = null
-        lookupPublicInfoHolder.callback = null
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.sendEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
-
-        delay(100L)
-        sendHolder.callback shouldNotBe null
-        sendHolder.callback?.onResponse(sendMutationResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-        result.isBlank() shouldBe false
-
-        verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockEmailMessageProcessor).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client).delete(anyString())
-    }
-
-    @Test
-    fun `sendEmailMessage() should return results for non-E2E encrypted send with attachments when no error present`() = runBlocking {
-        val lookupPublicInfoQueryResult by before {
-            LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                "typename",
-                emptyList(),
-            )
-        }
-        val lookupPublicInfoResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-            )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                .build()
-        }
-
-        sendHolder.callback = null
-        sendEncryptedHolder.callback = null
-        lookupPublicInfoHolder.callback = null
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            listOf(emailAttachment),
-            listOf(emailAttachment),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.sendEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
-
-        delay(100L)
-        sendHolder.callback shouldNotBe null
-        sendHolder.callback?.onResponse(sendMutationResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-        result.isBlank() shouldBe false
-
-        verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockEmailMessageProcessor).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client).delete(anyString())
-    }
-
-    @Test
-    fun `sendEmailMessage() should return results for E2E encrypted send when no error present`() = runBlocking {
-        val lookupPublicInfoResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-            )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
-                .build()
-        }
-
-        sendHolder.callback = null
-        sendEncryptedHolder.callback = null
-        lookupPublicInfoHolder.callback = null
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.sendEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
-
-        delay(100L)
-        sendEncryptedHolder.callback shouldNotBe null
-        sendEncryptedHolder.callback?.onResponse(sendEncryptedMutationResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-        result.isBlank() shouldBe false
-
-        verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockEmailCryptoService).encrypt(
-            any(),
-            any(),
-        )
-        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client).delete(anyString())
-    }
-
-    @Test
-    fun `sendEmailMessage should return results for in-network and out-of-network recipient send when no error present`() = runBlocking {
-        sendHolder.callback = null
-        sendEncryptedHolder.callback = null
-        lookupPublicInfoHolder.callback = null
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.sendEmailMessage(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
-
-        delay(100L)
-        sendHolder.callback shouldNotBe null
-        sendHolder.callback?.onResponse(sendMutationResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-        result.isBlank() shouldBe false
-
-        verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockEmailMessageProcessor).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client).delete(anyString())
-    }
-
-    @Test
-    fun `sendEmailMessage() should throw when send email mutation response is null`() = runBlocking {
-        val lookupPublicInfoQueryResult by before {
-            LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                "typename",
-                emptyList(),
-            )
-        }
-        val lookupPublicInfoResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-            )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                .build()
-        }
-
-        val nullSendResponse by before {
-            Response.builder<SendEmailMessageMutation.Data>(SendEmailMessageMutation(sendInput))
-                .data(null)
-                .build()
-        }
-
-        sendHolder.callback = null
-        sendEncryptedHolder.callback = null
-        lookupPublicInfoHolder.callback = null
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+            val deferredResult = async(Dispatchers.IO) {
                 client.sendEmailMessage(input)
             }
-        }
-        deferredResult.start()
+            deferredResult.start()
 
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
-        delay(100L)
-        sendHolder.callback shouldNotBe null
-        sendHolder.callback?.onResponse(nullSendResponse)
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
 
-        deferredResult.await()
+            delay(100L)
+            sendHolder.callback shouldNotBe null
+            sendHolder.callback?.onResponse(sendMutationResponse)
 
-        verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockEmailMessageProcessor).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client).delete(anyString())
-    }
+            val result = deferredResult.await()
+            result shouldNotBe null
+            result.isBlank() shouldBe false
 
-    @Test
-    fun `sendEmailMessage() should throw when send encrypted email mutation response is null`() = runBlocking {
-        val lookupPublicInfoResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
             )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
-                .build()
-        }
-        val nullEncryptedSendResponse by before {
-            Response.builder<SendEncryptedEmailMessageMutation.Data>(SendEncryptedEmailMessageMutation(sendEncryptedInput))
-                .data(null)
-                .build()
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
         }
 
-        sendHolder.callback = null
-        sendEncryptedHolder.callback = null
-        lookupPublicInfoHolder.callback = null
+    @Test
+    fun `sendEmailMessage() should return results for non-E2E encrypted send with attachments when no error present`() =
+        runBlocking {
+            val lookupPublicInfoQueryResult by before {
+                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
+                    "typename",
+                    emptyList(),
+                )
+            }
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
+                    .build()
+            }
 
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
+            lookupPublicInfoHolder.callback = null
 
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                listOf(emailAttachment),
+                listOf(emailAttachment),
+            )
+            val deferredResult = async(Dispatchers.IO) {
                 client.sendEmailMessage(input)
             }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            sendHolder.callback shouldNotBe null
+            sendHolder.callback?.onResponse(sendMutationResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+            result.isBlank() shouldBe false
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
         }
-        deferredResult.start()
-
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
-
-        delay(100L)
-        sendEncryptedHolder.callback shouldNotBe null
-        sendEncryptedHolder.callback?.onResponse(nullEncryptedSendResponse)
-
-        deferredResult.await()
-
-        verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockEmailCryptoService).encrypt(
-            any(),
-            any(),
-        )
-        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client).delete(anyString())
-    }
 
     @Test
-    fun `sendEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockS3Client.stub {
-            onBlocking { upload(any(), anyString(), anyOrNull()) } doThrow CancellationException("mock")
-        }
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
-
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<CancellationException> {
-                client.sendEmailMessage(input)
+    fun `sendEmailMessage() should return results for E2E encrypted send when no error present`() =
+        runBlocking {
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
+                    .build()
             }
-        }
-        deferredResult.start()
 
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
+            lookupPublicInfoHolder.callback = null
 
-        deferredResult.await()
-
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockEmailMessageProcessor).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockS3Client).upload(any(), anyString(), anyOrNull())
-    }
-
-    @Test
-    fun `sendEmailMessage() should throw when non-E2E send response has various errors`() = runBlocking {
-        testSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>("InvalidEmailContents")
-        testSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>("UnauthorizedAddress")
-        testSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
-
-        verify(mockAppSyncClient, times(3)).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockAppSyncClient, times(3)).mutate(any<SendEmailMessageMutation>())
-        verify(mockEmailMessageProcessor, times(3)).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockS3Client, times(3)).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client, times(3)).delete(anyString())
-    }
-
-    @Test
-    fun `sendEmailMessage() should throw when E2E send response has various errors`() = runBlocking {
-        testEncryptedSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>("InvalidEmailContents")
-        testEncryptedSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>("UnauthorizedAddress")
-        testEncryptedSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
-
-        verify(mockAppSyncClient, times(3)).query(any<LookupEmailAddressesPublicInfoQuery>())
-        verify(mockAppSyncClient, times(3)).mutate(any<SendEncryptedEmailMessageMutation>())
-        verify(mockEmailMessageProcessor, times(6)).encodeToInternetMessageData(
-            anyString(),
-            any(),
-            any(),
-            any(),
-            anyString(),
-            anyString(),
-            any(),
-            any(),
-            any(),
-        )
-        verify(mockEmailCryptoService, times(3)).encrypt(
-            any(),
-            any(),
-        )
-        verify(mockS3Client, times(3)).upload(any(), anyString(), anyOrNull())
-        verify(mockS3Client, times(3)).delete(anyString())
-    }
-
-    private inline fun <reified T : Exception> testSendException(apolloError: String) = runBlocking<Unit> {
-        val lookupPublicInfoQueryResult by before {
-            LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                "typename",
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
                 emptyList(),
             )
-        }
-        val lookupPublicInfoResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-            )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                .build()
-        }
-
-        sendHolder.callback = null
-
-        val errorSendResponse by before {
-            val error = com.apollographql.apollo.api.Error(
-                "mock",
-                emptyList(),
-                mapOf("errorType" to apolloError),
-            )
-            Response.builder<SendEmailMessageMutation.Data>(SendEmailMessageMutation(sendInput))
-                .errors(listOf(error))
-                .build()
-        }
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<T> {
+            val deferredResult = async(Dispatchers.IO) {
                 client.sendEmailMessage(input)
             }
-        }
-        deferredResult.start()
+            deferredResult.start()
 
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
-        delay(100L)
-        sendHolder.callback shouldNotBe null
-        sendHolder.callback?.onResponse(errorSendResponse)
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
 
-        deferredResult.await()
-    }
+            delay(100L)
+            sendEncryptedHolder.callback shouldNotBe null
+            sendEncryptedHolder.callback?.onResponse(sendEncryptedMutationResponse)
 
-    private inline fun <reified T : Exception> testEncryptedSendException(apolloError: String) = runBlocking<Unit> {
-        val lookupPublicInfoResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+            val result = deferredResult.await()
+            result shouldNotBe null
+            result.isBlank() shouldBe false
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
             )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
-                .build()
+            verify(mockEmailCryptoService).encrypt(
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
         }
 
-        sendEncryptedHolder.callback = null
+    @Test
+    fun `sendEmailMessage should return results for in-network and out-of-network recipient send when no error present`() =
+        runBlocking {
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
+            lookupPublicInfoHolder.callback = null
 
-        val errorSendResponse by before {
-            val error = com.apollographql.apollo.api.Error(
-                "mock",
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
                 emptyList(),
-                mapOf("errorType" to apolloError),
+                emptyList(),
             )
-            Response.builder<SendEncryptedEmailMessageMutation.Data>(SendEncryptedEmailMessageMutation(sendEncryptedInput))
-                .errors(listOf(error))
-                .build()
-        }
-
-        val input = SendEmailMessageInput(
-            "senderEmailAddressId",
-            InternetMessageFormatHeader(
-                EmailMessage.EmailAddress("from@bar.com"),
-                listOf(EmailMessage.EmailAddress("to@bar.com")),
-                listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                "email message subject",
-            ),
-            "email message body",
-            emptyList(),
-            emptyList(),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<T> {
+            val deferredResult = async(Dispatchers.IO) {
                 client.sendEmailMessage(input)
             }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            sendHolder.callback shouldNotBe null
+            sendHolder.callback?.onResponse(sendMutationResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+            result.isBlank() shouldBe false
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
         }
-        deferredResult.start()
 
-        delay(100L)
-        lookupPublicInfoHolder.callback shouldNotBe null
-        lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+    @Test
+    fun `sendEmailMessage() should throw when send email mutation response is null`() =
+        runBlocking {
+            val lookupPublicInfoQueryResult by before {
+                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
+                    "typename",
+                    emptyList(),
+                )
+            }
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
+                    .build()
+            }
 
-        delay(100L)
-        sendEncryptedHolder.callback shouldNotBe null
-        sendEncryptedHolder.callback?.onResponse(errorSendResponse)
+            val nullSendResponse by before {
+                Response.builder<SendEmailMessageMutation.Data>(SendEmailMessageMutation(sendInput))
+                    .data(null)
+                    .build()
+            }
 
-        deferredResult.await()
-    }
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
+            lookupPublicInfoHolder.callback = null
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            sendHolder.callback shouldNotBe null
+            sendHolder.callback?.onResponse(nullSendResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should throw when send encrypted email mutation response is null`() =
+        runBlocking {
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
+                    .build()
+            }
+            val nullEncryptedSendResponse by before {
+                Response.builder<SendEncryptedEmailMessageMutation.Data>(
+                    SendEncryptedEmailMessageMutation(sendEncryptedInput),
+                )
+                    .data(null)
+                    .build()
+            }
+
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
+            lookupPublicInfoHolder.callback = null
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            sendEncryptedHolder.callback shouldNotBe null
+            sendEncryptedHolder.callback?.onResponse(nullEncryptedSendResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockEmailCryptoService).encrypt(
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should not block coroutine cancellation exception`() =
+        runBlocking<Unit> {
+            mockS3Client.stub {
+                onBlocking {
+                    upload(
+                        any(),
+                        anyString(),
+                        anyOrNull(),
+                    )
+                } doThrow CancellationException("mock")
+            }
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<CancellationException> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+        }
+
+    @Test
+    fun `sendEmailMessage() should throw when non-E2E send response has various errors`() =
+        runBlocking {
+            testSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>(
+                "InvalidEmailContents",
+            )
+            testSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>("UnauthorizedAddress")
+            testSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
+
+            verify(mockAppSyncClient, times(3)).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient, times(3)).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockAppSyncClient, times(3)).mutate(any<SendEmailMessageMutation>())
+            verify(mockEmailMessageProcessor, times(3)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3Client, times(3)).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client, times(3)).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should throw when E2E send response has various errors`() =
+        runBlocking {
+            testEncryptedSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>(
+                "InvalidEmailContents",
+            )
+            testEncryptedSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>(
+                "UnauthorizedAddress",
+            )
+            testEncryptedSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
+
+            verify(mockAppSyncClient, times(3)).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient, times(3)).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockAppSyncClient, times(3)).mutate(any<SendEncryptedEmailMessageMutation>())
+            verify(mockEmailMessageProcessor, times(6)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockEmailCryptoService, times(3)).encrypt(
+                any(),
+                any(),
+            )
+            verify(mockS3Client, times(3)).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client, times(3)).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should throw emailMessageSizeLimitExceededError when E2E message is too big`() =
+        runBlocking<Unit> {
+            val limit = 10485769
+            val getConfigDataQueryResult by before {
+                GetEmailConfigQuery.GetEmailConfig(
+                    "typeName",
+                    GetEmailConfigQuery.GetEmailConfig.Fragments(
+                        EmailConfigurationData(
+                            "typename",
+                            10,
+                            5,
+                            200,
+                            limit,
+                            5,
+                            10,
+                        ),
+                    ),
+                )
+            }
+
+            val getConfigDataQueryResponse by before {
+                Response.builder<GetEmailConfigQuery.Data>(GetEmailConfigQuery())
+                    .data(GetEmailConfigQuery.Data(getConfigDataQueryResult))
+                    .build()
+            }
+            mockEmailMessageProcessor.stub {
+                on {
+                    encodeToInternetMessageData(
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                        anyString(),
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                    )
+                } doReturn ByteArray(limit + 1)
+            }
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
+                    .build()
+            }
+
+            sendHolder.callback = null
+            lookupPublicInfoHolder.callback = null
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockEmailCryptoService).encrypt(
+                any(),
+                any(),
+            )
+        }
+
+    @Test
+    fun `sendEmailMessage() should throw emailMessageSizeLimitExceededError when non-E2E message is too big`() =
+        runBlocking<Unit> {
+            val limit = 10485769
+            val getConfigDataQueryResult by before {
+                GetEmailConfigQuery.GetEmailConfig(
+                    "typeName",
+                    GetEmailConfigQuery.GetEmailConfig.Fragments(
+                        EmailConfigurationData(
+                            "typename",
+                            10,
+                            5,
+                            200,
+                            limit,
+                            5,
+                            10,
+                        ),
+                    ),
+                )
+            }
+
+            val getConfigDataQueryResponse by before {
+                Response.builder<GetEmailConfigQuery.Data>(GetEmailConfigQuery())
+                    .data(GetEmailConfigQuery.Data(getConfigDataQueryResult))
+                    .build()
+            }
+            mockEmailMessageProcessor.stub {
+                on {
+                    encodeToInternetMessageData(
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                        anyString(),
+                        anyString(),
+                        any(),
+                        any(),
+                        any(),
+                    )
+                } doReturn ByteArray(limit + 1)
+            }
+
+            sendHolder.callback = null
+            lookupPublicInfoHolder.callback = null
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+        }
+
+    private inline fun <reified T : Exception> testSendException(apolloError: String) =
+        runBlocking<Unit> {
+            val lookupPublicInfoQueryResult by before {
+                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
+                    "typename",
+                    emptyList(),
+                )
+            }
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
+                    .build()
+            }
+
+            sendHolder.callback = null
+
+            val errorSendResponse by before {
+                val error = com.apollographql.apollo.api.Error(
+                    "mock",
+                    emptyList(),
+                    mapOf("errorType" to apolloError),
+                )
+                Response.builder<SendEmailMessageMutation.Data>(SendEmailMessageMutation(sendInput))
+                    .errors(listOf(error))
+                    .build()
+            }
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<T> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            sendHolder.callback shouldNotBe null
+            sendHolder.callback?.onResponse(errorSendResponse)
+
+            deferredResult.await()
+        }
+
+    private inline fun <reified T : Exception> testEncryptedSendException(apolloError: String) =
+        runBlocking<Unit> {
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
+                    .build()
+            }
+
+            sendEncryptedHolder.callback = null
+
+            val errorSendResponse by before {
+                val error = com.apollographql.apollo.api.Error(
+                    "mock",
+                    emptyList(),
+                    mapOf("errorType" to apolloError),
+                )
+                Response.builder<SendEncryptedEmailMessageMutation.Data>(
+                    SendEncryptedEmailMessageMutation(sendEncryptedInput),
+                )
+                    .errors(listOf(error))
+                    .build()
+            }
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<T> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            sendEncryptedHolder.callback shouldNotBe null
+            sendEncryptedHolder.callback?.onResponse(errorSendResponse)
+
+            deferredResult.await()
+        }
 }

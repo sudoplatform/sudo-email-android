@@ -116,7 +116,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
             }
         }
 
-        val listDraftEmailMessagesResult = emailClient.listDraftEmailMessageMetadata(emailAddress.id)
+        val listDraftEmailMessagesResult = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
         listDraftEmailMessagesResult.find { it.id == draftId } shouldBe null
     }
 }

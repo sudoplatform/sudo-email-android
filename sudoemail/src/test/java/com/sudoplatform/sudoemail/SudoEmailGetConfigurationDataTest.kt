@@ -58,6 +58,8 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
                     5,
                     200,
                     100,
+                    5,
+                    10,
                 ),
             ),
         )
@@ -176,6 +178,8 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             updateEmailMessagesLimit shouldBe 5
             emailMessageMaxInboundMessageSize shouldBe 200
             emailMessageMaxOutboundMessageSize shouldBe 100
+            emailMessageRecipientsLimit shouldBe 5
+            encryptedEmailMessageRecipientsLimit shouldBe 10
         }
 
         verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())

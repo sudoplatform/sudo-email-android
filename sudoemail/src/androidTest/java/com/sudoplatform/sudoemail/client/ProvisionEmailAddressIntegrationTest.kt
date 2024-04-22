@@ -66,6 +66,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
             owners.first().issuer shouldBe "sudoplatform.sudoservice"
             result.emailAddress shouldBe emailAddress
             size shouldBe 0.0
+            numberOfEmailMessages shouldBe 0
             version shouldBe 1
             createdAt.time shouldBeGreaterThan 0L
             updatedAt.time shouldBeGreaterThan 0L
@@ -94,6 +95,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
             owners.first().issuer shouldBe "sudoplatform.sudoservice"
             result1.emailAddress shouldBe emailAddress
             size shouldBe 0.0
+            numberOfEmailMessages shouldBe 0
             version shouldBe 1
             createdAt.time shouldBeGreaterThan 0L
             updatedAt.time shouldBeGreaterThan 0L
@@ -112,6 +114,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
             owners.first().issuer shouldBe "sudoplatform.sudoservice"
             result2.emailAddress shouldBe emailAddress
             size shouldBe 0.0
+            numberOfEmailMessages shouldBe 0
             version shouldBe 1
             createdAt.time shouldBeGreaterThan 0L
             updatedAt.time shouldBeGreaterThan 0L
@@ -143,6 +146,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
             owners.first().issuer shouldBe "sudoplatform.sudoservice"
             result.emailAddress shouldBe emailAddress
             size shouldBe 0.0
+            numberOfEmailMessages shouldBe 0
             version shouldBe 1
             createdAt.time shouldBeGreaterThan 0L
             updatedAt.time shouldBeGreaterThan 0L

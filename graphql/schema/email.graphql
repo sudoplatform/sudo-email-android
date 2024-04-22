@@ -235,6 +235,8 @@ type EmailConfigurationData {
   updateEmailMessagesLimit: Int!
   emailMessageMaxInboundMessageSize: Int!
   emailMessageMaxOutboundMessageSize: Int!
+  emailMessageRecipientsLimit: Int!
+  encryptedEmailMessageRecipientsLimit: Int!
 }
 
 type Owner {
@@ -255,6 +257,7 @@ type EmailAddress {
   lastReceivedAtEpochMs: Float
   emailAddress: String!
   size: Float!
+  numberOfEmailMessages: Int!
   alias: SealedAttribute
   folders: [EmailFolder!]!
 }

@@ -110,6 +110,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                             1.0,
                             "example@sudoplatform.com",
                             0.0,
+                            0,
                             null,
                         ),
                     ),

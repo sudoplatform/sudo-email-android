@@ -47,6 +47,8 @@ class GetConfigurationDataIntegrationTest : BaseIntegrationTest() {
             updateEmailMessagesLimit shouldBe 100
             emailMessageMaxInboundMessageSize shouldBe 10485760
             emailMessageMaxOutboundMessageSize shouldBe 10485760
+            emailMessageRecipientsLimit shouldBe 10
+            encryptedEmailMessageRecipientsLimit shouldBe 10
         }
     }
 }

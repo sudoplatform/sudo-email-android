@@ -131,6 +131,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                     1.0,
                                     "example@sudoplatform.com",
                                     0.0,
+                                    0,
                                     null,
                                 ),
                             ),
@@ -263,6 +264,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                     owners.first().issuer shouldBe "issuer"
                     emailAddress shouldBe "example@sudoplatform.com"
                     size shouldBe 0.0
+                    numberOfEmailMessages shouldBe 0
                     version shouldBe 1
                     createdAt shouldBe Date(1L)
                     updatedAt shouldBe Date(1L)
@@ -323,6 +325,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                         1.0,
                                         "example@sudoplatform.com",
                                         0.0,
+                                        0,
                                         null,
                                     ),
                                 ),
@@ -506,6 +509,7 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                                         1.0,
                                         "example@sudoplatform.com",
                                         0.0,
+                                        0,
                                         EmailAddressWithoutFolders.Alias(
                                             "typename",
                                             EmailAddressWithoutFolders.Alias.Fragments(

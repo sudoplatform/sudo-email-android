@@ -44,6 +44,7 @@ class ParcelTest {
             owners = listOf(owner),
             emailAddress = rfc822Address,
             size = 0.0,
+            numberOfEmailMessages = 0,
             version = 1,
             createdAt = Date(42L),
             updatedAt = Date(43L),

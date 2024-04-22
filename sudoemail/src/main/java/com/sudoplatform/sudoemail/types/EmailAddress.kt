@@ -18,6 +18,7 @@ import java.util.Date
  * @property owners [List<Owner>] List of identifiers of the user/sudo associated with this email address.
  * @property emailAddress [String] Address in format 'local-part@domain' of the email.
  * @property size [Double] The total size of all email messages assigned to the email address in bytes.
+ * @property numberOfEmailMessages [Int] The total number of email messages assigned to the email address.
  * @property version [Int] Current version of the email address.
  * @property createdAt [Date] When the email address was created.
  * @property updatedAt [Date] When the email address was last updated.
@@ -32,6 +33,7 @@ data class EmailAddress(
     val owners: List<Owner>,
     val emailAddress: String,
     val size: Double,
+    val numberOfEmailMessages: Int,
     val version: Int,
     val createdAt: Date,
     val updatedAt: Date,
@@ -62,6 +64,7 @@ data class PartialEmailAddress(
     val owners: List<Owner>,
     val emailAddress: String,
     val size: Double,
+    val numberOfEmailMessages: Int,
     val version: Int,
     val createdAt: Date,
     val updatedAt: Date,

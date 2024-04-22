@@ -76,6 +76,7 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
                     owners shouldBe emailAddress.owners
                     listEmailAddresses.result.items[0].emailAddress shouldBe emailAddress.emailAddress
                     size shouldBe emailAddress.size
+                    numberOfEmailMessages shouldBe 0
                     version shouldBe emailAddress.version
                     createdAt.time shouldBe emailAddress.createdAt.time
                     updatedAt.time shouldBe emailAddress.createdAt.time
@@ -122,6 +123,7 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
                     partial.owners shouldBe emailAddress.owners
                     listEmailAddresses.result.failed[0].partial.emailAddress shouldBe emailAddress.emailAddress
                     partial.size shouldBe emailAddress.size
+                    partial.numberOfEmailMessages shouldBe 0
                     partial.version shouldBe emailAddress.version
                     partial.createdAt.time shouldBe emailAddress.createdAt.time
                     partial.updatedAt.time shouldBe emailAddress.createdAt.time

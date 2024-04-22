@@ -16,6 +16,9 @@ import kotlinx.parcelize.Parcelize
  * @property updateEmailMessagesLimit [Int] The number of email messages that can be updated at a time.
  * @property emailMessageMaxInboundMessageSize [Int] The maximum allowed size of an inbound email message.
  * @property emailMessageMaxOutboundMessageSize [Int] The maximum allowed size of an outbound email message.
+ * @property emailMessageRecipientsLimit [Int] The maximum number of recipients for an out-of-network email message.
+ * @property encryptedEmailMessageRecipientsLimit [Int] The maximum number of recipients for an in-network encrypted
+ *  email message.
  */
 @Parcelize
 data class ConfigurationData(
@@ -23,4 +26,6 @@ data class ConfigurationData(
     val updateEmailMessagesLimit: Int,
     val emailMessageMaxInboundMessageSize: Int,
     val emailMessageMaxOutboundMessageSize: Int,
+    val emailMessageRecipientsLimit: Int,
+    val encryptedEmailMessageRecipientsLimit: Int,
 ) : Parcelable

@@ -46,7 +46,7 @@ import java.util.Date
  * Test the operation of [SudoEmailClient.listEmailMessagesForEmailFolderId].
  */
 @RunWith(AndroidJUnit4::class)
-class ListEmailMessageForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
+class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()
 

@@ -68,6 +68,7 @@ class GetEmailAddressIntegrationTest : BaseIntegrationTest() {
             owners shouldBe emailAddress.owners
             retrievedEmailAddress.emailAddress shouldBe emailAddress.emailAddress
             size shouldBe emailAddress.size
+            numberOfEmailMessages shouldBe 0
             version shouldBe emailAddress.version
             createdAt.time shouldBe emailAddress.createdAt.time
             updatedAt.time shouldBe emailAddress.createdAt.time

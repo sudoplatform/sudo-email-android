@@ -15,6 +15,7 @@ import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.ListAPIResult
+import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
@@ -66,6 +67,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
         emailAddress shouldNotBe null
+        emailAddress.numberOfEmailMessages shouldBe 0
         emailAddressList.add(emailAddress)
 
         val messageCount = 2
@@ -86,6 +88,8 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }
         } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
+        var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount * 2
 
         when (val result = emailClient.deleteEmailMessages(sentEmailIds.toList())) {
             is BatchOperationResult.SuccessOrFailureResult -> {
@@ -95,6 +99,8 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 fail("Unexpected BatchOperationResult")
             }
         }
+        updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
     }
 
     @Test
@@ -144,6 +150,8 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 fail("Unexpected BatchOperationResult")
             }
         }
+        val updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
     }
 
     @Test

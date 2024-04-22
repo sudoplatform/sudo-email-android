@@ -46,6 +46,7 @@ fragment EmailAddressWithoutFolders on EmailAddress {
     lastReceivedAtEpochMs
     emailAddress
     size
+    numberOfEmailMessages
     alias {
         ...SealedAttribute
     }
@@ -120,6 +121,8 @@ fragment EmailConfigurationData on EmailConfigurationData {
     updateEmailMessagesLimit
     emailMessageMaxInboundMessageSize
     emailMessageMaxOutboundMessageSize
+    emailMessageRecipientsLimit
+    encryptedEmailMessageRecipientsLimit
 }
 
 fragment BlockedAddress on BlockedEmailAddress {

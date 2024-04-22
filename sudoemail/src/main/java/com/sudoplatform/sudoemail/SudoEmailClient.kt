@@ -390,6 +390,12 @@ interface SudoEmailClient : AutoCloseable {
         class LimitExceededException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
 
+        class EmailMessageSizeLimitExceededException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) :
+            EmailMessageException(message = message, cause = cause)
+
         class InvalidArgumentException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
 
@@ -799,21 +805,52 @@ interface SudoEmailClient : AutoCloseable {
     ): ListAPIResult<EmailMessage, PartialEmailMessage>
 
     /**
-     * Lists the metadata for all draft messages associated with the emailAddressId
+     * Lists the metadata and content of all draft messages for the user.
      *
-     * @param emailAddressId [String] the email address id
-     * @return List of [DraftEmailMessageMetadata]
+     * @return List of [DraftEmailMessageWithContent].
      *
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun listDraftEmailMessageMetadata(emailAddressId: String): List<DraftEmailMessageMetadata>
+    suspend fun listDraftEmailMessages(): List<DraftEmailMessageWithContent>
 
     /**
-     * Retrieves a draft email message
+     * Lists the metadata and content of all draft messages for the specified email address identifier.
      *
-     * @param input [GetDraftEmailMessageInput] Parameters used to get draft email message
-     * @return The [DraftEmailMessageWithContent]
+     * @param emailAddressId [String] The identifier of the email address associated with the draft email messages.
+     * @return List of [DraftEmailMessageWithContent].
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun listDraftEmailMessagesForEmailAddressId(emailAddressId: String): List<DraftEmailMessageWithContent>
+
+    /**
+     * Lists the metadata of all draft messages for the user.
+     *
+     * @return List of [DraftEmailMessageMetadata].
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun listDraftEmailMessageMetadata(): List<DraftEmailMessageMetadata>
+
+    /**
+     * Lists the metadata of all draft messages for the specified email address identifier.
+     *
+     * @param emailAddressId [String] The identifier of the email address associated with the draft email messages.
+     * @return List of [DraftEmailMessageMetadata].
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun listDraftEmailMessageMetadataForEmailAddressId(emailAddressId: String): List<DraftEmailMessageMetadata>
+
+    /**
+     * Retrieves a draft email message.
+     *
+     * @param input [GetDraftEmailMessageInput] Parameters used to retrieve a draft email message.
+     * @return The [DraftEmailMessageWithContent] containing metadata and content.
      *
      * @throws [EmailMessageException]
      */

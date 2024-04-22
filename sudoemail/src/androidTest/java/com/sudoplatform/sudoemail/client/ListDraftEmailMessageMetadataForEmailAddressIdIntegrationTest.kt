@@ -16,6 +16,7 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
+import io.kotlintest.shouldThrow
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -23,10 +24,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Test the operation of [SudoEmailClient.listDraftEmailMessageMetadata].
+ * Test the operation of [SudoEmailClient.listDraftEmailMessageMetadataForEmailAddressId].
  */
 @RunWith(AndroidJUnit4::class)
-class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
+class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()
 
@@ -44,7 +45,20 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listDraftEmailMessageMetadataShouldReturnEmptyListIfNoDrafts() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldThrowErrorIfSenderEmailAddressNotFound() = runBlocking<Unit> {
+        val sudo = createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+            emailClient.listDraftEmailMessageMetadataForEmailAddressId("bogusEmailId")
+        }
+    }
+
+    @Test
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnEmptyListIfNoDrafts() = runBlocking {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -55,13 +69,13 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val result = emailClient.listDraftEmailMessageMetadata()
+        val result = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
 
         result.size shouldBe 0
     }
 
     @Test
-    fun listDraftEmailMessageMetadataShouldReturnListOfDraftMessageMetadata() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnListOfDraftMessageMetadata() = runBlocking {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -72,7 +86,8 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val draftIds = mutableListOf<String>()
+        val createdDraftIds = mutableListOf<String>()
+
         for (i in 0 until 2) {
             val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
@@ -80,19 +95,19 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
                 subject = "Draft $i",
             )
             val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
-            draftIds.add(emailClient.createDraftEmailMessage(createDraftEmailMessageInput))
+            createdDraftIds.add(emailClient.createDraftEmailMessage(createDraftEmailMessageInput))
         }
-        draftIds.sort()
-        val result = emailClient.listDraftEmailMessageMetadata()
+        createdDraftIds.sort()
+        val result = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
 
         result.size shouldBe 2
         result.sortedBy { it.id }.forEachIndexed { index, draftEmailMessageMetadata ->
-            draftEmailMessageMetadata.id shouldBe draftIds[index]
+            draftEmailMessageMetadata.id shouldBe createdDraftIds[index]
         }
     }
 
     @Test
-    fun listDraftEmailMessageMetadataShouldUpdateWhenNewDraftIsAdded() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldUpdateWhenNewDraftIsAdded() = runBlocking {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -113,7 +128,7 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
             emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
         }
 
-        val result = emailClient.listDraftEmailMessageMetadata()
+        val result = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
 
         result.size shouldBe 2
 
@@ -125,13 +140,13 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
         emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
 
-        val updatedResult = emailClient.listDraftEmailMessageMetadata()
+        val finalResult = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
 
-        updatedResult.size shouldBe 3
+        finalResult.size shouldBe 3
     }
 
     @Test
-    fun listDraftEmailMessageMetadataShouldListMessagesForEachAddress() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldNotListMessagesFromOtherAccounts() = runBlocking {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -159,13 +174,13 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
             from = emailAddress2.emailAddress,
             to = listOf(emailAddress2.emailAddress),
-            subject = "Not yours",
+            subject = "Another Draft",
         )
         val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress2.id)
         emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
 
-        val result = emailClient.listDraftEmailMessageMetadata()
+        val result = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
 
-        result.size shouldBe 3
+        result.size shouldBe 2
     }
 }

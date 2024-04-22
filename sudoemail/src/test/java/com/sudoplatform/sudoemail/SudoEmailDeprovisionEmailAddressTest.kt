@@ -79,6 +79,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
                     1.0,
                     "example@sudoplatform.com",
                     0.0,
+                    0,
                     null,
                 ),
             ),
@@ -200,6 +201,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             owners.first().issuer shouldBe "issuer"
             emailAddress shouldBe "example@sudoplatform.com"
             size shouldBe 0.0
+            numberOfEmailMessages shouldBe 0
             version shouldBe 1
             createdAt shouldBe Date(1L)
             updatedAt shouldBe Date(1L)
