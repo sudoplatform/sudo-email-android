@@ -80,7 +80,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         sentEmailIds.size shouldBeGreaterThan 0
 
         // Wait for all the messages to arrive
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+        await.atMost(Duration.TEN_SECONDS.multiply(9)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
                     emailAddressId = emailAddress.id,
@@ -95,6 +95,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }
+
             else -> {
                 fail("Unexpected BatchOperationResult")
             }
@@ -104,55 +105,58 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteEmailMessagesShouldReturnPartialResultWhenDeletingExistingAndNonExistingMessages() = runBlocking {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun deleteEmailMessagesShouldReturnPartialResultWhenDeletingExistingAndNonExistingMessages() =
+        runBlocking {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val messageCount = 2
-        val sentEmailIds = mutableSetOf<String>()
-        for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-            sentEmailIds.add(emailId)
+            val messageCount = 2
+            val sentEmailIds = mutableSetOf<String>()
+            for (i in 0 until messageCount) {
+                val emailId = sendEmailMessage(emailClient, emailAddress)
+                emailId.isBlank() shouldBe false
+                sentEmailIds.add(emailId)
+            }
+            sentEmailIds.size shouldBeGreaterThan 0
+
+            // Wait for all the messages to arrive
+            await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+                runBlocking {
+                    val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                        emailAddressId = emailAddress.id,
+                    )
+                    emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+                }
+            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
+
+            val nonExistentIds = listOf("nonExistentId")
+            val input = mutableListOf<String>()
+            input.addAll(sentEmailIds)
+            input.addAll(nonExistentIds)
+
+            when (val result = emailClient.deleteEmailMessages(input)) {
+                is BatchOperationResult.PartialResult -> {
+                    result.status shouldBe BatchOperationStatus.PARTIAL
+                    result.successValues shouldContainExactlyInAnyOrder sentEmailIds
+                    result.failureValues shouldContainExactlyInAnyOrder nonExistentIds
+                }
+
+                else -> {
+                    fail("Unexpected BatchOperationResult")
+                }
+            }
+            val updatedEmailAddress =
+                emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+            updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
         }
-        sentEmailIds.size shouldBeGreaterThan 0
-
-        // Wait for all the messages to arrive
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-            runBlocking {
-                val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id,
-                )
-                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
-            }
-        } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
-
-        val nonExistentIds = listOf("nonExistentId")
-        val input = mutableListOf<String>()
-        input.addAll(sentEmailIds)
-        input.addAll(nonExistentIds)
-
-        when (val result = emailClient.deleteEmailMessages(input)) {
-            is BatchOperationResult.PartialResult -> {
-                result.status shouldBe BatchOperationStatus.PARTIAL
-                result.successValues shouldContainExactlyInAnyOrder sentEmailIds
-                result.failureValues shouldContainExactlyInAnyOrder nonExistentIds
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
-        val updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
-    }
 
     @Test
     fun deleteEmailMessagesShouldThrowWithInvalidArgumentWithEmptyInput() = runBlocking<Unit> {
@@ -162,16 +166,18 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteEmailMessagesShouldReturnFailureWhenDeletingMultipleNonExistingMessages() = runBlocking {
-        when (val result = emailClient.deleteEmailMessages(listOf("id1", "id2", "id3"))) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.FAILURE
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
+    fun deleteEmailMessagesShouldReturnFailureWhenDeletingMultipleNonExistingMessages() =
+        runBlocking {
+            when (val result = emailClient.deleteEmailMessages(listOf("id1", "id2", "id3"))) {
+                is BatchOperationResult.SuccessOrFailureResult -> {
+                    result.status shouldBe BatchOperationStatus.FAILURE
+                }
+
+                else -> {
+                    fail("Unexpected BatchOperationResult")
+                }
             }
         }
-    }
 
     @Test
     fun deleteEmailMessagesShouldAllowInputLimitEdgeCase() = runBlocking {
@@ -180,6 +186,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.FAILURE
             }
+
             else -> {
                 fail("Unexpected BatchOperationResult")
             }

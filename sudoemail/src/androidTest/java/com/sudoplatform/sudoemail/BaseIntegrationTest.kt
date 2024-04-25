@@ -53,7 +53,8 @@ abstract class BaseIntegrationTest {
 
         private const val verbose = false
         private val logLevel = if (verbose) LogLevel.VERBOSE else LogLevel.INFO
-        val logger = com.sudoplatform.sudologging.Logger("email-test", AndroidUtilsLogDriver(logLevel))
+        val logger =
+            com.sudoplatform.sudologging.Logger("email-test", AndroidUtilsLogDriver(logLevel))
 
         @JvmStatic
         protected val entitlements = listOf(
@@ -64,6 +65,7 @@ abstract class BaseIntegrationTest {
             Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
             Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
             Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
+            Entitlement("sudoplatform.email.emailAddressMaxProvisionsExpendable", "test", 60),
         )
 
         @JvmStatic
@@ -110,7 +112,8 @@ abstract class BaseIntegrationTest {
 
         @JvmStatic
         protected fun readArgument(argumentName: String, fallbackFileName: String?): String {
-            val argumentValue = InstrumentationRegistry.getArguments().getString(argumentName)?.trim()
+            val argumentValue =
+                InstrumentationRegistry.getArguments().getString(argumentName)?.trim()
             if (argumentValue != null) {
                 return argumentValue
             }
@@ -162,7 +165,8 @@ abstract class BaseIntegrationTest {
             entitlementsClient.redeemEntitlements()
         }
 
-        @BeforeClass @JvmStatic
+        @BeforeClass
+        @JvmStatic
         fun init() {
             Timber.plant(Timber.DebugTree())
             StrictMode.setVmPolicy(
@@ -191,7 +195,8 @@ abstract class BaseIntegrationTest {
             }
         }
 
-        @AfterClass @JvmStatic
+        @AfterClass
+        @JvmStatic
         fun fini() = runBlocking {
             if (userClient.isRegistered()) {
                 deregister()
@@ -297,7 +302,11 @@ abstract class BaseIntegrationTest {
         return client.sendEmailMessage(sendEmailMessageInput)
     }
 
-    protected suspend fun getFolderByName(client: SudoEmailClient, emailAddressId: String, folderName: String): EmailFolder? {
+    protected suspend fun getFolderByName(
+        client: SudoEmailClient,
+        emailAddressId: String,
+        folderName: String,
+    ): EmailFolder? {
         val listFoldersInput = ListEmailFoldersForEmailAddressIdInput(emailAddressId)
         return client.listEmailFoldersForEmailAddressId(listFoldersInput).items.find { it.folderName == folderName }
     }
