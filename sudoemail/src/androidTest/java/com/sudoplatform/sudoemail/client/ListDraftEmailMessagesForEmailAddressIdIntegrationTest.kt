@@ -103,6 +103,8 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
         result.size shouldBe 2
 
         result.forEach { item ->
+            item.emailAddressId shouldBe emailAddress.id
+
             val parsedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(item.rfc822Data)
             parsedMessage.to shouldContain emailAddress.emailAddress
             parsedMessage.from shouldContain emailAddress.emailAddress

@@ -88,6 +88,7 @@ class ListDraftEmailMessageMetadataIntegrationTest : BaseIntegrationTest() {
         result.size shouldBe 2
         result.sortedBy { it.id }.forEachIndexed { index, draftEmailMessageMetadata ->
             draftEmailMessageMetadata.id shouldBe draftIds[index]
+            draftEmailMessageMetadata.emailAddressId shouldBe emailAddress.id
         }
     }
 

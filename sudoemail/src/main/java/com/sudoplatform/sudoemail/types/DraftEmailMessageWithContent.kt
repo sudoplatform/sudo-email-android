@@ -15,12 +15,15 @@ import java.util.Date
  *
  * @implements [DraftEmailMessage]
  * @property id [String] Unique identifier of the draft message.
+ * @property emailAddressId [String] Unique identifier of the email address associated with the draft
+ *  email message.
  * @property updatedAt [Date] When the draft message was last updated.
  * @property rfc822Data [ByteArray] The rfc822 compliant data of the draft message.
  */
 @Parcelize
 data class DraftEmailMessageWithContent(
     override val id: String,
+    override val emailAddressId: String,
     override val updatedAt: Date,
     val rfc822Data: ByteArray,
 ) : Parcelable, DraftEmailMessage {
@@ -31,12 +34,14 @@ data class DraftEmailMessageWithContent(
         other as DraftEmailMessageWithContent
 
         if (id != other.id) return false
+        if (emailAddressId != other.emailAddressId) return false
         if (updatedAt != other.updatedAt) return false
         return rfc822Data.contentEquals(other.rfc822Data)
     }
 
     override fun hashCode(): Int {
         var result = id.hashCode()
+        result = 31 * result + emailAddressId.hashCode()
         result = 31 * result + updatedAt.hashCode()
         result = 31 * result + rfc822Data.contentHashCode()
         return result

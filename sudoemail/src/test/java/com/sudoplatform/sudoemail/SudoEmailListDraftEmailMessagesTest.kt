@@ -333,9 +333,11 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
 
         result.size shouldBe 2
         result[0].id shouldBe "id1"
+        result[0].emailAddressId shouldBe emailAddressId
         result[0].updatedAt.time shouldBe timestamp.time
         result[0].rfc822Data shouldNotBe null
         result[1].id shouldBe "id2"
+        result[1].emailAddressId shouldBe emailAddressId
         result[1].updatedAt.time shouldBe timestamp.time
         result[1].rfc822Data shouldNotBe null
 

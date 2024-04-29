@@ -397,6 +397,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
 
         val result = deferredResult.await()
         result.id shouldBe mockDraftId.toString()
+        result.emailAddressId shouldBe mockEmailAddressIdInput
         result.updatedAt shouldBe timestamp
 
         verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())

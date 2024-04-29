@@ -307,7 +307,9 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
         val result = deferredResult.await()
         result.size shouldBe 2
         result[0].id shouldBe mockListObjectsResponse[0].key
+        result[0].emailAddressId shouldBe emailAddressId
         result[1].id shouldBe mockListObjectsResponse[1].key
+        result[1].emailAddressId shouldBe emailAddressId
 
         verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
         verify(mockS3Client).list(

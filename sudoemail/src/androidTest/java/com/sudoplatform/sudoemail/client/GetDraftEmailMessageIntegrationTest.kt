@@ -112,6 +112,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         val draftEmailMessage = emailClient.getDraftEmailMessage(input)
 
         draftEmailMessage.id shouldBe draftId
+        draftEmailMessage.emailAddressId shouldBe emailAddress.id
         val parsedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(draftEmailMessage.rfc822Data)
 
         parsedMessage.to shouldContain emailAddress.emailAddress

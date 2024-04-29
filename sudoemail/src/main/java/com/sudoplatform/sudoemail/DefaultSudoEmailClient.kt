@@ -265,7 +265,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "11.0.0"
+    private val version: String = "11.1.0"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
@@ -1248,7 +1248,11 @@ internal class DefaultSudoEmailClient(
             var parsedMessage = emailMessageDataProcessor.parseInternetMessageData(decodedBytes)
             if (emailMessage.encryptionStatus() == EmailMessageEncryptionStatus.ENCRYPTED) {
                 val keyAttachments = parsedMessage.attachments.filter {
-                    it.contentId.contains(SecureEmailAttachmentType.KEY_EXCHANGE.contentId) &&
+                    (
+                        it.contentId.contains(SecureEmailAttachmentType.KEY_EXCHANGE.contentId) ||
+                            // Work around spelling error in legacy apps.
+                            it.contentId.contains("securekeyexhangedata@sudomail.com")
+                        ) &&
                         it.mimeType.contains(SecureEmailAttachmentType.KEY_EXCHANGE.mimeType)
                 }
                 if (keyAttachments.isEmpty()) {
@@ -1644,6 +1648,7 @@ internal class DefaultSudoEmailClient(
             )
             return DraftEmailMessageWithContent(
                 id = input.id,
+                emailAddressId = input.emailAddressId,
                 updatedAt = updatedAt,
                 rfc822Data = unsealedRfc822Data,
             )
@@ -1678,7 +1683,7 @@ internal class DefaultSudoEmailClient(
                 val s3Key = this.constructS3KeyForDraftEmailMessage(id)
                 val items = s3TransientClient.list(this.transientBucket, s3Key)
                 items.map {
-                    DraftEmailMessageMetadata(it.key.substringAfterLast("/"), it.lastModified)
+                    DraftEmailMessageMetadata(it.key.substringAfterLast("/"), id, it.lastModified)
                 }
             }
             return result
@@ -1698,6 +1703,7 @@ internal class DefaultSudoEmailClient(
             return items.map {
                 DraftEmailMessageMetadata(
                     it.key.substringAfterLast("/"),
+                    emailAddressId,
                     it.lastModified,
                 )
             }

@@ -103,6 +103,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
         result.size shouldBe 2
         result.sortedBy { it.id }.forEachIndexed { index, draftEmailMessageMetadata ->
             draftEmailMessageMetadata.id shouldBe createdDraftIds[index]
+            draftEmailMessageMetadata.emailAddressId shouldBe emailAddress.id
         }
     }
 
