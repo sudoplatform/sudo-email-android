@@ -62,8 +62,8 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val emailId = sendEmailMessage(emailClient, emailAddress, body = messageBody)
-        emailId.isBlank() shouldBe false
+        val sendResult = sendEmailMessage(emailClient, emailAddress, body = messageBody)
+        sendResult.id.isBlank() shouldBe false
 
         // Wait for all the messages to arrive
         Awaitility.await()
@@ -71,66 +71,67 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
             .pollInterval(1, TimeUnit.SECONDS)
             .until {
                 runBlocking {
-                    emailClient.getEmailMessage(GetEmailMessageInput(emailId)) != null
+                    emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id)) != null
                 }
             }
 
-        emailClient.getEmailMessage(GetEmailMessageInput(emailId))
+        emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message not found")
 
-        val input = GetEmailMessageWithBodyInput(emailId, emailAddress.id)
+        val input = GetEmailMessageWithBodyInput(sendResult.id, emailAddress.id)
         val result = emailClient.getEmailMessageWithBody(input)
             ?: throw AssertionError("should not be null")
-        result.id shouldBe emailId
+        result.id shouldBe sendResult.id
         result.body shouldBe messageBody
         result.attachments.isEmpty() shouldBe true
         result.inlineAttachments.isEmpty() shouldBe true
     }
 
     @Test
-    fun getEmailMessageWithBodyForEncryptedMessageShouldReturnUnencryptedMessageBody() = runBlocking {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun getEmailMessageWithBodyForEncryptedMessageShouldReturnUnencryptedMessageBody() =
+        runBlocking {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        receiverEmailAddress shouldNotBe null
-        emailAddressList.add(receiverEmailAddress)
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            receiverEmailAddress shouldNotBe null
+            emailAddressList.add(receiverEmailAddress)
 
-        val emailId = sendEmailMessage(
-            emailClient,
-            emailAddress,
-            toAddresses = listOf(receiverEmailAddress.emailAddress),
-            body = messageBody,
-        )
-        emailId.isBlank() shouldBe false
+            val sendResult = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(receiverEmailAddress.emailAddress),
+                body = messageBody,
+            )
+            sendResult.id.isBlank() shouldBe false
 
-        // Wait for all the messages to arrive
-        Awaitility.await()
-            .atMost(10, TimeUnit.SECONDS)
-            .pollInterval(1, TimeUnit.SECONDS)
-            .until {
-                runBlocking {
-                    emailClient.getEmailMessage(GetEmailMessageInput(emailId)) != null
+            // Wait for all the messages to arrive
+            Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
+                .until {
+                    runBlocking {
+                        emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id)) != null
+                    }
                 }
-            }
 
-        emailClient.getEmailMessage(GetEmailMessageInput(emailId))
-            ?: fail("Email message not found")
+            emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
+                ?: fail("Email message not found")
 
-        val input = GetEmailMessageWithBodyInput(emailId, emailAddress.id)
-        val result = emailClient.getEmailMessageWithBody(input)
-            ?: throw AssertionError("should not be null")
-        result.id shouldBe emailId
-        result.body shouldBe messageBody
-        result.attachments.isEmpty() shouldBe true
-        result.inlineAttachments.isEmpty() shouldBe true
-    }
+            val input = GetEmailMessageWithBodyInput(sendResult.id, emailAddress.id)
+            val result = emailClient.getEmailMessageWithBody(input)
+                ?: throw AssertionError("should not be null")
+            result.id shouldBe sendResult.id
+            result.body shouldBe messageBody
+            result.attachments.isEmpty() shouldBe true
+            result.inlineAttachments.isEmpty() shouldBe true
+        }
 }

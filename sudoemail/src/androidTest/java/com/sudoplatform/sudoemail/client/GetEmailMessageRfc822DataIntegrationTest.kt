@@ -61,8 +61,8 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val emailId = sendEmailMessage(emailClient, emailAddress)
-        emailId.isBlank() shouldBe false
+        val sendResult = sendEmailMessage(emailClient, emailAddress)
+        sendResult.id.isBlank() shouldBe false
 
         // Wait for all the messages to arrive
         Awaitility.await()
@@ -70,19 +70,20 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
             .pollInterval(1, TimeUnit.SECONDS)
             .until {
                 runBlocking {
-                    emailClient.getEmailMessage(GetEmailMessageInput(emailId)) != null
+                    emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id)) != null
                 }
             }
 
-        val emailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
+        val emailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message not found")
 
-        val input = GetEmailMessageRfc822DataInput(emailId, emailAddress.id)
+        val input = GetEmailMessageRfc822DataInput(sendResult.id, emailAddress.id)
         val result = emailClient.getEmailMessageRfc822Data(input)
             ?: throw AssertionError("should not be null")
-        result.id shouldBe emailId
+        result.id shouldBe sendResult.id
 
-        val simplifiedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(result.rfc822Data)
+        val simplifiedMessage =
+            Rfc822MessageDataProcessor().parseInternetMessageData(result.rfc822Data)
         with(simplifiedMessage) {
             to.shouldContainExactlyInAnyOrder(emailMessage.to.map { it.emailAddress })
             from.shouldContainExactlyInAnyOrder(emailMessage.from.map { it.emailAddress })

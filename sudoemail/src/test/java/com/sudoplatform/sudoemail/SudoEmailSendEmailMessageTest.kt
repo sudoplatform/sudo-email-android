@@ -16,6 +16,7 @@ import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.graphql.fragment.EmailConfigurationData
+import com.sudoplatform.sudoemail.graphql.fragment.SendEmailMessageResult
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.graphql.type.Rfc822HeaderInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
@@ -125,7 +126,16 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     }
 
     private val sendMutationResult by before {
-        "sendEmailMessage"
+        SendEmailMessageMutation.SendEmailMessageV2(
+            "__typename",
+            SendEmailMessageMutation.SendEmailMessageV2.Fragments(
+                SendEmailMessageResult(
+                    "__typename",
+                    "sendEmailMessage",
+                    1.0,
+                ),
+            ),
+        )
     }
 
     private val sendMutationResponse by before {
@@ -135,7 +145,16 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     }
 
     private val sendEncryptedMutationResult by before {
-        "sendEncryptedEmailMessage"
+        SendEncryptedEmailMessageMutation.SendEncryptedEmailMessage(
+            "__typename",
+            SendEncryptedEmailMessageMutation.SendEncryptedEmailMessage.Fragments(
+                SendEmailMessageResult(
+                    "__typename",
+                    "sendEncryptedEmailMessage",
+                    1.0,
+                ),
+            ),
+        )
     }
 
     private val sendEncryptedMutationResponse by before {
@@ -407,7 +426,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             val result = deferredResult.await()
             result shouldNotBe null
-            result.isBlank() shouldBe false
+            result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
@@ -481,7 +500,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             val result = deferredResult.await()
             result shouldNotBe null
-            result.isBlank() shouldBe false
+            result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
@@ -549,7 +568,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             val result = deferredResult.await()
             result shouldNotBe null
-            result.isBlank() shouldBe false
+            result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
@@ -613,7 +632,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             val result = deferredResult.await()
             result shouldNotBe null
-            result.isBlank() shouldBe false
+            result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())

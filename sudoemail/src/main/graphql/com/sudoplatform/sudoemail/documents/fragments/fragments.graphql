@@ -116,6 +116,11 @@ fragment UpdateEmailMessagesResult on UpdateEmailMessagesResult {
     failedMessageIds
 }
 
+fragment SendEmailMessageResult on SendEmailMessageResult {
+  id
+  createdAtEpochMs
+}
+
 fragment EmailConfigurationData on EmailConfigurationData {
     deleteEmailMessagesLimit
     updateEmailMessagesLimit

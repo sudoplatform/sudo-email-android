@@ -83,6 +83,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -90,8 +91,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
         }
 
         // Wait for all the messages to arrive
@@ -130,6 +131,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     size shouldBeGreaterThan 0.0
                 }
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -154,6 +156,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -161,8 +164,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
         }
 
         // Wait for all the messages to arrive
@@ -181,6 +184,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.size shouldBe 1
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -205,6 +209,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -212,8 +217,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
         }
 
         // Wait for all the messages to arrive
@@ -245,6 +250,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     }
                 }
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -269,6 +275,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -276,8 +283,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
         }
 
         val listEmailMessages =
@@ -304,6 +311,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     it.emailAddressId shouldBe emailAddress.id
                 }
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -311,235 +319,253 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnEmptyListForOutOfDateRangeSortDate() = runBlocking {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailMessagesForEmailAddressIdShouldReturnEmptyListForOutOfDateRangeSortDate() =
+        runBlocking {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
-        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
+
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
             }
-        }
 
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-        }
-
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            dateRange = EmailMessageDateRange(
-                sortDate = DateRange(
-                    startDate = sudo.createdAt,
-                    endDate = emailAddress.createdAt,
+            val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = emailAddress.id,
+                dateRange = EmailMessageDateRange(
+                    sortDate = DateRange(
+                        startDate = sudo.createdAt,
+                        endDate = emailAddress.createdAt,
+                    ),
                 ),
-            ),
-        )
-        when (val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe true
-                listEmailMessages.result.nextToken shouldBe null
-            }
-            else -> {
-                fail("Unexpected ListAPIResult")
+            )
+            when (
+                val listEmailMessages =
+                    emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            ) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe true
+                    listEmailMessages.result.nextToken shouldBe null
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
         }
-    }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnEmptyListForOutOfDateRangeUpdatedAtDate() = runBlocking {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailMessagesForEmailAddressIdShouldReturnEmptyListForOutOfDateRangeUpdatedAtDate() =
+        runBlocking {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
-        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
+
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
             }
-        }
 
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-        }
-
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            dateRange = EmailMessageDateRange(
-                updatedAt = DateRange(
-                    startDate = sudo.createdAt,
-                    endDate = emailAddress.createdAt,
+            val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = emailAddress.id,
+                dateRange = EmailMessageDateRange(
+                    updatedAt = DateRange(
+                        startDate = sudo.createdAt,
+                        endDate = emailAddress.createdAt,
+                    ),
                 ),
-            ),
-        )
-        when (val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe true
-                listEmailMessages.result.nextToken shouldBe null
-            }
-            else -> {
-                fail("Unexpected ListAPIResult")
+            )
+            when (
+                val listEmailMessages =
+                    emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            ) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe true
+                    listEmailMessages.result.nextToken shouldBe null
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
         }
-    }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldThrowForMultipleDateRangeSpecified() = runBlocking<Unit> {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailMessagesForEmailAddressIdShouldThrowForMultipleDateRangeSpecified() =
+        runBlocking<Unit> {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
-        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
+
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
+            }
+
+            val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = emailAddress.id,
+                dateRange = EmailMessageDateRange(
+                    sortDate = DateRange(
+                        startDate = emailAddress.createdAt,
+                        endDate = Date(emailAddress.createdAt.time + 100000),
+                    ),
+                    updatedAt = DateRange(
+                        startDate = emailAddress.createdAt,
+                        endDate = Date(emailAddress.createdAt.time + 100000),
+                    ),
+                ),
+            )
+            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
             }
         }
-
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-        }
-
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            dateRange = EmailMessageDateRange(
-                sortDate = DateRange(
-                    startDate = emailAddress.createdAt,
-                    endDate = Date(emailAddress.createdAt.time + 100000),
-                ),
-                updatedAt = DateRange(
-                    startDate = emailAddress.createdAt,
-                    endDate = Date(emailAddress.createdAt.time + 100000),
-                ),
-            ),
-        )
-        shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
-            emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
-        }
-    }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldThrowWhenInputStartDateGreaterThanEndDateForSortDateRange() = runBlocking<Unit> {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailMessagesForEmailAddressIdShouldThrowWhenInputStartDateGreaterThanEndDateForSortDateRange() =
+        runBlocking<Unit> {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
-        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
+
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
             }
-        }
 
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-        }
-
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            dateRange = EmailMessageDateRange(
-                sortDate = DateRange(
-                    startDate = Date(emailAddress.createdAt.time + 100000),
-                    endDate = emailAddress.createdAt,
+            val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = emailAddress.id,
+                dateRange = EmailMessageDateRange(
+                    sortDate = DateRange(
+                        startDate = Date(emailAddress.createdAt.time + 100000),
+                        endDate = emailAddress.createdAt,
+                    ),
                 ),
-            ),
-        )
-        shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
-            emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            )
+            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            }
         }
-    }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldThrowWhenInputStartDateGreaterThanEndDateForUpdatedAtDateRange() = runBlocking<Unit> {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailMessagesForEmailAddressIdShouldThrowWhenInputStartDateGreaterThanEndDateForUpdatedAtDateRange() =
+        runBlocking<Unit> {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
-        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
+
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
             }
-        }
 
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-        }
-
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            dateRange = EmailMessageDateRange(
-                updatedAt = DateRange(
-                    startDate = Date(emailAddress.createdAt.time + 100000),
-                    endDate = emailAddress.createdAt,
+            val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = emailAddress.id,
+                dateRange = EmailMessageDateRange(
+                    updatedAt = DateRange(
+                        startDate = Date(emailAddress.createdAt.time + 100000),
+                        endDate = emailAddress.createdAt,
+                    ),
                 ),
-            ),
-        )
-        shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
-            emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            )
+            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            }
         }
-    }
 
     @Test
     fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListAscending() = runBlocking {
@@ -559,6 +585,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -566,8 +593,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
         }
 
         // Wait for all the messages to arrive
@@ -600,6 +627,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     }
                 }
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -624,6 +652,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -631,8 +660,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
         }
 
         // Wait for all the messages to arrive
@@ -659,6 +688,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     }
                 }
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -666,20 +696,25 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnEmptyListForNonExistingEmailAddress() = runBlocking {
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = "nonExistentId",
-        )
-        when (val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe true
-                listEmailMessages.result.nextToken shouldBe null
-            }
-            else -> {
-                fail("Unexpected ListAPIResult")
+    fun listEmailMessagesForEmailAddressIdShouldReturnEmptyListForNonExistingEmailAddress() =
+        runBlocking {
+            val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = "nonExistentId",
+            )
+            when (
+                val listEmailMessages =
+                    emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            ) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe true
+                    listEmailMessages.result.nextToken shouldBe null
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
         }
-    }
 
     @Test
     fun listEmailMessagesForEmailAddressIdShouldReturnPartialResult() = runBlocking {
@@ -699,6 +734,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }
@@ -706,8 +742,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
         }
         delay(2000)
 
@@ -717,7 +753,10 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
         )
-        when (val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)) {
+        when (
+            val listEmailMessages =
+                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+        ) {
             is ListAPIResult.Partial -> {
                 listEmailMessages.result.items.size shouldBe 0
                 listEmailMessages.result.failed.size shouldBe messageCount * 2
@@ -725,6 +764,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                 listEmailMessages.result.failed[0].cause
                     .shouldBeInstanceOf<DeviceKeyManager.DeviceKeyManagerException.DecryptionException>()
             }
+
             else -> {
                 fail("Unexpected ListAPIResult")
             }

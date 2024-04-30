@@ -25,11 +25,15 @@ mutation UpdateEmailAddressMetadata($input: UpdateEmailAddressMetadataInput!) {
 }
 
 mutation SendEmailMessage($input: SendEmailMessageInput!) {
-  sendEmailMessage(input: $input)
+  sendEmailMessageV2(input: $input) {
+    ...SendEmailMessageResult
+  }
 }
 
 mutation SendEncryptedEmailMessage($input: SendEncryptedEmailMessageInput!) {
-  sendEncryptedEmailMessage(input: $input)
+  sendEncryptedEmailMessage(input: $input) {
+   ...SendEmailMessageResult
+  }
 }
 
 mutation UpdateEmailMessages($input: UpdateEmailMessagesInput!) {

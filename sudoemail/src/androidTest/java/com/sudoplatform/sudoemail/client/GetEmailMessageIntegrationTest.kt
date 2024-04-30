@@ -57,12 +57,12 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val emailId = sendEmailMessage(emailClient, emailAddress)
-        emailId.isBlank() shouldBe false
+        val result = sendEmailMessage(emailClient, emailAddress)
+        result.id.isBlank() shouldBe false
 
         delay(2000)
 
-        val getMessageInput = GetEmailMessageInput(emailId)
+        val getMessageInput = GetEmailMessageInput(result.id)
         val retrievedEmailMessage = emailClient.getEmailMessage(getMessageInput)
             ?: throw AssertionError("should not be null")
 

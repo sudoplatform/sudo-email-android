@@ -73,9 +73,9 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         val sentEmailIds = mutableSetOf<String>()
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-            sentEmailIds.add(emailId)
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
+            sentEmailIds.add(result.id)
         }
         sentEmailIds.size shouldBeGreaterThan 0
 
@@ -121,9 +121,9 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             val messageCount = 2
             val sentEmailIds = mutableSetOf<String>()
             for (i in 0 until messageCount) {
-                val emailId = sendEmailMessage(emailClient, emailAddress)
-                emailId.isBlank() shouldBe false
-                sentEmailIds.add(emailId)
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
+                sentEmailIds.add(result.id)
             }
             sentEmailIds.size shouldBeGreaterThan 0
 

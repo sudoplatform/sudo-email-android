@@ -33,6 +33,7 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
+import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
@@ -478,7 +479,7 @@ interface SudoEmailClient : AutoCloseable {
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun sendEmailMessage(input: SendEmailMessageInput): String
+    suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult
 
     /**
      * Update multiple [EmailMessage]s using a list of identifiers.

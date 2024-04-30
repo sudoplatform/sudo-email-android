@@ -85,6 +85,7 @@ import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
+import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
@@ -118,6 +119,7 @@ import com.sudoplatform.sudoemail.types.transformers.EmailFolderTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailMessageDateRangeTransformer.toEmailMessageDateRangeInput
 import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
+import com.sudoplatform.sudoemail.types.transformers.toDate
 import com.sudoplatform.sudoemail.util.EmailAddressParser
 import com.sudoplatform.sudoemail.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
@@ -418,7 +420,7 @@ internal class DefaultSudoEmailClient(
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun sendEmailMessage(input: SendEmailMessageInput): String {
+    override suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult {
         val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments) = input
         val s3ObjectKey: String
         try {
@@ -540,7 +542,7 @@ internal class DefaultSudoEmailClient(
         s3ObjectKey: String,
         emailMessageHeader: InternetMessageFormatHeader,
         hasAttachments: Boolean,
-    ): String {
+    ): SendEmailMessageResult {
         try {
             val s3EmailObjectInput = S3EmailObjectInput.builder()
                 .key(s3ObjectKey)
@@ -572,8 +574,14 @@ internal class DefaultSudoEmailClient(
                 throw interpretEmailMessageError(mutationResponse.errors().first())
             }
 
-            return mutationResponse.data()?.sendEncryptedEmailMessage()
-                ?: throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
+            val result = mutationResponse.data()?.sendEncryptedEmailMessage()
+            result?.let {
+                return SendEmailMessageResult(
+                    it.fragments().sendEmailMessageResult().id(),
+                    it.fragments().sendEmailMessageResult().createdAtEpochMs().toDate(),
+                )
+            }
+            throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
@@ -601,7 +609,7 @@ internal class DefaultSudoEmailClient(
     private suspend fun sendOutOfNetworkEmailMessage(
         senderEmailAddressId: String,
         s3ObjectKey: String,
-    ): String {
+    ): SendEmailMessageResult {
         try {
             val s3EmailObject = S3EmailObjectInput.builder()
                 .key(s3ObjectKey)
@@ -625,8 +633,14 @@ internal class DefaultSudoEmailClient(
                 throw interpretEmailMessageError(mutationResponse.errors().first())
             }
 
-            return mutationResponse.data()?.sendEmailMessage()
-                ?: throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
+            val result = mutationResponse.data()?.sendEmailMessageV2()
+            result?.let {
+                return SendEmailMessageResult(
+                    it.fragments().sendEmailMessageResult().id(),
+                    it.fragments().sendEmailMessageResult().createdAtEpochMs().toDate(),
+                )
+            }
+            throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {

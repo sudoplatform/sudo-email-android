@@ -17,6 +17,7 @@ import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
+import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
@@ -277,7 +278,7 @@ abstract class BaseIntegrationTest {
         body: String? = null,
         attachments: List<EmailAttachment> = emptyList(),
         inlineAttachments: List<EmailAttachment> = emptyList(),
-    ): String {
+    ): SendEmailMessageResult {
         val messageSubject = "Hello ${UUID.randomUUID()}"
         val emailBody = body ?: buildString {
             for (i in 0 until 500) {

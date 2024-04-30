@@ -69,15 +69,23 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
 
     private fun testEmailLifecycle(emailAddress: EmailAddress) = runBlocking<Unit> {
         // Send message from email address
-        val outgoingMessageId =
-            sendEmailMessage(emailClient, fromAddress = emailAddress, toAddresses = listOf(emailAddressList[0].emailAddress))
-        outgoingMessageId shouldNotBe null
+        val outgoingMessageResult =
+            sendEmailMessage(
+                emailClient,
+                fromAddress = emailAddress,
+                toAddresses = listOf(emailAddressList[0].emailAddress),
+            )
+        outgoingMessageResult.id shouldNotBe null
 
         // Receive message with email address
-        val incomingMessageId =
-            sendEmailMessage(emailClient, fromAddress = emailAddressList[0], toAddresses = listOf(emailAddress.emailAddress))
-        incomingMessageId shouldNotBe null
-        emailClient.getEmailMessage(GetEmailMessageInput(incomingMessageId)) shouldNotBe null
+        val incomingMessageResult =
+            sendEmailMessage(
+                emailClient,
+                fromAddress = emailAddressList[0],
+                toAddresses = listOf(emailAddress.emailAddress),
+            )
+        incomingMessageResult.id shouldNotBe null
+        emailClient.getEmailMessage(GetEmailMessageInput(incomingMessageResult.id)) shouldNotBe null
 
         // Deprovision second test address
         val deprovisionedAddress = emailClient.deprovisionEmailAddress(emailAddress.id)
@@ -89,7 +97,8 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
         setupTestData()
 
         // Get public key of another email address
-        var publicInfoInput = LookupEmailAddressesPublicInfoInput(listOf(emailAddressList[0].emailAddress))
+        var publicInfoInput =
+            LookupEmailAddressesPublicInfoInput(listOf(emailAddressList[0].emailAddress))
         var publicInfo = emailClient.lookupEmailAddressesPublicInfo(publicInfoInput)
         publicInfo shouldHaveAtLeastSize 1
         val keyId = publicInfo[0].keyId
@@ -100,11 +109,13 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
         //  - Failure -> environment does not allow duplicate keys, and has somewhere thrown an invalid/duplicate key error
         try {
             // Provision email address with the generated public key
-            val provisionedAddress = provisionEmailAddress(emailClient, ownershipProofList[0], keyId = keyId)
+            val provisionedAddress =
+                provisionEmailAddress(emailClient, ownershipProofList[0], keyId = keyId)
             provisionedAddress shouldNotBe null
 
             // Verify new provisioned address has same key
-            publicInfoInput = LookupEmailAddressesPublicInfoInput(listOf(provisionedAddress.emailAddress))
+            publicInfoInput =
+                LookupEmailAddressesPublicInfoInput(listOf(provisionedAddress.emailAddress))
             publicInfo = emailClient.lookupEmailAddressesPublicInfo(publicInfoInput)
             publicInfo shouldHaveAtLeastSize 1
             keyId shouldBe publicInfo[0].keyId

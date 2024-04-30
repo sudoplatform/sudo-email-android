@@ -71,8 +71,8 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val emailId = sendEmailMessage(emailClient, emailAddress)
-        emailId.isBlank() shouldBe false
+        val sendResult = sendEmailMessage(emailClient, emailAddress)
+        sendResult.id.isBlank() shouldBe false
 
         // Wait for all the messages to arrive
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
@@ -87,7 +87,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
             ?: fail("EmailFolder could not be found")
 
-        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
+        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message could not be found")
         with(retrievedEmailMessage) {
             folderId shouldBe sentFolder.id
@@ -97,17 +97,21 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
             ?: fail("EmailFolder could not be found")
 
-        val input = UpdateEmailMessagesInput(listOf(emailId), UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false))
+        val input = UpdateEmailMessagesInput(
+            listOf(sendResult.id),
+            UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
+        )
         when (val result = emailClient.updateEmailMessages(input)) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }
+
             else -> {
                 fail("Unexpected BatchOperationResult")
             }
         }
 
-        val updatedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
+        val updatedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message could not be found")
         with(updatedEmailMessage) {
             folderId shouldBe trashFolder.id
@@ -131,9 +135,9 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         val sentEmailIds = mutableListOf<String>()
         for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-            sentEmailIds.add(emailId)
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
+            sentEmailIds.add(result.id)
         }
         sentEmailIds.size shouldBeGreaterThan 0
 
@@ -150,11 +154,15 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
             ?: fail("EmailFolder could not be found")
 
-        val input = UpdateEmailMessagesInput(sentEmailIds, UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false))
+        val input = UpdateEmailMessagesInput(
+            sentEmailIds,
+            UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
+        )
         when (val result = emailClient.updateEmailMessages(input)) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.SUCCESS
             }
+
             else -> {
                 fail("Unexpected BatchOperationResult")
             }
@@ -166,8 +174,10 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
         )
-        val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
-        val outbound = (listEmailMessages as ListAPIResult.Success<EmailMessage>).result.items.filter { it.direction == Direction.OUTBOUND }
+        val listEmailMessages =
+            emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+        val outbound =
+            (listEmailMessages as ListAPIResult.Success<EmailMessage>).result.items.filter { it.direction == Direction.OUTBOUND }
         with(outbound[0]) {
             folderId shouldBe trashFolder.id
             seen shouldBe false
@@ -181,130 +191,148 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun updateEmailMessagesShouldKeepPreviousFolderIdUnchangedWhenMovingToSameFolder() = runBlocking {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun updateEmailMessagesShouldKeepPreviousFolderIdUnchangedWhenMovingToSameFolder() =
+        runBlocking {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val emailId = sendEmailMessage(emailClient, emailAddress)
-        emailId.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
 
-        // Wait for all the messages to arrive
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-            runBlocking {
-                val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id,
-                )
-                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            // Wait for all the messages to arrive
+            await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+                runBlocking {
+                    val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                        emailAddressId = emailAddress.id,
+                    )
+                    emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+                }
+            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == 2 }
+
+            val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
+                ?: fail("EmailFolder could not be found")
+
+            val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(result.id))
+                ?: fail("Email message could not be found")
+            with(retrievedEmailMessage) {
+                folderId shouldBe sentFolder.id
+                seen shouldBe true
+                previousFolderId shouldBe null
             }
-        } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == 2 }
 
-        val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
-            ?: fail("EmailFolder could not be found")
+            val input = UpdateEmailMessagesInput(
+                listOf(result.id),
+                UpdateEmailMessagesInput.UpdatableValues(sentFolder.id, false),
+            )
+            when (val result = emailClient.updateEmailMessages(input)) {
+                is BatchOperationResult.SuccessOrFailureResult -> {
+                    result.status shouldBe BatchOperationStatus.SUCCESS
+                }
 
-        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
-            ?: fail("Email message could not be found")
-        with(retrievedEmailMessage) {
-            folderId shouldBe sentFolder.id
-            seen shouldBe true
-            previousFolderId shouldBe null
-        }
-
-        val input = UpdateEmailMessagesInput(listOf(emailId), UpdateEmailMessagesInput.UpdatableValues(sentFolder.id, false))
-        when (val result = emailClient.updateEmailMessages(input)) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
+                else -> {
+                    fail("Unexpected BatchOperationResult")
+                }
             }
-            else -> {
-                fail("Unexpected BatchOperationResult")
+
+            val updatedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(result.id))
+                ?: fail("Email message could not be found")
+            with(updatedEmailMessage) {
+                folderId shouldBe sentFolder.id
+                seen shouldBe false
+                previousFolderId shouldBe null
             }
         }
-
-        val updatedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
-            ?: fail("Email message could not be found")
-        with(updatedEmailMessage) {
-            folderId shouldBe sentFolder.id
-            seen shouldBe false
-            previousFolderId shouldBe null
-        }
-    }
 
     @Test
-    fun updateEmailMessagesShouldReturnPartialResultWhenUpdatingExistingAndNonExistingMessages() = runBlocking {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun updateEmailMessagesShouldReturnPartialResultWhenUpdatingExistingAndNonExistingMessages() =
+        runBlocking {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val messageCount = 2
-        val sentEmailIds = mutableSetOf<String>()
-        for (i in 0 until messageCount) {
-            val emailId = sendEmailMessage(emailClient, emailAddress)
-            emailId.isBlank() shouldBe false
-            sentEmailIds.add(emailId)
+            val messageCount = 2
+            val sentEmailIds = mutableSetOf<String>()
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
+                sentEmailIds.add(result.id)
+            }
+            sentEmailIds.size shouldBeGreaterThan 0
+
+            // Wait for all the messages to arrive
+            await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+                runBlocking {
+                    val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                        emailAddressId = emailAddress.id,
+                    )
+                    emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+                }
+            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
+
+            val nonExistentIds = listOf("nonExistentId")
+            val emailIdList = mutableListOf<String>()
+            emailIdList.addAll(sentEmailIds)
+            emailIdList.addAll(nonExistentIds)
+
+            val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
+                ?: fail("EmailFolder could not be found")
+
+            val input = UpdateEmailMessagesInput(
+                emailIdList,
+                UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
+            )
+            when (val result = emailClient.updateEmailMessages(input)) {
+                is BatchOperationResult.PartialResult -> {
+                    result.status shouldBe BatchOperationStatus.PARTIAL
+                    result.successValues shouldContainExactlyInAnyOrder sentEmailIds
+                    result.failureValues shouldContainExactlyInAnyOrder nonExistentIds
+                }
+
+                else -> {
+                    fail("Unexpected BatchOperationResult")
+                }
+            }
         }
-        sentEmailIds.size shouldBeGreaterThan 0
-
-        // Wait for all the messages to arrive
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-            runBlocking {
-                val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id,
-                )
-                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
-            }
-        } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
-
-        val nonExistentIds = listOf("nonExistentId")
-        val emailIdList = mutableListOf<String>()
-        emailIdList.addAll(sentEmailIds)
-        emailIdList.addAll(nonExistentIds)
-
-        val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
-            ?: fail("EmailFolder could not be found")
-
-        val input = UpdateEmailMessagesInput(emailIdList, UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false))
-        when (val result = emailClient.updateEmailMessages(input)) {
-            is BatchOperationResult.PartialResult -> {
-                result.status shouldBe BatchOperationStatus.PARTIAL
-                result.successValues shouldContainExactlyInAnyOrder sentEmailIds
-                result.failureValues shouldContainExactlyInAnyOrder nonExistentIds
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
-    }
 
     @Test
-    fun updateEmailMessagesShouldReturnFailureWhenUpdatingMultipleNonExistentMessages() = runBlocking {
-        val input = UpdateEmailMessagesInput(listOf("id1", "id2", "id3"), UpdateEmailMessagesInput.UpdatableValues("folderId", false))
-        when (val result = emailClient.updateEmailMessages(input)) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.FAILURE
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
+    fun updateEmailMessagesShouldReturnFailureWhenUpdatingMultipleNonExistentMessages() =
+        runBlocking {
+            val input = UpdateEmailMessagesInput(
+                listOf("id1", "id2", "id3"),
+                UpdateEmailMessagesInput.UpdatableValues("folderId", false),
+            )
+            when (val result = emailClient.updateEmailMessages(input)) {
+                is BatchOperationResult.SuccessOrFailureResult -> {
+                    result.status shouldBe BatchOperationStatus.FAILURE
+                }
+
+                else -> {
+                    fail("Unexpected BatchOperationResult")
+                }
             }
         }
-    }
 
     @Test
     fun updateEmailMessagesShouldThrowWithInvalidArgumentWithEmptyInput() = runBlocking<Unit> {
-        val input = UpdateEmailMessagesInput(emptyList(), UpdateEmailMessagesInput.UpdatableValues("TRASH", true))
+        val input = UpdateEmailMessagesInput(
+            emptyList(),
+            UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
+        )
         shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
             emailClient.updateEmailMessages(input)
         }
@@ -313,11 +341,15 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun updateEmailMessagesShouldAllowInputLimitEdgeCase() = runBlocking {
         val inputIds = Array(100) { it.toString() }.toList()
-        val input = UpdateEmailMessagesInput(inputIds, UpdateEmailMessagesInput.UpdatableValues("TRASH", true))
+        val input = UpdateEmailMessagesInput(
+            inputIds,
+            UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
+        )
         when (val result = emailClient.updateEmailMessages(input)) {
             is BatchOperationResult.SuccessOrFailureResult -> {
                 result.status shouldBe BatchOperationStatus.FAILURE
             }
+
             else -> {
                 fail("Unexpected BatchOperationResult")
             }
@@ -327,7 +359,10 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun updateEmailMessagesShouldThrowWhenInputLimitExceeded() = runBlocking<Unit> {
         val inputIds = Array(101) { it.toString() }.toList()
-        val input = UpdateEmailMessagesInput(inputIds, UpdateEmailMessagesInput.UpdatableValues("TRASH", true))
+        val input = UpdateEmailMessagesInput(
+            inputIds,
+            UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
+        )
         shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
             emailClient.updateEmailMessages(input)
         }

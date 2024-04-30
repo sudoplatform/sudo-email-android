@@ -362,6 +362,12 @@ type BlockEmailAddressesBulkUpdateResult {
   successAddresses: [String!]
 }
 
+# Send email message result.
+type SendEmailMessageResult {
+  id: ID!
+  createdAtEpochMs: Float!
+}
+
 type GetEmailAddressBlocklistResponse {
   blockedAddresses: [BlockedEmailAddress!]!
 }
@@ -427,9 +433,9 @@ type Mutation {
 
   deprovisionEmailAddress(input: DeprovisionEmailAddressInput!): EmailAddress!
 
-  sendEmailMessage(input: SendEmailMessageInput!): ID!
+  sendEmailMessageV2(input: SendEmailMessageInput!): SendEmailMessageResult!
 
-  sendEncryptedEmailMessage(input: SendEncryptedEmailMessageInput!): ID!
+  sendEncryptedEmailMessage(input: SendEncryptedEmailMessageInput!): SendEmailMessageResult!
 
   deleteEmailMessages(input: DeleteEmailMessagesInput!): [ID!]!
 

@@ -55,12 +55,12 @@ class ImportExportKeysIntegrationTest : BaseIntegrationTest() {
         val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
         emailAddress shouldNotBe null
 
-        val emailId = sendEmailMessage(emailClient, emailAddress)
-        emailId.isBlank() shouldBe false
+        val result = sendEmailMessage(emailClient, emailAddress)
+        result.id.isBlank() shouldBe false
 
         delay(3000)
 
-        val getMessageInput = GetEmailMessageInput(emailId)
+        val getMessageInput = GetEmailMessageInput(result.id)
         val storedEmailMessage = emailClient.getEmailMessage(getMessageInput)
             ?: throw AssertionError("should not be null")
 
@@ -72,7 +72,8 @@ class ImportExportKeysIntegrationTest : BaseIntegrationTest() {
         }
 
         val getAddressInput = GetEmailAddressInput(emailAddress.id)
-        val storedEmailAddress = emailClient.getEmailAddress(getAddressInput) ?: throw AssertionError("should not be null")
+        val storedEmailAddress = emailClient.getEmailAddress(getAddressInput)
+            ?: throw AssertionError("should not be null")
         storedEmailAddress.emailAddress shouldBe emailAddress.emailAddress
 
         val exportedKeys = emailClient.exportKeys()

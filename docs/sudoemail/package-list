@@ -386,6 +386,10 @@ $dokka.location:com.sudoplatform.sudoemail.types/PartialResult///PointingToDecla
 $dokka.location:com.sudoplatform.sudoemail.types/PartialResult/PartialResult/#TypeParam(bounds=[kotlin.Any?])#java.lang.Exception/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-partial-result/-partial-result.html
 $dokka.location:com.sudoplatform.sudoemail.types/PartialResult/cause/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-partial-result/cause.html
 $dokka.location:com.sudoplatform.sudoemail.types/PartialResult/partial/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-partial-result/partial.html
+$dokka.location:com.sudoplatform.sudoemail.types/SendEmailMessageResult///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-send-email-message-result/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/SendEmailMessageResult/SendEmailMessageResult/#kotlin.String#java.util.Date/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-send-email-message-result/-send-email-message-result.html
+$dokka.location:com.sudoplatform.sudoemail.types/SendEmailMessageResult/createdAt/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-send-email-message-result/created-at.html
+$dokka.location:com.sudoplatform.sudoemail.types/SendEmailMessageResult/id/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-send-email-message-result/id.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder.ASC///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-sort-order/-a-s-c/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder.DESC///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-sort-order/-d-e-s-c/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-sort-order/index.html

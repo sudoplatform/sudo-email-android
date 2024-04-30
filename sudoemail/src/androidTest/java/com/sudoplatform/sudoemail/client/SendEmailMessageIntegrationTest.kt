@@ -93,8 +93,10 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(emailClient, emailAddress)
+            emailId = result.id
             emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
         }
 
         // Wait for all the messages to arrive
@@ -135,7 +137,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEmailWithValidAttachmentShouldReturnEmailMessageId() = runBlocking {
+    fun sendEmailWithValidAttachmentShouldReturnEmailMessageIdAndCreatedAt() = runBlocking {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -176,13 +178,15 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(
+            val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
                 attachments = listOf(attachment),
                 inlineAttachments = listOf(inlineAttachment),
             )
+            emailId = result.id
             emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
         }
 
         // Wait for all the messages to arrive
@@ -342,12 +346,14 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(
+            val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
                 listOf(receiverEmailAddress.emailAddress),
             )
+            emailId = result.id
             emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
         }
 
         // Wait for all the messages to arrive
@@ -435,14 +441,16 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(
+            val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
                 listOf(receiverEmailAddress.emailAddress),
                 attachments = listOf(attachment),
                 inlineAttachments = listOf(inlineAttachment),
             )
+            emailId = result.id
             emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
         }
 
         // Wait for all the messages to arrive
@@ -517,7 +525,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(
+            val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
                 listOf(
@@ -525,7 +533,9 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                     receiverEmailAddressTwo.emailAddress,
                 ),
             )
+            emailId = result.id
             emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
         }
 
         // Wait for all the messages to arrive
@@ -593,13 +603,15 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(
+            val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
                 listOf(receiverEmailAddress.emailAddress),
                 listOf(receiverEmailAddressTwo.emailAddress),
             )
+            emailId = result.id
             emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
         }
 
         // Wait for all the messages to arrive
@@ -660,12 +672,14 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val messageCount = 2
         var emailId = ""
         for (i in 0 until messageCount) {
-            emailId = sendEmailMessage(
+            val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
                 listOf(emailAddress.emailAddress),
             )
+            emailId = result.id
             emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
         }
 
         // Wait for all the messages to arrive

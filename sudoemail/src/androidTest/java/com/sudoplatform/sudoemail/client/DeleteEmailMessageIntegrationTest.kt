@@ -62,8 +62,9 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val emailId = sendEmailMessage(emailClient, emailAddress)
-        emailId.isBlank() shouldBe false
+        val sendResult = sendEmailMessage(emailClient, emailAddress)
+        sendResult.id.isBlank() shouldBe false
+        sendResult.createdAt shouldNotBe null
 
         // Wait for all the messages to arrive
         await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
@@ -75,8 +76,8 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
             }
         } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == 2 }
 
-        val result = emailClient.deleteEmailMessage(emailId)
-        result shouldBe emailId
+        val result = emailClient.deleteEmailMessage(sendResult.id)
+        result shouldBe sendResult.id
     }
 
     @Test
