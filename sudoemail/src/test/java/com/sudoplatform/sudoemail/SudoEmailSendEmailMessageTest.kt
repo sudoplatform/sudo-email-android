@@ -20,7 +20,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.SendEmailMessageResult
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.graphql.type.Rfc822HeaderInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -284,8 +284,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         }
     }
 
-    private val mockDeviceKeyManager by before {
-        DefaultDeviceKeyManager(
+    private val mockServiceKeyManager by before {
+        DefaultServiceKeyManager(
             "keyRingService",
             mockUserClient,
             mockKeyManager,
@@ -319,7 +319,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private val mockSealingService by before {
         DefaultSealingService(
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockLogger,
         )
     }
@@ -341,13 +341,14 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )

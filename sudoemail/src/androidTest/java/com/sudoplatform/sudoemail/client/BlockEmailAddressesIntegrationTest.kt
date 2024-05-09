@@ -108,7 +108,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun blockEmailAddressesShouldSuccessfullyBlockASingleAddress() = runBlocking<Unit> {
+    fun blockEmailAddressesShouldSuccessfullyBlockASingleAddress() = runBlocking {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -142,7 +142,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun blockEmailAddressesShouldSuccessfullyBlockAMultipleAddress() = runBlocking<Unit> {
+    fun blockEmailAddressesShouldSuccessfullyBlockAMultipleAddress() = runBlocking {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -201,7 +201,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         )
 
         // Make sure message was received
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = inboxFolder?.id?.let {
                     ListEmailMessagesForEmailFolderIdInput(
@@ -242,9 +242,9 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
 
         // Wait for messages to potentially arrive even though they shouldn't
         await.timeout(
-            Duration.TEN_SECONDS.multiply(12), // Increase timeout from default 10 seconds
+            Duration.TWO_MINUTES, // Increase timeout from default 10 seconds
         ).withPollDelay(
-            Duration.TEN_SECONDS.multiply(6), // Wait 60 seconds for first poll
+            Duration.ONE_MINUTE, // Wait 60 seconds for first poll
         ).untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = inboxFolder?.id?.let {
@@ -285,7 +285,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         )
 
         // Check that it was received
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = inboxFolder?.id?.let {
                     ListEmailMessagesForEmailFolderIdInput(

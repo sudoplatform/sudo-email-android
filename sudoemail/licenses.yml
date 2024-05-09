@@ -118,12 +118,6 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: https://developer.android.com/jetpack/androidx
-- artifact: org.jetbrains.kotlin:kotlin-stdlib-common:+
-  name: org.jetbrains.kotlin:kotlin-stdlib-common
-  copyrightHolder: JetBrains s.r.o.
-  license: The Apache License, Version 2.0
-  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
-  url: https://kotlinlang.org/
 - artifact: org.checkerframework:checker-compat-qual:+
   name: Checker Qual
   copyrightHolder: checkerframework
@@ -374,3 +368,177 @@
   license: Eclipse Public License 2.0
   licenseUrl: https://www.eclipse.org/legal/epl-2.0/
   url: https://github.com/jakartaee/jaf-api
+- artifact: androidx.documentfile:documentfile:+
+  name: documentfile
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: http://developer.android.com/tools/extras/support-library.html
+- artifact: androidx.legacy:legacy-support-core-utils:+
+  name: legacy-support-core-utils
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: http://developer.android.com/tools/extras/support-library.html
+- artifact: androidx.localbroadcastmanager:localbroadcastmanager:+
+  name: localbroadcastmanager
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: http://developer.android.com/tools/extras/support-library.html
+- artifact: androidx.print:print:+
+  name: print
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: http://developer.android.com/tools/extras/support-library.html
+- artifact: com.google.android.datatransport:transport-api:+
+  name: transport-api
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.android.datatransport:transport-backend-cct:+
+  name: transport-backend-cct
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.android.datatransport:transport-runtime:+
+  name: transport-runtime
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.android.gms:play-services-base:+
+  name: play-services-base
+  copyrightHolder: Google, Inc.
+  license: Android Software Development Kit License
+  licenseUrl: https://developer.android.com/studio/terms.html
+  url: https://developers.google.com/android/guides/overview
+- artifact: com.google.android.gms:play-services-basement:+
+  name: play-services-basement
+  copyrightHolder: Google, Inc.
+  license: Android Software Development Kit License
+  licenseUrl: https://developer.android.com/studio/terms.html
+  url: https://developers.google.com/android/guides/overview
+- artifact: com.google.android.gms:play-services-cloud-messaging:+
+  name: play-services-cloud-messaging
+  copyrightHolder: Google, Inc.
+  license: Android Software Development Kit License
+  licenseUrl: https://developer.android.com/studio/terms.html
+  url: https://developers.google.com/android/guides/overview
+- artifact: com.google.android.gms:play-services-stats:+
+  name: play-services-stats
+  copyrightHolder: Google, Inc.
+  license: Android Software Development Kit License
+  licenseUrl: https://developer.android.com/studio/terms.html
+  url: https://developers.google.com/android/guides/overview
+- artifact: com.google.android.gms:play-services-tasks:+
+  name: play-services-tasks
+  copyrightHolder: Google, Inc.
+  license: Android Software Development Kit License
+  licenseUrl: https://developer.android.com/studio/terms.html
+  url: https://developers.google.com/android/guides/overview
+- artifact: com.google.errorprone:error_prone_annotations:+
+  name: error_prone_annotations
+  copyrightHolder: Google, Inc.
+  license: Apache 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/google/error-prone
+- artifact: com.google.firebase:firebase-annotations:+
+  name: firebase-annotations
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-common-ktx:+
+  name: firebase-common-ktx
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-common:+
+  name: firebase-common
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-components:+
+  name: firebase-components
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-datatransport:+
+  name: firebase-datatransport
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-encoders-json:+
+  name: firebase-encoders-json
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-encoders-proto:+
+  name: firebase-encoders-proto
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-encoders:+
+  name: firebase-encoders
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-iid-interop:+
+  name: firebase-iid-interop
+  copyrightHolder: Google, Inc.
+  license: Android Software Development Kit License
+  licenseUrl: https://developer.android.com/studio/terms.html
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-installations-interop:+
+  name: firebase-installations-interop
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-installations:+
+  name: firebase-installations
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-measurement-connector:+
+  name: firebase-measurement-connector
+  copyrightHolder: Google, Inc.
+  license: Android Software Development Kit License
+  licenseUrl: https://developer.android.com/studio/terms.html
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-messaging-ktx:+
+  name: firebase-messaging-ktx
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: com.google.firebase:firebase-messaging:+
+  name: firebase-messaging
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/firebase/firebase-android-sdk
+- artifact: javax.inject:javax.inject:+
+  name: javax.inject
+  copyrightHolder: The JSR-330 Expert Group
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: http://code.google.com/p/atinject/
+- artifact: org.jetbrains.kotlinx:kotlinx-coroutines-play-services:+
+  name: kotlinx-coroutines-play-services
+  copyrightHolder: JetBrains s.r.o. and Kotlin Programming Language contributors
+  license: The Apache Software License, Version 2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://github.com/Kotlin/kotlinx.coroutines

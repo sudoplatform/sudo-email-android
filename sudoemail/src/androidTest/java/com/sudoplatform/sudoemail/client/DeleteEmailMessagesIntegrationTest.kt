@@ -105,7 +105,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteEmailMessagesShouldReturnPartialResultWhenDeletingExistingAndNonExistingMessages() =
+    fun deleteEmailMessagesShouldReturnPartialResultWhenDeletingExistingAndNonExistingMessages(): Unit =
         runBlocking {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
@@ -128,7 +128,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             sentEmailIds.size shouldBeGreaterThan 0
 
             // Wait for all the messages to arrive
-            await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
                 runBlocking {
                     val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
                         emailAddressId = emailAddress.id,
@@ -153,9 +153,12 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
                     fail("Unexpected BatchOperationResult")
                 }
             }
-            val updatedEmailAddress =
-                emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-            updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
+
+            await.atMost(Duration.TEN_SECONDS) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+                runBlocking {
+                    emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+                }
+            } has { this.numberOfEmailMessages == messageCount }
         }
 
     @Test

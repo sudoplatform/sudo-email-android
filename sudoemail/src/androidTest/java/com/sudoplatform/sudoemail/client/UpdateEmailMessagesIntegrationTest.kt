@@ -75,7 +75,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         sendResult.id.isBlank() shouldBe false
 
         // Wait for all the messages to arrive
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
                     emailAddressId = emailAddress.id,
@@ -142,7 +142,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         sentEmailIds.size shouldBeGreaterThan 0
 
         // Wait for all the messages to arrive
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
                     emailAddressId = emailAddress.id,
@@ -208,7 +208,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
             result.id.isBlank() shouldBe false
 
             // Wait for all the messages to arrive
-            await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
                 runBlocking {
                     val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
                         emailAddressId = emailAddress.id,
@@ -275,7 +275,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
             sentEmailIds.size shouldBeGreaterThan 0
 
             // Wait for all the messages to arrive
-            await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
                 runBlocking {
                     val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
                         emailAddressId = emailAddress.id,

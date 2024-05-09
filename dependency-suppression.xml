@@ -77,4 +77,14 @@
    <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java@.*$</packageUrl>
    <vulnerabilityName>CVE-2022-3509</vulnerabilityName>
 </suppress>
+<suppress>
+   <!-- false positives -->
+   <notes><![CDATA[
+   file name: kotlinx-coroutines-play-services-1.7.3.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlinx/kotlinx\-coroutines\-play\-services@.*$</packageUrl>
+   <vulnerabilityName>CVE-2020-22475</vulnerabilityName>
+   <vulnerabilityName>CVE-2022-39349</vulnerabilityName>
+</suppress>
 </suppressions>
+

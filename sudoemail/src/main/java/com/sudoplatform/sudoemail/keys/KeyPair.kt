@@ -22,7 +22,7 @@ internal data class KeyPair(
 ) {
     override fun toString(): String {
         val clz = this@KeyPair.javaClass.simpleName
-        return "$clz[keyId=$keyId keyRingId=$keyRingId publicKey.size=${publicKey?.size} privateKey.size=${privateKey?.size}]"
+        return "$clz[keyId=$keyId keyRingId=$keyRingId publicKey.size=${publicKey.size} privateKey.size=${privateKey.size}]"
     }
 
     override fun equals(other: Any?): Boolean {

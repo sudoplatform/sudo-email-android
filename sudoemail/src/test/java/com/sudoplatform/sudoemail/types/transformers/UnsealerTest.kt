@@ -13,7 +13,7 @@ import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.graphql.fragment.BlockedAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.transformers.Unsealer.Companion.DEFAULT_ALGORITHM
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
@@ -56,8 +56,8 @@ class UnsealerTest : BaseTests() {
         KeyManager(AndroidSQLiteStore(context))
     }
 
-    private val deviceKeyManager by before {
-        DefaultDeviceKeyManager(
+    private val serviceKeyManager by before {
+        DefaultServiceKeyManager(
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = keyManager,
@@ -71,14 +71,14 @@ class UnsealerTest : BaseTests() {
 
     private val unsealer by before {
         Unsealer(
-            deviceKeyManager,
+            serviceKeyManager,
             keyInfo,
         )
     }
 
     private val stringUnsealer by before {
         Unsealer(
-            deviceKeyManager,
+            serviceKeyManager,
             keyInfo2,
         )
     }
@@ -105,7 +105,7 @@ class UnsealerTest : BaseTests() {
     }
 
     private fun sealString(value: String): String {
-        val encryptedMetadata = deviceKeyManager.encryptWithSymmetricKeyId(
+        val encryptedMetadata = serviceKeyManager.encryptWithSymmetricKeyId(
             symmetricKeyId,
             value.toByteArray(Charsets.UTF_8),
         )

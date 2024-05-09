@@ -12,7 +12,7 @@ import com.apollographql.apollo.api.Response
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.fragment.EmailConfigurationData
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -91,8 +91,8 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         mock<KeyManagerInterface>()
     }
 
-    private val mockDeviceKeyManager by before {
-        DefaultDeviceKeyManager(
+    private val mockServiceKeyManager by before {
+        DefaultServiceKeyManager(
             "keyRingService",
             mockUserClient,
             mockKeyManager,
@@ -112,7 +112,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     private val mockSealingService by before {
         DefaultSealingService(
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockLogger,
         )
     }
@@ -127,13 +127,14 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )

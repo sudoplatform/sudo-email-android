@@ -35,7 +35,7 @@ import timber.log.Timber
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
-class DeviceKeyManagerRoboTest : BaseTests() {
+class ServiceKeyManagerRoboTest : BaseTests() {
 
     private val keyRingServiceName = "sudo-email"
 
@@ -51,8 +51,8 @@ class DeviceKeyManagerRoboTest : BaseTests() {
         KeyManager(AndroidSQLiteStore(context))
     }
 
-    private val deviceKeyManager by before {
-        DefaultDeviceKeyManager(
+    private val serviceKeyManager by before {
+        DefaultServiceKeyManager(
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = keyManager,
@@ -78,20 +78,20 @@ class DeviceKeyManagerRoboTest : BaseTests() {
         }
 
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException> {
-            deviceKeyManager.getKeyRingId()
+            serviceKeyManager.getKeyRingId()
         }
     }
 
     @Test
     fun shouldNotThrowIfRegistered() {
-        deviceKeyManager.getKeyRingId() shouldNotBe null
+        serviceKeyManager.getKeyRingId() shouldNotBe null
     }
 
     @Test
     fun shouldBeAbleToPerformOperationsAfterSignIn() = runBlocking {
-        deviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
+        serviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
 
-        val keyPair = deviceKeyManager.generateKeyPair()
+        val keyPair = serviceKeyManager.generateKeyPair()
         with(keyPair) {
             this shouldNotBe null
             keyRingId shouldStartWith keyRingServiceName
@@ -102,30 +102,30 @@ class DeviceKeyManagerRoboTest : BaseTests() {
             privateKey.size shouldBeGreaterThan 0
         }
 
-        val newKeyPair = deviceKeyManager.generateKeyPair()
+        val newKeyPair = serviceKeyManager.generateKeyPair()
         newKeyPair shouldNotBe null
         newKeyPair shouldNotBe keyPair
 
-        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
+        val fetchedKeyPair = serviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
         fetchedKeyPair shouldNotBe null
         fetchedKeyPair shouldNotBe keyPair
         fetchedKeyPair shouldBe newKeyPair
 
-        val fetchedPublicKey = deviceKeyManager.getPublicKeyWithId(keyPair.keyId)
+        val fetchedPublicKey = serviceKeyManager.getPublicKeyWithId(keyPair.keyId)
         fetchedPublicKey shouldNotBe null
 
-        deviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
+        serviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
 
-        val privateKeyExists = deviceKeyManager.privateKeyExists(newKeyPair.keyId)
+        val privateKeyExists = serviceKeyManager.privateKeyExists(newKeyPair.keyId)
         privateKeyExists shouldBe true
 
         val clearData = "hello world".toByteArray()
-        var secretData = deviceKeyManager.encryptWithKeyPairId(
+        var secretData = serviceKeyManager.encryptWithKeyPairId(
             newKeyPair.keyId,
             clearData,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
-        var decryptedData = deviceKeyManager.decryptWithKeyPairId(
+        var decryptedData = serviceKeyManager.decryptWithKeyPairId(
             secretData,
             newKeyPair.keyId,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
@@ -133,34 +133,34 @@ class DeviceKeyManagerRoboTest : BaseTests() {
         decryptedData shouldBe clearData
 
         keyManager.generateSymmetricKey("symmetricKey")
-        val symmetricKey = deviceKeyManager.getSymmetricKeyData("symmetricKey")
+        val symmetricKey = serviceKeyManager.getSymmetricKeyData("symmetricKey")
         symmetricKey shouldNotBe null
-        secretData = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
+        secretData = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
 
-        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, secretData)
+        decryptedData = serviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, secretData)
         decryptedData shouldBe clearData
 
         // Encrypt/decrypt with IV
-        val randomData = deviceKeyManager.createRandomData(16)
+        val randomData = serviceKeyManager.createRandomData(16)
         randomData shouldNotBe null
 
-        val symmetricKeyExists = deviceKeyManager.symmetricKeyExists("symmetricKey")
+        val symmetricKeyExists = serviceKeyManager.symmetricKeyExists("symmetricKey")
         symmetricKeyExists shouldBe true
 
         val clearData2 = "hello world2".toByteArray()
-        val secretData2 = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData2, randomData)
-        val decryptedData2 = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData2, randomData)
+        val secretData2 = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData2, randomData)
+        val decryptedData2 = serviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData2, randomData)
         decryptedData2 shouldBe clearData2
     }
 
     @Test
     fun shouldBeAbleToGenerateSymmetricKeyId() = runBlocking {
-        deviceKeyManager.getCurrentSymmetricKeyId() shouldBe null
+        serviceKeyManager.getCurrentSymmetricKeyId() shouldBe null
 
-        val symmetricKey = deviceKeyManager.generateNewCurrentSymmetricKey()
+        val symmetricKey = serviceKeyManager.generateNewCurrentSymmetricKey()
         symmetricKey.isBlank() shouldBe false
 
-        val symmetricKeyId = deviceKeyManager.getCurrentSymmetricKeyId()
+        val symmetricKeyId = serviceKeyManager.getCurrentSymmetricKeyId()
         symmetricKeyId shouldNotBe null
         symmetricKeyId?.isBlank() shouldBe false
     }

@@ -9,6 +9,7 @@ package com.sudoplatform.sudoemail.types
 import android.os.Parcelable
 import androidx.annotation.Keep
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 import java.util.Date
 
 /**
@@ -81,6 +82,7 @@ data class EmailMessage(
      * @property displayName [String] The display name (or personal name) of the email address.
      */
     @Parcelize
+    @Serializable
     @Keep
     data class EmailAddress(
         val emailAddress: String,

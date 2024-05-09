@@ -16,7 +16,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -166,8 +166,8 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
         }
     }
 
-    private val mockDeviceKeyManager by before {
-        DefaultDeviceKeyManager(
+    private val mockServiceKeyManager by before {
+        DefaultServiceKeyManager(
             "keyRingService",
             mockUserClient,
             mockKeyManager,
@@ -221,19 +221,24 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
         mock<EmailCryptoService>()
     }
 
+    private val mockNotificationHandler by before {
+        mock<SudoEmailNotificationHandler>()
+    }
+
     private val client by before {
         DefaultSudoEmailClient(
             context,
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            mockNotificationHandler,
             mockS3Client,
             mockS3Client,
         )
@@ -256,6 +261,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
+            mockNotificationHandler,
         )
     }
 

@@ -9,6 +9,10 @@ package com.sudoplatform.sudoemail.samples
 import android.content.Context
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.SudoEmailClient
+import com.sudoplatform.sudoemail.SudoEmailNotifiableClient
+import com.sudoplatform.sudoemail.SudoEmailNotificationHandler
+import com.sudoplatform.sudoemail.types.EmailMessageReceivedNotification
+import com.sudoplatform.sudonotification.SudoNotificationClient
 import com.sudoplatform.sudouser.SudoUserClient
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,6 +38,24 @@ class Samples : BaseTests() {
         val emailClient = SudoEmailClient.builder()
             .setContext(context)
             .setSudoUserClient(sudoUserClient)
+            .build()
+    }
+
+    fun sudoEmailNotifiableClient(sudoUserClient: SudoUserClient) {
+        val notificationHandler = object : SudoEmailNotificationHandler {
+            override fun onEmailMessageReceived(message: EmailMessageReceivedNotification) {
+                // Handle messageReceived notification
+            }
+        }
+
+        val notifiableClient = SudoEmailNotifiableClient.builder()
+            .setContext(context)
+            .setNotificationHandler(notificationHandler)
+            .build()
+
+        val sudoNotificationClient = SudoNotificationClient.builder()
+            .setSudoUserClient(sudoUserClient)
+            .setNotifiableClients(listOf(notifiableClient))
             .build()
     }
 }

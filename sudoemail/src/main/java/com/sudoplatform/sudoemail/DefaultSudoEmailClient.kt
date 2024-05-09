@@ -56,6 +56,7 @@ import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.keys.KeyPair
+import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -127,6 +128,8 @@ import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
+import com.sudoplatform.sudonotification.types.NotificationMetaData
+import com.sudoplatform.sudonotification.types.NotificationSchemaEntry
 import com.sudoplatform.sudouser.SudoUserClient
 import com.sudoplatform.sudouser.exceptions.AuthenticationException
 import kotlinx.coroutines.Dispatchers
@@ -160,7 +163,7 @@ import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as Updat
  * @property appSyncClient [AWSAppSyncClient] GraphQL client used to make requests to AWS and call sudo email service API.
  * @property sudoUserClient [SudoUserClient] Used to determine if a user is signed in and gain access to the user owner ID.
  * @property logger [Logger] Errors and warnings will be logged here.
- * @property deviceKeyManager [DeviceKeyManager] On device management of key storage.
+ * @property serviceKeyManager [ServiceKeyManager] On device management of key storage.
  * @property sealingService [SealingService] Service that handles sealing of emails
  * @property region [String] The AWS region.
  * @property emailBucket [String] The S3 Bucket for email messages sent from this identity.
@@ -174,14 +177,15 @@ internal class DefaultSudoEmailClient(
         LogConstants.SUDOLOG_TAG,
         AndroidUtilsLogDriver(LogLevel.INFO),
     ),
-    private val deviceKeyManager: DeviceKeyManager,
+    private val serviceKeyManager: ServiceKeyManager,
     private val emailMessageDataProcessor: EmailMessageDataProcessor,
     private val sealingService: SealingService,
     private val emailCryptoService: EmailCryptoService,
     private val region: String = Regions.US_EAST_1.name,
     private val emailBucket: String,
     private val transientBucket: String,
-    @VisibleForTesting
+    private val notificationHandler: SudoEmailNotificationHandler? = null,
+
     private val s3TransientClient: S3Client = DefaultS3Client(
         context,
         sudoUserClient,
@@ -189,7 +193,6 @@ internal class DefaultSudoEmailClient(
         transientBucket,
         logger,
     ),
-    @VisibleForTesting
     private val s3EmailClient: S3Client = DefaultS3Client(
         context,
         sudoUserClient,
@@ -271,24 +274,24 @@ internal class DefaultSudoEmailClient(
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
-        SubscriptionService(appSyncClient, deviceKeyManager, sudoUserClient, logger)
+        SubscriptionService(appSyncClient, serviceKeyManager, sudoUserClient, logger)
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun provisionEmailAddress(input: ProvisionEmailAddressInput): EmailAddress {
         try {
             // Ensure symmetric key has been generated
-            val symmetricKeyId = this.deviceKeyManager.getCurrentSymmetricKeyId()
+            val symmetricKeyId = this.serviceKeyManager.getCurrentSymmetricKeyId()
             if (symmetricKeyId == null) {
-                this.deviceKeyManager.generateNewCurrentSymmetricKey()
+                this.serviceKeyManager.generateNewCurrentSymmetricKey()
             }
 
             val keyPair: KeyPair = if (input.keyId != null) {
                 val id = input.keyId.toString()
-                this.deviceKeyManager.getKeyPairWithId(id) ?: throw KeyNotFoundException(
+                this.serviceKeyManager.getKeyPairWithId(id) ?: throw KeyNotFoundException(
                     PUBLIC_KEY_NOT_FOUND_ERROR_MSG,
                 )
             } else {
-                this.deviceKeyManager.generateKeyPair()
+                this.serviceKeyManager.generateKeyPair()
             }
             val keyInput = ProvisionEmailAddressPublicKeyInput.builder()
                 .keyId(keyPair.keyId)
@@ -300,7 +303,7 @@ internal class DefaultSudoEmailClient(
                 .emailAddress(input.emailAddress)
                 .ownershipProofTokens(listOf(input.ownershipProofToken))
                 .key(keyInput)
-                .alias(input.alias.toAliasInput(deviceKeyManager))
+                .alias(input.alias.toAliasInput(serviceKeyManager))
                 .build()
             val mutation = ProvisionEmailAddressMutation.builder()
                 .input(mutationInput)
@@ -317,7 +320,7 @@ internal class DefaultSudoEmailClient(
             val result =
                 mutationResponse.data()?.provisionEmailAddress()?.fragments()?.emailAddress()
             result?.let {
-                return EmailAddressTransformer.toEntity(deviceKeyManager, result)
+                return EmailAddressTransformer.toEntity(serviceKeyManager, result)
             }
             throw SudoEmailClient.EmailAddressException.ProvisionFailedException(NO_EMAIL_ERROR_MSG)
         } catch (e: Throwable) {
@@ -357,7 +360,7 @@ internal class DefaultSudoEmailClient(
             val result = mutationResponse.data()?.deprovisionEmailAddress()?.fragments()
                 ?.emailAddressWithoutFolders()
             result?.let {
-                return EmailAddressTransformer.toEntity(deviceKeyManager, result)
+                return EmailAddressTransformer.toEntity(serviceKeyManager, result)
             }
             throw SudoEmailClient.EmailAddressException.DeprovisionFailedException(
                 NO_EMAIL_ERROR_MSG,
@@ -382,7 +385,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput): String {
         try {
             val updateValuesInput = EmailAddressMetadataUpdateValuesInput.builder()
-                .alias(input.alias.toAliasInput(deviceKeyManager))
+                .alias(input.alias.toAliasInput(serviceKeyManager))
                 .build()
             val mutationInput = UpdateEmailAddressMetadataRequest.builder()
                 .id(input.id)
@@ -884,7 +887,7 @@ internal class DefaultSudoEmailClient(
             )
         }
         try {
-            deviceKeyManager.importKeys(archiveData)
+            serviceKeyManager.importKeys(archiveData)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             throw interpretEmailMessageException(e)
@@ -1007,7 +1010,7 @@ internal class DefaultSudoEmailClient(
             for (sealedEmailAddress in sealedEmailAddresses) {
                 try {
                     val unsealedEmailAddress = EmailAddressTransformer
-                        .toEntity(deviceKeyManager, sealedEmailAddress.fragments().emailAddress())
+                        .toEntity(serviceKeyManager, sealedEmailAddress.fragments().emailAddress())
                     success.add(unsealedEmailAddress)
                 } catch (e: Exception) {
                     val partialEmailAddress = EmailAddressTransformer
@@ -1071,7 +1074,7 @@ internal class DefaultSudoEmailClient(
             for (sealedEmailAddress in sealedEmailAddresses) {
                 try {
                     val unsealedEmailAddress = EmailAddressTransformer
-                        .toEntity(deviceKeyManager, sealedEmailAddress.fragments().emailAddress())
+                        .toEntity(serviceKeyManager, sealedEmailAddress.fragments().emailAddress())
                     success.add(unsealedEmailAddress)
                 } catch (e: Exception) {
                     val partialEmailAddress = EmailAddressTransformer
@@ -1195,7 +1198,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun getEmailMessage(input: GetEmailMessageInput): EmailMessage? {
         try {
             val result = retrieveEmailMessage(input) ?: return null
-            return EmailMessageTransformer.toEntity(deviceKeyManager, result)
+            return EmailMessageTransformer.toEntity(serviceKeyManager, result)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
@@ -1248,7 +1251,7 @@ internal class DefaultSudoEmailClient(
 
                     CRYPTO_CONTENT_ENCODING -> {
                         decodedBytes = EmailMessageTransformer.toUnsealedRfc822Data(
-                            deviceKeyManager,
+                            serviceKeyManager,
                             emailMessage.rfc822Header().keyId(),
                             emailMessage.rfc822Header().algorithm(),
                             decodedBytes,
@@ -1346,7 +1349,7 @@ internal class DefaultSudoEmailClient(
 
                     "sudoplatform-crypto" -> {
                         decodedBytes = EmailMessageTransformer.toUnsealedRfc822Data(
-                            deviceKeyManager,
+                            serviceKeyManager,
                             emailMessage.rfc822Header().keyId(),
                             emailMessage.rfc822Header().algorithm(),
                             decodedBytes,
@@ -1406,7 +1409,7 @@ internal class DefaultSudoEmailClient(
                 try {
                     val unsealerEmailMessage =
                         EmailMessageTransformer.toEntity(
-                            deviceKeyManager,
+                            serviceKeyManager,
                             sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
                     success.add(unsealerEmailMessage)
@@ -1473,7 +1476,7 @@ internal class DefaultSudoEmailClient(
                 try {
                     val unsealerEmailMessage =
                         EmailMessageTransformer.toEntity(
-                            deviceKeyManager,
+                            serviceKeyManager,
                             sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
                     success.add(unsealerEmailMessage)
@@ -1540,7 +1543,7 @@ internal class DefaultSudoEmailClient(
                 try {
                     val unsealerEmailMessage =
                         EmailMessageTransformer.toEntity(
-                            deviceKeyManager,
+                            serviceKeyManager,
                             sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
                     success.add(unsealerEmailMessage)
@@ -1760,7 +1763,7 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailCryptographicKeysException::class)
     override suspend fun exportKeys(): ByteArray {
         try {
-            return deviceKeyManager.exportKeys()
+            return serviceKeyManager.exportKeys()
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             throw interpretEmailMessageException(e)
@@ -1786,7 +1789,7 @@ internal class DefaultSudoEmailClient(
             )
         }
 
-        val symmetricKeyId = this.deviceKeyManager.getCurrentSymmetricKeyId()
+        val symmetricKeyId = this.serviceKeyManager.getCurrentSymmetricKeyId()
             ?: throw KeyNotFoundException(SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG)
 
         val owner = this.sudoUserClient.getSubject()
@@ -2017,7 +2020,7 @@ internal class DefaultSudoEmailClient(
         val unsealedBlockedAddresses = blockedAddresses.map {
             val hashedValue = it.hashedBlockedValue()
             var unsealedAddress = ""
-            if (deviceKeyManager.symmetricKeyExists(
+            if (serviceKeyManager.symmetricKeyExists(
                     it.sealedValue().fragments().sealedAttribute().keyId(),
                 )
             ) {
@@ -2065,7 +2068,7 @@ internal class DefaultSudoEmailClient(
 
     override fun reset() {
         close()
-        this.deviceKeyManager.removeAllKeys()
+        this.serviceKeyManager.removeAllKeys()
     }
 
     /** Private Methods */
@@ -2086,7 +2089,7 @@ internal class DefaultSudoEmailClient(
         }
 
         val result = queryResponse.data()?.emailAddress?.fragments()?.emailAddress() ?: return null
-        return EmailAddressTransformer.toEntity(deviceKeyManager, result)
+        return EmailAddressTransformer.toEntity(serviceKeyManager, result)
     }
 
     private suspend fun retrieveEmailMessage(input: GetEmailMessageInput): SealedEmailMessage? {
@@ -2118,7 +2121,7 @@ internal class DefaultSudoEmailClient(
         senderEmailAddressId: String,
         id: String? = null,
     ): String {
-        val symmetricKeyId = this.deviceKeyManager.getCurrentSymmetricKeyId()
+        val symmetricKeyId = this.serviceKeyManager.getCurrentSymmetricKeyId()
             ?: throw KeyNotFoundException(SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG)
 
         val draftId = if (id !== null) id else UUID.randomUUID().toString()
@@ -2302,3 +2305,13 @@ internal class DefaultSudoEmailClient(
         return SudoEmailClient.EmailBlocklistException.FailedException(e.toString())
     }
 }
+
+public data class SudoEmailNotificationSchemaEntry(
+    public override val description: String,
+    public override val fieldName: String,
+    public override val type: String,
+) : NotificationSchemaEntry
+public data class SudoEmailNotificationMetaData(
+    public override val serviceName: String,
+    public override val schema: List<SudoEmailNotificationSchemaEntry>,
+) : NotificationMetaData

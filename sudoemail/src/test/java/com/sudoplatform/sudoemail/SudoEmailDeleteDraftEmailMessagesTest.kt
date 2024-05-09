@@ -14,7 +14,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.S3Exception
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -146,8 +146,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         }
     }
 
-    private val mockDeviceKeyManager by before {
-        DefaultDeviceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
+    private val mockServiceKeyManager by before {
+        DefaultServiceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
     }
 
     private val mockAppSyncClient by before {
@@ -169,7 +169,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
     }
 
     private val mockSealingService by before {
-        DefaultSealingService(mockDeviceKeyManager, mockLogger)
+        DefaultSealingService(mockServiceKeyManager, mockLogger)
     }
 
     private val mockEmailCryptoService by before {
@@ -182,13 +182,14 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )

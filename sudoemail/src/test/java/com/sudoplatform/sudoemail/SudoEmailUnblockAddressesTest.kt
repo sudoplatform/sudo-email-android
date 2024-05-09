@@ -13,7 +13,7 @@ import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.fragment.UnblockAddressesResult
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
-import com.sudoplatform.sudoemail.keys.DeviceKeyManager
+import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
@@ -104,8 +104,8 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         mock<KeyManagerInterface>()
     }
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>().stub {
+    private val mockServiceKeyManager by before {
+        mock<ServiceKeyManager>().stub {
             on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
         }
     }
@@ -132,13 +132,14 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "emailBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -159,7 +160,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockAppSyncClient,
             mockS3Client,
             mockEmailMessageProcessor,

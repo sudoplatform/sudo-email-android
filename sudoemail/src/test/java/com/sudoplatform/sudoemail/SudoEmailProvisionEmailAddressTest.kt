@@ -18,6 +18,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressPublicKeyInput
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.keys.KeyPair
+import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -168,8 +169,8 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         }
     }
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>().stub {
+    private val mockServiceKeyManager by before {
+        mock<ServiceKeyManager>().stub {
             on { generateKeyPair() } doReturn KeyPair(
                 keyId = "keyId",
                 keyRingId = "keyRingId",
@@ -192,7 +193,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     private val mockSealingService by before {
         DefaultSealingService(
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockLogger,
         )
     }
@@ -207,13 +208,14 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -230,7 +232,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockAppSyncClient,
             mockS3Client,
             mockEmailMessageProcessor,
@@ -298,8 +300,8 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 it.variables().input().alias() shouldBe null
             },
         )
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -338,8 +340,8 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 it.variables().input().alias() shouldBe null
             },
         )
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -383,8 +385,8 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 it.variables().input().alias() shouldBe null
             },
         )
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -428,13 +430,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 it.variables().input().alias() shouldBe null
             },
         )
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `provisionEmailAddress() should throw if key manager returns null key pair`() = runBlocking<Unit> {
-        mockDeviceKeyManager.stub {
+        mockServiceKeyManager.stub {
             on { getKeyPairWithId(anyString()) } doReturn null
         }
 
@@ -453,8 +455,8 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         deferredResult.await()
 
-        verify(mockDeviceKeyManager).getKeyPairWithId(anyString())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getKeyPairWithId(anyString())
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -498,8 +500,8 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 it.variables().input().alias() shouldBe null
             },
         )
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -543,13 +545,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 it.variables().input().alias() shouldBe null
             },
         )
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `provisionEmailAddress() should throw when key registration fails`() = runBlocking<Unit> {
-        mockDeviceKeyManager.stub {
+        mockServiceKeyManager.stub {
             on { generateKeyPair() } doThrow DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException("Mock")
         }
 
@@ -567,15 +569,15 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
         deferredResult.await()
 
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `provisionEmailAddress() should generate symmetric key if one doesn't exist`() = runBlocking<Unit> {
         provisionHolder.callback shouldBe null
 
-        mockDeviceKeyManager.stub {
+        mockServiceKeyManager.stub {
             on { getCurrentSymmetricKeyId() } doReturn null
             on { generateNewCurrentSymmetricKey() } doReturn "symmetricKeyId"
         }
@@ -636,8 +638,8 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 it.variables().input().alias() shouldBe null
             },
         )
-        verify(mockDeviceKeyManager).generateKeyPair()
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
-        verify(mockDeviceKeyManager).generateNewCurrentSymmetricKey()
+        verify(mockServiceKeyManager).generateKeyPair()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).generateNewCurrentSymmetricKey()
     }
 }

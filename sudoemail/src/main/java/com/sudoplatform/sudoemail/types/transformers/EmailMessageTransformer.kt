@@ -8,7 +8,6 @@ package com.sudoplatform.sudoemail.types.transformers
 
 import android.text.util.Rfc822Tokenizer
 import androidx.annotation.Keep
-import com.google.gson.Gson
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
@@ -53,17 +52,12 @@ internal object EmailMessageTransformer {
         deviceKeyManager: DeviceKeyManager,
         sealedEmailMessage: SealedEmailMessage,
     ): EmailMessage {
-        val keyInfo = KeyInfo(
+        val unsealedRfc822Header = EmailHeaderDetailsUnsealer.toEmailHeaderDetails(
+            sealedEmailMessage.rfc822Header().base64EncodedSealedData(),
             sealedEmailMessage.rfc822Header().keyId(),
-            KeyType.PRIVATE_KEY,
             sealedEmailMessage.rfc822Header().algorithm(),
+            deviceKeyManager,
         )
-        val unsealer = Unsealer(deviceKeyManager, keyInfo)
-
-        val unsealedRfc822HeaderString =
-            unsealer.unseal(sealedEmailMessage.rfc822Header().base64EncodedSealedData())
-        val unsealedRfc822Header =
-            Gson().fromJson(unsealedRfc822HeaderString, EmailHeaderDetails::class.java)
 
         return EmailMessage(
             id = sealedEmailMessage.id(),

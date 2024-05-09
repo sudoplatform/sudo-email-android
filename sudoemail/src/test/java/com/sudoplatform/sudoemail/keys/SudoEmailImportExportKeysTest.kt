@@ -62,8 +62,8 @@ class SudoEmailImportExportKeysTest : BaseTests() {
 
     private val dummyKeyString = "dummy key archive"
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>().stub {
+    private val mockServiceKeyManager by before {
+        mock<ServiceKeyManager>().stub {
             on { exportKeys() } doReturn dummyKeyString.toByteArray(Charsets.UTF_8)
         }
     }
@@ -78,7 +78,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
 
     private val mockSealingService by before {
         DefaultSealingService(
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockLogger,
         )
     }
@@ -93,13 +93,14 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -111,7 +112,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockAppSyncClient,
             mockS3Client,
             mockEmailMessageProcessor,
@@ -124,7 +125,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         val archiveData = dummyKeyString.toByteArray()
         client.importKeys(archiveData)
 
-        verify(mockDeviceKeyManager).importKeys(archiveData)
+        verify(mockServiceKeyManager).importKeys(archiveData)
     }
 
     @Test
@@ -137,8 +138,8 @@ class SudoEmailImportExportKeysTest : BaseTests() {
 
     @Test
     fun `importKeys(archiveData) should throw when deviceKeyManager throws`() = runBlocking<Unit> {
-        val mockDeviceKeyManager by before {
-            mock<DeviceKeyManager>().stub {
+        val mockServiceKeyManager by before {
+            mock<ServiceKeyManager>().stub {
                 on { importKeys(any<ByteArray>()) } doThrow
                     DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Mock exception")
             }
@@ -148,13 +149,14 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -167,14 +169,14 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     fun `exportKeys() should return key archive as exported from deviceKeyManager`() = runBlocking {
         val keyArchiveData = client.exportKeys()
 
-        verify(mockDeviceKeyManager).exportKeys()
+        verify(mockServiceKeyManager).exportKeys()
         keyArchiveData.toString(Charsets.UTF_8) shouldBe dummyKeyString
     }
 
     @Test
     fun `exportKeys() should throw when deviceKeyManager throws`() = runBlocking<Unit> {
-        val mockDeviceKeyManager by before {
-            mock<DeviceKeyManager>().stub {
+        val mockServiceKeyManager by before {
+            mock<ServiceKeyManager>().stub {
                 on { exportKeys() } doThrow
                     DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Mock exception")
             }
@@ -185,13 +187,14 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -212,7 +215,6 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         @Suppress("ktlint:standard:max-line-length")
         val sealedString = "oct9RDGr5QUS0c6HtdJtjsQAUgeY5BtTb+nj6crXkZ2kwnXrPL5ghq9e8nTH+LCh6NpJTlXJo/D6KS6dkPsIV0N1toplIswkCk8VfJ7BcfiYpFQcC6Y/+MmP778deWVERxkiYq5N1xIcB4p7RB7SL+VKJrdZ0Bt+Y9ZoMRxq8voNIInfl+kI4NS8iQkhAEBWoWO9H64YFsXvGLkth0K1obRJvs9HiXYjQyQlMBpP7Ku+ikJFnxlBgaV3ejxxv0SL"
         val keyId = "311220fc-a246-4181-87da-3fa0779ebb78"
-        val algorithm = "AES/CBC/PKCS7Padding"
         val keyNameSpace = "SudoEmailClient"
         val from = "from: safe-09432135-1514-410128-11455-3110677109148911@team-gc-dev.com"
         val messageBody = "test draft message"
@@ -220,19 +222,20 @@ class SudoEmailImportExportKeysTest : BaseTests() {
 
         val keyManager = KeyManager(InMemoryStore())
 
-        val deviceKeyManager = DefaultDeviceKeyManager(keyNameSpace, mockUserClient, keyManager, mockLogger)
+        val serviceKeyManager = DefaultServiceKeyManager(keyNameSpace, mockUserClient, keyManager, mockLogger)
         val emailClient = DefaultSudoEmailClient(
             mockContext,
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            deviceKeyManager,
+            serviceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -241,7 +244,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         emailClient.importKeys(archiveData)
 
         val sealedData = Base64.decode(sealedString, Base64.NO_WRAP)
-        val unsealedString = deviceKeyManager.decryptWithSymmetricKeyId(keyId, sealedData).toString(Charsets.UTF_8)
+        val unsealedString = serviceKeyManager.decryptWithSymmetricKeyId(keyId, sealedData).toString(Charsets.UTF_8)
         unsealedString.contains(from) shouldBe true
         unsealedString.contains(messageBody) shouldBe true
     }

@@ -38,12 +38,15 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         }
     }
 
+    private val mockDeviceKeyManager by before {
+        mock<DeviceKeyManager>()
+    }
     private val mockKeyManager by before {
         mock<KeyManagerInterface>()
     }
 
-    private val deviceKeyManager by before {
-        DefaultDeviceKeyManager(
+    private val serviceKeyManager by before {
+        DefaultServiceKeyManager(
             userClient = mockUserClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = mockKeyManager,
@@ -57,7 +60,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { generateKeyPair(anyString(), anyBoolean()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
-            deviceKeyManager.generateKeyPair()
+            serviceKeyManager.generateKeyPair()
         }
     }
 
@@ -67,7 +70,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getPublicKeyData(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
-            deviceKeyManager.getKeyPairWithId("42")
+            serviceKeyManager.getKeyPairWithId("42")
         }
     }
 
@@ -78,7 +81,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getPrivateKeyData(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
-            deviceKeyManager.getKeyPairWithId("42")
+            serviceKeyManager.getKeyPairWithId("42")
         }
     }
 
@@ -88,7 +91,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getPublicKey(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
-            deviceKeyManager.getPublicKeyWithId("notAnId")
+            serviceKeyManager.getPublicKeyWithId("notAnId")
         }
     }
 
@@ -98,7 +101,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getPassword(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
-            deviceKeyManager.getCurrentSymmetricKeyId()
+            serviceKeyManager.getCurrentSymmetricKeyId()
         }
     }
 
@@ -108,7 +111,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { generateSymmetricKey(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
-            deviceKeyManager.generateRandomSymmetricKey()
+            serviceKeyManager.generateRandomSymmetricKey()
         }
     }
 
@@ -118,7 +121,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { deletePassword(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException> {
-            deviceKeyManager.generateNewCurrentSymmetricKey()
+            serviceKeyManager.generateNewCurrentSymmetricKey()
         }
     }
 
@@ -128,7 +131,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getSymmetricKeyData(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
-            deviceKeyManager.symmetricKeyExists("42")
+            serviceKeyManager.symmetricKeyExists("42")
         }
     }
 
@@ -138,7 +141,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getPrivateKeyData(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
-            deviceKeyManager.privateKeyExists("42")
+            serviceKeyManager.privateKeyExists("42")
         }
     }
 
@@ -148,7 +151,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getSymmetricKeyData(anyString()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
-            deviceKeyManager.getSymmetricKeyData("42")
+            serviceKeyManager.getSymmetricKeyData("42")
         }
     }
 
@@ -158,7 +161,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
-            deviceKeyManager.decryptWithKeyPairId(
+            serviceKeyManager.decryptWithKeyPairId(
                 ByteArray(42),
                 "42",
                 KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
@@ -172,7 +175,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { encryptWithPublicKey(anyString(), any(), any()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
-            deviceKeyManager.encryptWithKeyPairId(
+            serviceKeyManager.encryptWithKeyPairId(
                 "42",
                 ByteArray(42),
                 KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
@@ -186,7 +189,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
-            deviceKeyManager.decryptWithSymmetricKey(
+            serviceKeyManager.decryptWithSymmetricKey(
                 ByteArray(42),
                 ByteArray(42),
             )
@@ -199,7 +202,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
-            deviceKeyManager.decryptWithSymmetricKey(
+            serviceKeyManager.decryptWithSymmetricKey(
                 ByteArray(42),
                 ByteArray(42),
                 ByteArray(42),
@@ -213,7 +216,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { decryptWithSymmetricKey(anyString(), any<ByteArray>()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.DecryptionException> {
-            deviceKeyManager.decryptWithSymmetricKeyId(
+            serviceKeyManager.decryptWithSymmetricKeyId(
                 "42",
                 ByteArray(42),
             )
@@ -226,7 +229,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { encryptWithSymmetricKey(anyString(), any()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
-            deviceKeyManager.encryptWithSymmetricKeyId(
+            serviceKeyManager.encryptWithSymmetricKeyId(
                 "42",
                 ByteArray(42),
             )
@@ -239,7 +242,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { encryptWithSymmetricKey(anyString(), any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
-            deviceKeyManager.encryptWithSymmetricKeyId(
+            serviceKeyManager.encryptWithSymmetricKeyId(
                 "42",
                 ByteArray(42),
                 ByteArray(42),
@@ -253,7 +256,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { encryptWithSymmetricKey(any<ByteArray>(), any()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
-            deviceKeyManager.encryptWithSymmetricKey(
+            serviceKeyManager.encryptWithSymmetricKey(
                 ByteArray(42),
                 ByteArray(42),
             )
@@ -266,7 +269,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { encryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>(), any<ByteArray>()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
-            deviceKeyManager.encryptWithSymmetricKey(
+            serviceKeyManager.encryptWithSymmetricKey(
                 ByteArray(42),
                 ByteArray(42),
                 ByteArray(42),
@@ -280,7 +283,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { removeAllKeys() } doThrow RuntimeException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.UnknownException> {
-            deviceKeyManager.removeAllKeys()
+            serviceKeyManager.removeAllKeys()
         }
     }
 
@@ -290,7 +293,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { getSubject() } doThrow RuntimeException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException> {
-            deviceKeyManager.getKeyRingId()
+            serviceKeyManager.getKeyRingId()
         }
     }
 
@@ -300,7 +303,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
             on { exportKeys() } doThrow RuntimeException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException> {
-            deviceKeyManager.exportKeys()
+            serviceKeyManager.exportKeys()
         }
     }
 
@@ -312,7 +315,7 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         }
         val dummyKeyArchive = "dummy key archive".toByteArray()
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException> {
-            deviceKeyManager.importKeys(dummyKeyArchive)
+            serviceKeyManager.importKeys(dummyKeyArchive)
         }
     }
 }

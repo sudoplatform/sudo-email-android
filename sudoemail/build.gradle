@@ -3,6 +3,7 @@ apply plugin: 'com.amazonaws.appsync'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
 apply plugin: "org.owasp.dependencycheck"
+apply plugin: "org.jetbrains.kotlin.plugin.serialization"
 
 node {
     version = "16.18.0"
@@ -17,7 +18,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 33
         versionCode = 1
-        versionName = "11.0.0"
+        versionName = "12.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -75,7 +76,7 @@ android {
 }
 
 ext {
-    coroutine_version = '1.7.3'
+    coroutine_version = '1.8.0'
     kotlintest_version = "3.4.2"
 }
 
@@ -84,6 +85,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutine_version"
+    implementation('org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3')
 
     // AWS
     //
@@ -94,14 +96,16 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
 
     // Sudo Platform
-    implementation "com.sudoplatform:sudokeymanager:7.2.0"
+    implementation 'com.sudoplatform:sudokeymanager:7.2.1'
     implementation "com.sudoplatform:sudologging:4.0.0"
     implementation "com.sudoplatform:sudoconfigmanager:7.0.2"
-    implementation 'com.sudoplatform:sudouser:18.0.0'
+    implementation 'com.sudoplatform:sudouser:18.0.1'
     implementation 'com.sudoplatform:sudoapiclient:9.0.0'
+    implementation 'com.sudoplatform:sudonotification:2.0.0'
 
     implementation 'com.sun.mail:jakarta.mail:2.0.1'
     implementation 'com.sun.activation:jakarta.activation:2.0.1'
+    implementation 'com.google.firebase:firebase-messaging-ktx:23.4.1'
 
     // Testing
     testImplementation "junit:junit:4.13.2"
@@ -109,12 +113,12 @@ dependencies {
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
     testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     testImplementation 'org.mockito:mockito-core:5.11.0'
-    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.2.1'
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.3.1'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation "androidx.test:core:1.5.0"
-    testImplementation 'org.robolectric:robolectric:4.11.1'
+    testImplementation 'org.robolectric:robolectric:4.12.1'
     testImplementation "com.jakewharton.timber:timber:5.0.1"
-    testImplementation 'commons-codec:commons-codec:1.16.1'
+    testImplementation 'commons-codec:commons-codec:1.17.0'
 
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation "androidx.test:runner:1.5.2"

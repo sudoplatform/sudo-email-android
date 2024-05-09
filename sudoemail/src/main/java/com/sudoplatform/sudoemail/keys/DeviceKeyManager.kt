@@ -45,24 +45,6 @@ internal interface DeviceKeyManager {
     }
 
     /**
-     * Returns the key ring id associated with the owner's service.
-     *
-     * @return The identifier of the key ring associated with the owner's service.
-     * @throws [DeviceKeyManagerException.UserIdNotFoundException] if the user Id cannot be found.
-     */
-    @Throws(DeviceKeyManagerException::class)
-    fun getKeyRingId(): String
-
-    /**
-     * Returns the [KeyPair] with the identifier [id] if it exists.
-     *
-     * @param id [String] Identifier of the [KeyPair] to retrieve.
-     * @return The [KeyPair] with the identifier [id] if it exists, null if it does not.
-     */
-    @Throws(DeviceKeyManagerException::class)
-    fun getKeyPairWithId(id: String): KeyPair?
-
-    /**
      * Returns the [PublicKey] with the identifier [keyId] if it exists.
      *
      * @param keyId [String] Identifier of the Public Key to retrieve.
@@ -71,15 +53,6 @@ internal interface DeviceKeyManager {
      */
     @Throws(DeviceKeyManagerException::class)
     fun getPublicKeyWithId(keyId: String): PublicKey?
-
-    /**
-     * Returns a new [KeyPair].
-     *
-     * @return The generated [KeyPair].
-     * @throws [DeviceKeyManagerException.KeyGenerationException] if unable to generate the [KeyPair].
-     */
-    @Throws(DeviceKeyManagerException::class)
-    fun generateKeyPair(): KeyPair
 
     /**
      * Generate a random symmetric key which is not persisted in the Android key store.

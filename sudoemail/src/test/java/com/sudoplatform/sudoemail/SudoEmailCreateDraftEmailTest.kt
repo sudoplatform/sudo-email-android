@@ -14,7 +14,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
-import com.sudoplatform.sudoemail.keys.DeviceKeyManager
+import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
@@ -145,8 +145,8 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         }
     }
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>().stub {
+    private val mockServiceKeyManager by before {
+        mock<ServiceKeyManager>().stub {
             on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
             on { generateNewCurrentSymmetricKey() } doReturn "newSymmetricKeyId"
         }
@@ -194,13 +194,14 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -216,7 +217,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         verifyNoMoreInteractions(
             mockUserClient,
             mockKeyManager,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockAppSyncClient,
             mockS3Client,
             mockEmailMessageProcessor,
@@ -303,7 +304,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         deferredResult.await()
 
         verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService).sealString(
             check {
                 it shouldBe "symmetricKeyId"
@@ -348,7 +349,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         result shouldMatch uuidRegex
 
         verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService).sealString("symmetricKeyId", createDraftInput.rfc822Data)
         verify(mockS3Client).upload(
             check {

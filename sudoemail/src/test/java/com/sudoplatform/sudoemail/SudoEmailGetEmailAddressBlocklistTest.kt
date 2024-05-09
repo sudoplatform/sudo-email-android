@@ -14,7 +14,7 @@ import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
 import com.sudoplatform.sudoemail.graphql.fragment.GetEmailAddressBlocklistResponse
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
-import com.sudoplatform.sudoemail.keys.DeviceKeyManager
+import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
@@ -150,8 +150,8 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
         mock<KeyManagerInterface>()
     }
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>().stub {
+    private val mockServiceKeyManager by before {
+        mock<ServiceKeyManager>().stub {
             on { symmetricKeyExists(any<String>()) } doReturn true
         }
     }
@@ -188,13 +188,14 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -211,7 +212,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockAppSyncClient,
             mockS3Client,
             mockEmailMessageProcessor,
@@ -361,13 +362,13 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             argumentCaptor.firstValue shouldBe Base64.decode(mockData[0]["sealedData"] as String)
             argumentCaptor.secondValue shouldBe Base64.decode(mockData[1]["sealedData"] as String)
             verify(mockUserClient).getSubject()
-            verify(mockDeviceKeyManager, times(2)).symmetricKeyExists(any<String>())
+            verify(mockServiceKeyManager, times(2)).symmetricKeyExists(any<String>())
         }
 
     @Test
     fun `getEmailAddressBlocklist() returns with failed status and error type when necessary`() =
         runBlocking<Unit> {
-            mockDeviceKeyManager.stub {
+            mockServiceKeyManager.stub {
                 on { symmetricKeyExists(any<String>()) } doReturnConsecutively listOf(false, true)
             }
             mockSealingService.stub {
@@ -422,6 +423,6 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             )
             argumentCaptor.firstValue shouldBe Base64.decode(mockData[1]["sealedData"] as String)
             verify(mockUserClient).getSubject()
-            verify(mockDeviceKeyManager, times(2)).symmetricKeyExists(any<String>())
+            verify(mockServiceKeyManager, times(2)).symmetricKeyExists(any<String>())
         }
 }

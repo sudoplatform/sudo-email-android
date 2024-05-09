@@ -14,7 +14,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -141,8 +141,8 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
         }
     }
 
-    private val mockDeviceKeyManager by before {
-        DefaultDeviceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
+    private val mockServiceKeyManager by before {
+        DefaultServiceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
     }
 
     private val mockAppSyncClient by before {
@@ -171,11 +171,15 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     }
 
     private val mockSealingService by before {
-        DefaultSealingService(mockDeviceKeyManager, mockLogger)
+        DefaultSealingService(mockServiceKeyManager, mockLogger)
     }
 
     private val mockEmailCryptoService by before {
         mock<EmailCryptoService>()
+    }
+
+    private val mockNotificationHandler by before {
+        mock<SudoEmailNotificationHandler>()
     }
 
     private val client by before {
@@ -184,13 +188,14 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            mockNotificationHandler,
             mockS3Client,
             mockS3Client,
         )
@@ -210,6 +215,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
+            mockNotificationHandler,
         )
     }
 

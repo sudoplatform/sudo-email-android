@@ -12,7 +12,7 @@ import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.sudoplatform.sudoapiclient.ApiClientManager
 import com.sudoplatform.sudoconfigmanager.DefaultSudoConfigManager
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.secure.DefaultEmailCryptoService
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -152,6 +152,7 @@ interface SudoEmailClient : AutoCloseable {
         private var logger: Logger =
             Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
         private var namespace: String = DEFAULT_KEY_NAMESPACE
+        private var notificationHandler: SudoEmailNotificationHandler? = null
         private var databaseName: String = AndroidSQLiteStore.DEFAULT_DATABASE_NAME
 
         /**
@@ -204,6 +205,10 @@ interface SudoEmailClient : AutoCloseable {
             this.namespace = namespace
         }
 
+        fun setNotificationHandler(notificationHandler: SudoEmailNotificationHandler) = also {
+            this.notificationHandler = notificationHandler
+        }
+
         /**
          * Provide the database name to use for exportable key store database.
          */
@@ -227,9 +232,10 @@ interface SudoEmailClient : AutoCloseable {
             val appSyncClient = appSyncClient ?: ApiClientManager.getClient(
                 this@Builder.context!!,
                 this@Builder.sudoUserClient!!,
+                CONFIG_EMAIL_SERVICE,
             )
 
-            val deviceKeyManager = DefaultDeviceKeyManager(
+            val serviceKeyManager = DefaultServiceKeyManager(
                 keyRingServiceName = "sudo-email",
                 userClient = sudoUserClient!!,
                 keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(
@@ -241,12 +247,12 @@ interface SudoEmailClient : AutoCloseable {
             val emailMessageDataProcessor = Rfc822MessageDataProcessor()
 
             val sealingService = DefaultSealingService(
-                deviceKeyManager = deviceKeyManager,
+                deviceKeyManager = serviceKeyManager,
                 logger = logger,
             )
 
             val emailCryptoService = DefaultEmailCryptoService(
-                deviceKeyManager = deviceKeyManager,
+                deviceKeyManager = serviceKeyManager,
                 logger = logger,
             )
 
@@ -257,13 +263,14 @@ interface SudoEmailClient : AutoCloseable {
                 appSyncClient = appSyncClient,
                 sudoUserClient = sudoUserClient!!,
                 logger = logger,
-                deviceKeyManager = deviceKeyManager,
+                serviceKeyManager = serviceKeyManager,
                 region = region,
                 emailBucket = emailBucket,
                 transientBucket = transientBucket,
                 emailMessageDataProcessor = emailMessageDataProcessor,
                 sealingService = sealingService,
                 emailCryptoService = emailCryptoService,
+                notificationHandler = notificationHandler,
             )
         }
     }

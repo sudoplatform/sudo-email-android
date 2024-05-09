@@ -67,7 +67,7 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
         sendResult.createdAt shouldNotBe null
 
         // Wait for all the messages to arrive
-        await.atMost(Duration.TEN_SECONDS.multiply(6)) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
+        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
             runBlocking {
                 val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
                     emailAddressId = emailAddress.id,

@@ -15,7 +15,7 @@ import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
 import com.sudoplatform.sudoemail.graphql.type.EmailAddressMetadataUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput
-import com.sudoplatform.sudoemail.keys.DeviceKeyManager
+import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -107,8 +107,8 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         mock<KeyManagerInterface>()
     }
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>().stub {
+    private val mockServiceKeyManager by before {
+        mock<ServiceKeyManager>().stub {
             on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
             on { encryptWithSymmetricKeyId(anyString(), any(), eq(null)) } doReturn ByteArray(42)
         }
@@ -126,7 +126,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     private val mockSealingService by before {
         DefaultSealingService(
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockLogger,
         )
     }
@@ -141,13 +141,14 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -184,7 +185,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         result shouldBe "emailAddressId"
 
         verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -213,7 +214,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         mutationHolder.callback?.onResponse(nullResponse)
 
         verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -239,7 +240,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         deferredResult.await()
 
         verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -277,7 +278,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         deferredResult.await()
 
         verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
@@ -303,12 +304,12 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         deferredResult.await()
 
         verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockDeviceKeyManager.stub {
+        mockServiceKeyManager.stub {
             on { getCurrentSymmetricKeyId() } doThrow CancellationException("mock")
         }
 
@@ -326,6 +327,6 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
         deferredResult.await()
 
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 }

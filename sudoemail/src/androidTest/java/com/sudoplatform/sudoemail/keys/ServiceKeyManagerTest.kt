@@ -37,7 +37,7 @@ import java.util.logging.Logger
  * Test the operation of [DefaultDeviceKeyManager] on Android.
  */
 @RunWith(AndroidJUnit4::class)
-class DeviceKeyManagerTest {
+class ServiceKeyManagerTest {
 
     private val keyRingServiceName = "sudo-email"
 
@@ -71,8 +71,8 @@ class DeviceKeyManagerTest {
         KeyManagerFactory(BaseIntegrationTest.context).createAndroidKeyManager("eml-client-test")
     }
 
-    private val deviceKeyManager by lazy {
-        DefaultDeviceKeyManager(
+    private val serviceKeyManager by lazy {
+        DefaultServiceKeyManager(
             userClient = userClient,
             keyRingServiceName = keyRingServiceName,
             keyManager = keyManager,
@@ -161,7 +161,7 @@ class DeviceKeyManagerTest {
     @Test
     fun shouldThrowIfNotRegistered() {
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException> {
-            deviceKeyManager.getKeyRingId()
+            serviceKeyManager.getKeyRingId()
         }
     }
 
@@ -169,9 +169,9 @@ class DeviceKeyManagerTest {
     fun shouldBeAbleToPerformOperationsAfterSignIn() = runBlocking {
         registerSignInAndEntitle()
 
-        deviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
+        serviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
 
-        val keyPair = deviceKeyManager.generateKeyPair()
+        val keyPair = serviceKeyManager.generateKeyPair()
         with(keyPair) {
             this shouldNotBe null
             keyRingId shouldStartWith keyRingServiceName
@@ -182,27 +182,27 @@ class DeviceKeyManagerTest {
             privateKey.size.shouldBeGreaterThan(0)
         }
 
-        val newKeyPair = deviceKeyManager.generateKeyPair()
+        val newKeyPair = serviceKeyManager.generateKeyPair()
         newKeyPair shouldNotBe null
         newKeyPair shouldNotBe keyPair
 
-        val fetchedKeyPair = deviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
+        val fetchedKeyPair = serviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
         fetchedKeyPair shouldNotBe null
         fetchedKeyPair shouldNotBe keyPair
         fetchedKeyPair shouldBe newKeyPair
 
-        deviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
+        serviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
 
-        val privateKeyExists = deviceKeyManager.privateKeyExists(newKeyPair.keyId)
+        val privateKeyExists = serviceKeyManager.privateKeyExists(newKeyPair.keyId)
         privateKeyExists shouldBe true
 
         val clearData = "hello world".toByteArray()
-        val secretData = deviceKeyManager.encryptWithKeyPairId(
+        val secretData = serviceKeyManager.encryptWithKeyPairId(
             newKeyPair.keyId,
             clearData,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
-        var decryptedData = deviceKeyManager.decryptWithKeyPairId(
+        var decryptedData = serviceKeyManager.decryptWithKeyPairId(
             secretData,
             newKeyPair.keyId,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
@@ -211,28 +211,28 @@ class DeviceKeyManagerTest {
 
         keyManager.deleteSymmetricKey("symmetricKey")
         keyManager.generateSymmetricKey("symmetricKey")
-        val symmetricKey = deviceKeyManager.getSymmetricKeyData("symmetricKey")
-        val symmetricSecretData = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
+        val symmetricKey = serviceKeyManager.getSymmetricKeyData("symmetricKey")
+        val symmetricSecretData = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
 
-        decryptedData = deviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, symmetricSecretData)
+        decryptedData = serviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, symmetricSecretData)
         decryptedData shouldBe clearData
 
         // Encrypt/decrypt with IV
-        val randomData = deviceKeyManager.createRandomData(16)
+        val randomData = serviceKeyManager.createRandomData(16)
         randomData shouldNotBe null
 
-        val symmetricKeyExists = deviceKeyManager.symmetricKeyExists("symmetricKey")
+        val symmetricKeyExists = serviceKeyManager.symmetricKeyExists("symmetricKey")
         symmetricKeyExists shouldBe true
 
         val clearData2 = "hello world2".toByteArray()
-        val secretData2 = deviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData2, randomData)
-        val decryptedData2 = deviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData2, randomData)
+        val secretData2 = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData2, randomData)
+        val decryptedData2 = serviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData2, randomData)
         decryptedData2 shouldBe clearData2
 
         // exportKeys and importKeys
-        val exportedKeys = deviceKeyManager.exportKeys()
+        val exportedKeys = serviceKeyManager.exportKeys()
         exportedKeys shouldNotBe null
-        deviceKeyManager.removeAllKeys()
+        serviceKeyManager.removeAllKeys()
         shouldThrow<com.sudoplatform.sudokeymanager.KeyNotFoundException> {
             keyManager.encryptWithPublicKey(
                 newKeyPair.keyId,
@@ -240,8 +240,8 @@ class DeviceKeyManagerTest {
                 KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
             )
         }
-        deviceKeyManager.importKeys(exportedKeys)
-        decryptedData = deviceKeyManager.decryptWithKeyPairId(
+        serviceKeyManager.importKeys(exportedKeys)
+        decryptedData = serviceKeyManager.decryptWithKeyPairId(
             secretData,
             newKeyPair.keyId,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,

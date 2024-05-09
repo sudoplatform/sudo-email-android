@@ -15,7 +15,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.BlockAddressesResult
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.graphql.type.BlockedAddressHashAlgorithm
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
-import com.sudoplatform.sudoemail.keys.DeviceKeyManager
+import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
@@ -137,8 +137,8 @@ class SudoEmailBlockAddressesTest : BaseTests() {
         mock<KeyManagerInterface>()
     }
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>().stub {
+    private val mockServiceKeyManager by before {
+        mock<ServiceKeyManager>().stub {
             on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
         }
     }
@@ -167,13 +167,14 @@ class SudoEmailBlockAddressesTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )
@@ -194,7 +195,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockAppSyncClient,
             mockS3Client,
             mockEmailMessageProcessor,
@@ -238,7 +239,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
             verify(mockSealingService).sealString(any(), any())
             verify(mockUserClient).getSubject()
         }
@@ -280,7 +281,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
                 it.variables().input().blockedAddresses().size shouldBe addresses.size
             },
         )
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService, times(2)).sealString(any(), any())
         verify(mockUserClient).getSubject()
     }
@@ -343,7 +344,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
                     it.variables().input().blockedAddresses().size shouldBe addresses.size
                 },
             )
-            verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
             verify(mockSealingService, times(2)).sealString(any(), any())
             verify(mockUserClient).getSubject()
         }
@@ -411,7 +412,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
                 it.variables().input().blockedAddresses().size shouldBe addresses.size
             },
         )
-        verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService, times(2)).sealString(any(), any())
         verify(mockUserClient).getSubject()
     }
@@ -457,7 +458,7 @@ class SudoEmailBlockAddressesTest : BaseTests() {
                     it.variables().input().blockedAddresses().size shouldBe addresses.size
                 },
             )
-            verify(mockDeviceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
             verify(mockSealingService, times(2)).sealString(any(), any())
             verify(mockUserClient).getSubject()
         }

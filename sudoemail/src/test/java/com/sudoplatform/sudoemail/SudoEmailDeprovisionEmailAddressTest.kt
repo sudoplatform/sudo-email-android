@@ -14,7 +14,7 @@ import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailAddressInput
-import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -112,8 +112,8 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
         mock<KeyManagerInterface>()
     }
 
-    private val mockDeviceKeyManager by before {
-        DefaultDeviceKeyManager(
+    private val mockServiceKeyManager by before {
+        DefaultServiceKeyManager(
             "keyRingService",
             mockUserClient,
             mockKeyManager,
@@ -133,7 +133,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     private val mockSealingService by before {
         DefaultSealingService(
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockLogger,
         )
     }
@@ -148,13 +148,14 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             mockAppSyncClient,
             mockUserClient,
             mockLogger,
-            mockDeviceKeyManager,
+            mockServiceKeyManager,
             mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
             "identityBucket",
             "transientBucket",
+            null,
             mockS3Client,
             mockS3Client,
         )

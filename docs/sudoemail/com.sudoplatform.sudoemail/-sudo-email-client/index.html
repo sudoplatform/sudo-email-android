@@ -61,6 +61,10 @@
     <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">SudoEmailClient</a> : <a href="https://developer.android.com/reference/kotlin/java/lang/AutoCloseable.html">AutoCloseable</a></div><p class="paragraph">Interface encapsulating a library for interacting with the Sudo Platform Email service.</p><h4 class="">Samples</h4><div class="sample-container"><pre><code class="runnablesample monospace block lang-kotlin" theme="idea">import android.content.Context
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.SudoEmailClient
+import com.sudoplatform.sudoemail.SudoEmailNotifiableClient
+import com.sudoplatform.sudoemail.SudoEmailNotificationHandler
+import com.sudoplatform.sudoemail.types.EmailMessageReceivedNotification
+import com.sudoplatform.sudonotification.SudoNotificationClient
 import com.sudoplatform.sudouser.SudoUserClient
 import org.junit.Test
 import org.junit.runner.RunWith
