@@ -43,11 +43,12 @@ class EmailCryptoServiceTest : BaseTests() {
     private val stubKeyIds = setOf("keyId1", "keyId2")
 
     private val encryptedData = Base64.getEncoder().encodeToString("encryptedData".toByteArray())
-    private val initVectorData = Base64.getEncoder().encodeToString("initVectorData".toByteArray())
+    private val initVectorKeyID =
+        Base64.getEncoder().encodeToString("initVectorKeyID".toByteArray())
 
     private val stubData = """{
             "encryptedData": "$encryptedData",
-            "initVectorData": "$initVectorData"
+            "initVectorKeyID": "$initVectorKeyID"
         }"""
     private val stubKey = """{
             "$PUBLIC_KEY_ID_JSON":"publicKeyId",
@@ -162,7 +163,9 @@ class EmailCryptoServiceTest : BaseTests() {
     @Test
     fun `encrypt() should throw error if device key manager error occurs`() = runBlocking<Unit> {
         mockDeviceKeyManager.stub {
-            on { generateRandomSymmetricKey() } doThrow DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException("Mock")
+            on { generateRandomSymmetricKey() } doThrow DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
+                "Mock",
+            )
         }
         val deferredResult = async(Dispatchers.IO) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.SecureDataEncryptionException> {
@@ -195,41 +198,43 @@ class EmailCryptoServiceTest : BaseTests() {
     }
 
     @Test
-    fun `decrypt() should throw error for empty body attachment on secure package`() = runBlocking<Unit> {
-        val bodyAttachment = EmailAttachment(
-            fileName = SecureEmailAttachmentType.BODY.fileName,
-            contentId = SecureEmailAttachmentType.BODY.contentId,
-            mimeType = SecureEmailAttachmentType.BODY.mimeType,
-            inlineAttachment = false,
-            data = ByteArray(0),
-        )
-        val securePackage = SecurePackage(setOf(keyAttachment), bodyAttachment)
+    fun `decrypt() should throw error for empty body attachment on secure package`() =
+        runBlocking<Unit> {
+            val bodyAttachment = EmailAttachment(
+                fileName = SecureEmailAttachmentType.BODY.fileName,
+                contentId = SecureEmailAttachmentType.BODY.contentId,
+                mimeType = SecureEmailAttachmentType.BODY.mimeType,
+                inlineAttachment = false,
+                data = ByteArray(0),
+            )
+            val securePackage = SecurePackage(setOf(keyAttachment), bodyAttachment)
 
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                emailCryptoService.decrypt(securePackage)
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
+                    emailCryptoService.decrypt(securePackage)
+                }
             }
-        }
-        deferredResult.start()
-        delay(100L)
+            deferredResult.start()
+            delay(100L)
 
-        deferredResult.await()
-    }
+            deferredResult.await()
+        }
 
     @Test
-    fun `decrypt() should throw error for empty key attachments on secure package`() = runBlocking<Unit> {
-        val securePackage = SecurePackage(emptySet(), bodyAttachment)
+    fun `decrypt() should throw error for empty key attachments on secure package`() =
+        runBlocking<Unit> {
+            val securePackage = SecurePackage(emptySet(), bodyAttachment)
 
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                emailCryptoService.decrypt(securePackage)
+            val deferredResult = async(Dispatchers.IO) {
+                shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
+                    emailCryptoService.decrypt(securePackage)
+                }
             }
-        }
-        deferredResult.start()
-        delay(100L)
+            deferredResult.start()
+            delay(100L)
 
-        deferredResult.await()
-    }
+            deferredResult.await()
+        }
 
     @Test
     fun `decrypt() should throw error if no keys exist for user`() = runBlocking<Unit> {

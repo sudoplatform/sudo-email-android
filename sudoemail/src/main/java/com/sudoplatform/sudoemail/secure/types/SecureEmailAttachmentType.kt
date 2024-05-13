@@ -20,6 +20,16 @@ internal enum class SecureEmailAttachmentType(
     val mimeType: String,
     val contentId: String,
 ) {
-    KEY_EXCHANGE("Secure Data", "application/x-sudomail-key", "securekeyexchangedata@sudomail.com"),
-    BODY("Secure Email", "application/x-sudomail-body", "securebody@sudomail.com"),
+    KEY_EXCHANGE(
+        "Secure Data",
+        "application/x-sudoplatform-key",
+        "securekeyexchangedata@sudoplatform.com",
+    ),
+    BODY("Secure Email", "application/x-sudoplatform-body", "securebody@sudoplatform.com"),
 }
+
+internal val LEGACY_KEY_EXCHANGE_CONTENT_ID =
+    "securekeyexhangedata@sudomail.com" // Intentional misspelling of 'exchange' to match legacy system
+internal val LEGACY_KEY_EXCHANGE_MIME_TYPE = "application/x-sudomail-key"
+internal val LEGACY_BODY_CONTENT_ID = "securebody@sudomail.com"
+internal val LEGACY_BODY_MIME_TYPE = "application/x-sudomail-body"

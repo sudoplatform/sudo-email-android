@@ -62,6 +62,8 @@ import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.secure.types.LEGACY_BODY_CONTENT_ID
+import com.sudoplatform.sudoemail.secure.types.LEGACY_KEY_EXCHANGE_CONTENT_ID
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
@@ -1265,12 +1267,8 @@ internal class DefaultSudoEmailClient(
             var parsedMessage = emailMessageDataProcessor.parseInternetMessageData(decodedBytes)
             if (emailMessage.encryptionStatus() == EmailMessageEncryptionStatus.ENCRYPTED) {
                 val keyAttachments = parsedMessage.attachments.filter {
-                    (
-                        it.contentId.contains(SecureEmailAttachmentType.KEY_EXCHANGE.contentId) ||
-                            // Work around spelling error in legacy apps.
-                            it.contentId.contains("securekeyexhangedata@sudomail.com")
-                        ) &&
-                        it.mimeType.contains(SecureEmailAttachmentType.KEY_EXCHANGE.mimeType)
+                    it.contentId.contains(SecureEmailAttachmentType.KEY_EXCHANGE.contentId) ||
+                        it.contentId.contains(LEGACY_KEY_EXCHANGE_CONTENT_ID)
                 }
                 if (keyAttachments.isEmpty()) {
                     throw SudoEmailClient.EmailMessageException.FailedException(
@@ -1278,8 +1276,8 @@ internal class DefaultSudoEmailClient(
                     )
                 }
                 val bodyAttachment = parsedMessage.attachments.filter {
-                    it.contentId.contains(SecureEmailAttachmentType.BODY.contentId) &&
-                        it.mimeType.contains(SecureEmailAttachmentType.BODY.mimeType)
+                    it.contentId.contains(SecureEmailAttachmentType.BODY.contentId) ||
+                        it.contentId.contains(LEGACY_BODY_CONTENT_ID)
                 }
                 if (bodyAttachment.isEmpty()) {
                     throw SudoEmailClient.EmailMessageException.FailedException(
@@ -1291,12 +1289,13 @@ internal class DefaultSudoEmailClient(
                 parsedMessage =
                     emailMessageDataProcessor.parseInternetMessageData(unencryptedMessage)
             }
-            return EmailMessageWithBody(
+            val msg = EmailMessageWithBody(
                 input.id,
                 parsedMessage.body ?: "",
                 parsedMessage.attachments,
                 parsedMessage.inlineAttachments,
             )
+            return msg
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
@@ -2311,6 +2310,7 @@ public data class SudoEmailNotificationSchemaEntry(
     public override val fieldName: String,
     public override val type: String,
 ) : NotificationSchemaEntry
+
 public data class SudoEmailNotificationMetaData(
     public override val serviceName: String,
     public override val schema: List<SudoEmailNotificationSchemaEntry>,

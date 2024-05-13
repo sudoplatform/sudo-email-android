@@ -82,7 +82,19 @@ internal data class SealedKeyComponents(
                             "Base64 decoding of encrypted key failed",
                         )
                     val privateKeyId = get(PUBLIC_KEY_ID_JSON).asString
-                    val algorithm = PublicKeyEncryptionAlgorithm.valueOf(get(ALGORITHM_JSON).asString)
+                    var algorithm = PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+                    try {
+                        algorithm =
+                            PublicKeyEncryptionAlgorithm.valueOf(get(ALGORITHM_JSON).asString)
+                    } catch (e: IllegalArgumentException) {
+                        /**
+                         * No-op. This is necessary because the legacy app uses the value
+                         * `RSA/ECB/OAEPWithSHA-1AndMGF1Padding` which is not part of this enum but
+                         * maps to `RSA_ECB_OAEPSHA1` in both our and the legacy stack, so the
+                         * call to valueOf() will throw this exception and we ignore it and
+                         * keep the default of `RSA_ECB_OAEPSHA1`
+                         */
+                    }
                     return SealedKeyComponents(privateKeyId, encryptedKey, algorithm)
                 }
             }

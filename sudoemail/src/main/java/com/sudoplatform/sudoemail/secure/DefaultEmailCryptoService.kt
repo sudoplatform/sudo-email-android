@@ -24,15 +24,20 @@ import okio.ByteString.Companion.toByteString
 
 internal class DefaultEmailCryptoService(
     private val deviceKeyManager: DeviceKeyManager,
-    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
+    private val logger: Logger = Logger(
+        LogConstants.SUDOLOG_TAG,
+        AndroidUtilsLogDriver(LogLevel.INFO),
+    ),
 ) : EmailCryptoService {
 
     companion object {
 
         /** Exception messages */
-        private const val ENCRYPTION_ERROR_MSG = "Exception while encrypting the email body and keys"
+        private const val ENCRYPTION_ERROR_MSG =
+            "Exception while encrypting the email body and keys"
         private const val DECRYPTION_ERROR_MSG = "Exception while decrypting the email body"
-        private const val DECRYPTION_KEY_NOT_FOUND_ERROR_MSG = "Could not find a key to decrypt the email message body"
+        private const val DECRYPTION_KEY_NOT_FOUND_ERROR_MSG =
+            "Could not find a key to decrypt the email message body"
     }
 
     @Throws(EmailCryptoServiceException::class)
@@ -52,16 +57,19 @@ internal class DefaultEmailCryptoService(
                 data,
                 initVector,
             )
-            val secureBodyData = SecureData(encryptedBodyData.toByteString(), initVector.toByteString())
+            val secureBodyData =
+                SecureData(encryptedBodyData.toByteString(), initVector.toByteString())
             val serializedBodyData = secureBodyData.toJson().toByteArray()
 
             // Build an email attachment of the secure email body data
-            val secureBodyAttachment = buildEmailAttachment(serializedBodyData, SecureEmailAttachmentType.BODY)
+            val secureBodyAttachment =
+                buildEmailAttachment(serializedBodyData, SecureEmailAttachmentType.BODY)
 
             // Iterate through each public key for each recipient and encrypt the symmetric key with the public key
             val secureKeyAttachments = keyIds.mapIndexed { index, keyId ->
                 // Seal the symmetric key using the publicKey and RSA_ECB_OAEPSHA1 algorithm
-                val sealedKey = SealedKey(keyId, symmetricKey, PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1)
+                val sealedKey =
+                    SealedKey(keyId, symmetricKey, PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1)
                 val encryptedSymmetricKey = deviceKeyManager.encryptWithKeyPairId(
                     keyId,
                     sealedKey.symmetricKey,
@@ -93,7 +101,8 @@ internal class DefaultEmailCryptoService(
         }
 
         try {
-            val secureBodyData = SecureData.fromJson(securePackage.bodyAttachment.data.toByteString())
+            val secureBodyData =
+                SecureData.fromJson(securePackage.bodyAttachment.data.toByteString())
 
             // Iterate through the set of keyAttachments and search for the key
             // belonging to the current recipient
@@ -127,7 +136,7 @@ internal class DefaultEmailCryptoService(
             return deviceKeyManager.decryptWithSymmetricKey(
                 symmetricKey,
                 secureBodyData.encryptedData.toByteArray(),
-                secureBodyData.initVectorData.toByteArray(),
+                secureBodyData.initVectorKeyID.toByteArray(),
             )
         } catch (e: DeviceKeyManager.DeviceKeyManagerException) {
             logger.error("error $e")
@@ -140,7 +149,8 @@ internal class DefaultEmailCryptoService(
         attachmentType: SecureEmailAttachmentType,
         attachmentNumber: Int = -1,
     ): EmailAttachment {
-        val fileName = if (attachmentNumber >= 0) "${attachmentType.fileName} $attachmentNumber" else attachmentType.fileName
+        val fileName =
+            if (attachmentNumber >= 0) "${attachmentType.fileName} $attachmentNumber" else attachmentType.fileName
         return EmailAttachment(
             contentId = attachmentType.contentId,
             fileName = fileName,

@@ -18,29 +18,34 @@ import java.util.Base64
 class SecureDataTest {
 
     private val encryptedDataString = "encryptedData"
-    private val initVectorDataString = "initVectorData"
+    private val initVectorKeyIDString = "initVectorKeyID"
 
     @Test
     fun `toJson() should encode SecureData correctly`() {
         val encryptedData = Base64.getEncoder().encodeToString(encryptedDataString.toByteArray())
-        val initVectorData = Base64.getEncoder().encodeToString(initVectorDataString.toByteArray())
+        val initVectorKeyID =
+            Base64.getEncoder().encodeToString(initVectorKeyIDString.toByteArray())
 
-        val secureData = SecureData(encryptedDataString.toByteArray().toByteString(), initVectorDataString.toByteArray().toByteString())
+        val secureData = SecureData(
+            encryptedDataString.toByteArray().toByteString(),
+            initVectorKeyIDString.toByteArray().toByteString(),
+        )
 
         val encodedSecureData = secureData.toJson()
         encodedSecureData shouldBe
-            """{"${SecureData.ENCRYPTED_DATA_JSON}":"$encryptedData","${SecureData.INIT_VECTOR_DATA_JSON}":"$initVectorData"}"""
+            """{"${SecureData.ENCRYPTED_DATA_JSON}":"$encryptedData","${SecureData.INIT_VECTOR_KEY_ID}":"$initVectorKeyID"}"""
                 .trimIndent()
     }
 
     @Test
     fun `fromJson() should decode to SecureData correctly`() {
         val encryptedData = Base64.getEncoder().encodeToString(encryptedDataString.toByteArray())
-        val initVectorData = Base64.getEncoder().encodeToString(initVectorDataString.toByteArray())
+        val initVectorKeyID =
+            Base64.getEncoder().encodeToString(initVectorKeyIDString.toByteArray())
 
         val jsonString = """{
             "encryptedData": "$encryptedData",
-            "initVectorData": "$initVectorData"
+            "initVectorKeyID": "$initVectorKeyID"
         }"""
         val jsonData = jsonString.toByteArray().toByteString()
 
@@ -48,7 +53,7 @@ class SecureDataTest {
         with(secureData) {
             shouldNotBe(null)
             secureData.encryptedData.utf8() shouldBe "encryptedData"
-            secureData.initVectorData.utf8() shouldBe "initVectorData"
+            secureData.initVectorKeyID.utf8() shouldBe "initVectorKeyID"
         }
     }
 }

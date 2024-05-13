@@ -7,6 +7,8 @@
 package com.sudoplatform.sudoemail.util
 
 import android.os.Parcelable
+import com.sudoplatform.sudoemail.secure.types.LEGACY_BODY_MIME_TYPE
+import com.sudoplatform.sudoemail.secure.types.LEGACY_KEY_EXCHANGE_MIME_TYPE
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EncryptionStatus
@@ -66,9 +68,30 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
     ): ByteArray {
         val message = MimeMessage(session)
         message.setFrom(InternetAddress(from))
-        to.map { if (it.isNotBlank()) message.addRecipient(Message.RecipientType.TO, InternetAddress(it)) }
-        cc?.map { if (it.isNotBlank()) message.addRecipient(Message.RecipientType.CC, InternetAddress(it)) }
-        bcc?.map { if (it.isNotBlank()) message.addRecipient(Message.RecipientType.BCC, InternetAddress(it)) }
+        to.map {
+            if (it.isNotBlank()) {
+                message.addRecipient(
+                    Message.RecipientType.TO,
+                    InternetAddress(it),
+                )
+            }
+        }
+        cc?.map {
+            if (it.isNotBlank()) {
+                message.addRecipient(
+                    Message.RecipientType.CC,
+                    InternetAddress(it),
+                )
+            }
+        }
+        bcc?.map {
+            if (it.isNotBlank()) {
+                message.addRecipient(
+                    Message.RecipientType.BCC,
+                    InternetAddress(it),
+                )
+            }
+        }
         message.subject = subject
 
         // Check if encrypted then add a custom header
@@ -105,7 +128,8 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
             val attachmentBodyPart = MimeBodyPart()
             attachmentBodyPart.disposition = Part.ATTACHMENT
             attachmentBodyPart.fileName = attachment.fileName
-            attachmentBodyPart.dataHandler = DataHandler(ByteArrayDataSource(attachment.data, attachment.mimeType))
+            attachmentBodyPart.dataHandler =
+                DataHandler(ByteArrayDataSource(attachment.data, attachment.mimeType))
             attachmentBodyPart.contentID = "<${attachment.contentId}>"
 
             // Add normal attachments to the top level multi-part
@@ -116,7 +140,8 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
             val attachmentBodyPart = MimeBodyPart()
             attachmentBodyPart.disposition = Part.INLINE
             attachmentBodyPart.fileName = inlineAttachment.fileName
-            attachmentBodyPart.dataHandler = DataHandler(ByteArrayDataSource(inlineAttachment.data, inlineAttachment.mimeType))
+            attachmentBodyPart.dataHandler =
+                DataHandler(ByteArrayDataSource(inlineAttachment.data, inlineAttachment.mimeType))
             attachmentBodyPart.contentID = "<${inlineAttachment.contentId}>"
 
             // Add inline attachments to the "related" multipart
@@ -182,7 +207,13 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
                             appendLine("    Content-Type: ${bodyPart.contentType}")
                             appendLine("    Content-ID: $contentId")
                         }
-                        if (disposition != null && (bodyPart.disposition.equals(Part.INLINE, true))) {
+                        if (disposition != null && (
+                                bodyPart.disposition.equals(
+                                    Part.INLINE,
+                                    true,
+                                )
+                                )
+                        ) {
                             val contentId = bodyPart.getHeader("Content-ID")
                             if (contentId != null) {
                                 appendLine("    Inline Attachment: ${bodyPart.fileName}")
@@ -202,9 +233,12 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
     @Throws(MessagingException::class, IOException::class)
     private fun toSimplifiedEmailMessage(message: Message): SimplifiedEmailMessage {
         val from = message.from?.map { it.toString() } ?: emptyList()
-        val to = message.getRecipients(Message.RecipientType.TO)?.map { it.toString() } ?: emptyList()
-        val cc = message.getRecipients(Message.RecipientType.CC)?.map { it.toString() } ?: emptyList()
-        val bcc = message.getRecipients(Message.RecipientType.BCC)?.map { it.toString() } ?: emptyList()
+        val to =
+            message.getRecipients(Message.RecipientType.TO)?.map { it.toString() } ?: emptyList()
+        val cc =
+            message.getRecipients(Message.RecipientType.CC)?.map { it.toString() } ?: emptyList()
+        val bcc =
+            message.getRecipients(Message.RecipientType.BCC)?.map { it.toString() } ?: emptyList()
 
         val body: String
         val attachments: MutableList<EmailAttachment> = mutableListOf()
@@ -228,7 +262,9 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
                         }
                     } else if (
                         bodyPart.isMimeType(SecureEmailAttachmentType.KEY_EXCHANGE.mimeType) ||
-                        bodyPart.isMimeType(SecureEmailAttachmentType.BODY.mimeType)
+                        bodyPart.isMimeType(SecureEmailAttachmentType.BODY.mimeType) ||
+                        bodyPart.isMimeType(LEGACY_KEY_EXCHANGE_MIME_TYPE) ||
+                        bodyPart.isMimeType(LEGACY_BODY_MIME_TYPE)
                     ) {
                         val secureAttachmentPart = multipart.getBodyPart(i)
                         val disposition = secureAttachmentPart.disposition
