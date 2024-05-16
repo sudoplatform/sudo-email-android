@@ -1,0 +1,70 @@
+Received: from Debian-exim by mx2.dev.toys.com with local (Exim 4.86_2)
+	id 1jK6T7-0005bZ-MO
+	for 4747test1234@toys.com; Thu, 02 Apr 2020 20:29:41 +0000
+X-Failed-Recipients: kenspeckle87653224467899874@toys.com
+Auto-Submitted: auto-replied
+From: Mail Delivery System <Mailer-Daemon@sydd1mt02>
+To: 4747test1234@toys.com
+Content-Type: multipart/report; report-type=delivery-status; boundary=1585859381-eximdsn-260064648
+MIME-Version: 1.0
+Subject: Mail delivery failed: returning message to sender
+Message-Id: <E1jK6T7-0005bZ-MO@mx2.dev.toys.com>
+Date: Thu, 02 Apr 2020 20:29:41 +0000
+
+--1585859381-eximdsn-260064648
+Content-type: text/plain; charset=us-ascii
+
+This message was created automatically by mail delivery software.
+
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
+
+  kenspeckle87653224467899874@toys.com
+    host internal-development-dev1-mda-686131098.ap-southeast-2.elb.amazonaws.com [10.192.0.243]
+    SMTP error from remote mail server after RCPT TO:<kenspeckle87653224467899874@toys.com>:
+    550 5.1.1 Unknown user: kenspeckle87653224467899874@toys.com
+
+--1585859381-eximdsn-260064648
+Content-type: message/delivery-status
+
+Reporting-MTA: dns; mx2.dev.toys.com
+
+Action: failed
+Final-Recipient: rfc822;kenspeckle87653224467899874@toys.com
+Status: 5.0.0
+Remote-MTA: dns; internal-development-dev1-mda-686131098.ap-southeast-2.elb.amazonaws.com
+Diagnostic-Code: smtp; 550 5.1.1 Unknown user: kenspeckle87653224467899874@toys.com
+
+--1585859381-eximdsn-260064648
+Content-type: message/rfc822
+
+Return-path: <4747test1234@toys.com>
+Received: from ip-10-192-0-153.ap-southeast-2.compute.internal ([10.192.0.153] helo=sydd1rs01)
+	by mx2.dev.toys.com with esmtps (TLS1.0:ECDHE_RSA_AES_256_CBC_SHA1:256)
+	(Exim 4.86_2)
+	(envelope-from <4747test1234@toys.com>)
+	id 1jK6T7-0005bV-KY
+	for kenspeckle87653224467899874@toys.com; Thu, 02 Apr 2020 20:29:41 +0000
+Date: Thu, 2 Apr 2020 13:29:45 -0700 (MST)
+From: "4747test1234@toys.com" <4747test1234@toys.com>
+To:  <kenspeckle87653224467899874@toys.com>
+Message-ID: <1675522323.127.1585859381573.4747test1234@toys.com>
+Subject: Test
+MIME-Version: 1.0
+Content-Type: multipart/mixed; 
+	boundary="----=_Part_0_246766234.1585859385735"
+
+------=_Part_0_246766234.1585859385735
+Content-Type: multipart/related; 
+	boundary="----=_Part_1_32419787.1585859385748"
+
+------=_Part_1_32419787.1585859385748
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Test
+------=_Part_1_32419787.1585859385748--
+
+------=_Part_0_246766234.1585859385735--
+
+--1585859381-eximdsn-260064648--

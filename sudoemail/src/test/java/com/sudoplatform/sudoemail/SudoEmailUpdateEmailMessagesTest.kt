@@ -19,24 +19,25 @@ import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageFailure
+import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
+import com.sudoplatform.sudoemail.types.transformers.toDate
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,9 +74,9 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     }
 
     private val mutationResult by before {
-        UpdateEmailMessagesMutation.UpdateEmailMessages(
+        UpdateEmailMessagesMutation.UpdateEmailMessagesV2(
             "typename",
-            UpdateEmailMessagesMutation.UpdateEmailMessages.Fragments(
+            UpdateEmailMessagesMutation.UpdateEmailMessagesV2.Fragments(
                 UpdateEmailMessagesResult(
                     "typename",
                     UpdateEmailMessagesStatus.SUCCESS,
@@ -177,272 +178,280 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailMessages() should return success result when no error present`() = runBlocking<Unit> {
-        holder.callback shouldBe null
+    fun `updateEmailMessages() should return success result when no error present`() =
+        runTest {
+            holder.callback shouldBe null
 
-        val input = UpdateEmailMessagesInput(
-            listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.updateEmailMessages(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(mutationResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        when (result) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
-
-        verify(mockAppSyncClient)
-            .mutate<
-                UpdateEmailMessagesMutation.Data,
-                UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables,
-                >(
-                check {
-                    it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                    it.variables().input().values().folderId() shouldBe "folderId2"
-                    it.variables().input().values().seen() shouldBe true
-                },
+            val input = UpdateEmailMessagesInput(
+                listOf("id1", "id2"),
+                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
             )
-    }
-
-    @Test
-    fun `updateEmailMessages() should return failure result when no error present`() = runBlocking<Unit> {
-        val mutationResult by before {
-            UpdateEmailMessagesMutation.UpdateEmailMessages(
-                "typename",
-                UpdateEmailMessagesMutation.UpdateEmailMessages.Fragments(
-                    UpdateEmailMessagesResult(
-                        "typename",
-                        UpdateEmailMessagesStatus.FAILED,
-                        null,
-                        null,
-                    ),
-                ),
-            )
-        }
-
-        val mutationResponse by before {
-            Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
-                .data(UpdateEmailMessagesMutation.Data(mutationResult))
-                .build()
-        }
-
-        holder.callback shouldBe null
-
-        val input = UpdateEmailMessagesInput(
-            listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.updateEmailMessages(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(mutationResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        when (result) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.FAILURE
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
-
-        verify(mockAppSyncClient)
-            .mutate<
-                UpdateEmailMessagesMutation.Data,
-                UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables,
-                >(
-                check {
-                    it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                    it.variables().input().values().folderId() shouldBe "folderId2"
-                    it.variables().input().values().seen() shouldBe true
-                },
-            )
-    }
-
-    @Test
-    fun `updateEmailMessages() should return partial result when no error present`() = runBlocking<Unit> {
-        val mutationResult by before {
-            UpdateEmailMessagesMutation.UpdateEmailMessages(
-                "typename",
-                UpdateEmailMessagesMutation.UpdateEmailMessages.Fragments(
-                    UpdateEmailMessagesResult(
-                        "typename",
-                        UpdateEmailMessagesStatus.PARTIAL,
-                        listOf("id2"),
-                        listOf("id1"),
-                    ),
-                ),
-            )
-        }
-
-        val mutationResponse by before {
-            Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
-                .data(UpdateEmailMessagesMutation.Data(mutationResult))
-                .build()
-        }
-
-        holder.callback shouldBe null
-
-        val input = UpdateEmailMessagesInput(
-            listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            client.updateEmailMessages(input)
-        }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(mutationResponse)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        when (result) {
-            is BatchOperationResult.PartialResult -> {
-                result.status shouldBe BatchOperationStatus.PARTIAL
-                result.successValues shouldBe listOf("id2")
-                result.failureValues shouldBe listOf("id1")
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
-
-        verify(mockAppSyncClient)
-            .mutate<
-                UpdateEmailMessagesMutation.Data,
-                UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables,
-                >(
-                check {
-                    it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                    it.variables().input().values().folderId() shouldBe "folderId2"
-                    it.variables().input().values().seen() shouldBe true
-                },
-            )
-    }
-
-    @Test
-    fun `updateEmailMessages() should throw when email mutation response is null`() = runBlocking<Unit> {
-        holder.callback shouldBe null
-
-        val nullProvisionResponse by before {
-            Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
-                .data(null)
-                .build()
-        }
-
-        val input = UpdateEmailMessagesInput(
-            listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.updateEmailMessages(input)
             }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(mutationResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            result.status shouldBe BatchOperationStatus.SUCCESS
+
+            verify(mockAppSyncClient)
+                .mutate<
+                    UpdateEmailMessagesMutation.Data,
+                    UpdateEmailMessagesMutation,
+                    UpdateEmailMessagesMutation.Variables,
+                    >(
+                    check {
+                        it.variables().input().messageIds() shouldBe listOf("id1", "id2")
+                        it.variables().input().values().folderId() shouldBe "folderId2"
+                        it.variables().input().values().seen() shouldBe true
+                    },
+                )
         }
-        deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(nullProvisionResponse)
-
-        deferredResult.await()
-
-        verify(mockAppSyncClient)
-            .mutate<
-                UpdateEmailMessagesMutation.Data,
-                UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables,
-                >(
-                check {
-                    it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                    it.variables().input().values().folderId() shouldBe "folderId2"
-                    it.variables().input().values().seen() shouldBe true
-                },
-            )
-    }
 
     @Test
-    fun `updateEmailMessages() should throw when response has unexpected error`() = runBlocking<Unit> {
-        holder.callback = null
+    fun `updateEmailMessages() should return failure result when no error present`() =
+        runTest {
+            val mutationResult by before {
+                UpdateEmailMessagesMutation.UpdateEmailMessagesV2(
+                    "typename",
+                    UpdateEmailMessagesMutation.UpdateEmailMessagesV2.Fragments(
+                        UpdateEmailMessagesResult(
+                            "typename",
+                            UpdateEmailMessagesStatus.FAILED,
+                            null,
+                            null,
+                        ),
+                    ),
+                )
+            }
 
-        val errorResponse by before {
-            val error = com.apollographql.apollo.api.Error(
-                "mock",
-                emptyList(),
-                mapOf("errorType" to "blah"),
+            val mutationResponse by before {
+                Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
+                    .data(UpdateEmailMessagesMutation.Data(mutationResult))
+                    .build()
+            }
+
+            holder.callback shouldBe null
+
+            val input = UpdateEmailMessagesInput(
+                listOf("id1", "id2"),
+                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
             )
-            Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
-                .errors(listOf(error))
-                .build()
-        }
-
-        val input = UpdateEmailMessagesInput(
-            listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.updateEmailMessages(input)
             }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(mutationResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            result.status shouldBe BatchOperationStatus.FAILURE
+
+            verify(mockAppSyncClient)
+                .mutate<
+                    UpdateEmailMessagesMutation.Data,
+                    UpdateEmailMessagesMutation,
+                    UpdateEmailMessagesMutation.Variables,
+                    >(
+                    check {
+                        it.variables().input().messageIds() shouldBe listOf("id1", "id2")
+                        it.variables().input().values().folderId() shouldBe "folderId2"
+                        it.variables().input().values().seen() shouldBe true
+                    },
+                )
         }
-        deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(errorResponse)
-
-        deferredResult.await()
-
-        verify(mockAppSyncClient)
-            .mutate<
-                UpdateEmailMessagesMutation.Data,
-                UpdateEmailMessagesMutation,
-                UpdateEmailMessagesMutation.Variables,
-                >(
-                check {
-                    it.variables().input().messageIds() shouldBe listOf("id1", "id2")
-                    it.variables().input().values().folderId() shouldBe "folderId2"
-                    it.variables().input().values().seen() shouldBe true
-                },
-            )
-    }
 
     @Test
-    fun `updateEmailMessages() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `updateEmailMessages() should return partial result when no error present`() =
+        runTest {
+            val mutationResult by before {
+                UpdateEmailMessagesMutation.UpdateEmailMessagesV2(
+                    "typename",
+                    UpdateEmailMessagesMutation.UpdateEmailMessagesV2.Fragments(
+                        UpdateEmailMessagesResult(
+                            "typename",
+                            UpdateEmailMessagesStatus.PARTIAL,
+                            listOf(
+                                UpdateEmailMessagesResult.FailedMessage(
+                                    "__typename",
+                                    "id2",
+                                    "error",
+                                ),
+                            ),
+                            listOf(
+                                UpdateEmailMessagesResult.SuccessMessage(
+                                    "__typename",
+                                    "id1",
+                                    1.0,
+                                    2.0,
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            }
+
+            val mutationResponse by before {
+                Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
+                    .data(UpdateEmailMessagesMutation.Data(mutationResult))
+                    .build()
+            }
+
+            holder.callback shouldBe null
+
+            val input = UpdateEmailMessagesInput(
+                listOf("id1", "id2"),
+                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.updateEmailMessages(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(mutationResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            result.status shouldBe BatchOperationStatus.PARTIAL
+            result.successValues shouldBe listOf(
+                UpdatedEmailMessageSuccess(
+                    "id1",
+                    1.0.toDate(),
+                    2.0.toDate(),
+                ),
+            )
+            result.failureValues shouldBe listOf(
+                UpdatedEmailMessageFailure(
+                    "id2",
+                    "error",
+                ),
+            )
+
+            verify(mockAppSyncClient)
+                .mutate<
+                    UpdateEmailMessagesMutation.Data,
+                    UpdateEmailMessagesMutation,
+                    UpdateEmailMessagesMutation.Variables,
+                    >(
+                    check {
+                        it.variables().input().messageIds() shouldBe listOf("id1", "id2")
+                        it.variables().input().values().folderId() shouldBe "folderId2"
+                        it.variables().input().values().seen() shouldBe true
+                    },
+                )
+        }
+
+    @Test
+    fun `updateEmailMessages() should throw when email mutation response is null`() =
+        runTest {
+            holder.callback shouldBe null
+
+            val nullProvisionResponse by before {
+                Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
+                    .data(null)
+                    .build()
+            }
+
+            val input = UpdateEmailMessagesInput(
+                listOf("id1", "id2"),
+                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                    client.updateEmailMessages(input)
+                }
+            }
+            deferredResult.start()
+            delay(100L)
+
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(nullProvisionResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient)
+                .mutate<
+                    UpdateEmailMessagesMutation.Data,
+                    UpdateEmailMessagesMutation,
+                    UpdateEmailMessagesMutation.Variables,
+                    >(
+                    check {
+                        it.variables().input().messageIds() shouldBe listOf("id1", "id2")
+                        it.variables().input().values().folderId() shouldBe "folderId2"
+                        it.variables().input().values().seen() shouldBe true
+                    },
+                )
+        }
+
+    @Test
+    fun `updateEmailMessages() should throw when response has unexpected error`() =
+        runTest {
+            holder.callback = null
+
+            val errorResponse by before {
+                val error = com.apollographql.apollo.api.Error(
+                    "mock",
+                    emptyList(),
+                    mapOf("errorType" to "blah"),
+                )
+                Response.builder<UpdateEmailMessagesMutation.Data>(UpdateEmailMessagesMutation(input))
+                    .errors(listOf(error))
+                    .build()
+            }
+
+            val input = UpdateEmailMessagesInput(
+                listOf("id1", "id2"),
+                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                    client.updateEmailMessages(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(errorResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient)
+                .mutate<
+                    UpdateEmailMessagesMutation.Data,
+                    UpdateEmailMessagesMutation,
+                    UpdateEmailMessagesMutation.Variables,
+                    >(
+                    check {
+                        it.variables().input().messageIds() shouldBe listOf("id1", "id2")
+                        it.variables().input().values().folderId() shouldBe "folderId2"
+                        it.variables().input().values().seen() shouldBe true
+                    },
+                )
+        }
+
+    @Test
+    fun `updateEmailMessages() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
         val input = UpdateEmailMessagesInput(
             listOf("id1", "id2"),
             UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                 client.updateEmailMessages(input)
             }
@@ -483,7 +492,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailMessages() should throw when unknown error occurs()`() = runBlocking<Unit> {
+    fun `updateEmailMessages() should throw when unknown error occurs()`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -494,7 +503,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             listOf("id1", "id2"),
             UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.updateEmailMessages(input)
             }
@@ -519,25 +528,26 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockAppSyncClient.stub {
-            on { mutate(any<UpdateEmailMessagesMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        val input = UpdateEmailMessagesInput(
-            listOf("id1", "id2"),
-            UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
-        )
-        val deferredResult = async(Dispatchers.IO) {
-            shouldThrow<CancellationException> {
-                client.updateEmailMessages(input)
+    fun `updateEmailMessage() should not block coroutine cancellation exception`() =
+        runTest {
+            mockAppSyncClient.stub {
+                on { mutate(any<UpdateEmailMessagesMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
             }
+
+            val input = UpdateEmailMessagesInput(
+                listOf("id1", "id2"),
+                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                shouldThrow<CancellationException> {
+                    client.updateEmailMessages(input)
+                }
+            }
+            deferredResult.start()
+            delay(100L)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).mutate(any<UpdateEmailMessagesMutation>())
         }
-        deferredResult.start()
-        delay(100L)
-
-        deferredResult.await()
-
-        verify(mockAppSyncClient).mutate(any<UpdateEmailMessagesMutation>())
-    }
 }

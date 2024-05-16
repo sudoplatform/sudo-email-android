@@ -24,10 +24,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -178,11 +178,11 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     }
 
     @Test
-    fun `lookupEmailAddressesPublicInfo() should return results when no error present`() = runBlocking<Unit> {
+    fun `lookupEmailAddressesPublicInfo() should return results when no error present`() = runTest {
         holder.callback shouldBe null
 
         val input = LookupEmailAddressesPublicInfoInput(emailAddresses = listOf("emailAddress"))
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.lookupEmailAddressesPublicInfo(input)
         }
         deferredResult.start()
@@ -205,7 +205,7 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     }
 
     @Test
-    fun `lookupEmailAddressesPublicInfo() should return empty result when query result data is empty`() = runBlocking<Unit> {
+    fun `lookupEmailAddressesPublicInfo() should return empty result when query result data is empty`() = runTest {
         holder.callback shouldBe null
 
         val emptyInput by before {
@@ -230,7 +230,7 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
         }
 
         val input = LookupEmailAddressesPublicInfoInput(emptyList())
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.lookupEmailAddressesPublicInfo(input)
         }
         deferredResult.start()
@@ -246,11 +246,11 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     }
 
     @Test
-    fun `lookupEmailAddressesPublicInfo() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `lookupEmailAddressesPublicInfo() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
         val input = LookupEmailAddressesPublicInfoInput(listOf("emailAddress"))
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.lookupEmailAddressesPublicInfo(input)
             }
@@ -280,7 +280,7 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     }
 
     @Test
-    fun `lookupEmailAddressesPublicInfo() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `lookupEmailAddressesPublicInfo() should throw when unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -288,7 +288,7 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
         }
 
         val input = LookupEmailAddressesPublicInfoInput(listOf("emailAddress"))
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
                 client.lookupEmailAddressesPublicInfo(input)
             }

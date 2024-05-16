@@ -22,10 +22,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -159,10 +159,10 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     }
 
     @Test
-    fun `getConfigurationData() should return results when no error present`() = runBlocking<Unit> {
+    fun `getConfigurationData() should return results when no error present`() = runTest {
         holder.callback shouldBe null
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getConfigurationData()
         }
         deferredResult.start()
@@ -187,14 +187,14 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     }
 
     @Test
-    fun `getConfigurationData() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `getConfigurationData() should throw when unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
             on { query(any<GetEmailConfigQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailConfigurationException.UnknownException> {
                 client.getConfigurationData()
             }
@@ -208,7 +208,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     }
 
     @Test
-    fun `getConfigurationData() should throw when no config data is returned`() = runBlocking<Unit> {
+    fun `getConfigurationData() should throw when no config data is returned`() = runTest {
         holder.callback shouldBe null
 
         val noDataResponse by before {
@@ -217,7 +217,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailConfigurationException.FailedException> {
                 client.getConfigurationData()
             }
@@ -233,7 +233,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     }
 
     @Test
-    fun `getConfigurationData() should throw when query response contains errors`() = runBlocking<Unit> {
+    fun `getConfigurationData() should throw when query response contains errors`() = runTest {
         holder.callback shouldBe null
 
         val testError = com.apollographql.apollo.api.Error(
@@ -247,7 +247,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailConfigurationException.FailedException> {
                 client.getConfigurationData()
             }

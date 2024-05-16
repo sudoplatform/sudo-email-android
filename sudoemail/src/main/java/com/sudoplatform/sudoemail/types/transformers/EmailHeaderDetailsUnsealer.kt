@@ -9,7 +9,20 @@ package com.sudoplatform.sudoemail.types.transformers
 import com.google.gson.Gson
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 
+/**
+ * Unpack and decrypt the sealed fields of an email message header [EmailHeaderDetails].
+ */
 internal object EmailHeaderDetailsUnsealer {
+
+    /**
+     * Unseal and transform the email message header details to [EmailHeaderDetails].
+     *
+     * @param sealedRFC822HeaderString [String] The sealed email message header details.
+     * @param keyId [String] The identifier of the key used to unseal the payload.
+     * @param algorithm [String] The algorithm used to unseal the payload.
+     * @param deviceKeyManager [DeviceKeyManager] The device key manager string the keys used to unseal.
+     * @return The unsealed [EmailHeaderDetails].
+     */
     fun toEmailHeaderDetails(
         sealedRFC822HeaderString: String,
         keyId: String,

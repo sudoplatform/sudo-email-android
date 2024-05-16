@@ -28,10 +28,10 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
@@ -261,7 +261,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getDraftEmailMessage() should log and throw an error if sender address not found`() = runBlocking<Unit> {
+    fun `getDraftEmailMessage() should log and throw an error if sender address not found`() = runTest {
         holder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -283,7 +283,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
 
         val mockDraftId = UUID.randomUUID()
         val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 client.getDraftEmailMessage(input)
             }
@@ -301,7 +301,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getDraftEmailMessage() should log and throw an error if draft message is not found`() = runBlocking<Unit> {
+    fun `getDraftEmailMessage() should log and throw an error if draft message is not found`() = runTest {
         holder.callback shouldBe null
 
         val error = AmazonS3Exception("Not found")
@@ -314,7 +314,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
 
         val mockDraftId = UUID.randomUUID()
         val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
                 client.getDraftEmailMessage(input)
             }
@@ -342,7 +342,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getDraftEmailMessage() should throw error if no keyId is found in s3Object`() = runBlocking<Unit> {
+    fun `getDraftEmailMessage() should throw error if no keyId is found in s3Object`() = runTest {
         holder.callback shouldBe null
 
         val mockBadObjectUserMetadata = listOf("algorithm" to "algorithm").toMap()
@@ -358,7 +358,7 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
 
         val mockDraftId = UUID.randomUUID()
         val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
                 client.getDraftEmailMessage(input)
             }
@@ -381,12 +381,12 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getDraftEmailMessage() should return proper data if no errors`() = runBlocking<Unit> {
+    fun `getDraftEmailMessage() should return proper data if no errors`() = runTest {
         holder.callback shouldBe null
 
         val mockDraftId = UUID.randomUUID()
         val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getDraftEmailMessage(input)
         }
 

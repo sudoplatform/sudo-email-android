@@ -10,18 +10,17 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * Base class of Email Service notifications
+ * Base class of Email Service notifications.
  *
- * @property type [String]
- *     Type of notification. Concrete sub-classes will specify as
- *     their SerialName the value of this property that identifies
- *     the specific notification type.
- *
- * @property owner [String]
- *     Subject ID of user to whom the notification is addressed.
+ * @property type [String] Type of notification. Concrete sub-classes will
+ *  specify as their SerialName the value of this property that identifies
+ *  the specific notification type.
+ * @property owner [String] Subject identifier of user to whom the notification
+ *  is addressed.
  */
 @Serializable
 sealed class EmailServiceNotification {
+
     companion object {
         /**
          * JSON object to use for deserialisation of the notification.

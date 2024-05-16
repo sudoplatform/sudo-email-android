@@ -10,7 +10,18 @@ import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.notifications.EmailServiceNotification
 import com.sudoplatform.sudoemail.notifications.SealedNotification
 
+/**
+ * Unpack and decrypt the sealed fields of an email notification [SealedNotification].
+ */
 internal object NotificationUnsealer {
+
+    /**
+     * Unseal and transform the email notification to [EmailServiceNotification].
+     *
+     * @param deviceKeyManager [DeviceKeyManager] The device key manager string the keys used to unseal.
+     * @param sealedNotification [SealedNotification] The sealed email notifications.
+     * @return The unsealed [EmailHeaderDetails].
+     */
     fun toNotification(
         deviceKeyManager: DeviceKeyManager,
         sealedNotification: SealedNotification,

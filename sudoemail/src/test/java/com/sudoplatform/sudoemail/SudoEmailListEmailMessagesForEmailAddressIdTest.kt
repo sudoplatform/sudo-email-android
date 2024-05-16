@@ -39,10 +39,10 @@ import io.kotlintest.matchers.doubles.shouldBeLessThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.Request
@@ -244,7 +244,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return results when no error present`() =
-        runBlocking<Unit> {
+        runTest {
             queryHolder.callback shouldBe null
 
             val input = ListEmailMessagesForEmailAddressIdInput(
@@ -256,7 +256,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 ),
                 sortOrder = SortOrder.DESC,
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
@@ -333,7 +333,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return results when hasAttachments is true`() =
-        runBlocking<Unit> {
+        runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
                     unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
@@ -350,7 +350,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 ),
                 sortOrder = SortOrder.DESC,
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
@@ -427,7 +427,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return results when hasAttachments is unset`() =
-        runBlocking<Unit> {
+        runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
                     unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
@@ -444,7 +444,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 ),
                 sortOrder = SortOrder.ASC,
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
@@ -521,7 +521,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return results when updatedAt date range is specified`() =
-        runBlocking<Unit> {
+        runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
                     unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
@@ -538,7 +538,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 ),
                 sortOrder = SortOrder.DESC,
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
@@ -615,14 +615,13 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success result using default inputs when no error present`() =
-        runBlocking<Unit>
-        {
+        runTest() {
             queryHolder.callback shouldBe null
 
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
@@ -687,7 +686,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success result when populating nextToken`() =
-        runBlocking<Unit> {
+        runTest {
             queryHolder.callback shouldBe null
 
             val queryResultWithNextToken by before {
@@ -717,7 +716,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 emailAddressId = "emailAddressId",
                 nextToken = "dummyNextToken",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
@@ -782,8 +781,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success empty list result when query result data is empty`() =
-        runBlocking<Unit>
-        {
+        runTest() {
             queryHolder.callback shouldBe null
 
             val queryResultWithEmptyList by before {
@@ -805,7 +803,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
@@ -847,8 +845,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success empty list result when query result data is null`() =
-        runBlocking<Unit>
-        {
+        runTest() {
             queryHolder.callback shouldBe null
 
             val responseWithNullData by before {
@@ -862,7 +859,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
@@ -904,7 +901,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return partial results when unsealing fails`() =
-        runBlocking<Unit> {
+        runTest {
             mockKeyManager.stub {
                 on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException(
                     "KeyManagerException",
@@ -914,7 +911,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
@@ -959,7 +956,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should throw when unsealing fails`() =
-        runBlocking<Unit> {
+        runTest {
             mockAppSyncClient.stub {
                 on { query(any<ListEmailMessagesForEmailAddressIdQuery>()) } doThrow
                     Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
@@ -968,7 +965,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
                     client.listEmailMessagesForEmailAddressId(input)
                 }
@@ -994,13 +991,13 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should throw when http error occurs`() =
-        runBlocking<Unit> {
+        runTest {
             queryHolder.callback shouldBe null
 
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                     client.listEmailMessagesForEmailAddressId(input)
                 }
@@ -1044,7 +1041,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should throw when unknown error occurs()`() =
-        runBlocking<Unit> {
+        runTest {
             queryHolder.callback shouldBe null
 
             mockAppSyncClient.stub {
@@ -1056,7 +1053,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                     client.listEmailMessagesForEmailAddressId(input)
                 }
@@ -1084,7 +1081,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should not block coroutine cancellation exception`() =
-        runBlocking<Unit> {
+        runTest {
             mockAppSyncClient.stub {
                 on { query(any<ListEmailMessagesForEmailAddressIdQuery>()) } doThrow CancellationException(
                     "Mock Cancellation Exception",
@@ -1094,7 +1091,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<CancellationException> {
                     client.listEmailMessagesForEmailAddressId(input)
                 }

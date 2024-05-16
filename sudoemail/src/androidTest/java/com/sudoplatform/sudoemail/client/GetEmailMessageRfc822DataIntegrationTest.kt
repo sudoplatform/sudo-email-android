@@ -19,13 +19,11 @@ import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import kotlinx.coroutines.runBlocking
-import org.awaitility.Awaitility
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.TimeUnit
 
 /**
  * Test the operation of [SudoEmailClient.getEmailMessageRfc822Data].
@@ -42,14 +40,14 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun getEmailMessageRFC822DataShouldReturnSuccessfulResult() = runBlocking {
+    fun getEmailMessageRFC822DataShouldReturnSuccessfulResult() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -64,15 +62,7 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
         val sendResult = sendEmailMessage(emailClient, emailAddress)
         sendResult.id.isBlank() shouldBe false
 
-        // Wait for all the messages to arrive
-        Awaitility.await()
-            .atMost(10, TimeUnit.SECONDS)
-            .pollInterval(1, TimeUnit.SECONDS)
-            .until {
-                runBlocking {
-                    emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id)) != null
-                }
-            }
+        waitForMessage(sendResult.id)
 
         val emailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message not found")
@@ -83,7 +73,7 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
         result.id shouldBe sendResult.id
 
         val simplifiedMessage =
-            Rfc822MessageDataProcessor().parseInternetMessageData(result.rfc822Data)
+            Rfc822MessageDataProcessor(context).parseInternetMessageData(result.rfc822Data)
         with(simplifiedMessage) {
             to.shouldContainExactlyInAnyOrder(emailMessage.to.map { it.emailAddress })
             from.shouldContainExactlyInAnyOrder(emailMessage.from.map { it.emailAddress })
@@ -95,7 +85,7 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun getEmailMessageRFC822DataShouldReturnNullForNonExistentMessageId() = runBlocking {
+    fun getEmailMessageRFC822DataShouldReturnNullForNonExistentMessageId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)

@@ -19,7 +19,7 @@ import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -41,14 +41,14 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun getDraftEmailMessageShouldThrowErrorIfSenderEmailAddressNotFound() = runBlocking<Unit> {
+    fun getDraftEmailMessageShouldThrowErrorIfSenderEmailAddressNotFound() = runTest {
         val mockDraftId = UUID.randomUUID()
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
@@ -66,7 +66,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun getDraftEmailMessageShouldThrowErrorIfDraftMessageNotFound() = runBlocking<Unit> {
+    fun getDraftEmailMessageShouldThrowErrorIfDraftMessageNotFound() = runTest {
         val mockDraftId = UUID.randomUUID()
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
@@ -84,7 +84,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun getDraftEmailMessageShouldReturnProperMessage() = runBlocking {
+    fun getDraftEmailMessageShouldReturnProperMessage() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -95,7 +95,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
             subject = "Test Draft",
@@ -113,7 +113,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         draftEmailMessage.id shouldBe draftId
         draftEmailMessage.emailAddressId shouldBe emailAddress.id
-        val parsedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(draftEmailMessage.rfc822Data)
+        val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
 
         parsedMessage.to shouldContain emailAddress.emailAddress
         parsedMessage.from shouldContain emailAddress.emailAddress

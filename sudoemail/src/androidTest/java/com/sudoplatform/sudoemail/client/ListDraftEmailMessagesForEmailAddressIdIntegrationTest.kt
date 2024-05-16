@@ -19,7 +19,7 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -40,14 +40,14 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun listDraftEmailMessagesForEmailAddressIdShouldThrowErrorIfSenderEmailAddressNotFound() = runBlocking<Unit> {
+    fun listDraftEmailMessagesForEmailAddressIdShouldThrowErrorIfSenderEmailAddressNotFound() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -60,7 +60,7 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
     }
 
     @Test
-    fun listDraftEmailMessagesForEmailAddressIdShouldReturnEmptyListWhenDraftMessagesNotFound() = runBlocking {
+    fun listDraftEmailMessagesForEmailAddressIdShouldReturnEmptyListWhenDraftMessagesNotFound() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -77,7 +77,7 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
     }
 
     @Test
-    fun listDraftEmailMessagesForEmailAddressIdShouldReturnListOfDraftMessages() = runBlocking {
+    fun listDraftEmailMessagesForEmailAddressIdShouldReturnListOfDraftMessages() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -89,7 +89,7 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
         emailAddressList.add(emailAddress)
 
         for (i in 0 until 2) {
-            val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+            val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
                 to = listOf(emailAddress.emailAddress),
                 subject = "Draft $i",
@@ -105,7 +105,7 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
         result.forEach { item ->
             item.emailAddressId shouldBe emailAddress.id
 
-            val parsedMessage = Rfc822MessageDataProcessor().parseInternetMessageData(item.rfc822Data)
+            val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(item.rfc822Data)
             parsedMessage.to shouldContain emailAddress.emailAddress
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldContain "Draft"

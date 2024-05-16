@@ -10,15 +10,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
-import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudoprofiles.Sudo
-import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -39,27 +37,20 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
-    private fun blockAddresses(addresses: List<String>) = runBlocking {
-        when (val result = emailClient.blockEmailAddresses(addresses)) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
+    private fun blockAddresses(addresses: List<String>) = runTest {
+        val result = emailClient.blockEmailAddresses(addresses)
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 
     @Test
     fun getEmailAddressBlocklistReturnsEmptyArrayIfNoAddressesBlocked() =
-        runBlocking<Unit> {
+        runTest {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -81,7 +72,7 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun getEmailAddressBlocklistReturnsUnsealedBlockedAddresses() = runBlocking<Unit> {
+    fun getEmailAddressBlocklistReturnsUnsealedBlockedAddresses() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)

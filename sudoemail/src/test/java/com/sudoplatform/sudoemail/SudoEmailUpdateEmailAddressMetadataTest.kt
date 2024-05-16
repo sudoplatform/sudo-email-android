@@ -26,10 +26,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -165,14 +165,14 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailAddressMetadata() should return results when no error present`() = runBlocking<Unit> {
+    fun `updateEmailAddressMetadata() should return results when no error present`() = runTest {
         mutationHolder.callback shouldBe null
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
             "John Doe",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.updateEmailAddressMetadata(input)
         }
         deferredResult.start()
@@ -189,7 +189,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailAddressMetadata() should throw when response is null`() = runBlocking<Unit> {
+    fun `updateEmailAddressMetadata() should throw when response is null`() = runTest {
         mutationHolder.callback shouldBe null
 
         val nullResponse by before {
@@ -202,7 +202,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             "emailAddressId",
             "John Doe",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
                 client.updateEmailAddressMetadata(input)
             }
@@ -218,7 +218,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailAddressMetadata() should throw when unsealing fails`() = runBlocking<Unit> {
+    fun `updateEmailAddressMetadata() should throw when unsealing fails`() = runTest {
         mockAppSyncClient.stub {
             on { mutate(any<UpdateEmailAddressMetadataMutation>()) } doThrow Unsealer.UnsealerException.UnsupportedAlgorithmException(
                 "Mock Unsealer Exception",
@@ -229,7 +229,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             "emailAddressId",
             "John Doe",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnsealingException> {
                 client.updateEmailAddressMetadata(input)
             }
@@ -244,14 +244,14 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailAddressMetadata() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `updateEmailAddressMetadata() should throw when http error occurs`() = runTest {
         mutationHolder.callback shouldBe null
 
         val input = UpdateEmailAddressMetadataRequest(
             "emailAddressId",
             "John Doe",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
                 client.updateEmailAddressMetadata(input)
             }
@@ -282,7 +282,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() = runBlocking<Unit> {
+    fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() = runTest {
         mutationHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -293,7 +293,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             "emailAddressId",
             "John Doe",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
                 client.updateEmailAddressMetadata(input)
             }
@@ -308,7 +308,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailAddressMetadata() should not block coroutine cancellation exception`() = runBlocking<Unit> {
+    fun `updateEmailAddressMetadata() should not block coroutine cancellation exception`() = runTest {
         mockServiceKeyManager.stub {
             on { getCurrentSymmetricKeyId() } doThrow CancellationException("mock")
         }
@@ -317,7 +317,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             "emailAddressId",
             "John Doe",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.updateEmailAddressMetadata(input)
             }

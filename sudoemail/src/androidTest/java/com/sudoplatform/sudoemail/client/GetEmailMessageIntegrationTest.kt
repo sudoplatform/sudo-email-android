@@ -11,13 +11,14 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoprofiles.Sudo
+import io.kotlintest.fail
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,14 +39,14 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun getEmailMessageShouldReturnEmailMessageResult() = runBlocking {
+    fun getEmailMessageShouldReturnEmailMessageResult() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -60,7 +61,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
         val result = sendEmailMessage(emailClient, emailAddress)
         result.id.isBlank() shouldBe false
 
-        delay(2000)
+        waitForMessage(result.id)
 
         val getMessageInput = GetEmailMessageInput(result.id)
         val retrievedEmailMessage = emailClient.getEmailMessage(getMessageInput)
@@ -75,7 +76,41 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun getEmailMessageShouldReturnNullForNonExistentMessage() = runBlocking {
+    fun getEmailMessageShouldReturnEmailMessageResultForInNetworkMessage() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProofToken = ownershipProof, alias = "Ted Bear")
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val sendResult = sendEmailMessage(
+            emailClient,
+            emailAddress,
+            toAddresses = listOf(
+                EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+            ),
+        )
+        sendResult.id.isBlank() shouldBe false
+
+        waitForMessage(sendResult.id)
+
+        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
+            ?: fail("Email message not found")
+        with(retrievedEmailMessage) {
+            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+            to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
+            hasAttachments shouldBe false
+            size shouldBeGreaterThan 0.0
+        }
+    }
+
+    @Test
+    fun getEmailMessageShouldReturnNullForNonExistentMessage() = runTest {
         val getMessageInput = GetEmailMessageInput("nonExistentId")
         val retrievedEmailMessage = emailClient.getEmailMessage(getMessageInput)
         retrievedEmailMessage shouldBe null

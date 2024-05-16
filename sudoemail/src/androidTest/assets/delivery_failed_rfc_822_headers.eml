@@ -1,0 +1,55 @@
+Received: from Debian-exim by mx2.dev.toys.com with local (Exim 4.86_2)
+	id 1l4cy1-0000VF-9E
+	for ted.bear@toys.com; Wed, 27 Jan 2021 05:02:09 +0000
+X-Failed-Recipients: jdjdjfjfjfjffjdjdjj@dkfjfkf.com
+Auto-Submitted: auto-replied
+From: Mail Delivery System <Mailer-Daemon@sydd1mt02>
+To: ted.bear@toys.com
+Content-Type: multipart/report; report-type=delivery-status; boundary=1611723729-eximdsn-665999408
+MIME-Version: 1.0
+Subject: Mail delivery failed: returning message to sender
+Message-Id: <E1l4cy1-0000VF-9E@mx2.dev.toys.com>
+Date: Wed, 27 Jan 2021 05:02:09 +0000
+
+--1611723729-eximdsn-665999408
+Content-type: text/plain; charset=us-ascii
+
+This message was created automatically by mail delivery software.
+
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
+
+  jdjdjfjfjfjffjdjdjj@dkfjfkf.com
+    Unrouteable address
+
+--1611723729-eximdsn-665999408
+Content-type: message/delivery-status
+
+Reporting-MTA: dns; mx2.dev.toys.com
+
+Action: failed
+Final-Recipient: rfc822;jdjdjfjfjfjffjdjdjj@dkfjfkf.com
+Status: 5.0.0
+
+--1611723729-eximdsn-665999408
+Content-type: text/rfc822-headers
+
+Return-path: <ted.bear@toys.com>
+Received: from ip-10-192-0-33.ap-southeast-2.compute.internal ([10.192.0.33] helo=sydd1rs02)
+	by mx2.dev.toys.com with esmtps (TLS1.2:ECDHE_RSA_AES_256_CBC_SHA1:256)
+	(Exim 4.86_2)
+	(envelope-from <ted.bear@toys.com>)
+	id 1l4cy1-0000VC-4e
+	for jdjdjfjfjfjffjdjdjj@dkfjfkf.com; Wed, 27 Jan 2021 05:02:09 +0000
+Date: Wed, 27 Jan 2021 15:02:08 +1000 (GMT+10:00)
+From: "ted.bear@toys.com" <ted.bear@toys.com>
+To:  <jdjdjfjfjfjffjdjdjj@dkfjfkf.com>
+Message-ID: <999027331.9331.1611723729120.ted.bear@toys.com>
+Subject: Won't work
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+	boundary="----=_Part_3_161680590.1611723729046"
+X-Exim-DSN-Information: Due to administrative limits only headers are returned
+
+
+--1611723729-eximdsn-665999408--

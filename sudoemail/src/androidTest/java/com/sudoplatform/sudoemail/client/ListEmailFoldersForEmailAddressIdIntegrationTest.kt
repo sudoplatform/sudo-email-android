@@ -17,7 +17,7 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,14 +38,14 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun listEmailFoldersForEmailAddressIdShouldReturnAllEmailFolders() = runBlocking<Unit> {
+    fun listEmailFoldersForEmailAddressIdShouldReturnAllEmailFolders() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -72,7 +72,7 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailFoldersForEmailAddressIdShouldRespectLimit() = runBlocking {
+    fun listEmailFoldersForEmailAddressIdShouldRespectLimit() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)

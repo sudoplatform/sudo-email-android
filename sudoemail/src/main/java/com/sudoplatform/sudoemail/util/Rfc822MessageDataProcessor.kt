@@ -6,27 +6,32 @@
 
 package com.sudoplatform.sudoemail.util
 
+import android.content.Context
 import android.os.Parcelable
-import com.sudoplatform.sudoemail.secure.types.LEGACY_BODY_MIME_TYPE
-import com.sudoplatform.sudoemail.secure.types.LEGACY_KEY_EXCHANGE_MIME_TYPE
-import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
+import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EncryptionStatus
+import com.sudoplatform.sudologging.AndroidUtilsLogDriver
+import com.sudoplatform.sudologging.LogLevel
+import com.sudoplatform.sudologging.Logger
 import jakarta.activation.DataHandler
 import jakarta.mail.Message
 import jakarta.mail.MessagingException
+import jakarta.mail.Multipart
 import jakarta.mail.Part
 import jakarta.mail.Session
 import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
+import jakarta.mail.internet.MimeUtility
 import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.parcelize.Parcelize
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.lang.Exception
 import java.util.Properties
 
 @Parcelize
@@ -37,6 +42,7 @@ data class SimplifiedEmailMessage(
     val bcc: List<String>,
     val subject: String?,
     val body: String?,
+    val isHtml: Boolean,
     val attachments: List<EmailAttachment> = emptyList(),
     val inlineAttachments: List<EmailAttachment> = emptyList(),
 ) : Parcelable
@@ -46,11 +52,15 @@ private const val PLATFORM_ENCRYPTION = "sudoplatform"
 
 private const val CANNED_TEXT_BODY = "Encrypted message attached"
 
+private val HTML_TAG_BODY_REGEX = "(?si)<html.*</html>".toRegex()
+
 /**
  * A class which handles the processing of email message data which includes the encoding and
  * parsing of the RFC 822 compatible email message content.
  */
-class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
+class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDataProcessor {
+
+    private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
 
     private val session = Session.getInstance(Properties())
 
@@ -118,7 +128,7 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
                 messageBodyPart.setText(bodyText, "UTF-8")
                 messageBodyPart.setHeader("Content-Transfer-Encoding", "QUOTED-PRINTABLE")
                 messageBodyPart.setHeader("Content-Disposition", "inline")
-                messageBodyPart.setHeader("Content-Type", "text/plain")
+                messageBodyPart.setHeader("Content-Type", MimeTypes.TEXT_PLAIN)
                 relatedMultipart.addBodyPart(messageBodyPart)
                 topMultiPart.addBodyPart(relatedWrapper)
             }
@@ -158,132 +168,34 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
     @Throws(MessagingException::class, IOException::class)
     override fun parseInternetMessageData(rfc822Data: ByteArray): SimplifiedEmailMessage {
         val rfc822Input = ByteArrayInputStream(rfc822Data)
-        val javaMailMessage = LocalMimeMessage(session, rfc822Input)
-        return toSimplifiedEmailMessage(javaMailMessage)
-    }
-
-    private class LocalMimeMessage(
-        session: Session,
-        rfc822Input: InputStream,
-    ) : MimeMessage(session, rfc822Input) {
-        override fun toString(): String {
-            val from = from?.map { it.toString() } ?: emptyList()
-            val to = getRecipients(Message.RecipientType.TO)?.map { it.toString() } ?: emptyList()
-            val cc = getRecipients(Message.RecipientType.CC)?.map { it.toString() } ?: emptyList()
-            val bcc = getRecipients(Message.RecipientType.BCC)?.map { it.toString() } ?: emptyList()
-
-            return buildString {
-                if (dataHandler.dataSource.contentType.contains("text/plain")) {
-                    appendLine(dataHandler.content)
-                } else {
-                    appendLine("MimeMessage [")
-                    appendLine("  From: $from")
-                    appendLine("  To: $to")
-                    appendLine("  Cc: $cc")
-                    appendLine("  Bcc: $bcc")
-                    appendLine("  Subject: $subject")
-                    appendLine("  Received: $receivedDate")
-                    appendLine("  ContentType: $contentType")
-                    appendLine("  Description: $description")
-                    appendLine("  Encoding: $encoding")
-                    appendLine("  Size: $size")
-                    val multipart = MimeMultipart(dataHandler.dataSource)
-                    appendLine("  Preamble: ${multipart.preamble}")
-                    for (i in 0 until multipart.count) {
-                        val bodyPart = multipart.getBodyPart(i)
-                        appendLine("  Body Part $i [")
-                        appendLine("    ContentType: ${bodyPart.contentType}")
-                        appendLine("    Description: ${bodyPart.description}")
-                        appendLine("    Size: ${bodyPart.size}")
-                        if (bodyPart.contentType.contains("text/plain")) {
-                            appendLine("    Content: ${bodyPart.content}")
-                        }
-                        val disposition = bodyPart.disposition
-                        if (disposition != null && (disposition.equals(Part.ATTACHMENT, true))) {
-                            val attachmentDateSource = bodyPart.dataHandler.dataSource
-                            val contentId = bodyPart.getHeader("Content-ID")
-                            appendLine("    Attachment: ${bodyPart.fileName}")
-                            appendLine("    Content-Disposition: ${bodyPart.disposition}")
-                            appendLine("    Content-Type: ${bodyPart.contentType}")
-                            appendLine("    Content-ID: $contentId")
-                        }
-                        if (disposition != null && (
-                                bodyPart.disposition.equals(
-                                    Part.INLINE,
-                                    true,
-                                )
-                                )
-                        ) {
-                            val contentId = bodyPart.getHeader("Content-ID")
-                            if (contentId != null) {
-                                appendLine("    Inline Attachment: ${bodyPart.fileName}")
-                                appendLine("    Content-Disposition: ${bodyPart.disposition}")
-                                appendLine("    Content-Type: ${bodyPart.contentType}")
-                                appendLine("    Content-ID: $contentId")
-                            }
-                        }
-                        appendLine("  ]")
-                    }
-                    appendLine("]")
-                }
-            }
-        }
+        val mimeMessage = MimeMessage(session, rfc822Input)
+        return toSimplifiedEmailMessage(mimeMessage)
     }
 
     @Throws(MessagingException::class, IOException::class)
     private fun toSimplifiedEmailMessage(message: Message): SimplifiedEmailMessage {
         val from = message.from?.map { it.toString() } ?: emptyList()
-        val to =
-            message.getRecipients(Message.RecipientType.TO)?.map { it.toString() } ?: emptyList()
-        val cc =
-            message.getRecipients(Message.RecipientType.CC)?.map { it.toString() } ?: emptyList()
-        val bcc =
-            message.getRecipients(Message.RecipientType.BCC)?.map { it.toString() } ?: emptyList()
+        val to = message.getRecipients(Message.RecipientType.TO)?.map { it.toString() } ?: emptyList()
+        val cc = message.getRecipients(Message.RecipientType.CC)?.map { it.toString() } ?: emptyList()
+        val bcc = message.getRecipients(Message.RecipientType.BCC)?.map { it.toString() } ?: emptyList()
 
-        val body: String
-        val attachments: MutableList<EmailAttachment> = mutableListOf()
-        val inlineAttachments: MutableList<EmailAttachment> = mutableListOf()
-        if (message.isMimeType("text/plain")) {
-            body = buildString { append(message) }
-        } else {
-            val multipart = MimeMultipart(message.dataHandler.dataSource)
-            body = buildString {
-                for (i in 0 until multipart.count) {
-                    val bodyPart = multipart.getBodyPart(i)
-                    if (bodyPart.isMimeType("text/plain")) {
-                        append(bodyPart.content)
-                    } else if (bodyPart.isMimeType("multipart/*")) {
-                        val mimeMultipart = bodyPart.content as MimeMultipart
-                        for (j in 0 until mimeMultipart.count) {
-                            val mimeBodyPart = mimeMultipart.getBodyPart(j)
-                            if (mimeBodyPart.isMimeType("text/plain")) {
-                                append(mimeBodyPart.content)
-                            }
-                        }
-                    } else if (
-                        bodyPart.isMimeType(SecureEmailAttachmentType.KEY_EXCHANGE.mimeType) ||
-                        bodyPart.isMimeType(SecureEmailAttachmentType.BODY.mimeType) ||
-                        bodyPart.isMimeType(LEGACY_KEY_EXCHANGE_MIME_TYPE) ||
-                        bodyPart.isMimeType(LEGACY_BODY_MIME_TYPE)
-                    ) {
-                        val secureAttachmentPart = multipart.getBodyPart(i)
-                        val disposition = secureAttachmentPart.disposition
-                        if (disposition != null) {
-                            var contentId = secureAttachmentPart.getHeader("Content-ID").first()
-                            contentId = contentId.replace("<", "").replace(">", "")
-                            val attachment = EmailAttachment(
-                                secureAttachmentPart.fileName,
-                                contentId,
-                                secureAttachmentPart.contentType,
-                                false,
-                                secureAttachmentPart.inputStream.readBytes(),
-                            )
-                            attachments.add(attachment)
-                        }
-                    }
-                }
-            }
+        val parts = mutableListOf<ViewablePart>()
+        val allAttachments = mutableListOf<EmailAttachment>()
+
+        // Partition and collect the parts of the email message.
+        partitionEmailBody(message, parts, allAttachments)
+
+        // Build the email body based on the partitioned parts.
+        val (body, isHtml) = buildEmailBody(parts)
+
+        // Determine if attachments are inline or regular attachments based on the fact the CID appears in the body.
+        // The content disposition header does not seem to be reliable.
+        val (inlineAttachments, attachments) = allAttachments.partition {
+            body.contains("cid:${it.contentId}") || it.inlineAttachment
+        }.let { (inline, regular) ->
+            inline.map { it.copy(inlineAttachment = true) } to regular.map { it.copy(inlineAttachment = false) }
         }
+
         return SimplifiedEmailMessage(
             from,
             to,
@@ -291,8 +203,136 @@ class Rfc822MessageDataProcessor : EmailMessageDataProcessor {
             bcc,
             message.subject,
             body,
-            attachments.toList(),
-            inlineAttachments.toList(),
+            isHtml,
+            attachments,
+            inlineAttachments,
         )
+    }
+
+    /**
+     * Partition the email body [Part]s into [ViewablePart]s and [EmailAttachment]s.
+     *
+     * This function is called recursively until all email body parts have been checked.
+     *
+     * @param message [Part] The email body part to partition.
+     * @param parts [MutableList<ViewablePart>] The email body parts which contain `text/..` MIME type
+     *  or [Message] parts.
+     * @param attachments [MutableList<EmailAttachment>] The email attachments which are inline or
+     *  regular attachments.
+     */
+    private fun partitionEmailBody(message: Part, parts: MutableList<ViewablePart>, attachments: MutableList<EmailAttachment>) {
+        when {
+            message.fileName != null -> attachments.add(extractAttachment(message))
+            message.isMimeType(MimeTypes.MULTIPART_ALTERNATIVE) -> {
+                chooseAlternative(message.content as Multipart)?.let { childParts ->
+                    parts.addAll(childParts.parts)
+                    attachments.addAll(childParts.attachments)
+                }
+            }
+            message.isMimeType(MimeTypes.MULTIPART) -> {
+                val multipart = message.content as Multipart
+                for (i in 0 until multipart.count) {
+                    val bodyPart = multipart.getBodyPart(i)
+                    partitionEmailBody(bodyPart, parts, attachments)
+                }
+            }
+            message.isMimeType(MimeTypes.RFC822_MESSAGE) -> {
+                val partContent = message.content as? Part
+                if (partContent is Message) {
+                    parts.add(ViewableMessageHeader(partContent))
+                    partitionEmailBody(partContent, parts, attachments)
+                }
+            }
+            message.isMimeType(MimeTypes.CALENDAR) -> attachments.add(extractAttachment(message, "invite.ics"))
+            message.isMimeType(MimeTypes.TEXT_ANY) -> parts.add(ViewableBodyPart(message))
+            else -> logger.error("Unhandled part. content-type ${message.contentType}, disposition: ${message.disposition}")
+        }
+    }
+
+    /**
+     * Build an email body string based on the given [ViewablePart]s.
+     *
+     * @param parts [ViewablePart] A list of [ViewablePart]s.
+     * @return The [ViewableBody] containing email text body and HTML flag.
+     */
+    private fun buildEmailBody(parts: List<ViewablePart>): ViewableBody {
+        val isHtml = parts.any { it.part.isMimeType(MimeTypes.TEXT_HTML) } || parts.any { it is ViewableMessageHeader }
+        val body = parts.mapNotNull {
+            if (isHtml) {
+                it.asHtmlText(context)
+            } else {
+                it.asPlainText(context)
+            }
+        }.joinToString(separator = if (isHtml) "\n<br>\n" else "\n\n").let { text ->
+            // There can be instances where a HTML body is not wrapped in <html> tags, add them.
+            if (isHtml && !HTML_TAG_BODY_REGEX.containsMatchIn(text)) {
+                "<html>$text<html>"
+            } else {
+                text
+            }
+        }
+        return ViewableBody(body, isHtml)
+    }
+
+    /**
+     * Extracts the attachment data based on the given [Part].
+     *
+     * @param part [Part] The part to extract the attachment from.
+     * @param defaultFileName [String] The file name of the attachment.
+     * @return The [EmailAttachment].
+     */
+    private fun extractAttachment(part: Part, defaultFileName: String = "unknown"): EmailAttachment {
+        val mimeType = part.contentType.substringBefore(';').trim()
+        val decodedFileName = try {
+            MimeUtility.decodeText(part.fileName)
+        } catch (e: Exception) {
+            defaultFileName
+        }
+        val contentId = part.getHeader("Content-ID")?.firstOrNull()?.trim('<', '>') ?: ""
+        val data = (part.content as? InputStream) ?: part.inputStream
+        val isInLine = part.disposition.equals(Part.INLINE, true)
+        return EmailAttachment(decodedFileName, contentId, mimeType, isInLine, data.readBytes())
+    }
+
+    /**
+     * See [RFC][https://www.rfc-editor.org/rfc/rfc2046.html#section-5.1.4]
+     *
+     * Correctly handles the uncommon RFC `multipart/alternative` structure.
+     *
+     * The most common `multipart/alternative` structure is:
+     * ```
+     *   multipart/alternative
+     *     text/plain
+     *     text/html
+     * ```
+     * However RFC standard does not limit the structure, so it could be anything like:
+     * ```
+     *   multipart/alternative
+     *     text/plain
+     *     multipart/related
+     *       text/html
+     *       image/jpeg
+     * ```
+     *
+     * @param alternative [Multipart] The `multipart/alternative` from which to choose the most
+     *  appropriate child part.
+     * @return The collected parts and attachments of the chosen child.
+     */
+    private fun chooseAlternative(alternative: Multipart): CollectedParts? {
+        val parts: MutableList<ViewablePart> = mutableListOf()
+        val attachments: MutableList<EmailAttachment> = mutableListOf()
+        var index = alternative.count - 1
+        while (index >= 0) {
+            val childPart = alternative.getBodyPart(index--)
+            partitionEmailBody(childPart, parts, attachments)
+            if (parts.any { it.part.isMimeType(MimeTypes.TEXT_HTML) }) {
+                break
+            }
+        }
+        return if (parts.isEmpty() && attachments.isEmpty()) {
+            null
+        } else {
+            CollectedParts(parts, attachments)
+        }
     }
 }

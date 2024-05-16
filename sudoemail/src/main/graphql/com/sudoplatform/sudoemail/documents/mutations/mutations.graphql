@@ -37,7 +37,7 @@ mutation SendEncryptedEmailMessage($input: SendEncryptedEmailMessageInput!) {
 }
 
 mutation UpdateEmailMessages($input: UpdateEmailMessagesInput!) {
-  updateEmailMessages(input: $input) {
+  updateEmailMessagesV2(input: $input) {
     ...UpdateEmailMessagesResult
   }
 }

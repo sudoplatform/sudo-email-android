@@ -21,7 +21,7 @@ import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -121,7 +121,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     }
 
     @Test
-    fun `importKeys(archiveData) should succeed when no error present`() = runBlocking {
+    fun `importKeys(archiveData) should succeed when no error present`() = runTest {
         val archiveData = dummyKeyString.toByteArray()
         client.importKeys(archiveData)
 
@@ -129,7 +129,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     }
 
     @Test
-    fun `importKeys(archiveData) with empty archive data throws`() = runBlocking<Unit> {
+    fun `importKeys(archiveData) with empty archive data throws`() = runTest {
         val archiveData = "".toByteArray()
         shouldThrow<SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException> {
             client.importKeys(archiveData)
@@ -137,7 +137,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     }
 
     @Test
-    fun `importKeys(archiveData) should throw when deviceKeyManager throws`() = runBlocking<Unit> {
+    fun `importKeys(archiveData) should throw when deviceKeyManager throws`() = runTest {
         val mockServiceKeyManager by before {
             mock<ServiceKeyManager>().stub {
                 on { importKeys(any<ByteArray>()) } doThrow
@@ -166,7 +166,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     }
 
     @Test
-    fun `exportKeys() should return key archive as exported from deviceKeyManager`() = runBlocking {
+    fun `exportKeys() should return key archive as exported from deviceKeyManager`() = runTest {
         val keyArchiveData = client.exportKeys()
 
         verify(mockServiceKeyManager).exportKeys()
@@ -174,7 +174,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     }
 
     @Test
-    fun `exportKeys() should throw when deviceKeyManager throws`() = runBlocking<Unit> {
+    fun `exportKeys() should throw when deviceKeyManager throws`() = runTest {
         val mockServiceKeyManager by before {
             mock<ServiceKeyManager>().stub {
                 on { exportKeys() } doThrow
@@ -205,7 +205,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     }
 
     @Test
-    fun `importKeys() successfully imports keys exported from the JS SDK`() = runBlocking {
+    fun `importKeys() successfully imports keys exported from the JS SDK`() = runTest {
         // Obtained from JS exportKeys API. Don't update these constants since the point of this is to
         // check that we have not broken backward compatibility (with existing key
         // backups) and interoperability with all clients.

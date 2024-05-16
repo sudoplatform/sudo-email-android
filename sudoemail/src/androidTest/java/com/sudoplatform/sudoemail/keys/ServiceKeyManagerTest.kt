@@ -25,7 +25,7 @@ import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -90,7 +90,7 @@ class ServiceKeyManagerTest {
     }
 
     @After
-    fun fini() = runBlocking {
+    fun fini() = runTest {
         if (userClient.isRegistered()) {
             userClient.deregister()
         }
@@ -166,7 +166,7 @@ class ServiceKeyManagerTest {
     }
 
     @Test
-    fun shouldBeAbleToPerformOperationsAfterSignIn() = runBlocking {
+    fun shouldBeAbleToPerformOperationsAfterSignIn() = runTest {
         registerSignInAndEntitle()
 
         serviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null

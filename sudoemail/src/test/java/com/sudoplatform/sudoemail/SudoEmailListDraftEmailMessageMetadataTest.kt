@@ -27,10 +27,10 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -226,14 +226,14 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessageMetadata() should throw an error if an unknown error occurs`() = runBlocking<Unit> {
+    fun `listDraftEmailMessageMetadata() should throw an error if an unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
             on { query(any<ListEmailAddressesQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.listDraftEmailMessageMetadata()
             }
@@ -247,7 +247,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessageMetadata() should return an empty list if no addresses found for user`() = runBlocking<Unit> {
+    fun `listDraftEmailMessageMetadata() should return an empty list if no addresses found for user`() = runTest {
         holder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -264,7 +264,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessageMetadata()
         }
         deferredResult.start()
@@ -281,7 +281,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessageMetadata() should return an empty list if no drafts found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessageMetadata() should return an empty list if no drafts found`() = runTest {
         holder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
@@ -292,7 +292,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
             } doReturn emptyList()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessageMetadata()
         }
 
@@ -317,12 +317,12 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessageMetadata() should return a list of metadata for the user`() = runBlocking<Unit> {
+    fun `listDraftEmailMessageMetadata() should return a list of metadata for the user`() = runTest {
         holder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessageMetadata()
         }
 

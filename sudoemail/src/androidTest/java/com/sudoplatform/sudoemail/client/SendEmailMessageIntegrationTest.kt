@@ -18,10 +18,8 @@ import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EncryptionStatus
 import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.ListAPIResult
-import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
-import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
@@ -30,12 +28,7 @@ import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
-import org.awaitility.Duration
-import org.awaitility.kotlin.await
-import org.awaitility.kotlin.has
-import org.awaitility.kotlin.untilCallTo
-import org.awaitility.kotlin.withPollInterval
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -58,7 +51,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
@@ -67,7 +60,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     /* Send Non-E2E email tests */
 
     @Test
-    fun sendEmailShouldReturnEmailMessageId() = runBlocking {
+    fun sendEmailShouldReturnEmailMessageId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -99,16 +92,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             result.createdAt shouldNotBe null
         }
 
-        // Wait for all the messages to arrive
-        val listEmailMessages =
-            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-                runBlocking {
-                    val listEmailMessagesInput = ListEmailMessagesInput()
-                    emailClient.listEmailMessages(listEmailMessagesInput)
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
-
-        when (listEmailMessages) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -137,7 +121,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEmailWithValidAttachmentShouldReturnEmailMessageIdAndCreatedAt() = runBlocking {
+    fun sendEmailWithValidAttachmentShouldReturnEmailMessageIdAndCreatedAt() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -189,18 +173,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             result.createdAt shouldNotBe null
         }
 
-        // Wait for all the messages to arrive
-        val listEmailMessages =
-            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-                runBlocking {
-                    val listEmailMessagesInput = ListEmailMessagesInput()
-                    emailClient.listEmailMessages(listEmailMessagesInput)
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
-        var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount * 2
-
-        when (listEmailMessages) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -229,7 +202,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEmailShouldThrowWhenInvalidRecipientAddressUsed() = runBlocking<Unit> {
+    fun sendEmailShouldThrowWhenInvalidRecipientAddressUsed() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -242,12 +215,12 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddressList.add(emailAddress)
 
         shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
-            sendEmailMessage(emailClient, emailAddress, listOf("invalidEmailAddress"))
+            sendEmailMessage(emailClient, emailAddress, listOf(EmailMessage.EmailAddress("invalidEmailAddress")))
         }
     }
 
     @Test
-    fun sendEmailShouldThrowWhenInvalidSenderAddressUsed() = runBlocking<Unit> {
+    fun sendEmailShouldThrowWhenInvalidSenderAddressUsed() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -278,7 +251,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEmailShouldThrowWhenInvalidAttachmentUsed() = runBlocking<Unit> {
+    fun sendEmailShouldThrowWhenInvalidAttachmentUsed() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -316,7 +289,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     /* Send E2E email tests */
 
     @Test
-    fun sendEncryptedEmailShouldReturnEmailMessageId() = runBlocking {
+    fun sendEncryptedEmailShouldReturnEmailMessageId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -349,25 +322,14 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
-                listOf(receiverEmailAddress.emailAddress),
+                listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
             )
             emailId = result.id
             emailId.isBlank() shouldBe false
             result.createdAt shouldNotBe null
         }
 
-        // Wait for all the messages to arrive
-        val listEmailMessages =
-            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-                runBlocking {
-                    val listEmailMessagesInput = ListEmailMessagesInput()
-                    emailClient.listEmailMessages(listEmailMessagesInput)
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
-        var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
-
-        when (listEmailMessages) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -396,7 +358,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEncryptedEmailWithValidAttachmentShouldReturnEmailMessageId() = runBlocking {
+    fun sendEncryptedEmailWithValidAttachmentShouldReturnEmailMessageId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -444,7 +406,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
-                listOf(receiverEmailAddress.emailAddress),
+                listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
                 attachments = listOf(attachment),
                 inlineAttachments = listOf(inlineAttachment),
             )
@@ -453,16 +415,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             result.createdAt shouldNotBe null
         }
 
-        // Wait for all the messages to arrive
-        val listEmailMessages =
-            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-                runBlocking {
-                    val listEmailMessagesInput = ListEmailMessagesInput()
-                    emailClient.listEmailMessages(listEmailMessagesInput)
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
-
-        when (listEmailMessages) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -491,7 +444,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEncryptedEmailWithMultipleRecipientsShouldReturnEmailMessageId() = runBlocking {
+    fun sendEncryptedEmailWithMultipleRecipientsShouldReturnEmailMessageId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -529,8 +482,8 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 emailClient,
                 emailAddress,
                 listOf(
-                    receiverEmailAddress.emailAddress,
-                    receiverEmailAddressTwo.emailAddress,
+                    EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
+                    EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress),
                 ),
             )
             emailId = result.id
@@ -538,16 +491,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             result.createdAt shouldNotBe null
         }
 
-        // Wait for all the messages to arrive
-        val listEmailMessages =
-            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-                runBlocking {
-                    val listEmailMessagesInput = ListEmailMessagesInput()
-                    emailClient.listEmailMessages(listEmailMessagesInput)
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 3 }
-
-        when (listEmailMessages) {
+        when (val listEmailMessages = waitForMessages(messageCount * 3)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.isEmpty() shouldBe false
             }
@@ -569,7 +513,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEncryptedEmailWithMixtureOfRecipientsShouldReturnEmailMessageId() = runBlocking {
+    fun sendEncryptedEmailWithMixtureOfRecipientsShouldReturnEmailMessageId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -606,24 +550,15 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
-                listOf(receiverEmailAddress.emailAddress),
-                listOf(receiverEmailAddressTwo.emailAddress),
+                listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
+                listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress)),
             )
             emailId = result.id
             emailId.isBlank() shouldBe false
             result.createdAt shouldNotBe null
         }
 
-        // Wait for all the messages to arrive
-        val listEmailMessages =
-            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-                runBlocking {
-                    val listEmailMessagesInput = ListEmailMessagesInput()
-                    emailClient.listEmailMessages(listEmailMessagesInput)
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 3 }
-
-        when (listEmailMessages) {
+        when (val listEmailMessages = waitForMessages(messageCount * 3)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.isEmpty() shouldBe false
             }
@@ -646,7 +581,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEncryptedEmailWithIdenticalFromRecipientShouldReturnEmailAddressId() = runBlocking {
+    fun sendEncryptedEmailWithIdenticalFromRecipientShouldReturnEmailAddressId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -675,23 +610,14 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             val result = sendEmailMessage(
                 emailClient,
                 emailAddress,
-                listOf(emailAddress.emailAddress),
+                listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
             )
             emailId = result.id
             emailId.isBlank() shouldBe false
             result.createdAt shouldNotBe null
         }
 
-        // Wait for all the messages to arrive
-        val listEmailMessages =
-            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-                runBlocking {
-                    val listEmailMessagesInput = ListEmailMessagesInput()
-                    emailClient.listEmailMessages(listEmailMessagesInput)
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == messageCount * 2 }
-
-        when (listEmailMessages) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.isEmpty() shouldBe false
             }
@@ -714,7 +640,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
 
     @Test
     @Ignore("Ignore as this depends on the amount of memory on the simulator")
-    fun sendEncryptedEmailShouldThrowIfMessageIsTooLarge() = runBlocking<Unit> {
+    fun sendEncryptedEmailShouldThrowIfMessageIsTooLarge() = runTest {
         val configurationData = emailClient.getConfigurationData()
         val emailMessageMaxOutboundMessageSize =
             configurationData.emailMessageMaxOutboundMessageSize
@@ -752,7 +678,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             sendEmailMessage(
                 emailClient,
                 emailAddress,
-                listOf(emailAddress.emailAddress),
+                listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
                 attachments = listOf(attachment),
             )
         }

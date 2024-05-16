@@ -29,10 +29,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -79,6 +79,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
         listOf("bcc@bar.com"),
         "email message subject",
         "email message body",
+        false,
     )
     private val unsealedHeaderDetailsString =
         "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
@@ -226,14 +227,14 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
     @Test
     fun `getEmailMessageWithBody() should return results when no error present`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val input = GetEmailMessageWithBodyInput(
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageWithBody(input)
             }
             deferredResult.start()
@@ -260,7 +261,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
     @Test
     fun `getEmailMessageWithBody() should decompress data when appropriate`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
             mockRfc822Metadata.contentEncoding =
                 "sudoplatform-compression, sudoplatform-crypto, sudoplatform-binary-data"
@@ -287,7 +288,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageWithBody(input)
             }
             deferredResult.start()
@@ -314,7 +315,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
     @Test
     fun `getEmailMessageWithBody() should return null result when query result data is null`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val responseWithNullResult by before {
@@ -327,7 +328,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageWithBody(input)
             }
             deferredResult.start()
@@ -348,7 +349,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
     @Test
     fun `getEmailMessageWithBody() should return null result when query response is null`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val nullResponse by before {
@@ -361,7 +362,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageWithBody(input)
             }
             deferredResult.start()
@@ -381,12 +382,12 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
         }
 
     @Test
-    fun `getEmailMessageWithBody() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `getEmailMessageWithBody() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
         val input =
             GetEmailMessageWithBodyInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                 client.getEmailMessageWithBody(input)
             }
@@ -420,7 +421,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessageWithBody() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `getEmailMessageWithBody() should throw when unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -429,7 +430,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
         val input =
             GetEmailMessageWithBodyInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.getEmailMessageWithBody(input)
             }
@@ -448,7 +449,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
     @Test
     fun `getEmailMessageWithBody() should not suppress CancellationException`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             mockAppSyncClient.stub {
@@ -459,7 +460,7 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<CancellationException> {
                     client.getEmailMessageWithBody(input)
                 }

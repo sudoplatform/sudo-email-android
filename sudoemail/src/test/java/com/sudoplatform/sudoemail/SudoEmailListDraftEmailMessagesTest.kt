@@ -30,10 +30,10 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
@@ -316,13 +316,13 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessages() should return results when no error present`() = runBlocking<Unit> {
+    fun `listDraftEmailMessages() should return results when no error present`() = runTest {
         listEmailHolder.callback shouldBe null
         getEmailHolder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessages()
         }
         deferredResult.start()
@@ -363,14 +363,14 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessages() should throw an error if an unknown error occurs`() = runBlocking<Unit> {
+    fun `listDraftEmailMessages() should throw an error if an unknown error occurs`() = runTest {
         listEmailHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
             on { query(any<ListEmailAddressesQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.listDraftEmailMessages()
             }
@@ -384,7 +384,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessages() should return an empty list if no addresses found for user`() = runBlocking<Unit> {
+    fun `listDraftEmailMessages() should return an empty list if no addresses found for user`() = runTest {
         listEmailHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -401,7 +401,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessages()
         }
         deferredResult.start()
@@ -418,7 +418,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessages() should return an empty list if no drafts found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessages() should return an empty list if no drafts found`() = runTest {
         listEmailHolder.callback shouldBe null
         getEmailHolder.callback shouldBe null
 
@@ -430,7 +430,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
             } doReturn emptyList()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessages()
         }
         deferredResult.start()
@@ -459,7 +459,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessages() should throw an error if draft message is not found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessages() should throw an error if draft message is not found`() = runTest {
         listEmailHolder.callback shouldBe null
         getEmailHolder.callback shouldBe null
 
@@ -473,7 +473,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
             } doThrow error
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
                 client.listDraftEmailMessages()
             }

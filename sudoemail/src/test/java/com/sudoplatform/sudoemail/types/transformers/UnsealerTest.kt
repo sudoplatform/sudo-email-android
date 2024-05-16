@@ -22,7 +22,7 @@ import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -121,7 +121,7 @@ class UnsealerTest : BaseTests() {
     }
 
     @After
-    fun fini() = runBlocking {
+    fun fini() = runTest {
         Timber.uprootAll()
     }
 

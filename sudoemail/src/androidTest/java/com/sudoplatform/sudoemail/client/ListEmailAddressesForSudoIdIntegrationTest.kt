@@ -20,7 +20,7 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -41,14 +41,14 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun listEmailAddressesForSudoIdShouldReturnSingleEmailAddressListOutputResult() = runBlocking {
+    fun listEmailAddressesForSudoIdShouldReturnSingleEmailAddressListOutputResult() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo.id shouldNotBe null
         sudoList.add(sudo)
@@ -93,7 +93,7 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailAddressesForSudoIdShouldReturnPartialResultForMissingKey() = runBlocking {
+    fun listEmailAddressesForSudoIdShouldReturnPartialResultForMissingKey() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo.id shouldNotBe null
         sudoList.add(sudo)
@@ -140,7 +140,7 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailAddressesForSudoIdShouldReturnEmptyListResultForNonExistingSudo() = runBlocking {
+    fun listEmailAddressesForSudoIdShouldReturnEmptyListResultForNonExistingSudo() = runTest {
         val input = ListEmailAddressesForSudoIdInput("nonExistentId")
         val listEmailAddresses = emailClient.listEmailAddressesForSudoId(input)
         listEmailAddresses shouldNotBe null

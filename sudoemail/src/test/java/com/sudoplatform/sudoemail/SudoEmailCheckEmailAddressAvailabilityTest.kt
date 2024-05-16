@@ -24,10 +24,10 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.Request
@@ -163,14 +163,14 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should return results when no error present`() = runBlocking<Unit> {
+    fun `checkEmailAddressAvailability() should return results when no error present`() = runTest {
         queryHolder.callback shouldBe null
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
             domains,
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.checkEmailAddressAvailability(input)
         }
         deferredResult.start()
@@ -189,7 +189,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should return empty list output when query result data is empty`() = runBlocking<Unit> {
+    fun `checkEmailAddressAvailability() should return empty list output when query result data is empty`() = runTest {
         queryHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -209,7 +209,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             localParts,
             domains,
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.checkEmailAddressAvailability(input)
         }
         deferredResult.start()
@@ -227,7 +227,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should return empty list output when query response is null`() = runBlocking<Unit> {
+    fun `checkEmailAddressAvailability() should return empty list output when query response is null`() = runTest {
         queryHolder.callback shouldBe null
 
         val responseWithNullData by before {
@@ -240,7 +240,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             localParts,
             domains,
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.checkEmailAddressAvailability(input)
         }
         deferredResult.start()
@@ -258,7 +258,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should throw when response has error`() = runBlocking<Unit> {
+    fun `checkEmailAddressAvailability() should throw when response has error`() = runTest {
         queryHolder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -277,7 +277,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             localParts,
             domains,
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.checkEmailAddressAvailability(input)
             }
@@ -294,14 +294,14 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `checkEmailAddressAvailability() should throw when http error occurs`() = runTest {
         queryHolder.callback shouldBe null
 
         val input = CheckEmailAddressAvailabilityInput(
             localParts,
             domains,
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.checkEmailAddressAvailability(input)
             }
@@ -331,7 +331,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `checkEmailAddressAvailability() should throw when unknown error occurs`() = runTest {
         queryHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -342,7 +342,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             localParts,
             domains,
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
                 client.checkEmailAddressAvailability(input)
             }
@@ -356,7 +356,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should not block coroutine cancellation exception`() = runBlocking<Unit> {
+    fun `checkEmailAddressAvailability() should not block coroutine cancellation exception`() = runTest {
         mockAppSyncClient.stub {
             on { query(any<CheckEmailAddressAvailabilityQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

@@ -19,7 +19,7 @@ import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -40,13 +40,13 @@ class LookupEmailAddressesPublicInfoIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
-    private fun setupEmailAddress() = runBlocking {
+    private fun setupEmailAddress() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -61,7 +61,7 @@ class LookupEmailAddressesPublicInfoIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun lookupEmailAddressesPublicInfoShouldReturnEmailAddressPublicInfoResult(): Unit = runBlocking {
+    fun lookupEmailAddressesPublicInfoShouldReturnEmailAddressPublicInfoResult() = runTest {
         setupEmailAddress()
 
         val inputEmailAddress = emailAddressList[0].emailAddress
@@ -78,7 +78,7 @@ class LookupEmailAddressesPublicInfoIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun lookupEmailAddressesPublicInfoShouldReturnEmptyListWhenNoEmailAddressesFound(): Unit = runBlocking {
+    fun lookupEmailAddressesPublicInfoShouldReturnEmptyListWhenNoEmailAddressesFound() = runTest {
         setupEmailAddress()
 
         val inputEmailAddress = "fake@email.com"
@@ -89,7 +89,7 @@ class LookupEmailAddressesPublicInfoIntegrationTest : BaseIntegrationTest() {
         retrievedPublicInfo.count() shouldBe 0
     }
 
-    fun lookupEmailAddressesPublicInfoShouldThrowLimitExceededException(): Unit = runBlocking {
+    fun lookupEmailAddressesPublicInfoShouldThrowLimitExceededException() = runTest {
         val inputEmailAddress = "fake@email.com"
         val inputEmailAddresses = List(51) { inputEmailAddress }
         val input = LookupEmailAddressesPublicInfoInput(inputEmailAddresses)

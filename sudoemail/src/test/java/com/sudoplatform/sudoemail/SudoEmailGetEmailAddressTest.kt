@@ -27,10 +27,10 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -215,11 +215,11 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailAddress() should return results when no error present`() = runBlocking<Unit> {
+    fun `getEmailAddress() should return results when no error present`() = runTest {
         holder.callback shouldBe null
 
         val input = GetEmailAddressInput(id = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getEmailAddress(input)
         }
         deferredResult.start()
@@ -264,7 +264,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailAddress() should return null result when query result data is null`() = runBlocking<Unit> {
+    fun `getEmailAddress() should return null result when query result data is null`() = runTest {
         holder.callback shouldBe null
 
         val responseWithNullResult by before {
@@ -274,7 +274,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
         }
 
         val input = GetEmailAddressInput(id = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getEmailAddress(input)
         }
         deferredResult.start()
@@ -290,7 +290,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailAddress() should return null result when query response is null`() = runBlocking<Unit> {
+    fun `getEmailAddress() should return null result when query response is null`() = runTest {
         holder.callback shouldBe null
 
         val nullResponse by before {
@@ -300,7 +300,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
         }
 
         val input = GetEmailAddressInput(id = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getEmailAddress(input)
         }
         deferredResult.start()
@@ -316,11 +316,11 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailAddress() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `getEmailAddress() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
         val input = GetEmailAddressInput(id = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.getEmailAddress(input)
             }
@@ -350,7 +350,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailAddress() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `getEmailAddress() should throw when unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -358,7 +358,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
         }
 
         val input = GetEmailAddressInput(id = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
                 client.getEmailAddress(input)
             }
@@ -372,7 +372,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailAddress() should not suppress CancellationException`() = runBlocking<Unit> {
+    fun `getEmailAddress() should not suppress CancellationException`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -380,7 +380,7 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
         }
 
         val input = GetEmailAddressInput(id = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.getEmailAddress(input)
             }

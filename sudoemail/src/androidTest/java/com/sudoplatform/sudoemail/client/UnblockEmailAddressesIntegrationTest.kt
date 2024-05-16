@@ -10,15 +10,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
-import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoprofiles.Sudo
-import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -40,34 +38,27 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking<Unit> {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
-    private fun blockAddresses(addresses: List<String>) = runBlocking {
-        when (val result = emailClient.blockEmailAddresses(addresses)) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
+    private fun blockAddresses(addresses: List<String>) = runTest {
+        val result = emailClient.blockEmailAddresses(addresses)
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 
     @Test
     fun unblockEmailAddressesThrowsAnErrorIfPassedAnEmptyAddressesArray() =
-        runBlocking<Unit> {
+        runTest {
             shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
                 emailClient.unblockEmailAddresses(emptyList())
             }
         }
 
     @Test
-    fun unblockEmailAddressesShouldThrowAnErrorIfPassedDuplicateAddresses() = runBlocking<Unit> {
+    fun unblockEmailAddressesShouldThrowAnErrorIfPassedDuplicateAddresses() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -94,7 +85,7 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun unblockingAnAddressThatIsNotBlockedShouldReturnSuccess() = runBlocking {
+    fun unblockingAnAddressThatIsNotBlockedShouldReturnSuccess() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -110,22 +101,12 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         emailAddressToBlock shouldNotBe null
         emailAddressList.add(emailAddressToBlock)
 
-        when (
-            val result =
-                emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
-        ) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
+        val result = emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 
     @Test
-    fun unblockingABlockedAddressShouldReturnSuccess() = runBlocking {
+    fun unblockingABlockedAddressShouldReturnSuccess() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -143,22 +124,12 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
 
         blockAddresses(listOf(emailAddressToBlock.emailAddress))
 
-        when (
-            val result =
-                emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
-        ) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
+        val result = emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 
     @Test
-    fun unblockingMultipleBlockedAddressesShouldReturnSuccess() = runBlocking {
+    fun unblockingMultipleBlockedAddressesShouldReturnSuccess() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -177,21 +148,12 @@ class UnblockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         val spamAddress = "spammyMcSpamface${UUID.randomUUID()}@spambot.com"
         blockAddresses(listOf(emailAddressToBlock.emailAddress, spamAddress))
 
-        when (
-            val result = emailClient.unblockEmailAddresses(
-                listOf(
-                    emailAddressToBlock.emailAddress,
-                    spamAddress,
-                ),
-            )
-        ) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
+        val result = emailClient.unblockEmailAddresses(
+            listOf(
+                emailAddressToBlock.emailAddress,
+                spamAddress,
+            ),
+        )
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 }

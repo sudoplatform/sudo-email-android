@@ -11,18 +11,10 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.EmailMessage
-import com.sudoplatform.sudoemail.types.ListAPIResult
-import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import kotlinx.coroutines.runBlocking
-import org.awaitility.Duration
-import org.awaitility.kotlin.await
-import org.awaitility.kotlin.has
-import org.awaitility.kotlin.untilCallTo
-import org.awaitility.kotlin.withPollInterval
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -43,14 +35,14 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun deleteEmailMessageShouldSucceed() = runBlocking {
+    fun deleteEmailMessageShouldSucceed() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -66,22 +58,14 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
         sendResult.id.isBlank() shouldBe false
         sendResult.createdAt shouldNotBe null
 
-        // Wait for all the messages to arrive
-        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
-            runBlocking {
-                val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-                    emailAddressId = emailAddress.id,
-                )
-                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
-            }
-        } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == 2 }
+        waitForMessages(2)
 
         val result = emailClient.deleteEmailMessage(sendResult.id)
         result shouldBe sendResult.id
     }
 
     @Test
-    fun deleteEmailMessageShouldReturnNullForNonExistentMessage() = runBlocking {
+    fun deleteEmailMessageShouldReturnNullForNonExistentMessage() = runTest {
         val result = emailClient.deleteEmailMessage("nonExistentId")
         result shouldBe null
     }

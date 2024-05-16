@@ -17,7 +17,7 @@ import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,14 +38,14 @@ class DeprovisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun deprovisionEmailAddressShouldReturnEmailAddressResult() = runBlocking {
+    fun deprovisionEmailAddressShouldReturnEmailAddressResult() = runTest {
         val emailDomains = getEmailDomains(emailClient)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 
@@ -84,7 +84,7 @@ class DeprovisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deprovisionEmailAddressShouldThrowWithNonExistentAddress() = runBlocking<Unit> {
+    fun deprovisionEmailAddressShouldThrowWithNonExistentAddress() = runTest {
         val emailDomains = getEmailDomains(emailClient)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 

@@ -35,6 +35,8 @@ import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
+import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageFailure
+import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
@@ -244,7 +246,7 @@ interface SudoEmailClient : AutoCloseable {
                 ),
             )
 
-            val emailMessageDataProcessor = Rfc822MessageDataProcessor()
+            val emailMessageDataProcessor = Rfc822MessageDataProcessor(context!!)
 
             val sealingService = DefaultSealingService(
                 deviceKeyManager = serviceKeyManager,
@@ -441,6 +443,45 @@ interface SudoEmailClient : AutoCloseable {
     }
 
     /**
+     * Get the configuration data for the email service.
+     *
+     * @returns The configuration data [ConfigurationData] for the email service.
+     *
+     * @throws [EmailConfigurationException].
+     */
+    @Throws(EmailConfigurationException::class)
+    suspend fun getConfigurationData(): ConfigurationData
+
+    /**
+     * Get a list of the supported email domains.
+     *
+     * @param cachePolicy [CachePolicy] Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
+     * be aware that this will only return cached results of identical API calls.
+     * @return A list of supported domains.
+     *
+     * @throws [EmailAddressException].
+     */
+    @Throws(EmailAddressException::class)
+    suspend fun getSupportedEmailDomains(cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): List<String>
+
+    /**
+     * Check if an email address is available to be provisioned within a domain.
+     *
+     * Criteria:
+     *  - At least one local part is required.
+     *  - A maximum of 5 local parts per request.
+     *  - Local parts must not exceed 64 characters.
+     *  - Local parts must match the following pattern: `^[a-zA-Z0-9](\.?[-_a-zA-Z0-9])*$`.
+     *
+     * @param input [CheckEmailAddressAvailabilityInput] Parameters used to check for email address availability.
+     * @return A list of fully qualified available email addresses in the domains that match the local parts.
+     *
+     * @throws [EmailAddressException].
+     */
+    @Throws(EmailAddressException::class)
+    suspend fun checkEmailAddressAvailability(input: CheckEmailAddressAvailabilityInput): List<String>
+
+    /**
      * Provision an [EmailAddress].
      *
      * @param input [ProvisionEmailAddressInput] Parameters used to provision an email address.
@@ -473,159 +514,6 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailAddressException::class)
     suspend fun updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput): String
-
-    /**
-     * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
-     *
-     * Email messages sent to in-network recipients (i.e. email addresses that exist within the Sudo Platform)
-     * will be sent end-to-end encrypted.
-     *
-     * @param input [SendEmailMessageInput] Parameters used to send an email message.
-     * @return The identifier of the [EmailMessage] that is being sent.
-     *
-     * @throws [EmailMessageException].
-     */
-    @Throws(EmailMessageException::class)
-    suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult
-
-    /**
-     * Update multiple [EmailMessage]s using a list of identifiers.
-     *
-     * Email messages can only be updated in batches of 100 or less. Anything greater will throw an
-     * [EmailMessageException.LimitExceededException].
-     *
-     * This API returns a [BatchOperationResult]:
-     * - On Success, all email messages succeeded to update.
-     * - On Partial, only a partial amount of messages succeeded to update. Result includes a list
-     *     of identifiers of the email messages that failed and succeeded to update.
-     * - On Failure, all email messages failed to update. Result contains a list of identifiers of
-     *     email messages that failed to update.
-     *
-     * @param input [UpdateEmailMessagesInput] Parameters used to update a list of email messages.
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email messages identifiers that succeeded or failed to be updated.
-     *
-     * @throws [EmailMessageException].
-     */
-    @Throws(EmailMessageException::class)
-    suspend fun updateEmailMessages(input: UpdateEmailMessagesInput): BatchOperationResult<String>
-
-    /**
-     * Delete multiple [EmailMessage]s using a list of identifiers.
-     *
-     * Email messages can only be deleted in batches of 100 or less. Anything greater will throw an
-     * [EmailMessageException.LimitExceededException].
-     *
-     * This API returns a [BatchOperationResult]:
-     * - On Success, all email messages succeeded to delete.
-     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
-     *     of identifiers of the email messages that failed and succeeded to delete.
-     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
-     *     email messages that failed to delete.
-     *
-     * @param ids [List<String>] A list of one or more identifiers of the email messages to be deleted.
-     *  There is a limit of 100 email message identifiers per request. Exceeding this will cause an exception.
-     *  to be thrown.
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email messages identifiers that succeeded or failed to be deleted.
-     *
-     * @throws [EmailMessageException].
-     */
-    @Throws(EmailMessageException::class)
-    suspend fun deleteEmailMessages(ids: List<String>): BatchOperationResult<String>
-
-    /**
-     * Delete a single [EmailMessage] using the [id] parameter.
-     *
-     * @param id [String] Identifier of the [EmailMessage] to be deleted.
-     * @returns The identifier of the [EmailMessage] that was deleted or null if the email message
-     *  could not be deleted.
-     *
-     * @throws [EmailMessageException].
-     */
-    @Throws(EmailMessageException::class)
-    suspend fun deleteEmailMessage(id: String): String?
-
-    /**
-     * Creates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
-     *
-     * @param input [CreateDraftEmailMessageInput] Parameters used to create a draft email message.
-     * @return The identifier of the draft message that is being created.
-     *
-     * @throws [EmailMessageException], [EmailAddressException].
-     */
-    @Throws(EmailMessageException::class, EmailAddressException::class)
-    suspend fun createDraftEmailMessage(input: CreateDraftEmailMessageInput): String
-
-    /**
-     * Updates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
-     *
-     * @param input [UpdateDraftEmailMessageInput] Parameters used to update a draft email message.
-     * @return The identifier of the draft message that is being updated.
-     *
-     * @throws [EmailMessageException], [EmailAddressException].
-     */
-    @Throws(EmailMessageException::class, EmailAddressException::class)
-    suspend fun updateDraftEmailMessage(input: UpdateDraftEmailMessageInput): String
-
-    /**
-     * Delete multiple draft email messages with a list of identifiers.
-     *
-     * This API returns a [BatchOperationResult]:
-     * - On Success, all email messages succeeded to delete.
-     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
-     *     of identifiers of the email messages that failed and succeeded to delete.
-     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
-     *     email messages that failed to delete.
-     *
-     * @param input [DeleteDraftEmailMessagesInput] Input parameters containing a list of draft email message
-     * identifiers and an email address identifier.
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email messages identifiers that succeeded or failed to be deleted.
-     *
-     * @throws [EmailAddressException], [EmailMessageException].
-     */
-    @Throws(EmailAddressException::class, EmailMessageException::class)
-    suspend fun deleteDraftEmailMessages(input: DeleteDraftEmailMessagesInput): BatchOperationResult<String>
-
-    /**
-     * Import cryptographic keys from a key archive.
-     *
-     * @param archiveData [ByteArray] Key archive data to import the keys from.
-     *
-     * @throws [EmailCryptographicKeysException]
-     */
-    @Throws(EmailCryptographicKeysException::class)
-    suspend fun importKeys(archiveData: ByteArray)
-
-    /**
-     * Get a list of the supported email domains.
-     *
-     * @param cachePolicy [CachePolicy] Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
-     * be aware that this will only return cached results of identical API calls.
-     * @return A list of supported domains.
-     *
-     * @throws [EmailAddressException].
-     */
-    @Throws(EmailAddressException::class)
-    suspend fun getSupportedEmailDomains(cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): List<String>
-
-    /**
-     * Check if an email address is available to be provisioned within a domain.
-     *
-     * Criteria:
-     *  - At least one local part is required.
-     *  - A maximum of 5 local parts per request.
-     *  - Local parts must not exceed 64 characters.
-     *  - Local parts must match the following pattern: `^[a-zA-Z0-9](\.?[-_a-zA-Z0-9])*$`.
-     *
-     * @param input [CheckEmailAddressAvailabilityInput] Parameters used to check for email address availability.
-     * @return A list of fully qualified available email addresses in the domains that match the local parts.
-     *
-     * @throws [EmailAddressException].
-     */
-    @Throws(EmailAddressException::class)
-    suspend fun checkEmailAddressAvailability(input: CheckEmailAddressAvailabilityInput): List<String>
 
     /**
      * Get an [EmailAddress] using its identifier.
@@ -711,6 +599,81 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun listEmailFoldersForEmailAddressId(input: ListEmailFoldersForEmailAddressIdInput): ListOutput<EmailFolder>
 
     /**
+     * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
+     *
+     * Email messages sent to in-network recipients (i.e. email addresses that exist within the Sudo Platform)
+     * will be sent end-to-end encrypted.
+     *
+     * @param input [SendEmailMessageInput] Parameters used to send an email message.
+     * @return The identifier of the [EmailMessage] that is being sent.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult
+
+    /**
+     * Update multiple [EmailMessage]s using a list of identifiers.
+     *
+     * Email messages can only be updated in batches of 100 or less. Anything greater will throw an
+     * [EmailMessageException.LimitExceededException].
+     *
+     * This API returns a [BatchOperationResult]:
+     * - On Success, all email messages succeeded to update.
+     * - On Partial, only a partial amount of messages succeeded to update. Result includes a list
+     *     of identifiers of the email messages that failed and succeeded to update.
+     * - On Failure, all email messages failed to update. Result contains a list of identifiers of
+     *     email messages that failed to update.
+     *
+     * @param input [UpdateEmailMessagesInput] Parameters used to update a list of email messages.
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email messages identifiers that succeeded or failed to be updated.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun updateEmailMessages(input: UpdateEmailMessagesInput): BatchOperationResult<
+        UpdatedEmailMessageSuccess,
+        UpdatedEmailMessageFailure,
+        >
+
+    /**
+     * Delete multiple [EmailMessage]s using a list of identifiers.
+     *
+     * Email messages can only be deleted in batches of 100 or less. Anything greater will throw an
+     * [EmailMessageException.LimitExceededException].
+     *
+     * This API returns a [BatchOperationResult]:
+     * - On Success, all email messages succeeded to delete.
+     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
+     *     of identifiers of the email messages that failed and succeeded to delete.
+     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
+     *     email messages that failed to delete.
+     *
+     * @param ids [List<String>] A list of one or more identifiers of the email messages to be deleted.
+     *  There is a limit of 100 email message identifiers per request. Exceeding this will cause an exception.
+     *  to be thrown.
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email messages identifiers that succeeded or failed to be deleted.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun deleteEmailMessages(ids: List<String>): BatchOperationResult<String, String>
+
+    /**
+     * Delete a single [EmailMessage] using the [id] parameter.
+     *
+     * @param id [String] Identifier of the [EmailMessage] to be deleted.
+     * @returns The identifier of the [EmailMessage] that was deleted or null if the email message
+     *  could not be deleted.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun deleteEmailMessage(id: String): String?
+
+    /**
      * Get an [EmailMessage] using its identifier.
      *
      * @param input [GetEmailMessageInput] Parameters used to retrieve an [EmailMessage].
@@ -725,6 +688,10 @@ interface SudoEmailClient : AutoCloseable {
      * @param input [GetEmailMessageRfc822DataInput] Parameters used to retrieve the data of the email message.
      * @returns The data associated with the [EmailMessage] or null if the email message cannot be found.
      */
+    @Deprecated(
+        "Use getEmailMessageWithBody instead to retrieve email message data",
+        ReplaceWith("getEmailMessageWithBody"),
+    )
     @Throws(EmailMessageException::class)
     suspend fun getEmailMessageRfc822Data(input: GetEmailMessageRfc822DataInput): EmailMessageRfc822Data?
 
@@ -813,6 +780,59 @@ interface SudoEmailClient : AutoCloseable {
     ): ListAPIResult<EmailMessage, PartialEmailMessage>
 
     /**
+     * Creates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
+     *
+     * @param input [CreateDraftEmailMessageInput] Parameters used to create a draft email message.
+     * @return The identifier of the draft message that is being created.
+     *
+     * @throws [EmailMessageException], [EmailAddressException].
+     */
+    @Throws(EmailMessageException::class, EmailAddressException::class)
+    suspend fun createDraftEmailMessage(input: CreateDraftEmailMessageInput): String
+
+    /**
+     * Updates a draft email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.
+     *
+     * @param input [UpdateDraftEmailMessageInput] Parameters used to update a draft email message.
+     * @return The identifier of the draft message that is being updated.
+     *
+     * @throws [EmailMessageException], [EmailAddressException].
+     */
+    @Throws(EmailMessageException::class, EmailAddressException::class)
+    suspend fun updateDraftEmailMessage(input: UpdateDraftEmailMessageInput): String
+
+    /**
+     * Delete multiple draft email messages with a list of identifiers.
+     *
+     * This API returns a [BatchOperationResult]:
+     * - On Success, all email messages succeeded to delete.
+     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
+     *     of identifiers of the email messages that failed and succeeded to delete.
+     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
+     *     email messages that failed to delete.
+     *
+     * @param input [DeleteDraftEmailMessagesInput] Input parameters containing a list of draft email message
+     * identifiers and an email address identifier.
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email messages identifiers that succeeded or failed to be deleted.
+     *
+     * @throws [EmailAddressException], [EmailMessageException].
+     */
+    @Throws(EmailAddressException::class, EmailMessageException::class)
+    suspend fun deleteDraftEmailMessages(input: DeleteDraftEmailMessagesInput): BatchOperationResult<String, String>
+
+    /**
+     * Retrieves a draft email message.
+     *
+     * @param input [GetDraftEmailMessageInput] Parameters used to retrieve a draft email message.
+     * @return The [DraftEmailMessageWithContent] containing metadata and content.
+     *
+     * @throws [EmailMessageException]
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun getDraftEmailMessage(input: GetDraftEmailMessageInput): DraftEmailMessageWithContent
+
+    /**
      * Lists the metadata and content of all draft messages for the user.
      *
      * @return List of [DraftEmailMessageWithContent].
@@ -855,25 +875,48 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun listDraftEmailMessageMetadataForEmailAddressId(emailAddressId: String): List<DraftEmailMessageMetadata>
 
     /**
-     * Retrieves a draft email message.
+     * Blocks the given email address(es) for the user identified
      *
-     * @param input [GetDraftEmailMessageInput] Parameters used to retrieve a draft email message.
-     * @return The [DraftEmailMessageWithContent] containing metadata and content.
-     *
-     * @throws [EmailMessageException]
+     * @param addresses [List<String>] The list of email addresses to block
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email addresses that succeeded or failed to be blocked.
      */
-    @Throws(EmailMessageException::class)
-    suspend fun getDraftEmailMessage(input: GetDraftEmailMessageInput): DraftEmailMessageWithContent
+    suspend fun blockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String>
 
     /**
-     * Get the configuration data for the email service.
+     * Unblocks the given email address(es) for the logged in user
      *
-     * @returns The configuration data [ConfigurationData] for the email service.
-     *
-     * @throws [EmailConfigurationException].
+     * @param addresses [List<String>] The list of email addresses to unblock
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email addresses that succeeded or failed to be unblocked.
      */
-    @Throws(EmailConfigurationException::class)
-    suspend fun getConfigurationData(): ConfigurationData
+    suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String>
+
+    /**
+     * Unblocks the email addresses associated with the hashed values passed in for the logged in user
+     *
+     * @param hashedValues [List<String>] The list of hashedValues to unblock
+     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
+     *  of email addresses that succeeded or failed to be blocked.
+     */
+    suspend fun unblockEmailAddressesByHashedValue(hashedValues: List<String>): BatchOperationResult<String, String>
+
+    /**
+     * Get email address blocklist for given owner.
+     *
+     * @return A list of the blocked addresses
+     */
+    suspend fun getEmailAddressBlocklist(): List<UnsealedBlockedAddress>
+
+    /**
+     * Import cryptographic keys from a key archive.
+     *
+     * @param archiveData [ByteArray] Key archive data to import the keys from.
+     *
+     * @throws [EmailCryptographicKeysException]
+     */
+    @Throws(EmailCryptographicKeysException::class)
+    suspend fun importKeys(archiveData: ByteArray)
 
     /**
      * Export the cryptographic keys to a key archive.
@@ -907,40 +950,6 @@ interface SudoEmailClient : AutoCloseable {
      * Unsubscribe all subscribers from receiving notifications about modifications to [EmailMessage]s.
      */
     suspend fun unsubscribeAllFromEmailMessages()
-
-    /**
-     * Blocks the given email address(es) for the user identified
-     *
-     * @param addresses [List<String>] The list of email addresses to block
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email addresses that succeeded or failed to be blocked.
-     */
-    suspend fun blockEmailAddresses(addresses: List<String>): BatchOperationResult<String>
-
-    /**
-     * Unblocks the given email address(es) for the logged in user
-     *
-     * @param addresses [List<String>] The list of email addresses to unblock
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email addresses that succeeded or failed to be unblocked.
-     */
-    suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String>
-
-    /**
-     * Unblocks the email addresses associated with the hashed values passed in for the logged in user
-     *
-     * @param hashedValues [List<String>] The list of hashedValues to unblock
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email addresses that succeeded or failed to be blocked.
-     */
-    suspend fun unblockEmailAddressesByHashedValue(hashedValues: List<String>): BatchOperationResult<String>
-
-    /**
-     * Get email address blocklist for given owner
-     *
-     * @return A list of the blocked addresses
-     */
-    suspend fun getEmailAddressBlocklist(): List<UnsealedBlockedAddress>
 
     /**
      * Reset any internal state and cached content.

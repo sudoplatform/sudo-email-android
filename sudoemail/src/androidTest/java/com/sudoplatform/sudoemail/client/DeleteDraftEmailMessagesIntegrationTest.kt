@@ -10,18 +10,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
-import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
-import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -44,14 +42,14 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun deleteDraftEmailMessagesShouldThrowErrorIfSenderEmailAddressNotFound() = runBlocking<Unit> {
+    fun deleteDraftEmailMessagesShouldThrowErrorIfSenderEmailAddressNotFound() = runTest {
         val mockDraftId = UUID.randomUUID()
         val mockEmailAddressId = "non-existent-email-address-id"
 
@@ -65,7 +63,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteDraftEmailMessagesShouldThrowErrorIfInputSizeExceedsRateLimit() = runBlocking<Unit> {
+    fun deleteDraftEmailMessagesShouldThrowErrorIfInputSizeExceedsRateLimit() = runTest {
         val mockDraftIds = (0..(draftRateLimit + 1)).map { UUID.randomUUID().toString() }
         val mockEmailAddressId = "non-existent-email-address-id"
 
@@ -79,7 +77,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteDraftEmailMessagesShouldReturnSuccessResult() = runBlocking {
+    fun deleteDraftEmailMessagesShouldReturnSuccessResult() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -90,7 +88,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
             subject = "Test Draft",
@@ -107,16 +105,11 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
             listOf(draftId),
             emailAddress.id,
         )
-        when (val result = emailClient.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)) {
-            is BatchOperationResult.SuccessOrFailureResult -> {
-                result.status shouldBe BatchOperationStatus.SUCCESS
-            }
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
+        val result = emailClient.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
+        result.status shouldBe BatchOperationStatus.SUCCESS
 
-        val listDraftEmailMessagesResult = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
+        val listDraftEmailMessagesResult =
+            emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
         listDraftEmailMessagesResult.find { it.id == draftId } shouldBe null
     }
 }

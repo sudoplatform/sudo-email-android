@@ -17,22 +17,20 @@ import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
-import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.util.EmailAddressParser
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -171,11 +169,11 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     @Test
     fun `unblockEmailAddresses() should throw an InvalidInputException if passed an empty array`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder.callback shouldBe null
             val addresses = emptyList<String>()
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
                     client.unblockEmailAddresses(addresses)
                 }
@@ -187,7 +185,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     @Test
     fun `unblockEmailAddresses() should throw an InvalidInputException if passed an array with duplicate emails`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
             val uuid = UUID.randomUUID()
@@ -196,7 +194,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 "spammymcspamface$uuid@spambot.com",
             )
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
                     client.unblockEmailAddresses(addresses)
                 }
@@ -209,11 +207,11 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     @Test
     fun `unblockEmailAddresses() should return success when no errors present`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.unblockEmailAddresses(addresses)
             }
             deferredResult.start()
@@ -225,15 +223,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
             val result = deferredResult.await()
             result shouldNotBe null
 
-            when (result) {
-                is BatchOperationResult.SuccessOrFailureResult -> {
-                    result.status shouldBe BatchOperationStatus.SUCCESS
-                }
-
-                else -> {
-                    fail("Unexpected BatchOperationResult")
-                }
-            }
+            result.status shouldBe BatchOperationStatus.SUCCESS
 
             verify(mockAppSyncClient).mutate<
                 UnblockEmailAddressesMutation.Data,
@@ -250,7 +240,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     @Test
     fun `unblockEmailAddresses() should return failure when api returns failed status`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
 
@@ -278,7 +268,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                     .build()
             }
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.unblockEmailAddresses(addresses)
             }
             deferredResult.start()
@@ -290,15 +280,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
             val result = deferredResult.await()
             result shouldNotBe null
 
-            when (result) {
-                is BatchOperationResult.SuccessOrFailureResult -> {
-                    result.status shouldBe BatchOperationStatus.FAILURE
-                }
-
-                else -> {
-                    fail("Unexpected BatchOperationResult")
-                }
-            }
+            result.status shouldBe BatchOperationStatus.FAILURE
 
             verify(mockAppSyncClient).mutate<
                 UnblockEmailAddressesMutation.Data,
@@ -314,7 +296,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         }
 
     @Test
-    fun `unblockEmailAddresses() should return proper lists on partial`() = runBlocking<Unit> {
+    fun `unblockEmailAddresses() should return proper lists on partial`() = runTest {
         callbackHolder.callback shouldBe null
         addresses.size shouldNotBe 0
 
@@ -342,7 +324,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.unblockEmailAddresses(addresses)
         }
         deferredResult.start()
@@ -354,17 +336,9 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         val result = deferredResult.await()
         result shouldNotBe null
 
-        when (result) {
-            is BatchOperationResult.PartialResult -> {
-                result.status shouldBe BatchOperationStatus.PARTIAL
-                result.failureValues shouldContain addresses[0]
-                result.successValues shouldContain addresses[1]
-            }
-
-            else -> {
-                fail("Unexpected BatchOperationResult")
-            }
-        }
+        result.status shouldBe BatchOperationStatus.PARTIAL
+        result.failureValues?.shouldContain(addresses[0])
+        result.successValues?.shouldContain(addresses[1])
 
         verify(mockAppSyncClient).mutate<
             UnblockEmailAddressesMutation.Data,
@@ -381,7 +355,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     @Test
     fun `unblockEmailAddresses() should throw an error if response contains errors`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
 
@@ -399,7 +373,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                     .errors(listOf(error))
                     .build()
             }
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
                     client.unblockEmailAddresses(addresses)
                 }

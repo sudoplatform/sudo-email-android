@@ -11,6 +11,7 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
@@ -19,19 +20,18 @@ import io.kotlintest.matchers.collections.shouldHaveAtLeastSize
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Test the operations of
- * [SudoEmailClient.provisionEmailAddress],
- * [SudoEmailClient.sendEmailMessage],
- * [SudoEmailClient.getEmailMessage]
- * and [SudoEmailClient.deprovisionEmailAddress]
- * for email addresses provisioned with a specific Public Key identifier.
+ * For email addresses provisioned with a specific Public Key identifier, test the operations of:
+ *  - [SudoEmailClient.provisionEmailAddress]
+ *  - [SudoEmailClient.sendEmailMessage]
+ *  - [SudoEmailClient.getEmailMessage]
+ *  - [SudoEmailClient.deprovisionEmailAddress]
  */
 @RunWith(AndroidJUnit4::class)
 class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
@@ -46,14 +46,14 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         ownershipProofList.clear()
         sudoClient.reset()
     }
 
-    private fun setupTestData() = runBlocking {
+    private fun setupTestData() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo.id shouldNotBe null
         sudoList.add(sudo)
@@ -67,13 +67,13 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
         emailAddressList.add(provisionedAddress)
     }
 
-    private fun testEmailLifecycle(emailAddress: EmailAddress) = runBlocking<Unit> {
+    private fun testEmailLifecycle(emailAddress: EmailAddress) = runTest {
         // Send message from email address
         val outgoingMessageResult =
             sendEmailMessage(
                 emailClient,
                 fromAddress = emailAddress,
-                toAddresses = listOf(emailAddressList[0].emailAddress),
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddressList[0].emailAddress)),
             )
         outgoingMessageResult.id shouldNotBe null
 
@@ -82,7 +82,7 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
             sendEmailMessage(
                 emailClient,
                 fromAddress = emailAddressList[0],
-                toAddresses = listOf(emailAddress.emailAddress),
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
             )
         incomingMessageResult.id shouldNotBe null
         emailClient.getEmailMessage(GetEmailMessageInput(incomingMessageResult.id)) shouldNotBe null
@@ -93,7 +93,7 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun provisionalEmailAddressWithReusedPublicKeyShouldHandleLifecycle() = runBlocking<Unit> {
+    fun provisionalEmailAddressWithReusedPublicKeyShouldHandleLifecycle() = runTest {
         setupTestData()
 
         // Get public key of another email address
@@ -127,7 +127,7 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun provisionalEmailAddressWithInvalidPublicKeyShouldThrow() = runBlocking<Unit> {
+    fun provisionalEmailAddressWithInvalidPublicKeyShouldThrow() = runTest {
         setupTestData()
 
         shouldThrow<KeyNotFoundException> {

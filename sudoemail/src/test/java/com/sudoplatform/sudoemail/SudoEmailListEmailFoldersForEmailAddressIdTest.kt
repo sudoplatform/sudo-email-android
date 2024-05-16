@@ -25,10 +25,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.Request
@@ -194,7 +194,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return results when no error present`() = runBlocking<Unit> {
+    fun `listEmailFoldersForEmailAddressId() should return results when no error present`() = runTest {
         queryHolder.callback shouldBe null
 
         val input = ListEmailFoldersForEmailAddressIdInput(
@@ -202,7 +202,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             limit = 1,
             nextToken = null,
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listEmailFoldersForEmailAddressId(input)
         }
         deferredResult.start()
@@ -246,7 +246,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return results when populating nextToken`() = runBlocking<Unit> {
+    fun `listEmailFoldersForEmailAddressId() should return results when populating nextToken`() = runTest {
         queryHolder.callback shouldBe null
 
         val queryResultWithNextToken by before {
@@ -296,7 +296,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             1,
             "dummyNextToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listEmailFoldersForEmailAddressId(input)
         }
         deferredResult.start()
@@ -340,7 +340,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return empty list output when query result data is empty`() = runBlocking<Unit> {
+    fun `listEmailFoldersForEmailAddressId() should return empty list output when query result data is empty`() = runTest {
         queryHolder.callback shouldBe null
 
         val queryResultWithEmptyList by before {
@@ -358,7 +358,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         }
 
         val input = ListEmailFoldersForEmailAddressIdInput("emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listEmailFoldersForEmailAddressId(input)
         }
         deferredResult.start()
@@ -388,7 +388,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return empty list output when query response is null`() = runBlocking<Unit> {
+    fun `listEmailFoldersForEmailAddressId() should return empty list output when query response is null`() = runTest {
         queryHolder.callback shouldBe null
 
         val nullQueryResponse by before {
@@ -398,7 +398,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         }
 
         val input = ListEmailFoldersForEmailAddressIdInput("emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listEmailFoldersForEmailAddressId(input)
         }
         deferredResult.start()
@@ -428,11 +428,11 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `listEmailFoldersForEmailAddressId() should throw when http error occurs`() = runTest {
         queryHolder.callback shouldBe null
 
         val input = ListEmailFoldersForEmailAddressIdInput("emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
                 client.listEmailFoldersForEmailAddressId(input)
             }
@@ -473,7 +473,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `listEmailFoldersForEmailAddressId() should throw when unknown error occurs`() = runTest {
         queryHolder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -481,7 +481,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         }
 
         val input = ListEmailFoldersForEmailAddressIdInput("emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
                 client.listEmailFoldersForEmailAddressId(input)
             }
@@ -506,7 +506,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should not block coroutine cancellation exception`() = runBlocking<Unit> {
+    fun `listEmailFoldersForEmailAddressId() should not block coroutine cancellation exception`() = runTest {
         mockAppSyncClient.stub {
             on { query(any<ListEmailFoldersForEmailAddressIdQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
         }

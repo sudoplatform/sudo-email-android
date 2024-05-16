@@ -17,10 +17,10 @@ import com.sudoplatform.sudoemail.types.EmailAttachment
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyInt
@@ -97,8 +97,8 @@ class EmailCryptoServiceTest : BaseTests() {
     }
 
     @Test
-    fun `encrypt() should return results when no error present`() = runBlocking<Unit> {
-        val deferredResult = async(Dispatchers.IO) {
+    fun `encrypt() should return results when no error present`() = runTest {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             emailCryptoService.encrypt(stubData.toByteArray(), stubKeyIds)
         }
 
@@ -133,10 +133,10 @@ class EmailCryptoServiceTest : BaseTests() {
     }
 
     @Test
-    fun `encrypt() should throw error if data is empty`() = runBlocking<Unit> {
+    fun `encrypt() should throw error if data is empty`() = runTest {
         val data = ByteArray(0)
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
                 emailCryptoService.encrypt(data, stubKeyIds)
             }
@@ -148,8 +148,8 @@ class EmailCryptoServiceTest : BaseTests() {
     }
 
     @Test
-    fun `encrypt() should throw error if keyIds are empty`() = runBlocking<Unit> {
-        val deferredResult = async(Dispatchers.IO) {
+    fun `encrypt() should throw error if keyIds are empty`() = runTest {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
                 emailCryptoService.encrypt(stubData.toByteArray(), emptySet())
             }
@@ -161,13 +161,13 @@ class EmailCryptoServiceTest : BaseTests() {
     }
 
     @Test
-    fun `encrypt() should throw error if device key manager error occurs`() = runBlocking<Unit> {
+    fun `encrypt() should throw error if device key manager error occurs`() = runTest {
         mockDeviceKeyManager.stub {
             on { generateRandomSymmetricKey() } doThrow DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
                 "Mock",
             )
         }
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.SecureDataEncryptionException> {
                 emailCryptoService.encrypt(stubData.toByteArray(), stubKeyIds)
             }
@@ -181,8 +181,8 @@ class EmailCryptoServiceTest : BaseTests() {
     }
 
     @Test
-    fun `decrypt() should return results when no error present`() = runBlocking<Unit> {
-        val deferredResult = async(Dispatchers.IO) {
+    fun `decrypt() should return results when no error present`() = runTest {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             emailCryptoService.decrypt(securePackage)
         }
 
@@ -199,7 +199,7 @@ class EmailCryptoServiceTest : BaseTests() {
 
     @Test
     fun `decrypt() should throw error for empty body attachment on secure package`() =
-        runBlocking<Unit> {
+        runTest {
             val bodyAttachment = EmailAttachment(
                 fileName = SecureEmailAttachmentType.BODY.fileName,
                 contentId = SecureEmailAttachmentType.BODY.contentId,
@@ -209,7 +209,7 @@ class EmailCryptoServiceTest : BaseTests() {
             )
             val securePackage = SecurePackage(setOf(keyAttachment), bodyAttachment)
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
                     emailCryptoService.decrypt(securePackage)
                 }
@@ -222,10 +222,10 @@ class EmailCryptoServiceTest : BaseTests() {
 
     @Test
     fun `decrypt() should throw error for empty key attachments on secure package`() =
-        runBlocking<Unit> {
+        runTest {
             val securePackage = SecurePackage(emptySet(), bodyAttachment)
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
                     emailCryptoService.decrypt(securePackage)
                 }
@@ -237,12 +237,12 @@ class EmailCryptoServiceTest : BaseTests() {
         }
 
     @Test
-    fun `decrypt() should throw error if no keys exist for user`() = runBlocking<Unit> {
+    fun `decrypt() should throw error if no keys exist for user`() = runTest {
         mockDeviceKeyManager.stub {
             on { privateKeyExists(anyString()) } doReturn false
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.KeyNotFoundException> {
                 emailCryptoService.decrypt(securePackage)
             }

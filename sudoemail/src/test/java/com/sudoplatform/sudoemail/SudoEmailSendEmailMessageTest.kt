@@ -35,10 +35,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -375,7 +375,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send when no error present`() =
-        runBlocking {
+        runTest {
             val lookupPublicInfoQueryResult by before {
                 LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
                     "typename",
@@ -408,7 +408,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
                 emptyList(),
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.sendEmailMessage(input)
             }
             deferredResult.start()
@@ -449,7 +449,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send with attachments when no error present`() =
-        runBlocking {
+        runTest {
             val lookupPublicInfoQueryResult by before {
                 LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
                     "typename",
@@ -482,7 +482,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 listOf(emailAttachment),
                 listOf(emailAttachment),
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.sendEmailMessage(input)
             }
             deferredResult.start()
@@ -523,7 +523,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should return results for E2E encrypted send when no error present`() =
-        runBlocking {
+        runTest {
             val lookupPublicInfoResponse by before {
                 Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
                     LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
@@ -550,7 +550,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
                 emptyList(),
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.sendEmailMessage(input)
             }
             deferredResult.start()
@@ -595,7 +595,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage should return results for in-network and out-of-network recipient send when no error present`() =
-        runBlocking {
+        runTest {
             sendHolder.callback = null
             sendEncryptedHolder.callback = null
             lookupPublicInfoHolder.callback = null
@@ -614,7 +614,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
                 emptyList(),
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.sendEmailMessage(input)
             }
             deferredResult.start()
@@ -655,7 +655,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should throw when send email mutation response is null`() =
-        runBlocking {
+        runTest {
             val lookupPublicInfoQueryResult by before {
                 LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
                     "typename",
@@ -694,7 +694,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
                 emptyList(),
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                     client.sendEmailMessage(input)
                 }
@@ -735,7 +735,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should throw when send encrypted email mutation response is null`() =
-        runBlocking {
+        runTest {
             val lookupPublicInfoResponse by before {
                 Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
                     LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
@@ -770,7 +770,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
             )
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                     client.sendEmailMessage(input)
                 }
@@ -815,7 +815,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should not block coroutine cancellation exception`() =
-        runBlocking<Unit> {
+        runTest {
             mockS3Client.stub {
                 onBlocking {
                     upload(
@@ -841,7 +841,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
             )
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<CancellationException> {
                     client.sendEmailMessage(input)
                 }
@@ -876,7 +876,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should throw when non-E2E send response has various errors`() =
-        runBlocking {
+        runTest {
             testSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>(
                 "InvalidEmailContents",
             )
@@ -903,7 +903,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should throw when E2E send response has various errors`() =
-        runBlocking {
+        runTest {
             testEncryptedSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>(
                 "InvalidEmailContents",
             )
@@ -936,7 +936,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should throw emailMessageSizeLimitExceededError when E2E message is too big`() =
-        runBlocking<Unit> {
+        runTest {
             val limit = 10485769
             val getConfigDataQueryResult by before {
                 GetEmailConfigQuery.GetEmailConfig(
@@ -1001,7 +1001,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
             )
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
                     client.sendEmailMessage(input)
                 }
@@ -1039,7 +1039,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Test
     fun `sendEmailMessage() should throw emailMessageSizeLimitExceededError when non-E2E message is too big`() =
-        runBlocking<Unit> {
+        runTest {
             val limit = 10485769
             val getConfigDataQueryResult by before {
                 GetEmailConfigQuery.GetEmailConfig(
@@ -1097,7 +1097,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
             )
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
                     client.sendEmailMessage(input)
                 }
@@ -1130,7 +1130,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         }
 
     private inline fun <reified T : Exception> testSendException(apolloError: String) =
-        runBlocking<Unit> {
+        runTest {
             val lookupPublicInfoQueryResult by before {
                 LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
                     "typename",
@@ -1172,7 +1172,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
                 emptyList(),
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<T> {
                     client.sendEmailMessage(input)
                 }
@@ -1195,7 +1195,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         }
 
     private inline fun <reified T : Exception> testEncryptedSendException(apolloError: String) =
-        runBlocking<Unit> {
+        runTest {
             val lookupPublicInfoResponse by before {
                 Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
                     LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
@@ -1233,7 +1233,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 emptyList(),
                 emptyList(),
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<T> {
                     client.sendEmailMessage(input)
                 }

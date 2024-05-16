@@ -30,10 +30,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -241,14 +241,14 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should return results when no error present`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should return results when no error present`() = runTest {
         provisionHolder.callback shouldBe null
 
         val input = ProvisionEmailAddressInput(
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.provisionEmailAddress(input)
         }
         deferredResult.start()
@@ -305,7 +305,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw when email mutation response is null`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw when email mutation response is null`() = runTest {
         provisionHolder.callback shouldBe null
 
         val nullProvisionResponse by before {
@@ -318,7 +318,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.ProvisionFailedException> {
                 client.provisionEmailAddress(input)
             }
@@ -345,7 +345,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw when response has illegal format error`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw when response has illegal format error`() = runTest {
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {
@@ -363,7 +363,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
                 client.provisionEmailAddress(input)
             }
@@ -390,7 +390,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw when response has an invalid key ring error`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw when response has an invalid key ring error`() = runTest {
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {
@@ -408,7 +408,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.PublicKeyException> {
                 client.provisionEmailAddress(input)
             }
@@ -435,7 +435,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw if key manager returns null key pair`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw if key manager returns null key pair`() = runTest {
         mockServiceKeyManager.stub {
             on { getKeyPairWithId(anyString()) } doReturn null
         }
@@ -445,7 +445,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "ownershipProofToken",
             keyId = "invalidKeyId",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<KeyNotFoundException> {
                 client.provisionEmailAddress(input)
             }
@@ -460,7 +460,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw when response has an insufficient entitlements error`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw when response has an insufficient entitlements error`() = runTest {
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {
@@ -478,7 +478,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.InsufficientEntitlementsException> {
                 client.provisionEmailAddress(input)
             }
@@ -505,7 +505,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw when response has a policy failed error`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw when response has a policy failed error`() = runTest {
         provisionHolder.callback shouldBe null
 
         val errorProvisionResponse by before {
@@ -523,7 +523,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.InsufficientEntitlementsException> {
                 client.provisionEmailAddress(input)
             }
@@ -550,7 +550,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should throw when key registration fails`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should throw when key registration fails`() = runTest {
         mockServiceKeyManager.stub {
             on { generateKeyPair() } doThrow DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException("Mock")
         }
@@ -559,7 +559,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.PublicKeyException> {
                 client.provisionEmailAddress(input)
             }
@@ -574,7 +574,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `provisionEmailAddress() should generate symmetric key if one doesn't exist`() = runBlocking<Unit> {
+    fun `provisionEmailAddress() should generate symmetric key if one doesn't exist`() = runTest {
         provisionHolder.callback shouldBe null
 
         mockServiceKeyManager.stub {
@@ -586,7 +586,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             "example@sudoplatform.com",
             "ownershipProofToken",
         )
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.provisionEmailAddress(input)
         }
         deferredResult.start()

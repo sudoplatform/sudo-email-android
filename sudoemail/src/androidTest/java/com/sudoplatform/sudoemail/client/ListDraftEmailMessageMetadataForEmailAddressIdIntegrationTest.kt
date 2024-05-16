@@ -17,7 +17,7 @@ import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,14 +38,14 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun listDraftEmailMessageMetadataForEmailAddressIdShouldThrowErrorIfSenderEmailAddressNotFound() = runBlocking<Unit> {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldThrowErrorIfSenderEmailAddressNotFound() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -58,7 +58,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     }
 
     @Test
-    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnEmptyListIfNoDrafts() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnEmptyListIfNoDrafts() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -75,7 +75,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     }
 
     @Test
-    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnListOfDraftMessageMetadata() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnListOfDraftMessageMetadata() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -89,7 +89,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
         val createdDraftIds = mutableListOf<String>()
 
         for (i in 0 until 2) {
-            val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+            val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
                 to = listOf(emailAddress.emailAddress),
                 subject = "Draft $i",
@@ -108,7 +108,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     }
 
     @Test
-    fun listDraftEmailMessageMetadataForEmailAddressIdShouldUpdateWhenNewDraftIsAdded() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldUpdateWhenNewDraftIsAdded() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -120,7 +120,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
         emailAddressList.add(emailAddress)
 
         for (i in 0 until 2) {
-            val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+            val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
                 to = listOf(emailAddress.emailAddress),
                 subject = "Draft $i",
@@ -133,7 +133,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
 
         result.size shouldBe 2
 
-        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
             subject = "New Draft",
@@ -147,7 +147,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     }
 
     @Test
-    fun listDraftEmailMessageMetadataForEmailAddressIdShouldNotListMessagesFromOtherAccounts() = runBlocking {
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldNotListMessagesFromOtherAccounts() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -163,7 +163,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
         emailAddressList.add(emailAddress2)
 
         for (i in 0 until 2) {
-            val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+            val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                 from = emailAddress.emailAddress,
                 to = listOf(emailAddress.emailAddress),
                 subject = "Draft $i",
@@ -172,7 +172,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
             emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
         }
 
-        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
             from = emailAddress2.emailAddress,
             to = listOf(emailAddress2.emailAddress),
             subject = "Another Draft",

@@ -23,10 +23,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -155,10 +155,10 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should return results when no error present`() = runBlocking<Unit> {
+    fun `deleteEmailMessage() should return results when no error present`() = runTest {
         holder.callback shouldBe null
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.deleteEmailMessage("id")
         }
         deferredResult.start()
@@ -184,7 +184,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should return null result when delete operation fails`() = runBlocking<Unit> {
+    fun `deleteEmailMessage() should return null result when delete operation fails`() = runTest {
         val mutationResult by before {
             listOf("id")
         }
@@ -197,7 +197,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
 
         holder.callback shouldBe null
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.deleteEmailMessage("id")
         }
         deferredResult.start()
@@ -222,7 +222,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should throw when email mutation response is null`() = runBlocking<Unit> {
+    fun `deleteEmailMessage() should throw when email mutation response is null`() = runTest {
         holder.callback shouldBe null
 
         val nullProvisionResponse by before {
@@ -231,7 +231,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                 client.deleteEmailMessage("id")
             }
@@ -257,7 +257,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should throw when response has various errors`() = runBlocking<Unit> {
+    fun `deleteEmailMessage() should throw when response has various errors`() = runTest {
         testException<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException>("EmailMessageNotFound")
         testException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
@@ -274,10 +274,10 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `deleteEmailMessage() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                 client.deleteEmailMessage("id")
             }
@@ -316,14 +316,14 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should throw when unknown error occurs()`() = runBlocking<Unit> {
+    fun `deleteEmailMessage() should throw when unknown error occurs()`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
             on { mutate(any<DeleteEmailMessagesMutation>()) } doThrow RuntimeException("Mock Runtime Exception")
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.deleteEmailMessage("id")
             }
@@ -346,12 +346,12 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should not block coroutine cancellation exception`() = runBlocking<Unit> {
+    fun `deleteEmailMessage() should not block coroutine cancellation exception`() = runTest {
         mockAppSyncClient.stub {
             on { mutate(any<DeleteEmailMessagesMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.deleteEmailMessage("id1")
             }
@@ -364,7 +364,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
         verify(mockAppSyncClient).mutate(any<DeleteEmailMessagesMutation>())
     }
 
-    private inline fun <reified T : Exception> testException(apolloError: String) = runBlocking<Unit> {
+    private inline fun <reified T : Exception> testException(apolloError: String) = runTest {
         holder.callback = null
 
         val errorSendResponse by before {
@@ -378,7 +378,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<T> {
                 client.deleteEmailMessage("id")
             }

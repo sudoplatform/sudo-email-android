@@ -1,0 +1,68 @@
+Received: from toys.org ([216.34.181.45] helo=smtp.ch3.sourceforge.com)
+	by mx2.dev.toys.com with esmtps (TLS1.2:ECDHE_RSA_AES_256_GCM_SHA384:256)
+	(Exim 4.86_2)
+	(envelope-from <toys@toys.org>)
+	id 1dvcpN-0003zX-9V
+	for ted.bear@toys.org; Sat, 23 Sep 2017 05:18:10 +0000
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=sourceforge.com; s=x; h=From:Content-Transfer-Encoding:To:Content-Type:
+	Mime-Version:Message-Id:Date:Subject:Sender:Reply-To:Cc:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=6PHpfuYYl4B+u2/89Nixj5UZE80jBP8LukYLj4GlPrc=; b=R30v6ejWTIP7aN62YrnD92z9/I
+	5ZTFq3cwRRJGS350tDPdGrXoSDCgJhnigTsclQKd70X1Ir86kX3aafSbHa62DzRspxEgITfngapYs
+	WmWhhAJE0UINL2G0l0AyWh+0o/TZCZfpCDcDUXEZoesB/2lU+rhKisis+EIh0mD4bZkY=;
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=toys.org; s=x; h=From:Content-Transfer-Encoding:To:Content-Type:
+	Mime-Version:Message-Id:Date:Subject:Sender:Reply-To:Cc:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=6PHpfuYYl4B+u2/89Nixj5UZE80jBP8LukYLj4GlPrc=; b=RpP6AFnKxeC5ctH62u9Gdva7EG
+	flAfZKTJu399WvVT91kskIa2n/2LIZZjuVOyn+HxIVi2RhpyV5xL90OMnHk1yhp00y1W4NRmM7Fep
+	wSj0ekXRW9FSXS4zasgkF9xRTY37/RZSSShboQdWSHrpwIAj61oHwnqvHcQhaWFu8UW8=;
+Received: from localhost ([127.0.0.1] helo=toys-web-1.v22.ch3.sourceforge.com)
+	by toys-web-1.v22.ch3.sourceforge.com with smtp (Exim 4.89)
+	(envelope-from <toys@toys.org>)
+	id 1dvcpt-0002Za-AZ
+	for ted.bear@toys.org; Sat, 23 Sep 2017 05:18:41 +0000
+Date: Sat, 23 Sep 2017 05:18:41 +0000
+Message-Id: <1506143921.319843-9323-slash-toys-web-1.v22.ch3.sourceforge.com@toys.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+To: ted.bear@toys.org
+Content-Transfer-Encoding: 8bit
+From: toys@toys.org
+Received-SPF: neutral client-ip=216.34.181.45; envelope-from=toys@toys.org; helo=smtp.ch3.sourceforge.com
+X-SA-Exim-Connect-IP: 216.34.181.45
+X-SA-Exim-Mail-From: toys@toys.org
+X-Spam-Checker-Version: SpamAssassin 3.4.1 (2015-04-28) on sydd1mt02
+Subject: User Information for TedBear4135
+X-SA-Exim-Version: 4.2.1 (built Sun, 16 Aug 2015 09:47:16 +0000)
+X-SA-Exim-Scanned: No (on mx2.dev.toys.com); Unknown failure
+
+Your new password is XXXXXX.  Your old password will still work until
+this password is used.  Go to the URL below to log in:
+
+<https://toys.org/index.pl?op=userlogin&upasswd=XXXXXX&unickname=Frank4135&returnto=%2Flogin.pl%3Fop=changeprefs>
+
+Make sure you then CHANGE YOUR PASSWORD!
+
+If you have received this message without having requested it, it is
+because someone attempted to use your username or e-mail address.  It
+was mostly likely an innocent mistake, and they are not getting your
+password, so you can safely disregard this message.
+
+Thanks.
+
+In case you get multiple emails you didn't request, the requester's IP
+was 120.29.52.153.  Its user agent was
+"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko"
+(not that you should trust that value, but it might be interesting).
+In case that's a properly-configured proxy,
+the value of its X-Forwarded-For header was "120.29.52.153, 120.2" --
+but don't trust that value unless you know a reason to (we don't).
+
+If you don't use this new password within 3 days, it will expire
+and you'll have to send yourself another one.

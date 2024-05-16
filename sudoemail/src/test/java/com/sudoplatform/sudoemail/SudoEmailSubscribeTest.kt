@@ -16,7 +16,7 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -112,7 +112,7 @@ class SudoEmailSubscribeTest : BaseTests() {
     }
 
     @Test
-    fun `subscribeToEmailMessages() should throw when not authenticated`() = runBlocking<Unit> {
+    fun `subscribeToEmailMessages() should throw when not authenticated`() = runTest {
         mockUserClient.stub {
             on { getSubject() } doReturn null
         }

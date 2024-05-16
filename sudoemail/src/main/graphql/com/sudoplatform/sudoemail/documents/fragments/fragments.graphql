@@ -110,11 +110,19 @@ fragment SealedEmailMessage on SealedEmailMessage {
     encryptionStatus
 }
 
-fragment UpdateEmailMessagesResult on UpdateEmailMessagesResult {
-    status
-    successMessageIds
-    failedMessageIds
+fragment UpdateEmailMessagesResult on UpdateEmailMessagesV2Result {
+  status
+  failedMessages {
+    id
+    errorType
+  }
+  successMessages {
+    id
+    createdAtEpochMs
+    updatedAtEpochMs
+  }
 }
+
 
 fragment SendEmailMessageResult on SendEmailMessageResult {
   id

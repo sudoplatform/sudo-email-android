@@ -28,10 +28,10 @@ import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -213,14 +213,14 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should return results when no error present`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val input = GetEmailMessageRfc822DataInput(
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageRfc822Data(input)
             }
             deferredResult.start()
@@ -246,7 +246,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should decompress data when appropriate`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
             mockRfc822Metadata.contentEncoding =
                 "sudoplatform-compression, sudoplatform-crypto, sudoplatform-binary-data"
@@ -273,7 +273,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageRfc822Data(input)
             }
             deferredResult.start()
@@ -299,7 +299,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should return null result when query result data is null`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val responseWithNullResult by before {
@@ -312,7 +312,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageRfc822Data(input)
             }
             deferredResult.start()
@@ -333,7 +333,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should return null result when query response is null`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val nullResponse by before {
@@ -346,7 +346,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessageRfc822Data(input)
             }
             deferredResult.start()
@@ -366,12 +366,12 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
         }
 
     @Test
-    fun `getEmailMessageRfc822Data() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `getEmailMessageRfc822Data() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
         val input =
             GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                 client.getEmailMessageRfc822Data(input)
             }
@@ -405,7 +405,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessageRfc822Data() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `getEmailMessageRfc822Data() should throw when unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -414,7 +414,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
         val input =
             GetEmailMessageRfc822DataInput(id = "emailMessageId", emailAddressId = "emailAddressId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.getEmailMessageRfc822Data(input)
             }
@@ -433,7 +433,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
     @Test
     fun `getEmailMessageRfc822Data() should not suppress CancellationException`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             mockAppSyncClient.stub {
@@ -444,7 +444,7 @@ class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
                 id = "emailMessageId",
                 emailAddressId = "emailAddressId",
             )
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<CancellationException> {
                     client.getEmailMessageRfc822Data(input)
                 }

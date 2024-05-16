@@ -14,7 +14,7 @@ import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.types.EmailMessage
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -42,12 +42,12 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         sudoClient.reset()
     }
 
     @Test
-    fun subscribeUnsubscribeShouldNotFail() = runBlocking {
+    fun subscribeUnsubscribeShouldNotFail() = runTest {
         if (!userClient.isRegistered()) {
             registerSignInAndEntitle()
         }
@@ -72,7 +72,7 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun subscribeShouldThrowWhenNotAuthenticated() = runBlocking<Unit> {
+    fun subscribeShouldThrowWhenNotAuthenticated() = runTest {
         if (userClient.isRegistered()) {
             deregister()
         }

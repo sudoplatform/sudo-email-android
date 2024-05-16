@@ -30,10 +30,10 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
@@ -266,7 +266,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
     }
 
     @Test
-    fun `updateDraftEmailMessage() should log and throw an error if sender address not found`() = runBlocking<Unit> {
+    fun `updateDraftEmailMessage() should log and throw an error if sender address not found`() = runTest {
         holder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -289,7 +289,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         val mockDraftId = UUID.randomUUID().toString()
         val updateDraftEmailMessageInput = UpdateDraftEmailMessageInput(mockDraftId, "rfc822Data".toByteArray(), "senderEmailAddressId")
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 client.updateDraftEmailMessage(updateDraftEmailMessageInput)
             }
@@ -305,7 +305,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
     }
 
     @Test
-    fun `updateDraftEmailMessage() should log and throw an error if draft message not found`() = runBlocking<Unit> {
+    fun `updateDraftEmailMessage() should log and throw an error if draft message not found`() = runTest {
         holder.callback shouldBe null
 
         val error = AmazonS3Exception("Not found")
@@ -319,7 +319,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
         val mockDraftId = UUID.randomUUID().toString()
         val updateDraftEmailMessageInput = UpdateDraftEmailMessageInput(mockDraftId, "rfc822Data".toByteArray(), "senderEmailAddressId")
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
                 client.updateDraftEmailMessage(updateDraftEmailMessageInput)
             }
@@ -346,7 +346,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
     }
 
     @Test
-    fun `updateDraftEmailMessage() should log and throw an error if s3 upload errors`() = runBlocking<Unit> {
+    fun `updateDraftEmailMessage() should log and throw an error if s3 upload errors`() = runTest {
         holder.callback shouldBe null
 
         val error = CancellationException("Unknown exception")
@@ -368,7 +368,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
             "senderEmailAddressId",
         )
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.updateDraftEmailMessage(updateDraftInput)
             }
@@ -409,7 +409,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
     }
 
     @Test
-    fun `updateDraftEmailMessage() should return uuid on success`() = runBlocking<Unit> {
+    fun `updateDraftEmailMessage() should return uuid on success`() = runTest {
         holder.callback shouldBe null
 
         val mockDraftId = UUID.randomUUID().toString()
@@ -419,7 +419,7 @@ class SudoEmailUpdateDraftEmailTest : BaseTests() {
             "senderEmailAddressId",
         )
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.updateDraftEmailMessage(updateDraftInput)
         }
 

@@ -28,10 +28,10 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
@@ -266,12 +266,12 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessagesForEmailAddressId() should return results when no error present`() = runBlocking<Unit> {
+    fun `listDraftEmailMessagesForEmailAddressId() should return results when no error present`() = runTest {
         holder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
         }
 
@@ -308,7 +308,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessagesForEmailAddressId() should throw an error if sender address not found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessagesForEmailAddressId() should throw an error if sender address not found`() = runTest {
         holder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -328,7 +328,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 client.listDraftEmailMessagesForEmailAddressId(mockEmailAddressIdInput)
             }
@@ -346,7 +346,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessagesForEmailAddressId() should return an empty list if no drafts found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessagesForEmailAddressId() should return an empty list if no drafts found`() = runTest {
         holder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
@@ -357,7 +357,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             } doReturn emptyList()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
         }
 
@@ -382,7 +382,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessagesForEmailAddressId() should throw an error if draft message is not found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessagesForEmailAddressId() should throw an error if draft message is not found`() = runTest {
         holder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
@@ -395,7 +395,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             } doThrow error
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
                 client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
             }

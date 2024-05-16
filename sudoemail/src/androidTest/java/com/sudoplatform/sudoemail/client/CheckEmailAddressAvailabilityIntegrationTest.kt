@@ -18,7 +18,7 @@ import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -39,14 +39,14 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun checkEmailAddressAvailabilityShouldSucceed() = runBlocking<Unit> {
+    fun checkEmailAddressAvailabilityShouldSucceed() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -88,7 +88,7 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun checkEmailAddressAvailabilityWithBadInputShouldFail() = runBlocking<Unit> {
+    fun checkEmailAddressAvailabilityWithBadInputShouldFail() = runTest {
         val emailDomains = getEmailDomains(emailClient)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 

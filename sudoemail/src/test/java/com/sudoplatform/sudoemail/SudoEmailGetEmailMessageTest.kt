@@ -31,10 +31,10 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -216,11 +216,11 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessage() should return results when no error present`() = runBlocking<Unit> {
+    fun `getEmailMessage() should return results when no error present`() = runTest {
         holder.callback shouldBe null
 
         val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getEmailMessage(input)
         }
         deferredResult.start()
@@ -264,7 +264,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return results when hasAttachments is true`() =
-        runBlocking<Unit> {
+        runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
                     unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
@@ -273,7 +273,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
             holder.callback shouldBe null
 
             val input = GetEmailMessageInput(id = "emailMessageId")
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessage(input)
             }
             deferredResult.start()
@@ -317,7 +317,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return results when hasAttachments is unset`() =
-        runBlocking<Unit> {
+        runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
                     unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
@@ -326,7 +326,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
             holder.callback shouldBe null
 
             val input = GetEmailMessageInput(id = "emailMessageId")
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessage(input)
             }
             deferredResult.start()
@@ -370,7 +370,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return null result when query result data is null`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val responseWithNullResult by before {
@@ -380,7 +380,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
             }
 
             val input = GetEmailMessageInput(id = "emailMessageId")
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessage(input)
             }
             deferredResult.start()
@@ -401,7 +401,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
 
     @Test
     fun `getEmailMessage() should return null result when query response is null`() =
-        runBlocking<Unit> {
+        runTest {
             holder.callback shouldBe null
 
             val nullResponse by before {
@@ -411,7 +411,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
             }
 
             val input = GetEmailMessageInput(id = "emailMessageId")
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailMessage(input)
             }
             deferredResult.start()
@@ -431,11 +431,11 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         }
 
     @Test
-    fun `getEmailMessage() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `getEmailMessage() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
         val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
                 client.getEmailMessage(input)
             }
@@ -469,7 +469,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessage() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `getEmailMessage() should throw when unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -477,7 +477,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         }
 
         val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
                 client.getEmailMessage(input)
             }
@@ -495,7 +495,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessage() should not suppress CancellationException`() = runBlocking<Unit> {
+    fun `getEmailMessage() should not suppress CancellationException`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
@@ -503,7 +503,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         }
 
         val input = GetEmailMessageInput(id = "emailMessageId")
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.getEmailMessage(input)
             }

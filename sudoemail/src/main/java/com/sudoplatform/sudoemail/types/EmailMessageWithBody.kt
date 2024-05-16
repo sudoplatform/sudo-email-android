@@ -14,6 +14,7 @@ import kotlinx.parcelize.Parcelize
  *
  * @property id [String] Unique identifier of the email message.
  * @property body [String] The email message body.
+ * @property isHtml [Boolean] Flag indicating whether the body is formatted as HTML.
  * @property attachments [List<EmailAttachment>] A list of email message attachments.
  * @property inlineAttachments [List<EmailAttachment>] A list of email message inline attachments.
  */
@@ -21,6 +22,7 @@ import kotlinx.parcelize.Parcelize
 data class EmailMessageWithBody(
     val id: String,
     val body: String,
+    val isHtml: Boolean,
     val attachments: List<EmailAttachment>,
     val inlineAttachments: List<EmailAttachment>,
 ) : Parcelable

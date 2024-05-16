@@ -88,7 +88,7 @@ class SudoEmailNotifiableClientTest : BaseTests() {
 
     @Test
     fun `processPayload does nothing for badly formatted payloads`() {
-        val payloads = listOf<Map<String, String>>(
+        val payloads = listOf(
             mapOf(),
             mapOf(Pair("sudoplatform", "this is not JSON")),
             mapOf(Pair("sudoplatform", "{}")),

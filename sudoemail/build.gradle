@@ -18,7 +18,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 33
         versionCode = 1
-        versionName = "12.1.0"
+        versionName = "14.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -57,7 +57,7 @@ android {
         unitTests.includeAndroidResources = true
         unitTests.returnDefaultValues = true
         unitTests.all {
-            outputs.upToDateWhen {false}
+            outputs.upToDateWhen { false }
             jacoco {
                 includeNoLocationClasses = true
                 excludes = [
@@ -112,7 +112,7 @@ dependencies {
     testImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
     testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation 'org.mockito:mockito-core:5.12.0'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:5.3.1'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation "androidx.test:core:1.5.0"
@@ -120,6 +120,7 @@ dependencies {
     testImplementation "com.jakewharton.timber:timber:5.0.1"
     testImplementation 'commons-codec:commons-codec:1.17.0'
 
+    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation "androidx.test:runner:1.5.2"
     androidTestImplementation "androidx.test:core:1.5.0"
@@ -184,7 +185,8 @@ licenseTools {
     ignoredProjects = ["org.mockito"]
 }
 
-@Grab('org.yaml:snakeyaml:1.17') // Yaml parser
+@Grab('org.yaml:snakeyaml:1.17')
+// Yaml parser
 import org.yaml.snakeyaml.Yaml
 
 task checkLicenseHaveRequiredFields {
@@ -237,16 +239,16 @@ task jacocoTestReport(type: JacocoReport, dependsOn: "testDebugUnitTest") {
     group = "Reporting"
     description = "Generate Jacoco coverage reports"
     classDirectories.setFrom(
-        fileTree(
-            dir: "${buildDir}/tmp/kotlin-classes/debug",
-            excludes: ['**/R.class',
-                       '**/R$*.class',
-                       '**/BuildConfig.*',
-                       '**/Manifest*.*']
-        )
+            fileTree(
+                    dir: "${buildDir}/tmp/kotlin-classes/debug",
+                    excludes: ['**/R.class',
+                               '**/R$*.class',
+                               '**/BuildConfig.*',
+                               '**/Manifest*.*']
+            )
     )
     sourceDirectories.setFrom(files("${buildDir.parent}/sudoemail/src/main/java"))
-    executionData.setFrom(fileTree(["dir":"${buildDir.parent}", "includes":["**/*.exec", "**/*.ec"]]))
+    executionData.setFrom(fileTree(["dir": "${buildDir.parent}", "includes": ["**/*.exec", "**/*.ec"]]))
 }
 
 // Dokka documentation generation
@@ -291,10 +293,9 @@ ext {
 }
 
 // Internal and External publishing
-if(project.findProperty("tag") &&
+if (project.findProperty("tag") &&
         project.file("${rootProject.projectDir}/util/publish-mavencentral.gradle").exists()) {
     apply from: "${rootProject.projectDir}/util/publish-mavencentral.gradle"
-}
-else if (project.file("${rootProject.projectDir}/util/publish-internal-android.gradle").exists()) {
+} else if (project.file("${rootProject.projectDir}/util/publish-internal-android.gradle").exists()) {
     apply from: "${rootProject.projectDir}/util/publish-internal-android.gradle"
 }

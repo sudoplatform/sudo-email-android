@@ -9,17 +9,36 @@ package com.sudoplatform.sudoemail.types
 /**
  * Result type of an API that performs a batch operation.
  */
-sealed class BatchOperationResult<out T> {
+data class BatchOperationResult<S, F>(
+    val status: BatchOperationStatus,
+    var successValues: List<S>? = null,
+    val failureValues: List<F>? = null,
+) {
+    companion object {
+        /**
+         * Creates a [BatchOperationResult] where the [successValues] and [failureValues] are
+         * of the same type [S].
+         */
+        fun <S> createSame(
+            status: BatchOperationStatus,
+            successValues: List<S>? = null,
+            failureValues: List<S>? = null,
+        ): BatchOperationResult<S, S> {
+            return BatchOperationResult(status, successValues, failureValues)
+        }
 
-    /** Representation of a success or failure result from a batch operation. */
-    data class SuccessOrFailureResult(val status: BatchOperationStatus) : BatchOperationResult<Nothing>()
-
-    /** Representation of a partial result from a batch operation. */
-    data class PartialResult<T>(
-        val status: BatchOperationStatus = BatchOperationStatus.PARTIAL,
-        val successValues: List<T>,
-        val failureValues: List<T>,
-    ) : BatchOperationResult<T>()
+        /**
+         * Creates a [BatchOperationResult] where the [successValues] and [failureValues] can
+         * be of different types ([S] and [F], respectively).
+         */
+        fun <S, F> createDifferent(
+            status: BatchOperationStatus,
+            successValues: List<S>? = null,
+            failureValues: List<F>? = null,
+        ): BatchOperationResult<S, F> {
+            return BatchOperationResult(status, successValues, failureValues)
+        }
+    }
 }
 
 /**

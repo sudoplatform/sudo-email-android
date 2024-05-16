@@ -6,6 +6,9 @@
 
 package com.sudoplatform.sudoemail.util
 
+/**
+ * Defines constants relating to the Sudo Platform Email SDK.
+ */
 internal object Constants {
     const val SERVICE_NAME: String = "emService"
 }

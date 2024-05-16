@@ -26,10 +26,10 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -220,7 +220,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     }
 
     @Test
-    fun `listDraftEmailMessageMetadataForEmailAddressId() should throw an error if send address not found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should throw an error if send address not found`() = runTest {
         holder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -242,7 +242,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
 
         val emailAddressId = "emailAddressId"
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 client.listDraftEmailMessageMetadataForEmailAddressId(emailAddressId)
             }
@@ -259,7 +259,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     }
 
     @Test
-    fun `listDraftEmailMessageMetadataForEmailAddressId() should return an empty list if no drafts found`() = runBlocking<Unit> {
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should return an empty list if no drafts found`() = runTest {
         holder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
@@ -270,7 +270,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
             } doReturn emptyList()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessageMetadataForEmailAddressId(emailAddressId)
         }
 
@@ -295,12 +295,12 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     }
 
     @Test
-    fun `listDraftEmailMessageMetadataForEmailAddressId() should return a list of metadata for the email address`() = runBlocking<Unit> {
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should return a list of metadata for the email address`() = runTest {
         holder.callback shouldBe null
 
         val emailAddressId = "emailAddressId"
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessageMetadataForEmailAddressId(emailAddressId)
         }
 

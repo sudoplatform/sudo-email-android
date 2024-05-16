@@ -17,10 +17,18 @@ import com.sudoplatform.sudoemail.util.Constants
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
+import com.sudoplatform.sudonotification.SudoNotificationClient
 import com.sudoplatform.sudonotification.types.NotificationMetaData
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+/**
+ * Default implementation of the [SudoEmailNotifiableClient] interface.
+ *
+ * @property deviceKeyManager [DeviceKeyManager] On device management of key storage.
+ * @property notificationHandler [SudoEmailNotificationHandler] ...
+ * @property logger [Logger] Errors and warnings will be logged here.
+ */
 internal class DefaultSudoEmailNotifiableClient(
     private val deviceKeyManager: DeviceKeyManager,
     private val notificationHandler: SudoEmailNotificationHandler,
@@ -31,14 +39,12 @@ internal class DefaultSudoEmailNotifiableClient(
 ) : SudoEmailNotifiableClient {
 
     /**
-     * Email Service service name key in sudoplatformconfig.json
-     * and notifications.
+     * Email Service service name key in sudoplatformconfig.json and notifications.
      */
     override val serviceName = Constants.SERVICE_NAME
 
     /**
-     * Return Email Service notification filter schema to
-     * [com.sudoplatform.sudonotification.SudoNotificationClient]
+     * Return Email Service notification filter schema to [SudoNotificationClient].
      */
     override fun getSchema(): NotificationMetaData {
         return SudoEmailNotificationMetaData(
@@ -74,10 +80,12 @@ internal class DefaultSudoEmailNotifiableClient(
     }
 
     /**
-     * Process RemoteMessage.
+     * Process [RemoteMessage].
      *
-     * Unseals the sealed payload, determines the notification type and
-     * delegates further to the application's handler.
+     * Unseals the sealed payload, determines the notification type and delegates further
+     * to the application's handler.
+     *
+     * @param message [RemoteMessage] The remote message to process.
      */
     override fun processPayload(message: RemoteMessage) {
         logger.debug { "Received notification: ${message.data}" }
@@ -133,9 +141,6 @@ internal class DefaultSudoEmailNotifiableClient(
                 this.notificationHandler.onEmailMessageReceived(
                     EmailMessageReceivedNotificationTransformer.toEntity(notification),
                 )
-            }
-            else -> {
-                logger.warning { "Unhandled notification type ${notification.type}" }
             }
         }
     }

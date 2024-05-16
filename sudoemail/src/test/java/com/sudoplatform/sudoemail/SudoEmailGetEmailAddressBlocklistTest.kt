@@ -27,10 +27,10 @@ import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -223,7 +223,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
     @Test
     fun `getEmailAddressBlocklist() should throw an error if response contains errors`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder shouldNotBe null
 
             val errorResponse by before {
@@ -241,7 +241,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                     .build()
             }
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
                     client.getEmailAddressBlocklist()
                 }
@@ -269,7 +269,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
     @Test
     fun `getEmailAddressBlocklist() should return an empty list if no addresses are returned`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder shouldNotBe null
 
             val emptyResponse by before {
@@ -292,7 +292,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 ).build()
             }
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailAddressBlocklist()
             }
             deferredResult.start()
@@ -320,10 +320,10 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
     @Test
     fun `getEmailAddressBlocklist() returns array of unsealed values on success`() =
-        runBlocking<Unit> {
+        runTest {
             callbackHolder shouldNotBe null
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailAddressBlocklist()
             }
             deferredResult.start()
@@ -367,7 +367,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
     @Test
     fun `getEmailAddressBlocklist() returns with failed status and error type when necessary`() =
-        runBlocking<Unit> {
+        runTest {
             mockServiceKeyManager.stub {
                 on { symmetricKeyExists(any<String>()) } doReturnConsecutively listOf(false, true)
             }
@@ -382,7 +382,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
             callbackHolder shouldNotBe null
 
-            val deferredResult = async(Dispatchers.IO) {
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailAddressBlocklist()
             }
             deferredResult.start()

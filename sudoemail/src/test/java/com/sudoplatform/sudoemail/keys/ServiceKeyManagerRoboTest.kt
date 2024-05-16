@@ -18,7 +18,7 @@ import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -67,7 +67,7 @@ class ServiceKeyManagerRoboTest : BaseTests() {
     }
 
     @After
-    fun fini() = runBlocking {
+    fun fini() = runTest {
         Timber.uprootAll()
     }
 
@@ -88,7 +88,7 @@ class ServiceKeyManagerRoboTest : BaseTests() {
     }
 
     @Test
-    fun shouldBeAbleToPerformOperationsAfterSignIn() = runBlocking {
+    fun shouldBeAbleToPerformOperationsAfterSignIn() = runTest {
         serviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
 
         val keyPair = serviceKeyManager.generateKeyPair()
@@ -154,7 +154,7 @@ class ServiceKeyManagerRoboTest : BaseTests() {
     }
 
     @Test
-    fun shouldBeAbleToGenerateSymmetricKeyId() = runBlocking {
+    fun shouldBeAbleToGenerateSymmetricKeyId() = runTest {
         serviceKeyManager.getCurrentSymmetricKeyId() shouldBe null
 
         val symmetricKey = serviceKeyManager.generateNewCurrentSymmetricKey()

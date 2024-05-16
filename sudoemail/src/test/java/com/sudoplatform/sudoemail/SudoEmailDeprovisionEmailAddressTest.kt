@@ -25,10 +25,10 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -180,10 +180,10 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `deprovisionEmailAddress() should return results when no error present`() = runBlocking<Unit> {
+    fun `deprovisionEmailAddress() should return results when no error present`() = runTest {
         holder.callback shouldBe null
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.deprovisionEmailAddress("emailAddressId")
         }
         deferredResult.start()
@@ -214,7 +214,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `deprovisionEmailAddress() should throw when mutation response is null`() = runBlocking<Unit> {
+    fun `deprovisionEmailAddress() should throw when mutation response is null`() = runTest {
         holder.callback shouldBe null
 
         val nullResponse by before {
@@ -223,7 +223,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.DeprovisionFailedException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }
@@ -240,7 +240,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `deprovisionEmailAddress() should throw when response has an email address not found error`() = runBlocking<Unit> {
+    fun `deprovisionEmailAddress() should throw when response has an email address not found error`() = runTest {
         holder.callback shouldBe null
 
         val errorDeprovisionResponse by before {
@@ -255,7 +255,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }
@@ -272,7 +272,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `deprovisionEmailAddress() should throw when response has an unauthorized address error`() = runBlocking<Unit> {
+    fun `deprovisionEmailAddress() should throw when response has an unauthorized address error`() = runTest {
         holder.callback shouldBe null
 
         val errorDeprovisionResponse by before {
@@ -287,7 +287,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
                 .build()
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnauthorizedEmailAddressException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }
@@ -304,10 +304,10 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `deprovisionEmailAddress() should throw when http error occurs`() = runBlocking<Unit> {
+    fun `deprovisionEmailAddress() should throw when http error occurs`() = runTest {
         holder.callback shouldBe null
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.DeprovisionFailedException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }
@@ -337,14 +337,14 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `deprovisionEmailAddress() should throw when unknown error occurs`() = runBlocking<Unit> {
+    fun `deprovisionEmailAddress() should throw when unknown error occurs`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
             on { mutate(any<DeprovisionEmailAddressMutation>()) } doThrow RuntimeException("Mock Runtime Exception")
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }
@@ -358,14 +358,14 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `deprovisionEmailAddress() should not suppress CancellationException`() = runBlocking<Unit> {
+    fun `deprovisionEmailAddress() should not suppress CancellationException`() = runTest {
         holder.callback shouldBe null
 
         mockAppSyncClient.stub {
             on { mutate(any<DeprovisionEmailAddressMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
         }
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }

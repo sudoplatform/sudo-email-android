@@ -19,7 +19,7 @@ import io.kotlintest.matchers.string.shouldNotBeEqualIgnoringCase
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -40,14 +40,14 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun provisionEmailAddressShouldReturnEmailAddress() = runBlocking<Unit> {
+    fun provisionEmailAddressShouldReturnEmailAddress() = runTest {
         val emailDomains = getEmailDomains(emailClient)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 
@@ -79,7 +79,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun provisionEmailAddressShouldAllowMultipleEmailsPerSudo() = runBlocking {
+    fun provisionEmailAddressShouldAllowMultipleEmailsPerSudo() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo.id shouldNotBe null
         sudoList.add(sudo)
@@ -129,7 +129,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun provisionEmailAddressWithAliasShouldReturnEmailAddress() = runBlocking<Unit> {
+    fun provisionEmailAddressWithAliasShouldReturnEmailAddress() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo.id shouldNotBe null
         sudoList.add(sudo)
@@ -159,7 +159,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun provisionEmailAddressShouldThrowWithUnsupportedDomain() = runBlocking<Unit> {
+    fun provisionEmailAddressShouldThrowWithUnsupportedDomain() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -178,7 +178,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun provisionEmailAddressShouldFailWithInvalidLocalPart() = runBlocking<Unit> {
+    fun provisionEmailAddressShouldFailWithInvalidLocalPart() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -196,7 +196,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun provisionEmailAddressShouldThrowWithExistingAddressExceptionAfterDeprovisioning() = runBlocking<Unit> {
+    fun provisionEmailAddressShouldThrowWithExistingAddressExceptionAfterDeprovisioning() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)

@@ -58,39 +58,92 @@
   <div class="breadcrumbs"><a href="../../../index.html">sudoemail</a><span class="delimiter">/</span><a href="../index.html">com.sudoplatform.sudoemail.types</a><span class="delimiter">/</span><span class="current">BatchOperationResult</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Batch</span><wbr></wbr><span>Operation</span><wbr></wbr><span><span>Result</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="index.html">BatchOperationResult</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="index.html">T</a><span class="token operator">&gt;</span></div><p class="paragraph">Result type of an API that performs a batch operation.</p><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-success-or-failure-result/index.html">SuccessOrFailureResult</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-partial-result/index.html">PartialResult</a></div></span></div><div></div></div></div></div></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">BatchOperationResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">S</a><span class="token punctuation">, </span><span class="token keyword"></span><a href="index.html">F</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>status<span class="token operator">: </span><a href="../-batch-operation-status/index.html">BatchOperationStatus</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">var </span>successValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">S</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>failureValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">F</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><p class="paragraph">Result type of an API that performs a batch operation.</p></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,FUNCTION,PROPERTY">Members</button></div>
     <div class="tabs-section-body">
-      <div data-togglable="TYPE">
-        <h2 class="">Types</h2>
-        <div class="table"><a data-name="-1367658783%2FClasslikes%2F2021949935" anchor-label="PartialResult" id="-1367658783%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
-          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="">Constructors</h2>
+        <div class="table"><a data-name="740516114%2FConstructors%2F2021949935" anchor-label="BatchOperationResult" id="740516114%2FConstructors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-partial-result/index.html"><span>Partial</span><wbr></wbr><span><span>Result</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1367658783%2FClasslikes%2F2021949935"></span>
+                  <div><a href="-batch-operation-result.html"><span>Batch</span><wbr></wbr><span>Operation</span><wbr></wbr><span><span>Result</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="740516114%2FConstructors%2F2021949935"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-partial-result/index.html">PartialResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="-partial-result/index.html">T</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>status<span class="token operator">: </span><a href="../-batch-operation-status/index.html">BatchOperationStatus</a><span class="token operator"> = </span>BatchOperationStatus.PARTIAL<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>successValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="-partial-result/index.html">T</a><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>failureValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="-partial-result/index.html">T</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span> : <a href="index.html">BatchOperationResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="-partial-result/index.html">T</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Representation of a partial result from a batch operation.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">status<span class="token operator">: </span><a href="../-batch-operation-status/index.html">BatchOperationStatus</a><span class="token punctuation">, </span></span><span class="parameter ">successValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">S</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter ">failureValues<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">F</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-1403011454%2FClasslikes%2F2021949935" anchor-label="SuccessOrFailureResult" id="-1403011454%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+        </div>
+      </div>
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="-614934637%2FClasslikes%2F2021949935" anchor-label="Companion" id="-614934637%2FClasslikes%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
           <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-success-or-failure-result/index.html"><span>Success</span><wbr></wbr><span>Or</span><wbr></wbr><span>Failure</span><wbr></wbr><span><span>Result</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1403011454%2FClasslikes%2F2021949935"></span>
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-614934637%2FClasslikes%2F2021949935"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-success-or-failure-result/index.html">SuccessOrFailureResult</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>status<span class="token operator">: </span><a href="../-batch-operation-status/index.html">BatchOperationStatus</a></span></span><span class="token punctuation">)</span> : <a href="index.html">BatchOperationResult</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-nothing/index.html">Nothing</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Representation of a success or failure result from a batch operation.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="-743225088%2FProperties%2F2021949935" anchor-label="failureValues" id="-743225088%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="failure-values.html"><span>failure</span><wbr></wbr><span><span>Values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-743225088%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">val </span><a href="failure-values.html">failureValues</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">F</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1552910300%2FProperties%2F2021949935" anchor-label="status" id="1552910300%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="status.html"><span><span>status</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1552910300%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">val </span><a href="status.html">status</a><span class="token operator">: </span><a href="../-batch-operation-status/index.html">BatchOperationStatus</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="359050087%2FProperties%2F2021949935" anchor-label="successValues" id="359050087%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="success-values.html"><span>success</span><wbr></wbr><span><span>Values</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="359050087%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">var </span><a href="success-values.html">successValues</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html">List</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="index.html">S</a><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
                 </div>
               </div>
             </div>

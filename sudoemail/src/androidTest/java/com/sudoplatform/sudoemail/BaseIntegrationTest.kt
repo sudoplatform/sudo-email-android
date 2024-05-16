@@ -17,8 +17,12 @@ import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
+import com.sudoplatform.sudoemail.types.ListAPIResult
+import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
+import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
@@ -34,6 +38,12 @@ import com.sudoplatform.sudouser.TESTAuthenticationProvider
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import org.awaitility.Awaitility
+import org.awaitility.Duration
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.has
+import org.awaitility.kotlin.untilCallTo
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import timber.log.Timber
@@ -191,14 +201,14 @@ abstract class BaseIntegrationTest {
                 .setLogger(logger)
                 .build()
 
-            runBlocking {
+            runTest {
                 registerSignInAndEntitle()
             }
         }
 
         @AfterClass
         @JvmStatic
-        fun fini() = runBlocking {
+        fun fini() = runTest {
             if (userClient.isRegistered()) {
                 deregister()
             }
@@ -271,10 +281,10 @@ abstract class BaseIntegrationTest {
     protected suspend fun sendEmailMessage(
         client: SudoEmailClient,
         fromAddress: EmailAddress,
-        toAddresses: List<String> = listOf(toSimulatorAddress),
-        ccAddresses: List<String> = emptyList(),
-        bccAddresses: List<String> = emptyList(),
-        replyToAddresses: List<String> = emptyList(),
+        toAddresses: List<EmailMessage.EmailAddress> = listOf(EmailMessage.EmailAddress(toSimulatorAddress)),
+        ccAddresses: List<EmailMessage.EmailAddress> = emptyList(),
+        bccAddresses: List<EmailMessage.EmailAddress> = emptyList(),
+        replyToAddresses: List<EmailMessage.EmailAddress> = emptyList(),
         body: String? = null,
         attachments: List<EmailAttachment> = emptyList(),
         inlineAttachments: List<EmailAttachment> = emptyList(),
@@ -286,11 +296,11 @@ abstract class BaseIntegrationTest {
             }
         }
         val emailMessageHeader = InternetMessageFormatHeader(
-            EmailMessage.EmailAddress(fromAddress.emailAddress),
-            toAddresses.map { EmailMessage.EmailAddress(it) },
-            ccAddresses.map { EmailMessage.EmailAddress(it) },
-            bccAddresses.map { EmailMessage.EmailAddress(it) },
-            replyToAddresses.map { EmailMessage.EmailAddress(it) },
+            EmailMessage.EmailAddress(fromAddress.emailAddress, fromAddress.alias),
+            toAddresses,
+            ccAddresses,
+            bccAddresses,
+            replyToAddresses,
             messageSubject,
         )
         val sendEmailMessageInput = SendEmailMessageInput(
@@ -310,5 +320,36 @@ abstract class BaseIntegrationTest {
     ): EmailFolder? {
         val listFoldersInput = ListEmailFoldersForEmailAddressIdInput(emailAddressId)
         return client.listEmailFoldersForEmailAddressId(listFoldersInput).items.find { it.folderName == folderName }
+    }
+
+    /** Wait for single message to arrive. */
+    protected fun waitForMessage(id: String) {
+        Awaitility.await()
+            .atMost(Duration.TEN_SECONDS)
+            .pollInterval(Duration.ONE_SECOND)
+            .until {
+                runBlocking {
+                    with(emailClient) {
+                        getEmailMessage(GetEmailMessageInput(id)) != null
+                    }
+                }
+            }
+    }
+
+    /** Wait for multiple messages to arrive. */
+    protected fun waitForMessages(
+        count: Int,
+        listInput: ListEmailMessagesInput = ListEmailMessagesInput(),
+    ): ListAPIResult<EmailMessage, PartialEmailMessage> {
+        return await
+            .atMost(Duration.ONE_MINUTE)
+            .pollInterval(Duration.TWO_HUNDRED_MILLISECONDS)
+            .untilCallTo {
+                runBlocking {
+                    with(emailClient) {
+                        listEmailMessages(listInput)
+                    }
+                }
+            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == count }
     }
 }

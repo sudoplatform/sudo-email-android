@@ -28,10 +28,10 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -227,7 +227,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
     }
 
     @Test
-    fun `createDraftEmailMessage() should log and throw an error if send address not found`() = runBlocking<Unit> {
+    fun `createDraftEmailMessage() should log and throw an error if send address not found`() = runTest {
         holder.callback shouldBe null
 
         val error = com.apollographql.apollo.api.Error(
@@ -252,7 +252,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             "senderEmailAddressId",
         )
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 client.createDraftEmailMessage(createDraftInput)
             }
@@ -269,7 +269,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
     }
 
     @Test
-    fun `createDraftEmailMessage() should log and throw an error if s3 upload errors`() = runBlocking<Unit> {
+    fun `createDraftEmailMessage() should log and throw an error if s3 upload errors`() = runTest {
         holder.callback shouldBe null
 
         val error = CancellationException("Unknown exception")
@@ -289,7 +289,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             "senderEmailAddressId",
         )
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.createDraftEmailMessage(createDraftInput)
             }
@@ -327,7 +327,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
     }
 
     @Test
-    fun `createDraftEmailMessage() should return uuid on success`() = runBlocking<Unit> {
+    fun `createDraftEmailMessage() should return uuid on success`() = runTest {
         holder.callback shouldBe null
 
         val createDraftInput = CreateDraftEmailMessageInput(
@@ -335,7 +335,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             "senderEmailAddressId",
         )
 
-        val deferredResult = async(Dispatchers.IO) {
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.createDraftEmailMessage(createDraftInput)
         }
 

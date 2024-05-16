@@ -12,7 +12,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -33,14 +33,14 @@ class GetConfigurationDataIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun getConfigurationDataShouldReturnConfigurationData() = runBlocking {
+    fun getConfigurationDataShouldReturnConfigurationData() = runTest {
         val configurationData = emailClient.getConfigurationData()
         with(configurationData) {
             deleteEmailMessagesLimit shouldBe 100

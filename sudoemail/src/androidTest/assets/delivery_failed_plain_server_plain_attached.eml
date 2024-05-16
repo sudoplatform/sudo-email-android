@@ -1,0 +1,70 @@
+Received: from Debian-exim by mx1.dev.toys.com with local (Exim 4.86_2)
+	id 1jK3wP-0008KO-Ew
+	for 4747test1234@toys.com; Thu, 02 Apr 2020 17:47:45 +0000
+X-Failed-Recipients: test@test.com
+Auto-Submitted: auto-replied
+From: Mail Delivery System <Mailer-Daemon@sydd1mt01>
+To: 4747test1234@toys.com
+Content-Type: multipart/report; report-type=delivery-status; boundary=1585849665-eximdsn-227622858
+MIME-Version: 1.0
+Subject: Mail delivery failed: returning message to sender
+Message-Id: <E1jK3wP-0008KO-Ew@mx1.dev.toys.com>
+Date: Thu, 02 Apr 2020 17:47:45 +0000
+
+--1585849665-eximdsn-227622858
+Content-type: text/plain; charset=us-ascii
+
+This message was created automatically by mail delivery software.
+
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
+
+  test@test.com
+    host mx.spamexperts.com [38.109.53.20]
+    SMTP error from remote mail server after RCPT TO:<test@test.com>:
+    550 no mailbox by that name is currently available
+
+--1585849665-eximdsn-227622858
+Content-type: message/delivery-status
+
+Reporting-MTA: dns; mx1.dev.toys.com
+
+Action: failed
+Final-Recipient: rfc822;test@test.com
+Status: 5.0.0
+Remote-MTA: dns; mx.spamexperts.com
+Diagnostic-Code: smtp; 550 no mailbox by that name is currently available
+
+--1585849665-eximdsn-227622858
+Content-type: message/rfc822
+
+Return-path: <4747test1234@toys.com>
+Received: from ip-10-192-0-153.ap-southeast-2.compute.internal ([10.192.0.153] helo=sydd1rs01)
+	by mx1.dev.toys.com with esmtps (TLS1.0:ECDHE_RSA_AES_256_CBC_SHA1:256)
+	(Exim 4.86_2)
+	(envelope-from <4747test1234@toys.com>)
+	id 1jK3wM-0008KK-KF
+	for test@test.com; Thu, 02 Apr 2020 17:47:42 +0000
+Date: Thu, 2 Apr 2020 10:47:47 -0700 (MST)
+From: "4747test1234@toys.com" <4747test1234@toys.com>
+To:  <test@test.com>
+Message-ID: <1346569153.105.1585849662564.4747test1234@toys.com>
+Subject: Test
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+	boundary="----=_Part_0_246870345.1585849667271"
+
+------=_Part_0_246870345.1585849667271
+Content-Type: multipart/related;
+	boundary="----=_Part_1_148843086.1585849667276"
+
+------=_Part_1_148843086.1585849667276
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Test
+------=_Part_1_148843086.1585849667276--
+
+------=_Part_0_246870345.1585849667271--
+
+--1585849665-eximdsn-227622858--

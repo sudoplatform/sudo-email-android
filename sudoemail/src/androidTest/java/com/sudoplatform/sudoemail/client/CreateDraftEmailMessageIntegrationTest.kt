@@ -17,7 +17,7 @@ import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.string.shouldMatch
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,14 +38,14 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
+    fun teardown() = runTest {
         emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
 
     @Test
-    fun createDraftEmailMessageShouldFailWithBogusSenderAddress() = runBlocking<Unit> {
+    fun createDraftEmailMessageShouldFailWithBogusSenderAddress() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -57,7 +57,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
         )
@@ -69,7 +69,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun createDraftEmailMessageShouldReturnUUIDOnSuccess() = runBlocking {
+    fun createDraftEmailMessageShouldReturnUUIDOnSuccess() = runTest {
         val uuidRegex = Regex("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
@@ -81,7 +81,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageDataProcessor().encodeToInternetMessageData(
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
             from = emailAddress.emailAddress,
             to = listOf(emailAddress.emailAddress),
         )
