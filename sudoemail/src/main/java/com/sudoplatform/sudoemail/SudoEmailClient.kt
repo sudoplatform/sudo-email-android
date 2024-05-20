@@ -27,6 +27,7 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
+import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
 import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.ListAPIResult
@@ -35,7 +36,6 @@ import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
-import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageFailure
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
@@ -634,7 +634,7 @@ interface SudoEmailClient : AutoCloseable {
     @Throws(EmailMessageException::class)
     suspend fun updateEmailMessages(input: UpdateEmailMessagesInput): BatchOperationResult<
         UpdatedEmailMessageSuccess,
-        UpdatedEmailMessageFailure,
+        EmailMessageOperationFailureResult,
         >
 
     /**
@@ -809,17 +809,20 @@ interface SudoEmailClient : AutoCloseable {
      * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
      *     of identifiers of the email messages that failed and succeeded to delete.
      * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
-     *     email messages that failed to delete.
+     *     email messages that failed to delete and associated error type.
      *
      * @param input [DeleteDraftEmailMessagesInput] Input parameters containing a list of draft email message
      * identifiers and an email address identifier.
      * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email messages identifiers that succeeded or failed to be deleted.
+     *  of email messages that succeeded and a list of identifiers of messages that failed and an associated
+     *  error type.
      *
      * @throws [EmailAddressException], [EmailMessageException].
      */
     @Throws(EmailAddressException::class, EmailMessageException::class)
-    suspend fun deleteDraftEmailMessages(input: DeleteDraftEmailMessagesInput): BatchOperationResult<String, String>
+    suspend fun deleteDraftEmailMessages(
+        input: DeleteDraftEmailMessagesInput,
+    ): BatchOperationResult<String, EmailMessageOperationFailureResult>
 
     /**
      * Retrieves a draft email message.

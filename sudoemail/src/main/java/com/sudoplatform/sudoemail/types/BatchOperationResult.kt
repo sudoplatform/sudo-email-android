@@ -49,3 +49,16 @@ enum class BatchOperationStatus {
     PARTIAL,
     FAILURE,
 }
+
+/**
+ * Representation of the result of an unsuccessful operation on an email
+ * message in the Sudo Platform Email SDK.
+ *
+ * @property id [String] The unique identifier of the message.
+ * @property errorType [String] A description of the error that cause the
+ * message to not be updated.
+ */
+data class EmailMessageOperationFailureResult(
+    val id: String,
+    val errorType: String,
+)

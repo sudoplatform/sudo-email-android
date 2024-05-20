@@ -20,7 +20,7 @@ import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
-import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageFailure
+import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudoemail.types.transformers.toDate
@@ -334,7 +334,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 ),
             )
             result.failureValues shouldBe listOf(
-                UpdatedEmailMessageFailure(
+                EmailMessageOperationFailureResult(
                     "id2",
                     "error",
                 ),

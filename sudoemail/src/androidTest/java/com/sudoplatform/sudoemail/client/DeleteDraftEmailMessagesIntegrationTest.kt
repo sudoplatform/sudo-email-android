@@ -33,7 +33,6 @@ import java.util.UUID
 class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()
-    private val draftRateLimit = 10
 
     @Before
     fun setup() {
@@ -63,17 +62,26 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteDraftEmailMessagesShouldThrowErrorIfInputSizeExceedsRateLimit() = runTest {
-        val mockDraftIds = (0..(draftRateLimit + 1)).map { UUID.randomUUID().toString() }
-        val mockEmailAddressId = "non-existent-email-address-id"
+    fun deleteDraftEmailMessagesShouldReturnSuccessOnNonExistentMessage() = runTest {
+        val sudo = createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val mockDraftId = UUID.randomUUID().toString()
 
         val input = DeleteDraftEmailMessagesInput(
-            mockDraftIds,
-            mockEmailAddressId,
+            listOf(mockDraftId),
+            emailAddress.id,
         )
-        shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-            emailClient.deleteDraftEmailMessages(input)
-        }
+
+        val result = emailClient.deleteDraftEmailMessages(input)
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 
     @Test
@@ -112,4 +120,42 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
             emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
         listDraftEmailMessagesResult.find { it.id == draftId } shouldBe null
     }
+
+    @Test
+    fun deleteDraftEmailMessagesShouldDeleteMultipleMessagesAtOnce() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val draftIds = mutableListOf<String>()
+
+            (0..(10)).forEach { _ ->
+                val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailAddress.emailAddress,
+                    to = listOf(emailAddress.emailAddress),
+                    subject = "Test Draft",
+                )
+
+                val createDraftInput = CreateDraftEmailMessageInput(
+                    rfc822Data = rfc822Data,
+                    senderEmailAddressId = emailAddress.id,
+                )
+                val draftId = emailClient.createDraftEmailMessage(createDraftInput)
+                draftIds.add(draftId)
+            }
+
+            val input = DeleteDraftEmailMessagesInput(
+                draftIds,
+                emailAddress.id,
+            )
+            val result = emailClient.deleteDraftEmailMessages(input)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+        }
 }

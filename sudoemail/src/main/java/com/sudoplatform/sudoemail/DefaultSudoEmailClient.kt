@@ -78,6 +78,7 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
+import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
 import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.EncryptionStatus
@@ -91,7 +92,6 @@ import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
-import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageFailure
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
@@ -305,6 +305,7 @@ internal class DefaultSudoEmailClient(
                 is ApolloException -> throw SudoEmailClient.EmailConfigurationException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailConfigurationException(e)
             }
         }
@@ -330,9 +331,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -365,9 +368,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -426,9 +431,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.ProvisionFailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -466,9 +473,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.DeprovisionFailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -505,9 +514,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.UpdateFailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -523,9 +534,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -601,9 +614,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -663,9 +678,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -705,9 +722,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailAddressException(e)
             }
         }
@@ -747,9 +766,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailFolderException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailFolderException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailFolderException(e)
             }
         }
@@ -863,9 +884,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -922,9 +945,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         } finally {
@@ -979,9 +1004,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         } finally {
@@ -997,7 +1024,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun updateEmailMessages(input: UpdateEmailMessagesInput):
-        BatchOperationResult<UpdatedEmailMessageSuccess, UpdatedEmailMessageFailure> {
+        BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult> {
         val idSet = input.ids.toSet()
         try {
             if (idSet.size > ID_REQUEST_LIMIT) {
@@ -1041,9 +1068,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1111,9 +1140,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1130,9 +1161,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1196,9 +1229,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1289,9 +1324,11 @@ internal class DefaultSudoEmailClient(
                 is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
                     cause = e,
                 )
+
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1371,6 +1408,7 @@ internal class DefaultSudoEmailClient(
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1437,6 +1475,7 @@ internal class DefaultSudoEmailClient(
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
@@ -1503,12 +1542,16 @@ internal class DefaultSudoEmailClient(
                 is ApolloException -> throw SudoEmailClient.EmailMessageException.FailedException(
                     cause = e,
                 )
+
                 else -> throw interpretEmailMessageException(e)
             }
         }
     }
 
-    @Throws(SudoEmailClient.EmailMessageException::class, SudoEmailClient.EmailAddressException::class)
+    @Throws(
+        SudoEmailClient.EmailMessageException::class,
+        SudoEmailClient.EmailAddressException::class,
+    )
     override suspend fun createDraftEmailMessage(input: CreateDraftEmailMessageInput): String {
         throwIfEmailAddressNotFound(input.senderEmailAddressId)
 
@@ -1520,7 +1563,10 @@ internal class DefaultSudoEmailClient(
         }
     }
 
-    @Throws(SudoEmailClient.EmailMessageException::class, SudoEmailClient.EmailAddressException::class)
+    @Throws(
+        SudoEmailClient.EmailMessageException::class,
+        SudoEmailClient.EmailAddressException::class,
+    )
     override suspend fun updateDraftEmailMessage(input: UpdateDraftEmailMessageInput): String {
         this.getDraftEmailMessage(
             GetDraftEmailMessageInput(input.id, input.senderEmailAddressId),
@@ -1557,19 +1603,19 @@ internal class DefaultSudoEmailClient(
         return draftId
     }
 
-    @Throws(SudoEmailClient.EmailAddressException::class, SudoEmailClient.EmailMessageException::class)
-    override suspend fun deleteDraftEmailMessages(input: DeleteDraftEmailMessagesInput): BatchOperationResult<String, String> {
+    @Throws(
+        SudoEmailClient.EmailAddressException::class,
+        SudoEmailClient.EmailMessageException::class,
+    )
+    override suspend fun deleteDraftEmailMessages(
+        input: DeleteDraftEmailMessagesInput,
+    ): BatchOperationResult<String, EmailMessageOperationFailureResult> {
         val (ids, emailAddressId) = input
-        if (ids.size > DRAFT_ID_REQUEST_LIMIT) {
-            throw SudoEmailClient.EmailMessageException.LimitExceededException(
-                LIMIT_EXCEEDED_ERROR_MSG,
-            )
-        }
 
         throwIfEmailAddressNotFound(emailAddressId)
 
         val successIds: MutableList<String> = mutableListOf()
-        val failureIds: MutableList<String> = mutableListOf()
+        val failureIds: MutableList<EmailMessageOperationFailureResult> = mutableListOf()
         for (id in ids) {
             try {
                 val s3Key = this.constructS3KeyForDraftEmailMessage(emailAddressId, id)
@@ -1577,7 +1623,7 @@ internal class DefaultSudoEmailClient(
                 successIds.add(id)
             } catch (e: Throwable) {
                 logger.error("unexpected error $e")
-                failureIds.add(id)
+                failureIds.add(EmailMessageOperationFailureResult(id, e.message ?: "Unknown Error"))
             }
         }
         val status = if (ids.isEmpty() || ids.size == successIds.size) {
@@ -1587,7 +1633,7 @@ internal class DefaultSudoEmailClient(
         } else {
             BatchOperationStatus.PARTIAL
         }
-        return BatchOperationResult.createSame(status, successIds, failureIds)
+        return BatchOperationResult.createDifferent(status, successIds, failureIds)
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)

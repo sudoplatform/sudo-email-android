@@ -10,7 +10,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.UpdateEmailMessagesResult
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
-import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageFailure
+import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 
 /**
@@ -23,9 +23,11 @@ internal object UpdateEmailMessagesResultTransformer {
      * Transform the [UpdateEmailMessagesResult] result type to its entity type.
      *
      * @param result [UpdateEmailMessagesResult] The update email messages result type.
-     * @return The [BatchOperationResult<UpdatedEmailMessageSuccess, UpdatedEmailMessageFailure>] entity type.
+     * @return The [BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult>] entity type.
      */
-    fun toEntity(result: UpdateEmailMessagesResult): BatchOperationResult<UpdatedEmailMessageSuccess, UpdatedEmailMessageFailure> {
+    fun toEntity(
+        result: UpdateEmailMessagesResult,
+    ): BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult> {
         val status: BatchOperationStatus =
             if (result.status() == UpdateEmailMessagesStatus.FAILED) {
                 BatchOperationStatus.FAILURE
@@ -45,10 +47,10 @@ internal object UpdateEmailMessagesResultTransformer {
                     )
                 }
                 ?: emptyList()
-        val failureMessages: List<UpdatedEmailMessageFailure> =
+        val failureMessages: List<EmailMessageOperationFailureResult> =
             result.failedMessages()
                 ?.map {
-                    UpdatedEmailMessageFailure(
+                    EmailMessageOperationFailureResult(
                         it.id(),
                         it.errorType(),
                     )

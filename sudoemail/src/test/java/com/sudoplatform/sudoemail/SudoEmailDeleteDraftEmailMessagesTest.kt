@@ -20,11 +20,15 @@ import com.sudoplatform.sudoemail.s3.S3Exception
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import io.kotlintest.inspectors.forAtLeastOne
+import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldContain
+import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -254,24 +258,6 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `deleteDraftEmailMessages() should throw an error if input size exceeds rate limit`() =
-        runTest {
-            val draftIds = (0..11).map { i -> "mock-draft-id-$i" }
-            val emailAddressId = "mock-email-address-id"
-            val deleteDraftEmailMessagesInput =
-                DeleteDraftEmailMessagesInput(draftIds, emailAddressId)
-
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-                    client.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
-                }
-            }
-            deferredResult.start()
-            delay(100L)
-            deferredResult.await()
-        }
-
-    @Test
     fun `deleteDraftEmailMessages() should return success result if all operations succeeded`() =
         runTest {
             holder.callback shouldBe null
@@ -343,7 +329,11 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.PARTIAL
             result.successValues?.shouldContain(draftIds[0])
-            result.failureValues?.shouldContain(draftIds[1])
+            result.failureValues?.shouldHaveSize(1)
+            result.failureValues?.first() shouldBe EmailMessageOperationFailureResult(
+                draftIds[1],
+                "S3 delete failed",
+            )
 
             verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
             // S3 client delete method is called once per draft id
@@ -387,6 +377,16 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             result shouldNotBe null
 
             result.status shouldBe BatchOperationStatus.FAILURE
+            result.successValues?.shouldBeEmpty()
+            result.failureValues?.shouldHaveSize(2)
+            result.failureValues?.forAtLeastOne {
+                it.id shouldBe draftIds[0]
+                it.errorType shouldBe "S3 delete failed"
+            }
+            result.failureValues?.forAtLeastOne {
+                it.id shouldBe draftIds[1]
+                it.errorType shouldBe "S3 delete failed"
+            }
 
             verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
             // S3 client delete method is called once per draft id
