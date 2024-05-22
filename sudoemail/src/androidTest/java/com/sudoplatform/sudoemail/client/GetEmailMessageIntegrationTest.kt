@@ -76,7 +76,41 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun getEmailMessageShouldReturnEmailMessageResultForInNetworkMessage() = runTest {
+    fun getEmailMessageShouldReturnEmailMessageResultForOutOfNetworkMessageWithAlias() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProofToken = ownershipProof, alias = "Ted Bear")
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val sendResult = sendEmailMessage(
+            emailClient,
+            emailAddress,
+            toAddresses = listOf(
+                EmailMessage.EmailAddress(toSimulatorAddress, emailAddress.alias),
+            ),
+        )
+        sendResult.id.isBlank() shouldBe false
+
+        waitForMessage(sendResult.id)
+
+        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
+            ?: fail("Email message not found")
+        with(retrievedEmailMessage) {
+            from.firstOrNull() shouldBe EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias)
+            to shouldBe listOf(EmailMessage.EmailAddress(toSimulatorAddress, emailAddress.alias))
+            hasAttachments shouldBe false
+            size shouldBeGreaterThan 0.0
+        }
+    }
+
+    @Test
+    fun getEmailMessageShouldReturnEmailMessageResultForInNetworkMessageWithAlias() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -102,7 +136,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
         val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message not found")
         with(retrievedEmailMessage) {
-            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+            from.firstOrNull() shouldBe EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias)
             to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0

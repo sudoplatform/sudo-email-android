@@ -275,7 +275,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "14.0.0"
+    private val version: String = "15.0.1"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
@@ -807,7 +807,7 @@ internal class DefaultSudoEmailClient(
                 // Process encrypted email message
                 val encryptionStatus = EncryptionStatus.ENCRYPTED
                 val rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
-                    from = emailMessageHeader.from.emailAddress,
+                    from = emailMessageHeader.from.toString(),
                     to = emailMessageHeader.to.map { it.toString() },
                     cc = emailMessageHeader.cc.map { it.toString() },
                     bcc = emailMessageHeader.bcc.map { it.toString() },
@@ -823,7 +823,7 @@ internal class DefaultSudoEmailClient(
 
                 // Encode the RFC 822 data with the secureAttachments
                 val encryptedRfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
-                    from = emailMessageHeader.from.emailAddress,
+                    from = emailMessageHeader.from.toString(),
                     to = emailMessageHeader.to.map { it.toString() },
                     cc = emailMessageHeader.cc.map { it.toString() },
                     bcc = emailMessageHeader.bcc.map { it.toString() },
@@ -857,7 +857,7 @@ internal class DefaultSudoEmailClient(
                 // Process non-encrypted email message
                 val encryptionStatus = EncryptionStatus.UNENCRYPTED
                 val rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
-                    from = emailMessageHeader.from.emailAddress,
+                    from = emailMessageHeader.from.toString(),
                     to = emailMessageHeader.to.map { it.toString() },
                     cc = emailMessageHeader.cc.map { it.toString() },
                     bcc = emailMessageHeader.bcc.map { it.toString() },
