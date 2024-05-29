@@ -11,6 +11,7 @@ import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.apollographql.apollo.api.Response
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
+import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
@@ -83,10 +84,17 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             .build()
     }
 
+    private val supportedDomains by before {
+        GetEmailDomainsQuery.GetEmailDomains(
+            "typename",
+            listOf("foo.com", "bear.com"),
+        )
+    }
+
     private val emailAddressPublicInfo by before {
         EmailAddressPublicInfo(
             "typename",
-            "to@bar.com",
+            "to@bear.com",
             "keyId",
             "publicKey",
         )
@@ -188,7 +196,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     LookupEmailAddressesPublicInfoQuery.Item.Fragments(
                         EmailAddressPublicInfo(
                             "typename",
-                            "to@bar.com",
+                            "to@bear.com",
                             "keyId",
                             "publicKey",
                         ),
@@ -199,7 +207,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     LookupEmailAddressesPublicInfoQuery.Item.Fragments(
                         EmailAddressPublicInfo(
                             "typename",
-                            "cc@bar.com",
+                            "cc@bear.com",
                             "keyId",
                             "publicKey",
                         ),
@@ -210,7 +218,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     LookupEmailAddressesPublicInfoQuery.Item.Fragments(
                         EmailAddressPublicInfo(
                             "typename",
-                            "bcc@bar.com",
+                            "bcc@bear.com",
                             "keyId",
                             "publicKey",
                         ),
@@ -218,6 +226,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 ),
             ),
         )
+    }
+
+    private val getSupportedDomainsQueryResponse by before {
+        Response.builder<GetEmailDomainsQuery.Data>(GetEmailDomainsQuery())
+            .data(GetEmailDomainsQuery.Data(supportedDomains))
+            .build()
     }
 
     private val lookupPublicInfoResponse by before {
@@ -253,6 +267,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private val sendHolder = CallbackHolder<SendEmailMessageMutation.Data>()
     private val sendEncryptedHolder = CallbackHolder<SendEncryptedEmailMessageMutation.Data>()
+    private val getSupportedDomainsHolder = CallbackHolder<GetEmailDomainsQuery.Data>()
     private val lookupPublicInfoHolder = CallbackHolder<LookupEmailAddressesPublicInfoQuery.Data>()
     private val getConfigDataHolder = CallbackHolder<GetEmailConfigQuery.Data>()
 
@@ -271,6 +286,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         mock<AWSAppSyncClient>().stub {
             on { mutate(any<SendEmailMessageMutation>()) } doReturn sendHolder.mutationOperation
             on { mutate(any<SendEncryptedEmailMessageMutation>()) } doReturn sendEncryptedHolder.mutationOperation
+            on { query(any<GetEmailDomainsQuery>()) } doReturn getSupportedDomainsHolder.queryOperation
             on { query(any<LookupEmailAddressesPublicInfoQuery>()) } doReturn lookupPublicInfoHolder.queryOperation
             on { query(any<GetEmailConfigQuery>()) } doReturn getConfigDataHolder.queryOperation
         }
@@ -356,9 +372,11 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     @Before
     fun init() {
+        getConfigDataHolder.callback = null
+        getSupportedDomainsHolder.callback = null
+        lookupPublicInfoHolder.callback = null
         sendHolder.callback = null
         sendEncryptedHolder.callback = null
-        lookupPublicInfoHolder.callback = null
     }
 
     @After
@@ -376,23 +394,9 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send when no error present`() =
         runTest {
-            val lookupPublicInfoQueryResult by before {
-                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                    "typename",
-                    emptyList(),
-                )
-            }
-            val lookupPublicInfoResponse by before {
-                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-                )
-                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                    .build()
-            }
-
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
             sendHolder.callback = null
-            sendEncryptedHolder.callback = null
-            lookupPublicInfoHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
@@ -414,12 +418,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
-            lookupPublicInfoHolder.callback shouldNotBe null
-            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendHolder.callback shouldNotBe null
@@ -430,8 +434,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -450,23 +454,9 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send with attachments when no error present`() =
         runTest {
-            val lookupPublicInfoQueryResult by before {
-                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                    "typename",
-                    emptyList(),
-                )
-            }
-            val lookupPublicInfoResponse by before {
-                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-                )
-                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                    .build()
-            }
-
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
             sendHolder.callback = null
-            sendEncryptedHolder.callback = null
-            lookupPublicInfoHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
@@ -488,12 +478,72 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+
+            delay(100L)
             getConfigDataHolder.callback shouldNotBe null
             getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
-            lookupPublicInfoHolder.callback shouldNotBe null
-            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+            sendHolder.callback shouldNotBe null
+            sendHolder.callback?.onResponse(sendMutationResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+            result.id.isBlank() shouldBe false
+
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should return results for non-E2E encrypted send with no recipients`() =
+        runTest {
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
+            sendHolder.callback = null
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    emptyList(),
+                    emptyList(),
+                    emptyList(),
+                    emptyList(),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.sendEmailMessage(input)
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendHolder.callback shouldNotBe null
@@ -504,8 +554,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -532,18 +582,19 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            sendHolder.callback = null
-            sendEncryptedHolder.callback = null
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
+            sendEncryptedHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
                 InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
                     "email message subject",
                 ),
                 "email message body",
@@ -556,12 +607,16 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
             lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendEncryptedHolder.callback shouldNotBe null
@@ -571,9 +626,10 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result shouldNotBe null
             result.id.isBlank() shouldBe false
 
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
             verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -596,15 +652,25 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage should return results for in-network and out-of-network recipient send when no error present`() =
         runTest {
+            val lookupPublicInfoResponse by before {
+                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
+                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
+                )
+                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryItemsResult))
+                    .build()
+            }
+
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
+            lookupPublicInfoHolder.callback = null
             sendHolder.callback = null
             sendEncryptedHolder.callback = null
-            lookupPublicInfoHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
                 InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
                     listOf(EmailMessage.EmailAddress("cc@bar.com")),
                     listOf(EmailMessage.EmailAddress("bcc@bar.com")),
                     listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
@@ -620,12 +686,16 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
             lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendHolder.callback shouldNotBe null
@@ -635,9 +705,10 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result shouldNotBe null
             result.id.isBlank() shouldBe false
 
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -656,29 +727,15 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should throw when send email mutation response is null`() =
         runTest {
-            val lookupPublicInfoQueryResult by before {
-                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                    "typename",
-                    emptyList(),
-                )
-            }
-            val lookupPublicInfoResponse by before {
-                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-                )
-                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                    .build()
-            }
-
             val nullSendResponse by before {
                 Response.builder<SendEmailMessageMutation.Data>(SendEmailMessageMutation(sendInput))
                     .data(null)
                     .build()
             }
 
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
             sendHolder.callback = null
-            sendEncryptedHolder.callback = null
-            lookupPublicInfoHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
@@ -702,12 +759,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
-            lookupPublicInfoHolder.callback shouldNotBe null
-            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendHolder.callback shouldNotBe null
@@ -715,9 +772,9 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
-            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -751,18 +808,19 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            sendHolder.callback = null
-            sendEncryptedHolder.callback = null
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
+            sendEncryptedHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
                 InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
                     "email message subject",
                 ),
                 "email message body",
@@ -778,12 +836,16 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
             lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendEncryptedHolder.callback shouldNotBe null
@@ -791,9 +853,10 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
             verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -849,17 +912,17 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+
+            delay(100L)
             getConfigDataHolder.callback shouldNotBe null
             getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
-            delay(100L)
-            lookupPublicInfoHolder.callback shouldNotBe null
-            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
-
             deferredResult.await()
 
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -875,6 +938,48 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         }
 
     @Test
+    fun `sendEmailMessage should throw when any in-network recipient email address does not exist`() =
+        runTest {
+            getSupportedDomainsHolder.callback = null
+            lookupPublicInfoHolder.callback = null
+
+            val input = SendEmailMessageInput(
+                "senderEmailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+            )
+
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                shouldThrow<SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException> {
+                    client.sendEmailMessage(input)
+                }
+            }
+            deferredResult.start()
+
+            delay(100L)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+
+            delay(100L)
+            lookupPublicInfoHolder.callback shouldNotBe null
+            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+        }
+
+    @Test
     fun `sendEmailMessage() should throw when non-E2E send response has various errors`() =
         runTest {
             testSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>(
@@ -883,8 +988,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             testSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>("UnauthorizedAddress")
             testSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
+            verify(mockAppSyncClient, times(3)).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient, times(3)).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient, times(3)).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockAppSyncClient, times(3)).mutate(any<SendEmailMessageMutation>())
             verify(mockEmailMessageProcessor, times(3)).encodeToInternetMessageData(
                 anyString(),
@@ -912,6 +1017,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             )
             testEncryptedSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
+            verify(mockAppSyncClient, times(3)).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient, times(3)).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient, times(3)).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockAppSyncClient, times(3)).mutate(any<SendEncryptedEmailMessageMutation>())
@@ -983,17 +1089,20 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            sendHolder.callback = null
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
                 InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
                     "email message subject",
                 ),
                 "email message body",
@@ -1009,15 +1118,20 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
             lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
 
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+
             deferredResult.await()
 
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
@@ -1079,8 +1193,11 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 } doReturn ByteArray(limit + 1)
             }
 
-            sendHolder.callback = null
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
+            sendHolder.callback = null
+            sendEncryptedHolder.callback = null
 
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
@@ -1105,17 +1222,17 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+
+            delay(100L)
             getConfigDataHolder.callback shouldNotBe null
             getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
-            delay(100L)
-            lookupPublicInfoHolder.callback shouldNotBe null
-            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
-
             deferredResult.await()
 
+            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
                 any(),
@@ -1131,21 +1248,11 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private inline fun <reified T : Exception> testSendException(apolloError: String) =
         runTest {
-            val lookupPublicInfoQueryResult by before {
-                LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                    "typename",
-                    emptyList(),
-                )
-            }
-            val lookupPublicInfoResponse by before {
-                Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                    LookupEmailAddressesPublicInfoQuery(lookupPublicInfoInput),
-                )
-                    .data(LookupEmailAddressesPublicInfoQuery.Data(lookupPublicInfoQueryResult))
-                    .build()
-            }
-
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
+            lookupPublicInfoHolder.callback = null
             sendHolder.callback = null
+            sendEncryptedHolder.callback = null
 
             val errorSendResponse by before {
                 val error = com.apollographql.apollo.api.Error(
@@ -1180,12 +1287,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
-            lookupPublicInfoHolder.callback shouldNotBe null
-            lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendHolder.callback shouldNotBe null
@@ -1204,6 +1311,10 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
+            getSupportedDomainsHolder.callback = null
+            getConfigDataHolder.callback = null
+            lookupPublicInfoHolder.callback = null
+            sendHolder.callback = null
             sendEncryptedHolder.callback = null
 
             val errorSendResponse by before {
@@ -1222,11 +1333,11 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             val input = SendEmailMessageInput(
                 "senderEmailAddressId",
                 InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
                     "email message subject",
                 ),
                 "email message body",
@@ -1241,12 +1352,16 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getConfigDataHolder.callback shouldNotBe null
-            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
+            getSupportedDomainsHolder.callback shouldNotBe null
+            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
             lookupPublicInfoHolder.callback?.onResponse(lookupPublicInfoResponse)
+
+            delay(100L)
+            getConfigDataHolder.callback shouldNotBe null
+            getConfigDataHolder.callback?.onResponse(getConfigDataQueryResponse)
 
             delay(100L)
             sendEncryptedHolder.callback shouldNotBe null

@@ -76,6 +76,7 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
@@ -208,7 +209,6 @@ internal class DefaultSudoEmailClient(
     companion object {
         /** Maximum limit of number of identifiers that can be deleted per request. */
         private const val ID_REQUEST_LIMIT = 100
-        private const val DRAFT_ID_REQUEST_LIMIT = 10
 
         /** Content encoding values for email message data. */
         private const val CRYPTO_CONTENT_ENCODING = "sudoplatform-crypto"
@@ -225,6 +225,7 @@ internal class DefaultSudoEmailClient(
         private const val INVALID_EMAIL_ADDRESS_MSG = "Invalid email address"
         private const val INSUFFICIENT_ENTITLEMENTS_MSG = "Entitlements have been exceeded"
         private const val NO_EMAIL_ID_ERROR_MSG = "No email message identifier returned"
+        private const val IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG = "At least one email address does not exist in network"
         private const val INVALID_MESSAGE_CONTENT_MSG = "Invalid email message contents"
         private const val EMAIL_ADDRESS_NOT_FOUND_MSG = "Email address not found"
         private const val EMAIL_ADDRESS_UNAVAILABLE_MSG = "Email address is not available"
@@ -275,7 +276,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "15.0.1"
+    private val version: String = "15.0.2"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
@@ -779,128 +780,95 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult {
         val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments) = input
-        val s3ObjectKey: String
         try {
-            val config = getConfigurationData()
-            val emailMessageMaxOutboundMessageSize = config.emailMessageMaxOutboundMessageSize
-            // Check whether recipient addresses and associated public keys exist in the platform
+            val domains = getSupportedEmailDomains()
+
             val allRecipients = mutableListOf<EmailMessage.EmailAddress>().apply {
                 addAll(emailMessageHeader.to)
                 addAll(emailMessageHeader.cc)
                 addAll(emailMessageHeader.bcc)
             }.map { it.emailAddress }
-            val lookupPublicInfoInput = LookupEmailAddressesPublicInfoInput(
-                emailAddresses = allRecipients,
+
+            // Identify whether recipients are internal or external based on their domains
+            val (internalRecipients, externalRecipients) = allRecipients.partition { recipient ->
+                domains.any { domain ->
+                    recipient.contains(domain)
+                }
+            }
+
+            if (internalRecipients.isNotEmpty()) {
+                // Lookup public key information for each internal recipient
+                val lookupPublicInfoInput = LookupEmailAddressesPublicInfoInput(
+                    emailAddresses = internalRecipients,
+                )
+                val emailAddressesPublicInfo = lookupEmailAddressesPublicInfo(lookupPublicInfoInput)
+
+                // Check whether internal recipient addresses and associated public keys exist in the platform
+                val isInNetworkAddresses = internalRecipients.all { recipient ->
+                    emailAddressesPublicInfo.any { info -> info.emailAddress == recipient }
+                }
+                if (!isInNetworkAddresses) {
+                    throw SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException(
+                        IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG,
+                    )
+                }
+
+                return if (externalRecipients.isEmpty()) {
+                    // Process encrypted email message
+                    sendInNetworkEmailMessage(
+                        senderEmailAddressId,
+                        emailMessageHeader,
+                        body,
+                        attachments,
+                        inlineAttachments,
+                        emailAddressesPublicInfo,
+                    )
+                } else {
+                    // Process non-encrypted email message
+                    sendOutOfNetworkEmailMessage(
+                        senderEmailAddressId,
+                        emailMessageHeader,
+                        body,
+                        attachments,
+                        inlineAttachments,
+                    )
+                }
+            }
+            // Process non-encrypted email message
+            return sendOutOfNetworkEmailMessage(
+                senderEmailAddressId,
+                emailMessageHeader,
+                body,
+                attachments,
+                inlineAttachments,
             )
-            val emailAddressesPublicInfo = lookupEmailAddressesPublicInfo(lookupPublicInfoInput)
-
-            // Identify whether all addresses are in-network or not
-            val isInNetworkAddresses = allRecipients.all { recipient ->
-                emailAddressesPublicInfo.any { info -> info.emailAddress == recipient }
-            }
-
-            if (isInNetworkAddresses) {
-                val clientRefId = UUID.randomUUID().toString()
-                val objectId =
-                    "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
-
-                // Process encrypted email message
-                val encryptionStatus = EncryptionStatus.ENCRYPTED
-                val rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
-                    from = emailMessageHeader.from.toString(),
-                    to = emailMessageHeader.to.map { it.toString() },
-                    cc = emailMessageHeader.cc.map { it.toString() },
-                    bcc = emailMessageHeader.bcc.map { it.toString() },
-                    subject = emailMessageHeader.subject,
-                    body,
-                    attachments,
-                    inlineAttachments,
-                )
-                val keyIds = emailAddressesPublicInfo.map { it.keyId }.toSet()
-                val hasAttachments = attachments.isNotEmpty() || inlineAttachments.isNotEmpty()
-                val encryptedEmailMessage = emailCryptoService.encrypt(rfc822Data, keyIds)
-                val secureAttachments = encryptedEmailMessage.toList()
-
-                // Encode the RFC 822 data with the secureAttachments
-                val encryptedRfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
-                    from = emailMessageHeader.from.toString(),
-                    to = emailMessageHeader.to.map { it.toString() },
-                    cc = emailMessageHeader.cc.map { it.toString() },
-                    bcc = emailMessageHeader.bcc.map { it.toString() },
-                    subject = emailMessageHeader.subject,
-                    body,
-                    secureAttachments,
-                    inlineAttachments,
-                    encryptionStatus,
-                )
-                if (encryptedRfc822Data.size > emailMessageMaxOutboundMessageSize) {
-                    logger.error(
-                        "Email message size exceeded. Limit: $emailMessageMaxOutboundMessageSize bytes. " +
-                            "Message size: ${encryptedRfc822Data.size}",
-                    )
-                    throw SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException(
-                        "Email message size exceeded. Limit: $emailMessageMaxOutboundMessageSize bytes",
-                    )
-                }
-                s3ObjectKey = s3TransientClient.upload(encryptedRfc822Data, objectId)
-                return sendInNetworkEmailMessage(
-                    senderEmailAddressId,
-                    s3ObjectKey,
-                    emailMessageHeader,
-                    hasAttachments,
-                )
-            } else {
-                val clientRefId = UUID.randomUUID().toString()
-                val objectId =
-                    "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
-
-                // Process non-encrypted email message
-                val encryptionStatus = EncryptionStatus.UNENCRYPTED
-                val rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
-                    from = emailMessageHeader.from.toString(),
-                    to = emailMessageHeader.to.map { it.toString() },
-                    cc = emailMessageHeader.cc.map { it.toString() },
-                    bcc = emailMessageHeader.bcc.map { it.toString() },
-                    subject = emailMessageHeader.subject,
-                    body,
-                    attachments,
-                    inlineAttachments,
-                    encryptionStatus,
-                )
-                if (rfc822Data.size > emailMessageMaxOutboundMessageSize) {
-                    logger.error(
-                        "Email message size exceeded. Limit: $emailMessageMaxOutboundMessageSize bytes. Message size: ${rfc822Data.size}",
-                    )
-                    throw SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException(
-                        "Email message size exceeded. Limit: $emailMessageMaxOutboundMessageSize bytes",
-                    )
-                }
-                s3ObjectKey = s3TransientClient.upload(rfc822Data, objectId)
-                return sendOutOfNetworkEmailMessage(senderEmailAddressId, s3ObjectKey)
-            }
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
-            when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
-                    cause = e,
-                )
-
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
-                    cause = e,
-                )
-
-                else -> throw interpretEmailMessageException(e)
-            }
+            throw handleSendEmailMessageException(e)
         }
     }
 
     private suspend fun sendInNetworkEmailMessage(
         senderEmailAddressId: String,
-        s3ObjectKey: String,
         emailMessageHeader: InternetMessageFormatHeader,
-        hasAttachments: Boolean,
+        body: String,
+        attachments: List<EmailAttachment>,
+        inlineAttachments: List<EmailAttachment>,
+        emailAddressesPublicInfo: List<EmailAddressPublicInfo>,
     ): SendEmailMessageResult {
+        var s3ObjectKey = ""
+
         try {
+            s3ObjectKey = processAndUploadEmailMessage(
+                senderEmailAddressId,
+                emailMessageHeader,
+                body,
+                attachments,
+                inlineAttachments,
+                EncryptionStatus.ENCRYPTED,
+                emailAddressesPublicInfo,
+            )
+
             val s3EmailObjectInput = S3EmailObjectInput.builder()
                 .key(s3ObjectKey)
                 .region(region)
@@ -913,7 +881,7 @@ internal class DefaultSudoEmailClient(
                 .bcc(emailMessageHeader.bcc.map { it.toString() })
                 .replyTo(emailMessageHeader.replyTo.map { it.toString() })
                 .subject(emailMessageHeader.subject)
-                .hasAttachments(hasAttachments)
+                .hasAttachments(attachments.isNotEmpty() || inlineAttachments.isNotEmpty())
                 .build()
 
             val mutationInput = SendEncryptedEmailMessageRequest.builder()
@@ -941,17 +909,7 @@ internal class DefaultSudoEmailClient(
             throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
-            when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
-                    cause = e,
-                )
-
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
-                    cause = e,
-                )
-
-                else -> throw interpretEmailMessageException(e)
-            }
+            throw handleSendEmailMessageException(e)
         } finally {
             try {
                 if (s3ObjectKey.isNotBlank()) {
@@ -965,15 +923,28 @@ internal class DefaultSudoEmailClient(
 
     private suspend fun sendOutOfNetworkEmailMessage(
         senderEmailAddressId: String,
-        s3ObjectKey: String,
+        emailMessageHeader: InternetMessageFormatHeader,
+        body: String,
+        attachments: List<EmailAttachment>,
+        inlineAttachments: List<EmailAttachment>,
     ): SendEmailMessageResult {
+        var s3ObjectKey = ""
+
         try {
+            s3ObjectKey = processAndUploadEmailMessage(
+                senderEmailAddressId,
+                emailMessageHeader,
+                body,
+                attachments,
+                inlineAttachments,
+                EncryptionStatus.UNENCRYPTED,
+            )
+
             val s3EmailObject = S3EmailObjectInput.builder()
                 .key(s3ObjectKey)
                 .region(region)
                 .bucket(transientBucket)
                 .build()
-
             val mutationInput = SendEmailMessageRequest.builder()
                 .emailAddressId(senderEmailAddressId)
                 .message(s3EmailObject)
@@ -1000,17 +971,7 @@ internal class DefaultSudoEmailClient(
             throw SudoEmailClient.EmailMessageException.FailedException(NO_EMAIL_ID_ERROR_MSG)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
-            when (e) {
-                is NotAuthorizedException -> throw SudoEmailClient.EmailMessageException.AuthenticationException(
-                    cause = e,
-                )
-
-                is ApolloException -> throw SudoEmailClient.EmailMessageException.SendFailedException(
-                    cause = e,
-                )
-
-                else -> throw interpretEmailMessageException(e)
-            }
+            throw handleSendEmailMessageException(e)
         } finally {
             try {
                 if (s3ObjectKey.isNotBlank()) {
@@ -1019,6 +980,71 @@ internal class DefaultSudoEmailClient(
             } catch (e: Throwable) {
                 logger.error("$e")
             }
+        }
+    }
+
+    private suspend fun processAndUploadEmailMessage(
+        senderEmailAddressId: String,
+        emailMessageHeader: InternetMessageFormatHeader,
+        body: String,
+        attachments: List<EmailAttachment>,
+        inlineAttachments: List<EmailAttachment>,
+        encryptionStatus: EncryptionStatus,
+        emailAddressesPublicInfo: List<EmailAddressPublicInfo> = emptyList(),
+    ): String {
+        val config = getConfigurationData()
+        val emailMessageMaxOutboundMessageSize = config.emailMessageMaxOutboundMessageSize
+
+        try {
+            val clientRefId = UUID.randomUUID().toString()
+            val objectId =
+                "${this.constructS3PrefixForEmailAddress(senderEmailAddressId)}/$clientRefId"
+
+            var rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
+                from = emailMessageHeader.from.toString(),
+                to = emailMessageHeader.to.map { it.toString() },
+                cc = emailMessageHeader.cc.map { it.toString() },
+                bcc = emailMessageHeader.bcc.map { it.toString() },
+                subject = emailMessageHeader.subject,
+                body,
+                attachments,
+                inlineAttachments,
+                EncryptionStatus.UNENCRYPTED,
+            )
+
+            if (encryptionStatus == EncryptionStatus.ENCRYPTED) {
+                val keyIds = emailAddressesPublicInfo.map { it.keyId }.toSet()
+                val encryptedEmailMessage = emailCryptoService.encrypt(rfc822Data, keyIds)
+                val secureAttachments = encryptedEmailMessage.toList()
+
+                // Encode the RFC 822 data with the secureAttachments
+                rfc822Data = emailMessageDataProcessor.encodeToInternetMessageData(
+                    from = emailMessageHeader.from.toString(),
+                    to = emailMessageHeader.to.map { it.toString() },
+                    cc = emailMessageHeader.cc.map { it.toString() },
+                    bcc = emailMessageHeader.bcc.map { it.toString() },
+                    subject = emailMessageHeader.subject,
+                    body,
+                    secureAttachments,
+                    inlineAttachments,
+                    encryptionStatus,
+                )
+            }
+
+            if (rfc822Data.size > emailMessageMaxOutboundMessageSize) {
+                logger.error(
+                    "Email message size exceeded. Limit: $emailMessageMaxOutboundMessageSize bytes. " +
+                        "Message size: ${rfc822Data.size}",
+                )
+                throw SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException(
+                    "Email message size exceeded. Limit: $emailMessageMaxOutboundMessageSize bytes",
+                )
+            }
+
+            return s3TransientClient.upload(rfc822Data, objectId)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            throw handleSendEmailMessageException(e)
         }
     }
 
@@ -2125,6 +2151,14 @@ internal class DefaultSudoEmailClient(
             throw SudoEmailClient.EmailAddressException.EmailAddressNotFoundException(
                 EMAIL_ADDRESS_NOT_FOUND_MSG,
             )
+        }
+    }
+
+    private fun handleSendEmailMessageException(e: Throwable): Throwable {
+        return when (e) {
+            is NotAuthorizedException -> SudoEmailClient.EmailMessageException.AuthenticationException(cause = e)
+            is ApolloException -> SudoEmailClient.EmailMessageException.SendFailedException(cause = e)
+            else -> interpretEmailMessageException(e)
         }
     }
 

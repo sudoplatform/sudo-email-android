@@ -388,6 +388,9 @@ interface SudoEmailClient : AutoCloseable {
         class UnauthorizedAddressException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
 
+        class InNetworkAddressNotFoundException(message: String? = null, cause: Throwable? = null) :
+            EmailMessageException(message = message, cause = cause)
+
         class UnsealingException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
 

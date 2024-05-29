@@ -202,6 +202,116 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
+    fun sendEmailShouldThrowWithEmptyRecipients() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                emptyList(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
+            )
+        }
+    }
+
+    @Test
+    fun sendEmailWithMixtureOfRecipientsShouldReturnUnencryptedStatus() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        receiverEmailAddress shouldNotBe null
+        emailAddressList.add(receiverEmailAddress)
+
+        val receiverEmailAddressTwo = provisionEmailAddress(emailClient, ownershipProof)
+        receiverEmailAddressTwo shouldNotBe null
+        emailAddressList.add(receiverEmailAddressTwo)
+
+        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.isEmpty() shouldBe false
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        val messageCount = 2
+        var emailId = ""
+        for (i in 0 until messageCount) {
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(
+                    EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
+                    EmailMessage.EmailAddress(toSimulatorAddress),
+                ),
+                listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress)),
+            )
+            emailId = result.id
+            emailId.isBlank() shouldBe false
+            result.createdAt shouldNotBe null
+        }
+
+        when (val listEmailMessages = waitForMessages(messageCount * 4)) {
+            is ListAPIResult.Success -> {
+                listEmailMessages.result.items.isEmpty() shouldBe false
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
+            ?: fail("Email message could not be found")
+        with(retrievedEmailMessage) {
+            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+            to shouldBe listOf(
+                EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
+                EmailMessage.EmailAddress(toSimulatorAddress),
+            )
+            cc shouldBe listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress))
+            hasAttachments shouldBe false
+            size shouldBeGreaterThan 0.0
+            encryptionStatus shouldBe EncryptionStatus.UNENCRYPTED
+        }
+    }
+
+    @Test
     fun sendEmailShouldThrowWhenInvalidRecipientAddressUsed() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
@@ -283,6 +393,34 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         )
         shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
             sendEmailMessage(emailClient, emailAddress, attachments = listOf(attachment))
+        }
+    }
+
+    @Test
+    fun sendEmailShouldThrowWhenInNetworkRecipientAddressNotFound() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val emailDomains = emailClient.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+        val inNetworkNotFoundAddress = "notfoundaddress@${emailDomains.first()}"
+
+        shouldThrow<SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(
+                    EmailMessage.EmailAddress(toSimulatorAddress),
+                    EmailMessage.EmailAddress(inNetworkNotFoundAddress),
+                ),
+            )
         }
     }
 
@@ -513,74 +651,6 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEncryptedEmailWithMixtureOfRecipientsShouldReturnEmailMessageId() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        receiverEmailAddress shouldNotBe null
-        emailAddressList.add(receiverEmailAddress)
-
-        val receiverEmailAddressTwo = provisionEmailAddress(emailClient, ownershipProof)
-        receiverEmailAddressTwo shouldNotBe null
-        emailAddressList.add(receiverEmailAddressTwo)
-
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
-        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.isEmpty() shouldBe false
-            }
-
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
-
-        val messageCount = 2
-        var emailId = ""
-        for (i in 0 until messageCount) {
-            val result = sendEmailMessage(
-                emailClient,
-                emailAddress,
-                listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
-                listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress)),
-            )
-            emailId = result.id
-            emailId.isBlank() shouldBe false
-            result.createdAt shouldNotBe null
-        }
-
-        when (val listEmailMessages = waitForMessages(messageCount * 3)) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-            }
-
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
-
-        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
-            ?: fail("Email message could not be found")
-        with(retrievedEmailMessage) {
-            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.firstOrNull()?.emailAddress shouldBe receiverEmailAddress.emailAddress
-            cc.firstOrNull()?.emailAddress shouldBe receiverEmailAddressTwo.emailAddress
-            hasAttachments shouldBe false
-            size shouldBeGreaterThan 0.0
-            encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
-        }
-    }
-
-    @Test
     fun sendEncryptedEmailWithIdenticalFromRecipientShouldReturnEmailAddressId() = runTest {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
@@ -635,6 +705,38 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
             encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
+        }
+    }
+
+    @Test
+    fun sendEncryptedEmailShouldThrowWhenInNetworkRecipientAddressNotFound() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        receiverEmailAddress shouldNotBe null
+        emailAddressList.add(receiverEmailAddress)
+
+        val emailDomains = emailClient.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+        val inNetworkNotFoundAddress = "notfoundaddress@${emailDomains.first()}"
+
+        shouldThrow<SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(
+                    EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
+                    EmailMessage.EmailAddress(inNetworkNotFoundAddress),
+                ),
+            )
         }
     }
 
