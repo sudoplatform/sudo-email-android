@@ -7,6 +7,7 @@
 package com.sudoplatform.sudoemail.secure
 
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
+import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 
 /**
  * Encrypts and decrypts email messages within the email service.
@@ -44,12 +45,13 @@ internal interface EmailCryptoService {
      * Encrypt email data that can be decrypted by all the recipients.
      *
      * @param data [ByteArray] The body of the email that should be encrypted.
-     * @param keyIds [Set<String>] The list of [keyIds] for each recipient that must be able to decrypt the message.
+     * @param emailAddressPublicInfo [List<EmailAddressPublicInfo>] The list of public key information for each
+     *  recipient that must be able to decrypt the message.
      * @return The encrypted body and a sealed key for each recipient.
      * @throws [EmailCryptoServiceException] when the encryption operation fails.
      */
     @Throws(EmailCryptoServiceException::class)
-    suspend fun encrypt(data: ByteArray, keyIds: Set<String>): SecurePackage
+    suspend fun encrypt(data: ByteArray, emailAddressPublicInfo: List<EmailAddressPublicInfo>): SecurePackage
 
     /**
      * Decrypt email data using the key belonging to the current recipient.

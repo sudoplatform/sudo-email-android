@@ -231,7 +231,6 @@ internal class DefaultSudoEmailClient(
         private const val EMAIL_ADDRESS_UNAVAILABLE_MSG = "Email address is not available"
         private const val EMAIL_ADDRESS_UNAUTHORIZED_MSG = "Unauthorized email address"
         private const val EMAIL_MESSAGE_NOT_FOUND_MSG = "Email message not found"
-        private const val SUDO_NOT_FOUND_MSG = "Sudo identifier not provided"
         private const val LIMIT_EXCEEDED_ERROR_MSG = "Input cannot exceed $ID_REQUEST_LIMIT"
         private const val INVALID_ARGUMENT_ERROR_MSG = "Invalid input"
         private const val SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG = "Symmetric key not found"
@@ -247,6 +246,7 @@ internal class DefaultSudoEmailClient(
             "Body attachments could not be found"
         private const val EMAIL_CRYPTO_ERROR_MSG =
             "Unable to perform cryptographic operation on email data"
+        private const val SERVICE_QUOTA_EXCEEDED_ERROR_MSG = "Daily message quota limit exceeded"
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         const val KEY_NOT_FOUND_ERROR = "Key not found"
@@ -254,7 +254,6 @@ internal class DefaultSudoEmailClient(
 
         /** Errors returned from the service */
         private const val ERROR_TYPE = "errorType"
-        private const val SERVICE_ERROR = "ServiceError"
         private const val ERROR_INVALID_KEYRING = "InvalidKeyRingId"
         private const val ERROR_INVALID_ARGUMENT = "InvalidArgument"
         private const val ERROR_INVALID_EMAIL = "EmailValidation"
@@ -266,6 +265,7 @@ internal class DefaultSudoEmailClient(
         private const val ERROR_INVALID_DOMAIN = "InvalidEmailDomain"
         private const val ERROR_MESSAGE_NOT_FOUND = "EmailMessageNotFound"
         private const val ERROR_INSUFFICIENT_ENTITLEMENTS = "InsufficientEntitlementsError"
+        private const val ERROR_SERVICE_QUOTA_EXCEEDED = "ServiceQuotaExceededError"
     }
 
     /**
@@ -276,7 +276,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "15.0.2"
+    private val version: String = "15.2.0"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
@@ -797,9 +797,13 @@ internal class DefaultSudoEmailClient(
             }
 
             if (internalRecipients.isNotEmpty()) {
-                // Lookup public key information for each internal recipient
+                // Lookup public key information for each internal recipient and sender
+                val recipientsAndSender = mutableListOf<String>().apply {
+                    addAll(internalRecipients)
+                    add(emailMessageHeader.from.emailAddress)
+                }
                 val lookupPublicInfoInput = LookupEmailAddressesPublicInfoInput(
-                    emailAddresses = internalRecipients,
+                    emailAddresses = recipientsAndSender,
                 )
                 val emailAddressesPublicInfo = lookupEmailAddressesPublicInfo(lookupPublicInfoInput)
 
@@ -1013,8 +1017,7 @@ internal class DefaultSudoEmailClient(
             )
 
             if (encryptionStatus == EncryptionStatus.ENCRYPTED) {
-                val keyIds = emailAddressesPublicInfo.map { it.keyId }.toSet()
-                val encryptedEmailMessage = emailCryptoService.encrypt(rfc822Data, keyIds)
+                val encryptedEmailMessage = emailCryptoService.encrypt(rfc822Data, emailAddressesPublicInfo)
                 val secureAttachments = encryptedEmailMessage.toList()
 
                 // Encode the RFC 822 data with the secureAttachments
@@ -2263,9 +2266,9 @@ internal class DefaultSudoEmailClient(
             return SudoEmailClient.EmailMessageException.EmailMessageNotFoundException(
                 EMAIL_MESSAGE_NOT_FOUND_MSG,
             )
-        } else if (error.contains(SERVICE_ERROR)) {
-            return SudoEmailClient.EmailMessageException.EmailMessageNotFoundException(
-                SUDO_NOT_FOUND_MSG,
+        } else if (error.contains(ERROR_SERVICE_QUOTA_EXCEEDED)) {
+            return SudoEmailClient.EmailMessageException.LimitExceededException(
+                SERVICE_QUOTA_EXCEEDED_ERROR_MSG,
             )
         }
         return SudoEmailClient.EmailMessageException.FailedException(e.toString())

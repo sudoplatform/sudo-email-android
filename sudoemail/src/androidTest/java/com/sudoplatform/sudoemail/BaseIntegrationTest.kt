@@ -22,6 +22,7 @@ import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
@@ -254,7 +255,11 @@ abstract class BaseIntegrationTest {
         )
         val pref = if (safePrefix.endsWith("-")) safePrefix else "$safePrefix-"
         val uuid = UUID.randomUUID().toString().map { it.toString() }
-        return (pref + uuid.map { safeMap[it] }.joinToString(""))
+        val localPart = (pref + uuid.map { safeMap[it] }.joinToString(""))
+        if (localPart.length > 64) {
+            return localPart.substring(0, 63)
+        }
+        return localPart
     }
 
     protected suspend fun provisionEmailAddress(
@@ -263,11 +268,12 @@ abstract class BaseIntegrationTest {
         address: String? = null,
         alias: String? = null,
         keyId: String? = null,
+        prefix: String? = null,
     ): EmailAddress {
         val emailDomains = client.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 
-        val localPart = generateSafeLocalPart()
+        val localPart = generateSafeLocalPart(prefix)
         val emailAddress = address ?: (localPart + "@" + emailDomains.first())
         val provisionInput = ProvisionEmailAddressInput(
             emailAddress = emailAddress,
@@ -281,15 +287,20 @@ abstract class BaseIntegrationTest {
     protected suspend fun sendEmailMessage(
         client: SudoEmailClient,
         fromAddress: EmailAddress,
-        toAddresses: List<EmailMessage.EmailAddress> = listOf(EmailMessage.EmailAddress(toSimulatorAddress)),
+        toAddresses: List<EmailMessage.EmailAddress> = listOf(
+            EmailMessage.EmailAddress(
+                toSimulatorAddress,
+            ),
+        ),
         ccAddresses: List<EmailMessage.EmailAddress> = emptyList(),
         bccAddresses: List<EmailMessage.EmailAddress> = emptyList(),
         replyToAddresses: List<EmailMessage.EmailAddress> = emptyList(),
         body: String? = null,
         attachments: List<EmailAttachment> = emptyList(),
         inlineAttachments: List<EmailAttachment> = emptyList(),
+        subject: String? = null,
     ): SendEmailMessageResult {
-        val messageSubject = "Hello ${UUID.randomUUID()}"
+        val messageSubject = subject ?: "Hello ${UUID.randomUUID()}"
         val emailBody = body ?: buildString {
             for (i in 0 until 500) {
                 appendLine("Body of message ${UUID.randomUUID()}")
@@ -348,6 +359,23 @@ abstract class BaseIntegrationTest {
                 runBlocking {
                     with(emailClient) {
                         listEmailMessages(listInput)
+                    }
+                }
+            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == count }
+    }
+
+    /** Wait for multiple messages to arrive. */
+    protected fun waitForMessagesByFolder(
+        count: Int,
+        listInput: ListEmailMessagesForEmailFolderIdInput,
+    ): ListAPIResult<EmailMessage, PartialEmailMessage> {
+        return await
+            .atMost(Duration.ONE_MINUTE)
+            .pollInterval(Duration.TWO_HUNDRED_MILLISECONDS)
+            .untilCallTo {
+                runBlocking {
+                    with(emailClient) {
+                        listEmailMessagesForEmailFolderId(listInput)
                     }
                 }
             } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == count }

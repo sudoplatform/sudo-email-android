@@ -13,6 +13,7 @@ import com.sudoplatform.sudoemail.secure.types.ENCRYPTED_KEY_JSON
 import com.sudoplatform.sudoemail.secure.types.PUBLIC_KEY_ID_JSON
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
+import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -40,7 +41,14 @@ import java.util.Base64
  */
 class EmailCryptoServiceTest : BaseTests() {
 
-    private val stubKeyIds = setOf("keyId1", "keyId2")
+    private val stubPublicInfo = listOf(
+        EmailAddressPublicInfo(
+            "foo@bar.com",
+            "keyId1",
+            "publicKey1",
+        ),
+        EmailAddressPublicInfo("foo@bar.com", "keyId2", "publicKey2"),
+    )
 
     private val encryptedData = Base64.getEncoder().encodeToString("encryptedData".toByteArray())
     private val initVectorKeyID =
@@ -77,7 +85,7 @@ class EmailCryptoServiceTest : BaseTests() {
             on { generateRandomSymmetricKey() } doReturn ByteArray(42)
             on { createRandomData(anyInt()) } doReturn ByteArray(42)
             on { encryptWithSymmetricKey(any(), any(), any()) } doReturn ByteArray(42)
-            on { encryptWithKeyPairId(anyString(), any(), any()) } doReturn ByteArray(42)
+            on { encryptWithPublicKey(any(), any(), any()) } doReturn ByteArray(42)
             on { privateKeyExists(anyString()) } doReturn true
             on { decryptWithKeyPairId(any(), anyString(), any()) } doReturn ByteArray(42)
             on { decryptWithSymmetricKey(any(), any(), any()) } doReturn ByteArray(42)
@@ -98,8 +106,16 @@ class EmailCryptoServiceTest : BaseTests() {
 
     @Test
     fun `encrypt() should return results when no error present`() = runTest {
+        val stubPublicInfo = listOf(
+            EmailAddressPublicInfo(
+                "foo@bar.com",
+                "keyId1",
+                encryptedData,
+            ),
+            EmailAddressPublicInfo("foo@bar.com", "keyId2", encryptedData),
+        )
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            emailCryptoService.encrypt(stubData.toByteArray(), stubKeyIds)
+            emailCryptoService.encrypt(stubData.toByteArray(), stubPublicInfo)
         }
 
         deferredResult.start()
@@ -129,7 +145,7 @@ class EmailCryptoServiceTest : BaseTests() {
         verify(mockDeviceKeyManager).generateRandomSymmetricKey()
         verify(mockDeviceKeyManager).createRandomData(anyInt())
         verify(mockDeviceKeyManager).encryptWithSymmetricKey(any(), any(), any())
-        verify(mockDeviceKeyManager, times(2)).encryptWithKeyPairId(anyString(), any(), any())
+        verify(mockDeviceKeyManager, times(2)).encryptWithPublicKey(any(), any(), any())
     }
 
     @Test
@@ -138,7 +154,7 @@ class EmailCryptoServiceTest : BaseTests() {
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                emailCryptoService.encrypt(data, stubKeyIds)
+                emailCryptoService.encrypt(data, stubPublicInfo)
             }
         }
         deferredResult.start()
@@ -151,7 +167,7 @@ class EmailCryptoServiceTest : BaseTests() {
     fun `encrypt() should throw error if keyIds are empty`() = runTest {
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                emailCryptoService.encrypt(stubData.toByteArray(), emptySet())
+                emailCryptoService.encrypt(stubData.toByteArray(), emptyList())
             }
         }
         deferredResult.start()
@@ -169,7 +185,7 @@ class EmailCryptoServiceTest : BaseTests() {
         }
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<EmailCryptoService.EmailCryptoServiceException.SecureDataEncryptionException> {
-                emailCryptoService.encrypt(stubData.toByteArray(), stubKeyIds)
+                emailCryptoService.encrypt(stubData.toByteArray(), stubPublicInfo)
             }
         }
         deferredResult.start()

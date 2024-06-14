@@ -176,6 +176,20 @@ internal open class DefaultDeviceKeyManager(
     }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun encryptWithPublicKey(
+        key: ByteArray,
+        data: ByteArray,
+        algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
+    ): ByteArray {
+        try {
+            return keyManager.encryptWithPublicKey(key, data, algorithm)
+        } catch (e: KeyManagerException) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)
+        }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
     override fun decryptWithSymmetricKey(key: ByteArray, data: ByteArray, initVector: ByteArray?): ByteArray {
         return try {
             if (initVector != null) {

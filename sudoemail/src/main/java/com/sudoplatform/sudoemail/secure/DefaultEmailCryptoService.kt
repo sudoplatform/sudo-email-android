@@ -6,6 +6,7 @@
 
 package com.sudoplatform.sudoemail.secure
 
+import com.amazonaws.util.Base64
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.secure.EmailCryptoService.Companion.IV_SIZE
@@ -15,6 +16,7 @@ import com.sudoplatform.sudoemail.secure.types.SealedKeyComponents
 import com.sudoplatform.sudoemail.secure.types.SecureData
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
+import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudokeymanager.KeyManagerInterface.PublicKeyEncryptionAlgorithm
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
@@ -41,8 +43,8 @@ internal class DefaultEmailCryptoService(
     }
 
     @Throws(EmailCryptoServiceException::class)
-    override suspend fun encrypt(data: ByteArray, keyIds: Set<String>): SecurePackage {
-        if (data.isEmpty() || keyIds.isEmpty()) {
+    override suspend fun encrypt(data: ByteArray, emailAddressPublicInfo: List<EmailAddressPublicInfo>): SecurePackage {
+        if (data.isEmpty() || emailAddressPublicInfo.isEmpty()) {
             throw EmailCryptoServiceException.InvalidArgumentException()
         }
 
@@ -66,12 +68,13 @@ internal class DefaultEmailCryptoService(
                 buildEmailAttachment(serializedBodyData, SecureEmailAttachmentType.BODY)
 
             // Iterate through each public key for each recipient and encrypt the symmetric key with the public key
-            val secureKeyAttachments = keyIds.mapIndexed { index, keyId ->
+            val distinctPublicInfo = emailAddressPublicInfo.distinctBy { it.keyId }
+            val secureKeyAttachments = distinctPublicInfo.mapIndexed { index, publicInfo ->
                 // Seal the symmetric key using the publicKey and RSA_ECB_OAEPSHA1 algorithm
                 val sealedKey =
-                    SealedKey(keyId, symmetricKey, PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1)
-                val encryptedSymmetricKey = deviceKeyManager.encryptWithKeyPairId(
-                    keyId,
+                    SealedKey(publicInfo.keyId, symmetricKey, PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1)
+                val encryptedSymmetricKey = deviceKeyManager.encryptWithPublicKey(
+                    Base64.decode(publicInfo.publicKey),
                     sealedKey.symmetricKey,
                     sealedKey.algorithm,
                 )

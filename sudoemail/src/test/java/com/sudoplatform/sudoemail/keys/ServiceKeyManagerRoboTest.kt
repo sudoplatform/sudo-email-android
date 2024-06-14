@@ -132,6 +132,19 @@ class ServiceKeyManagerRoboTest : BaseTests() {
         )
         decryptedData shouldBe clearData
 
+        val clearData2 = "hello world2".toByteArray()
+        val secretData2 = serviceKeyManager.encryptWithPublicKey(
+            newKeyPair.publicKey,
+            clearData2,
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+        )
+        val decryptedData2 = serviceKeyManager.decryptWithKeyPairId(
+            secretData2,
+            newKeyPair.keyId,
+            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+        )
+        decryptedData2 shouldBe clearData2
+
         keyManager.generateSymmetricKey("symmetricKey")
         val symmetricKey = serviceKeyManager.getSymmetricKeyData("symmetricKey")
         symmetricKey shouldNotBe null
@@ -147,10 +160,10 @@ class ServiceKeyManagerRoboTest : BaseTests() {
         val symmetricKeyExists = serviceKeyManager.symmetricKeyExists("symmetricKey")
         symmetricKeyExists shouldBe true
 
-        val clearData2 = "hello world2".toByteArray()
-        val secretData2 = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData2, randomData)
-        val decryptedData2 = serviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData2, randomData)
-        decryptedData2 shouldBe clearData2
+        val clearData3 = "hello world3".toByteArray()
+        val secretData3 = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData3, randomData)
+        val decryptedData3 = serviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData3, randomData)
+        decryptedData3 shouldBe clearData3
     }
 
     @Test

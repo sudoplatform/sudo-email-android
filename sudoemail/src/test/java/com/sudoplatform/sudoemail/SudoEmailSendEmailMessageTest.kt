@@ -985,13 +985,16 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             testSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>(
                 "InvalidEmailContents",
             )
+            testSendException<SudoEmailClient.EmailMessageException.LimitExceededException>(
+                "ServiceQuotaExceededError",
+            )
             testSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>("UnauthorizedAddress")
             testSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
-            verify(mockAppSyncClient, times(3)).query(any<GetEmailDomainsQuery>())
-            verify(mockAppSyncClient, times(3)).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient, times(3)).mutate(any<SendEmailMessageMutation>())
-            verify(mockEmailMessageProcessor, times(3)).encodeToInternetMessageData(
+            verify(mockAppSyncClient, times(4)).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient, times(4)).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient, times(4)).mutate(any<SendEmailMessageMutation>())
+            verify(mockEmailMessageProcessor, times(4)).encodeToInternetMessageData(
                 anyString(),
                 any(),
                 any(),
@@ -1002,8 +1005,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
             )
-            verify(mockS3Client, times(3)).upload(any(), anyString(), anyOrNull())
-            verify(mockS3Client, times(3)).delete(anyString())
+            verify(mockS3Client, times(4)).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client, times(4)).delete(anyString())
         }
 
     @Test
@@ -1012,16 +1015,19 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             testEncryptedSendException<SudoEmailClient.EmailMessageException.InvalidMessageContentException>(
                 "InvalidEmailContents",
             )
+            testEncryptedSendException<SudoEmailClient.EmailMessageException.LimitExceededException>(
+                "ServiceQuotaExceededError",
+            )
             testEncryptedSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>(
                 "UnauthorizedAddress",
             )
             testEncryptedSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
-            verify(mockAppSyncClient, times(3)).query(any<GetEmailDomainsQuery>())
-            verify(mockAppSyncClient, times(3)).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient, times(3)).query(any<LookupEmailAddressesPublicInfoQuery>())
-            verify(mockAppSyncClient, times(3)).mutate(any<SendEncryptedEmailMessageMutation>())
-            verify(mockEmailMessageProcessor, times(6)).encodeToInternetMessageData(
+            verify(mockAppSyncClient, times(4)).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient, times(4)).query(any<GetEmailConfigQuery>())
+            verify(mockAppSyncClient, times(4)).query(any<LookupEmailAddressesPublicInfoQuery>())
+            verify(mockAppSyncClient, times(4)).mutate(any<SendEncryptedEmailMessageMutation>())
+            verify(mockEmailMessageProcessor, times(8)).encodeToInternetMessageData(
                 anyString(),
                 any(),
                 any(),
@@ -1032,12 +1038,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
             )
-            verify(mockEmailCryptoService, times(3)).encrypt(
+            verify(mockEmailCryptoService, times(4)).encrypt(
                 any(),
                 any(),
             )
-            verify(mockS3Client, times(3)).upload(any(), anyString(), anyOrNull())
-            verify(mockS3Client, times(3)).delete(anyString())
+            verify(mockS3Client, times(4)).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client, times(4)).delete(anyString())
         }
 
     @Test

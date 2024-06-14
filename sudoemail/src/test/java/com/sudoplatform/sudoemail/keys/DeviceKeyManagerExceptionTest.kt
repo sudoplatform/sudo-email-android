@@ -38,9 +38,6 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         }
     }
 
-    private val mockDeviceKeyManager by before {
-        mock<DeviceKeyManager>()
-    }
     private val mockKeyManager by before {
         mock<KeyManagerInterface>()
     }
@@ -177,6 +174,20 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
             serviceKeyManager.encryptWithKeyPairId(
                 "42",
+                ByteArray(42),
+                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+            )
+        }
+    }
+
+    @Test
+    fun encryptWithPublicKeyShouldThrowIfKeyManagerThrows() {
+        mockKeyManager.stub {
+            on { encryptWithPublicKey(any<ByteArray>(), any<ByteArray>(), any()) } doThrow KeyManagerException("mock")
+        }
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
+            serviceKeyManager.encryptWithPublicKey(
+                ByteArray(42),
                 ByteArray(42),
                 KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
             )

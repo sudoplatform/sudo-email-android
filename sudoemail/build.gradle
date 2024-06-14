@@ -18,7 +18,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 33
         versionCode = 1
-        versionName = "15.0.2"
+        versionName = "15.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -96,7 +96,7 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
 
     // Sudo Platform
-    implementation 'com.sudoplatform:sudokeymanager:7.2.1'
+    implementation 'com.sudoplatform:sudokeymanager:7.3.0'
     implementation "com.sudoplatform:sudologging:4.0.0"
     implementation "com.sudoplatform:sudoconfigmanager:7.0.2"
     implementation 'com.sudoplatform:sudouser:18.0.1'

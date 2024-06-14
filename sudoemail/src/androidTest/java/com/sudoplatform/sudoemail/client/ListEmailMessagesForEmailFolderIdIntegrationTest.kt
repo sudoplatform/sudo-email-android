@@ -17,7 +17,6 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
-import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.SortOrder
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
@@ -30,12 +29,7 @@ import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.awaitility.Duration
-import org.awaitility.kotlin.await
-import org.awaitility.kotlin.has
-import org.awaitility.kotlin.untilCallTo
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -97,7 +91,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         }
 
         when (
-            val listEmailMessages = waitForMessages(
+            val listEmailMessages = waitForMessagesByFolder(
                 messageCount,
                 ListEmailMessagesForEmailFolderIdInput(
                     inboxFolder.id,
@@ -123,58 +117,73 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResultForInNetworkMessage() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResultForInNetworkMessage() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProofToken = ownershipProof, alias = "Ted Bear")
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
-            ?: fail("EmailFolder could not be found")
-
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val result = sendEmailMessage(
+            val emailAddress = provisionEmailAddress(
                 emailClient,
-                emailAddress,
-                toAddresses = listOf(
-                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
-                ),
+                ownershipProofToken = ownershipProof,
+                alias = "Ted Bear",
             )
-            result.id.isBlank() shouldBe false
-        }
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        when (
-            val listEmailMessages = waitForMessages(
-                messageCount,
-                ListEmailMessagesForEmailFolderIdInput(
-                    inboxFolder.id,
-                ),
-            )
-        ) {
-            is ListAPIResult.Success -> {
-                val inbound = listEmailMessages.result.items
-                inbound.size shouldBe messageCount
-                with(inbound[0]) {
-                    from shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    hasAttachments shouldBe false
-                    size shouldBeGreaterThan 0.0
-                    folderId shouldBe inboxFolder.id
+            val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
+                ?: fail("EmailFolder could not be found")
+
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                    toAddresses = listOf(
+                        EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                    ),
+                )
+                result.id.isBlank() shouldBe false
+            }
+
+            when (
+                val listEmailMessages = waitForMessagesByFolder(
+                    messageCount,
+                    ListEmailMessagesForEmailFolderIdInput(
+                        inboxFolder.id,
+                    ),
+                )
+            ) {
+                is ListAPIResult.Success -> {
+                    val inbound = listEmailMessages.result.items
+                    inbound.size shouldBe messageCount
+                    with(inbound[0]) {
+                        from shouldBe listOf(
+                            EmailMessage.EmailAddress(
+                                emailAddress.emailAddress,
+                                emailAddress.alias,
+                            ),
+                        )
+                        to shouldBe listOf(
+                            EmailMessage.EmailAddress(
+                                emailAddress.emailAddress,
+                                emailAddress.alias,
+                            ),
+                        )
+                        hasAttachments shouldBe false
+                        size shouldBeGreaterThan 0.0
+                        folderId shouldBe inboxFolder.id
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
-
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
         }
-    }
 
     @Test
     fun listEmailMessagesForEmailFolderIdShouldRespectLimit() = runTest {
@@ -214,7 +223,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             limit = 1,
         )
         when (
-            val listEmailMessages = waitForMessages(
+            val listEmailMessages = waitForMessagesByFolder(
                 1,
                 listEmailMessagesInput,
             )
@@ -273,7 +282,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             ),
         )
         when (
-            val listEmailMessages = waitForMessages(
+            val listEmailMessages = waitForMessagesByFolder(
                 messageCount,
                 listEmailMessagesInput,
             )
@@ -339,7 +348,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             ),
         )
         when (
-            val listEmailMessages = waitForMessages(
+            val listEmailMessages = waitForMessagesByFolder(
                 messageCount,
                 listEmailMessagesInput,
             )
@@ -666,7 +675,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             sortOrder = SortOrder.ASC,
         )
         when (
-            val listEmailMessages = waitForMessages(
+            val listEmailMessages = waitForMessagesByFolder(
                 messageCount,
                 listEmailMessagesInput,
             )
@@ -727,7 +736,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             sortOrder = SortOrder.DESC,
         )
         when (
-            val listEmailMessages = waitForMessages(
+            val listEmailMessages = waitForMessagesByFolder(
                 messageCount,
                 listEmailMessagesInput,
             )
@@ -789,7 +798,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 sortOrder = SortOrder.DESC,
             )
             when (
-                val listEmailMessages = waitForMessages(
+                val listEmailMessages = waitForMessagesByFolder(
                     0,
                     listEmailMessagesInput,
                 )
@@ -882,22 +891,5 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 fail("Unexpected ListAPIResult")
             }
         }
-    }
-
-    /** Wait for multiple messages to arrive. */
-    private fun waitForMessages(
-        count: Int,
-        listInput: ListEmailMessagesForEmailFolderIdInput,
-    ): ListAPIResult<EmailMessage, PartialEmailMessage> {
-        return await
-            .atMost(Duration.ONE_MINUTE)
-            .pollInterval(Duration.TWO_HUNDRED_MILLISECONDS)
-            .untilCallTo {
-                runBlocking {
-                    with(emailClient) {
-                        listEmailMessagesForEmailFolderId(listInput)
-                    }
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == count }
     }
 }
