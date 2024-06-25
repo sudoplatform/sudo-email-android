@@ -19,6 +19,7 @@ import com.sudoplatform.sudoemail.types.EncryptionStatus
 import com.sudoplatform.sudoemail.types.Owner
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.State
+import java.util.Date
 
 /**
  * Data class used to deserialize the email message RFC822 header value.
@@ -33,6 +34,7 @@ internal data class EmailHeaderDetails(
     val replyTo: List<EmailMessage.EmailAddress>,
     val hasAttachments: Boolean = false,
     val subject: String? = null,
+    val date: Date? = null,
 )
 
 /**
@@ -84,6 +86,7 @@ internal object EmailMessageTransformer {
             hasAttachments = unsealedRfc822Header.hasAttachments,
             encryptionStatus = sealedEmailMessage.encryptionStatus()
                 ?.toEmailMessageEncryptionStatus() ?: EncryptionStatus.UNENCRYPTED,
+            date = unsealedRfc822Header.date,
         )
     }
 

@@ -38,7 +38,6 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
-import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -63,24 +62,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailMessageTest : BaseTests() {
-
-    private fun mockSeal(value: String): String {
-        val valueBytes = value.toByteArray()
-        val data = ByteArray(256)
-        valueBytes.copyInto(data)
-        return Base64.encodeBase64String(data)
-    }
-
-    private val unsealedHeaderDetailsString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[{\"emailAddress\":\"foobar@unittest.org\"}],\"replyTo\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"subject\":" +
-            "\"testSubject\",\"hasAttachments\":false}"
-    private val unsealedHeaderDetailsHasAttachmentsTrueString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[],\"replyTo\":[],\"subject\":\"testSubject\",\"hasAttachments\":true}"
-    private val unsealedHeaderDetailsHasAttachmentsUnsetString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[],\"replyTo\":[],\"subject\":\"testSubject\"}"
 
     private val queryResult by before {
         GetEmailMessageQuery.GetEmailMessage(
@@ -251,6 +232,60 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
             state shouldBe State.DELIVERED
             createdAt shouldBe Date(1L)
             updatedAt shouldBe Date(1L)
+            date shouldBe null
+        }
+
+        verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
+            check {
+                it.variables().id() shouldBe "emailMessageId"
+            },
+        )
+        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+    }
+
+    @Test
+    fun `getEmailMessage() should return results when date is set`() = runTest {
+        mockKeyManager.stub {
+            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                unsealedHeaderDetailsWithDateString.toByteArray()
+        }
+
+        holder.callback shouldBe null
+
+        val input = GetEmailMessageInput(id = "emailMessageId")
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+            client.getEmailMessage(input)
+        }
+        deferredResult.start()
+
+        delay(100L)
+        holder.callback shouldNotBe null
+        holder.callback?.onResponse(response)
+
+        val result = deferredResult.await()
+        result shouldNotBe null
+
+        val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+        with(result!!) {
+            id shouldBe "id"
+            owner shouldBe "owner"
+            owners shouldBe emptyList()
+            emailAddressId shouldBe "emailAddressId"
+            clientRefId shouldBe "clientRefId"
+            from.shouldContainExactlyInAnyOrder(addresses)
+            to.shouldContainExactlyInAnyOrder(addresses)
+            cc.shouldContainExactlyInAnyOrder(addresses)
+            replyTo.shouldContainExactlyInAnyOrder(addresses)
+            bcc.isEmpty() shouldBe true
+            direction shouldBe Direction.INBOUND
+            subject shouldBe "testSubject"
+            hasAttachments shouldBe false
+            seen shouldBe false
+            state shouldBe State.DELIVERED
+            createdAt shouldBe Date(1L)
+            updatedAt shouldBe Date(1L)
+            date shouldBe Date(2L)
         }
 
         verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
@@ -304,6 +339,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
                 state shouldBe State.DELIVERED
                 createdAt shouldBe Date(1L)
                 updatedAt shouldBe Date(1L)
+                date shouldBe Date(2L)
             }
 
             verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(
@@ -357,6 +393,7 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
                 state shouldBe State.DELIVERED
                 createdAt shouldBe Date(1L)
                 updatedAt shouldBe Date(1L)
+                date shouldBe Date(2L)
             }
 
             verify(mockAppSyncClient).query<GetEmailMessageQuery.Data, GetEmailMessageQuery, GetEmailMessageQuery.Variables>(

@@ -32,7 +32,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -57,17 +56,6 @@ import java.util.UUID
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetDraftEmailMessageTest : BaseTests() {
-    private fun mockSeal(value: String): String {
-        val valueBytes = value.toByteArray()
-        val data = ByteArray(256)
-        valueBytes.copyInto(data)
-        return Base64.encodeBase64String(data)
-    }
-
-    private val unsealedHeaderDetailsString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[{\"emailAddress\":\"foobar@unittest.org\"}],\"replyTo\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"subject\":" +
-            "\"testSubject\",\"hasAttachments\":false}"
 
     private val mockUserMetadata = listOf(
         "keyId" to "keyId",
@@ -162,7 +150,12 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     private val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doReturn ByteArray(42)
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn unsealedHeaderDetailsString.toByteArray()
+            on {
+                decryptWithSymmetricKey(
+                    any<ByteArray>(),
+                    any<ByteArray>(),
+                )
+            } doReturn unsealedHeaderDetailsString.toByteArray()
         }
     }
 
@@ -261,85 +254,87 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getDraftEmailMessage() should log and throw an error if sender address not found`() = runTest {
-        holder.callback shouldBe null
+    fun `getDraftEmailMessage() should log and throw an error if sender address not found`() =
+        runTest {
+            holder.callback shouldBe null
 
-        val error = com.apollographql.apollo.api.Error(
-            "mock",
-            emptyList(),
-            mapOf("errorType" to "AddressNotFound"),
-        )
+            val error = com.apollographql.apollo.api.Error(
+                "mock",
+                emptyList(),
+                mapOf("errorType" to "AddressNotFound"),
+            )
 
-        val mockQuery by before {
-            GetEmailAddressQuery(mockEmailAddressIdInput)
-        }
-
-        val nullEmailResponse by before {
-            Response.builder<GetEmailAddressQuery.Data>(mockQuery)
-                .errors(listOf(error))
-                .data(null)
-                .build()
-        }
-
-        val mockDraftId = UUID.randomUUID()
-        val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                client.getDraftEmailMessage(input)
+            val mockQuery by before {
+                GetEmailAddressQuery(mockEmailAddressIdInput)
             }
+
+            val nullEmailResponse by before {
+                Response.builder<GetEmailAddressQuery.Data>(mockQuery)
+                    .errors(listOf(error))
+                    .data(null)
+                    .build()
+            }
+
+            val mockDraftId = UUID.randomUUID()
+            val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                    client.getDraftEmailMessage(input)
+                }
+            }
+
+            deferredResult.start()
+            delay(100L)
+
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(nullEmailResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
         }
-
-        deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(nullEmailResponse)
-
-        deferredResult.await()
-
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
-    }
 
     @Test
-    fun `getDraftEmailMessage() should log and throw an error if draft message is not found`() = runTest {
-        holder.callback shouldBe null
+    fun `getDraftEmailMessage() should log and throw an error if draft message is not found`() =
+        runTest {
+            holder.callback shouldBe null
 
-        val error = AmazonS3Exception("Not found")
-        error.errorCode = "404 Not Found"
-        mockS3Client.stub {
-            onBlocking {
-                download(anyString())
-            } doThrow error
-        }
-
-        val mockDraftId = UUID.randomUUID()
-        val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
-                client.getDraftEmailMessage(input)
+            val error = AmazonS3Exception("Not found")
+            error.errorCode = "404 Not Found"
+            mockS3Client.stub {
+                onBlocking {
+                    download(anyString())
+                } doThrow error
             }
+
+            val mockDraftId = UUID.randomUUID()
+            val input = GetDraftEmailMessageInput(mockDraftId.toString(), mockEmailAddressIdInput)
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
+                    client.getDraftEmailMessage(input)
+                }
+            }
+
+            deferredResult.start()
+            delay(100L)
+
+            holder.callback shouldNotBe null
+            holder.callback?.onResponse(emailAddressQueryResponse)
+
+            deferredResult.await()
+
+            verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
+            verify(mockS3Client).download(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
         }
-
-        deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(emailAddressQueryResponse)
-
-        deferredResult.await()
-
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
-        verify(mockS3Client).getObjectMetadata(
-            check {
-                it shouldContain mockDraftId.toString()
-            },
-        )
-        verify(mockS3Client).download(
-            check {
-                it shouldContain mockDraftId.toString()
-            },
-        )
-    }
 
     @Test
     fun `getDraftEmailMessage() should throw error if no keyId is found in s3Object`() = runTest {

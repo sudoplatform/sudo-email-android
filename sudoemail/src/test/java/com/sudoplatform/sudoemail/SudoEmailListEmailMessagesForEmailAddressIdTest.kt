@@ -47,7 +47,6 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.ResponseBody.Companion.toResponseBody
-import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -75,29 +74,11 @@ import com.sudoplatform.sudoemail.graphql.type.SortOrder as SortOrderEntity
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
-    private fun mockSeal(value: String): String {
-        val valueBytes = value.toByteArray()
-        val data = ByteArray(256)
-        valueBytes.copyInto(data)
-        return Base64.encodeBase64String(data)
-    }
-
     private val input by before {
         ListEmailMessagesForEmailAddressIdRequest.builder()
             .emailAddressId("emailAddressId")
             .build()
     }
-
-    private val unsealedHeaderDetailsString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[{\"emailAddress\":\"foobar@unittest.org\"}],\"replyTo\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"subject\":" +
-            "\"testSubject\",\"hasAttachments\":false}"
-    private val unsealedHeaderDetailsHasAttachmentsTrueString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[],\"replyTo\":[],\"subject\":\"testSubject\",\"hasAttachments\":true}"
-    private val unsealedHeaderDetailsHasAttachmentsUnsetString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[],\"replyTo\":[],\"subject\":\"testSubject\"}"
 
     private val queryResultItem by before {
         ListEmailMessagesForEmailAddressIdQuery.Item(
@@ -298,6 +279,102 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                         state shouldBe State.DELIVERED
                         createdAt shouldBe Date(1L)
                         updatedAt shouldBe Date(1L)
+                        date shouldBe null
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            verify(mockAppSyncClient)
+                .query<
+                    ListEmailMessagesForEmailAddressIdQuery.Data,
+                    ListEmailMessagesForEmailAddressIdQuery,
+                    ListEmailMessagesForEmailAddressIdQuery.Variables,
+                    >(
+                    check {
+                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
+                        it.variables().input().limit() shouldBe 1
+                        it.variables().input().nextToken() shouldBe null
+                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                            ?.startDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                            ?.endDateEpochMs()?.shouldBeLessThan(
+                                Date().time.toDouble(),
+                            )
+                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    },
+                )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `listEmailMessagesForEmailAddressId() should return results when date is set`() =
+        runTest {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    unsealedHeaderDetailsWithDateString.toByteArray()
+            }
+
+            queryHolder.callback shouldBe null
+
+            val input = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = "emailAddressId",
+                limit = 1,
+                nextToken = null,
+                dateRange = EmailMessageDateRange(
+                    sortDate = DateRange(Date(), Date()),
+                ),
+                sortOrder = SortOrder.DESC,
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.listEmailMessagesForEmailAddressId(
+                    input,
+                )
+            }
+            deferredResult.start()
+
+            delay(100L)
+            queryHolder.callback shouldNotBe null
+            queryHolder.callback?.onResponse(queryResponse)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
+
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
+
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners shouldBe emptyList()
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.shouldContainExactlyInAnyOrder(addresses)
+                        replyTo.shouldContainExactlyInAnyOrder(addresses)
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe false
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                        date shouldBe Date(2L)
                     }
                 }
 
@@ -392,6 +469,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                         state shouldBe State.DELIVERED
                         createdAt shouldBe Date(1L)
                         updatedAt shouldBe Date(1L)
+                        date shouldBe Date(2L)
                     }
                 }
 
@@ -486,6 +564,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                         state shouldBe State.DELIVERED
                         createdAt shouldBe Date(1L)
                         updatedAt shouldBe Date(1L)
+                        date shouldBe Date(2L)
                     }
                 }
 
@@ -580,6 +659,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                         state shouldBe State.DELIVERED
                         createdAt shouldBe Date(1L)
                         updatedAt shouldBe Date(1L)
+                        date shouldBe Date(2L)
                     }
                 }
 

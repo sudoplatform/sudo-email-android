@@ -107,6 +107,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
                     folderId shouldBe inboxFolder.id
+                    date.shouldBeInstanceOf<Date>()
                 }
             }
 
@@ -176,6 +177,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                         hasAttachments shouldBe false
                         size shouldBeGreaterThan 0.0
                         folderId shouldBe inboxFolder.id
+                        date.shouldBeInstanceOf<Date>()
                     }
                 }
 

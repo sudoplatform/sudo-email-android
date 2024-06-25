@@ -115,6 +115,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
+                    date.shouldBeInstanceOf<Date>()
                 }
                 inbound.size shouldBe messageCount
                 with(inbound[0]) {
@@ -122,6 +123,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                     to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
+                    date.shouldBeInstanceOf<Date>()
                 }
             }
 
@@ -132,66 +134,93 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListResultForInNetworkMessage() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListResultForInNetworkMessage() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProofToken = ownershipProof, alias = "Ted Bear")
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val result = sendEmailMessage(
+            val emailAddress = provisionEmailAddress(
                 emailClient,
-                emailAddress,
-                toAddresses = listOf(
-                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
-                ),
+                ownershipProofToken = ownershipProof,
+                alias = "Ted Bear",
             )
-            result.id.isBlank() shouldBe false
-        }
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        when (
-            val listEmailMessages = waitForMessages(
-                messageCount * 2,
-                ListEmailMessagesForEmailAddressIdInput(
-                    emailAddress.id,
-                ),
-            )
-        ) {
-            is ListAPIResult.Success -> {
-                val outbound = listEmailMessages.result.items.filter {
-                    it.direction == Direction.OUTBOUND
-                }
-                val inbound = listEmailMessages.result.items.filter {
-                    it.direction == Direction.INBOUND
-                }
-                outbound.size shouldBe messageCount
-                with(outbound[0]) {
-                    from shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    hasAttachments shouldBe false
-                    size shouldBeGreaterThan 0.0
-                }
-                inbound.size shouldBe messageCount
-                with(inbound[0]) {
-                    from shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    hasAttachments shouldBe false
-                    size shouldBeGreaterThan 0.0
-                }
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                    toAddresses = listOf(
+                        EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                    ),
+                )
+                result.id.isBlank() shouldBe false
             }
 
-            else -> {
-                fail("Unexpected ListAPIResult")
+            when (
+                val listEmailMessages = waitForMessages(
+                    messageCount * 2,
+                    ListEmailMessagesForEmailAddressIdInput(
+                        emailAddress.id,
+                    ),
+                )
+            ) {
+                is ListAPIResult.Success -> {
+                    val outbound = listEmailMessages.result.items.filter {
+                        it.direction == Direction.OUTBOUND
+                    }
+                    val inbound = listEmailMessages.result.items.filter {
+                        it.direction == Direction.INBOUND
+                    }
+                    outbound.size shouldBe messageCount
+                    with(outbound[0]) {
+                        from shouldBe listOf(
+                            EmailMessage.EmailAddress(
+                                emailAddress.emailAddress,
+                                emailAddress.alias,
+                            ),
+                        )
+                        to shouldBe listOf(
+                            EmailMessage.EmailAddress(
+                                emailAddress.emailAddress,
+                                emailAddress.alias,
+                            ),
+                        )
+                        hasAttachments shouldBe false
+                        size shouldBeGreaterThan 0.0
+                        date.shouldBeInstanceOf<Date>()
+                    }
+                    inbound.size shouldBe messageCount
+                    with(inbound[0]) {
+                        from shouldBe listOf(
+                            EmailMessage.EmailAddress(
+                                emailAddress.emailAddress,
+                                emailAddress.alias,
+                            ),
+                        )
+                        to shouldBe listOf(
+                            EmailMessage.EmailAddress(
+                                emailAddress.emailAddress,
+                                emailAddress.alias,
+                            ),
+                        )
+                        hasAttachments shouldBe false
+                        size shouldBeGreaterThan 0.0
+                        date.shouldBeInstanceOf<Date>()
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
         }
-    }
 
     @Test
     fun listEmailMessagesForEmailAddressIdShouldRespectLimit() = runTest {

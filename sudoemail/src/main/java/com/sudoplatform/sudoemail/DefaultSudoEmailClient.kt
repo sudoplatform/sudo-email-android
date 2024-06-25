@@ -225,7 +225,8 @@ internal class DefaultSudoEmailClient(
         private const val INVALID_EMAIL_ADDRESS_MSG = "Invalid email address"
         private const val INSUFFICIENT_ENTITLEMENTS_MSG = "Entitlements have been exceeded"
         private const val NO_EMAIL_ID_ERROR_MSG = "No email message identifier returned"
-        private const val IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG = "At least one email address does not exist in network"
+        private const val IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG =
+            "At least one email address does not exist in network"
         private const val INVALID_MESSAGE_CONTENT_MSG = "Invalid email message contents"
         private const val EMAIL_ADDRESS_NOT_FOUND_MSG = "Email address not found"
         private const val EMAIL_ADDRESS_UNAVAILABLE_MSG = "Email address is not available"
@@ -1017,7 +1018,8 @@ internal class DefaultSudoEmailClient(
             )
 
             if (encryptionStatus == EncryptionStatus.ENCRYPTED) {
-                val encryptedEmailMessage = emailCryptoService.encrypt(rfc822Data, emailAddressesPublicInfo)
+                val encryptedEmailMessage =
+                    emailCryptoService.encrypt(rfc822Data, emailAddressesPublicInfo)
                 val secureAttachments = encryptedEmailMessage.toList()
 
                 // Encode the RFC 822 data with the secureAttachments
@@ -1409,12 +1411,12 @@ internal class DefaultSudoEmailClient(
             val partials: MutableList<PartialResult<PartialEmailMessage>> = mutableListOf()
             for (sealedEmailMessage in sealedEmailMessages) {
                 try {
-                    val unsealerEmailMessage =
+                    val unsealedEmailMessage =
                         EmailMessageTransformer.toEntity(
                             serviceKeyManager,
                             sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
-                    success.add(unsealerEmailMessage)
+                    success.add(unsealedEmailMessage)
                 } catch (e: Exception) {
                     val partialEmailMessage =
                         EmailMessageTransformer.toPartialEntity(
@@ -1476,12 +1478,12 @@ internal class DefaultSudoEmailClient(
             val partials: MutableList<PartialResult<PartialEmailMessage>> = mutableListOf()
             for (sealedEmailMessage in sealedEmailMessages) {
                 try {
-                    val unsealerEmailMessage =
+                    val unsealedEmailMessage =
                         EmailMessageTransformer.toEntity(
                             serviceKeyManager,
                             sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
-                    success.add(unsealerEmailMessage)
+                    success.add(unsealedEmailMessage)
                 } catch (e: Exception) {
                     val partialEmailMessage =
                         EmailMessageTransformer.toPartialEntity(
@@ -1543,12 +1545,12 @@ internal class DefaultSudoEmailClient(
             val partials: MutableList<PartialResult<PartialEmailMessage>> = mutableListOf()
             for (sealedEmailMessage in sealedEmailMessages) {
                 try {
-                    val unsealerEmailMessage =
+                    val unsealedEmailMessage =
                         EmailMessageTransformer.toEntity(
                             serviceKeyManager,
                             sealedEmailMessage.fragments().sealedEmailMessage(),
                         )
-                    success.add(unsealerEmailMessage)
+                    success.add(unsealedEmailMessage)
                 } catch (e: Exception) {
                     val partialEmailMessage =
                         EmailMessageTransformer.toPartialEntity(
@@ -2159,7 +2161,10 @@ internal class DefaultSudoEmailClient(
 
     private fun handleSendEmailMessageException(e: Throwable): Throwable {
         return when (e) {
-            is NotAuthorizedException -> SudoEmailClient.EmailMessageException.AuthenticationException(cause = e)
+            is NotAuthorizedException -> SudoEmailClient.EmailMessageException.AuthenticationException(
+                cause = e,
+            )
+
             is ApolloException -> SudoEmailClient.EmailMessageException.SendFailedException(cause = e)
             else -> interpretEmailMessageException(e)
         }

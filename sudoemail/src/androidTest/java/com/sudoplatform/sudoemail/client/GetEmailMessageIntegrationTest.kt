@@ -16,6 +16,7 @@ import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
+import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.test.runTest
@@ -23,6 +24,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.Date
 
 /**
  * Test the operation of [SudoEmailClient.getEmailMessage].
@@ -72,6 +74,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
             to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
+            date.shouldBeInstanceOf<Date>()
         }
     }
 
@@ -84,7 +87,11 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
         val ownershipProof = getOwnershipProof(sudo)
         ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProofToken = ownershipProof, alias = "Ted Bear")
+        val emailAddress = provisionEmailAddress(
+            emailClient,
+            ownershipProofToken = ownershipProof,
+            alias = "Ted Bear",
+        )
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
@@ -102,10 +109,14 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
         val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message not found")
         with(retrievedEmailMessage) {
-            from.firstOrNull() shouldBe EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias)
+            from.firstOrNull() shouldBe EmailMessage.EmailAddress(
+                emailAddress.emailAddress,
+                emailAddress.alias,
+            )
             to shouldBe listOf(EmailMessage.EmailAddress(toSimulatorAddress, emailAddress.alias))
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
+            date.shouldBeInstanceOf<Date>()
         }
     }
 
@@ -118,7 +129,11 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
         val ownershipProof = getOwnershipProof(sudo)
         ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProofToken = ownershipProof, alias = "Ted Bear")
+        val emailAddress = provisionEmailAddress(
+            emailClient,
+            ownershipProofToken = ownershipProof,
+            alias = "Ted Bear",
+        )
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
@@ -136,10 +151,19 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
         val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
             ?: fail("Email message not found")
         with(retrievedEmailMessage) {
-            from.firstOrNull() shouldBe EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias)
-            to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
+            from.firstOrNull() shouldBe EmailMessage.EmailAddress(
+                emailAddress.emailAddress,
+                emailAddress.alias,
+            )
+            to shouldBe listOf(
+                EmailMessage.EmailAddress(
+                    emailAddress.emailAddress,
+                    emailAddress.alias,
+                ),
+            )
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
+            date.shouldBeInstanceOf<Date>()
         }
     }
 

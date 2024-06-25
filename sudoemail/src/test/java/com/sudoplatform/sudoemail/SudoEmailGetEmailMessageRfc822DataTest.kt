@@ -35,7 +35,6 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
 import okhttp3.ResponseBody.Companion.toResponseBody
-import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -62,19 +61,7 @@ import java.util.zip.GZIPOutputStream
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailMessageRfc822DataTest : BaseTests() {
 
-    private fun mockSeal(value: String): String {
-        val valueBytes = value.toByteArray()
-        val data = ByteArray(256)
-        valueBytes.copyInto(data)
-        return Base64.encodeBase64String(data)
-    }
-
     private val mockRfc822Metadata: ObjectMetadata = ObjectMetadata()
-
-    private val unsealedHeaderDetailsString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[{\"emailAddress\":\"foobar@unittest.org\"}],\"replyTo\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"subject\":" +
-            "\"testSubject\",\"hasAttachments\":false}"
 
     private val queryResult by before {
         GetEmailMessageQuery.GetEmailMessage(

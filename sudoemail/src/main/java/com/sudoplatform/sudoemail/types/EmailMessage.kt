@@ -73,6 +73,7 @@ data class EmailMessage(
     val receivedAt: Date? = null,
     val hasAttachments: Boolean,
     val encryptionStatus: EncryptionStatus,
+    val date: Date? = null,
 ) : Parcelable {
 
     /**
@@ -141,6 +142,7 @@ data class PartialEmailMessage(
     val updatedAt: Date,
     val size: Double,
     val encryptionStatus: EncryptionStatus,
+    val date: Date? = null,
 ) : Parcelable {
 
     /**

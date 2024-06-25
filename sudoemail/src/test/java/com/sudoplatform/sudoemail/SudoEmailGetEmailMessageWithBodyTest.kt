@@ -63,13 +63,6 @@ import java.util.zip.GZIPOutputStream
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
-    private fun mockSeal(value: String): String {
-        val valueBytes = value.toByteArray()
-        val data = ByteArray(256)
-        valueBytes.copyInto(data)
-        return Base64.encodeBase64String(data)
-    }
-
     private val mockRfc822Metadata: ObjectMetadata = ObjectMetadata()
 
     private val emailMessage = SimplifiedEmailMessage(
@@ -81,10 +74,6 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
         "email message body",
         false,
     )
-    private val unsealedHeaderDetailsString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[{\"emailAddress\":\"foobar@unittest.org\"}],\"replyTo\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"subject\":" +
-            "\"testSubject\",\"hasAttachments\":false}"
 
     private val queryResult by before {
         GetEmailMessageQuery.GetEmailMessage(

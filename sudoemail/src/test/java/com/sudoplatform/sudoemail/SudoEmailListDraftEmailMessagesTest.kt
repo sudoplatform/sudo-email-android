@@ -34,7 +34,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.apache.commons.codec.binary.Base64
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -58,18 +57,6 @@ import java.util.Date
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailListDraftEmailMessagesTest : BaseTests() {
-
-    private fun mockSeal(value: String): String {
-        val valueBytes = value.toByteArray()
-        val data = ByteArray(256)
-        valueBytes.copyInto(data)
-        return Base64.encodeBase64String(data)
-    }
-
-    private val unsealedHeaderDetailsString =
-        "{\"bcc\":[],\"to\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"from\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"cc\":" +
-            "[{\"emailAddress\":\"foobar@unittest.org\"}],\"replyTo\":[{\"emailAddress\":\"foobar@unittest.org\"}],\"subject\":" +
-            "\"testSubject\",\"hasAttachments\":false}"
 
     private val mockUserMetadata = listOf(
         "keyId" to "keyId",
@@ -215,7 +202,12 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     private val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
             on { decryptWithPrivateKey(anyString(), any(), any()) } doReturn ByteArray(42)
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn unsealedHeaderDetailsString.toByteArray()
+            on {
+                decryptWithSymmetricKey(
+                    any<ByteArray>(),
+                    any<ByteArray>(),
+                )
+            } doReturn unsealedHeaderDetailsString.toByteArray()
         }
     }
 
@@ -384,38 +376,39 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listDraftEmailMessages() should return an empty list if no addresses found for user`() = runTest {
-        listEmailHolder.callback shouldBe null
+    fun `listDraftEmailMessages() should return an empty list if no addresses found for user`() =
+        runTest {
+            listEmailHolder.callback shouldBe null
 
-        val queryResultWithEmptyList by before {
-            ListEmailAddressesQuery.ListEmailAddresses(
-                "typename",
-                emptyList(),
-                null,
-            )
+            val queryResultWithEmptyList by before {
+                ListEmailAddressesQuery.ListEmailAddresses(
+                    "typename",
+                    emptyList(),
+                    null,
+                )
+            }
+
+            val responseWithEmptyList by before {
+                Response.builder<ListEmailAddressesQuery.Data>(ListEmailAddressesQuery(input))
+                    .data(ListEmailAddressesQuery.Data(queryResultWithEmptyList))
+                    .build()
+            }
+
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.listDraftEmailMessages()
+            }
+            deferredResult.start()
+            delay(100L)
+
+            listEmailHolder.callback shouldNotBe null
+            listEmailHolder.callback?.onResponse(responseWithEmptyList)
+
+            val result = deferredResult.await()
+            result shouldNotBe null
+            result.size shouldBe 0
+
+            verify(mockAppSyncClient).query(any<ListEmailAddressesQuery>())
         }
-
-        val responseWithEmptyList by before {
-            Response.builder<ListEmailAddressesQuery.Data>(ListEmailAddressesQuery(input))
-                .data(ListEmailAddressesQuery.Data(queryResultWithEmptyList))
-                .build()
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listDraftEmailMessages()
-        }
-        deferredResult.start()
-        delay(100L)
-
-        listEmailHolder.callback shouldNotBe null
-        listEmailHolder.callback?.onResponse(responseWithEmptyList)
-
-        val result = deferredResult.await()
-        result shouldNotBe null
-        result.size shouldBe 0
-
-        verify(mockAppSyncClient).query(any<ListEmailAddressesQuery>())
-    }
 
     @Test
     fun `listDraftEmailMessages() should return an empty list if no drafts found`() = runTest {
