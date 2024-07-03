@@ -29,6 +29,7 @@ class Rfc822MessageDataProcessorTest {
         private const val RAW_EMAIL_WITH_ATTACHMENTS = "sample_email_with_attachments.eml"
         private const val RAW_EMAIL_REPLY_TO_WITH_INLINE_ATTACHMENT = "reply_from_gmail.eml"
         private const val RAW_EMAIL_WITH_ATTACHED_EMAIL = "attached_email.eml"
+        private const val RAW_EMAIL_WITH_INLINE_AND_NON_INLINE_ATTACHMENT = "email_with_inline_and_non_inline_attachment.eml"
         private const val DELIVERY_FAILED_RFC_822_HEADER_EMAIL = "delivery_failed_rfc_822_headers.eml"
         private const val DELIVERY_FAILED_INLINE_IMAGE_EMAIL = "delivery_failed_inline_image.eml"
         private const val DELIVERY_FAILED_PLAIN_SERVER_PLAIN_ATTACHED_EMAIL = "delivery_failed_plain_server_plain_attached.eml"
@@ -169,7 +170,7 @@ class Rfc822MessageDataProcessorTest {
     }
 
     @Test
-    fun shouldParseEmailWithRegularAttachmentsAndInlineAttachments() {
+    fun shouldParseEmailWithRegularAttachmentsAndInlineAttachmentsWithIncorrectDisposition() {
         val rawEmail = getRawEmail(RAW_EMAIL_WITH_ATTACHMENTS)
 
         val message = Rfc822MessageDataProcessor(context).parseInternetMessageData(rawEmail)
@@ -269,6 +270,46 @@ class Rfc822MessageDataProcessorTest {
                 mimeType shouldBe "image/png"
                 inlineAttachment shouldBe true
                 data.size shouldBe 205256
+            }
+        }
+    }
+
+    @Test
+    fun shouldParseEmailWithInlineAndNonInLineAttachment() {
+        val rawEmail = getRawEmail(RAW_EMAIL_WITH_INLINE_AND_NON_INLINE_ATTACHMENT)
+
+        val message = Rfc822MessageDataProcessor(context).parseInternetMessageData(rawEmail)
+
+        with(message) {
+            from shouldContainExactlyInAnyOrder listOf("John Smith <jsmith@foobar.com>")
+            to shouldContainExactlyInAnyOrder listOf("\"ted42dp@toys.com\" <ted42dp@toys.com>")
+            cc.isEmpty() shouldBe true
+            bcc.isEmpty() shouldBe true
+            subject shouldBe "Hi from Outlook"
+            body?.shouldContainOrderedStrings(
+                listOf(
+                    "Hello",
+                    "from Outlook",
+                ),
+            )
+            isHtml shouldBe true
+
+            attachments.size shouldBe 1
+            with(attachments.first()) {
+                fileName shouldBe "whiskey_the_dog.jpg"
+                contentId shouldBe ""
+                mimeType shouldBe "image/jpeg"
+                inlineAttachment shouldBe false
+                data.size shouldBe 2850
+            }
+
+            inlineAttachments.size shouldBe 1
+            with(inlineAttachments.first()) {
+                fileName shouldBe "image001.png"
+                contentId shouldBe "image001.png@01DAC3C5.D4996FD0"
+                mimeType shouldBe "image/png"
+                inlineAttachment shouldBe true
+                data.size shouldBe 16826
             }
         }
     }

@@ -191,7 +191,7 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
         // Determine if attachments are inline or regular attachments based on the fact the CID appears in the body.
         // The content disposition header does not seem to be reliable.
         val (inlineAttachments, attachments) = allAttachments.partition {
-            body.contains("cid:${it.contentId}") || it.inlineAttachment
+            it.inlineAttachment || (it.contentId.isNotEmpty() && body.contains("cid:${it.contentId}"))
         }.let { (inline, regular) ->
             inline.map { it.copy(inlineAttachment = true) } to regular.map { it.copy(inlineAttachment = false) }
         }
