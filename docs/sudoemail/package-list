@@ -65,6 +65,7 @@ $dokka.location:com.sudoplatform.sudoemail.subscription/EmailMessageSubscriber/e
 $dokka.location:com.sudoplatform.sudoemail.subscription/Subscriber.ConnectionState.CONNECTED///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.subscription/-subscriber/-connection-state/-c-o-n-n-e-c-t-e-d/index.html
 $dokka.location:com.sudoplatform.sudoemail.subscription/Subscriber.ConnectionState.DISCONNECTED///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.subscription/-subscriber/-connection-state/-d-i-s-c-o-n-n-e-c-t-e-d/index.html
 $dokka.location:com.sudoplatform.sudoemail.subscription/Subscriber.ConnectionState///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.subscription/-subscriber/-connection-state/index.html
+$dokka.location:com.sudoplatform.sudoemail.subscription/Subscriber.ConnectionState/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.subscription/-subscriber/-connection-state/entries.html
 $dokka.location:com.sudoplatform.sudoemail.subscription/Subscriber.ConnectionState/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.subscription/-subscriber/-connection-state/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.subscription/Subscriber.ConnectionState/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.subscription/-subscriber/-connection-state/values.html
 $dokka.location:com.sudoplatform.sudoemail.subscription/Subscriber///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.subscription/-subscriber/index.html
@@ -193,6 +194,7 @@ $dokka.location:com.sudoplatform.sudoemail.types/BatchOperationStatus.FAILURE///
 $dokka.location:com.sudoplatform.sudoemail.types/BatchOperationStatus.PARTIAL///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-batch-operation-status/-p-a-r-t-i-a-l/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/BatchOperationStatus.SUCCESS///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-batch-operation-status/-s-u-c-c-e-s-s/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/BatchOperationStatus///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-batch-operation-status/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/BatchOperationStatus/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-batch-operation-status/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/BatchOperationStatus/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-batch-operation-status/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/BatchOperationStatus/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-batch-operation-status/values.html
 $dokka.location:com.sudoplatform.sudoemail.types/BlockedAddress///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-blocked-address/index.html
@@ -206,11 +208,13 @@ $dokka.location:com.sudoplatform.sudoemail.types/BlockedAddress/sealedValue/#/Po
 $dokka.location:com.sudoplatform.sudoemail.types/BlockedAddress/updatedAt/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-blocked-address/updated-at.html
 $dokka.location:com.sudoplatform.sudoemail.types/BlockedAddressHashAlgorithm.SHA256///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-blocked-address-hash-algorithm/-s-h-a256/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/BlockedAddressHashAlgorithm///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-blocked-address-hash-algorithm/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/BlockedAddressHashAlgorithm/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-blocked-address-hash-algorithm/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/BlockedAddressHashAlgorithm/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-blocked-address-hash-algorithm/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/BlockedAddressHashAlgorithm/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-blocked-address-hash-algorithm/values.html
 $dokka.location:com.sudoplatform.sudoemail.types/CachePolicy.CACHE_ONLY///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-cache-policy/-c-a-c-h-e_-o-n-l-y/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/CachePolicy.REMOTE_ONLY///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-cache-policy/-r-e-m-o-t-e_-o-n-l-y/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/CachePolicy///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-cache-policy/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/CachePolicy/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-cache-policy/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/CachePolicy/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-cache-policy/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/CachePolicy/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-cache-policy/values.html
 $dokka.location:com.sudoplatform.sudoemail.types/ConfigurationData///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-configuration-data/index.html
@@ -229,6 +233,7 @@ $dokka.location:com.sudoplatform.sudoemail.types/Direction.INBOUND///PointingToD
 $dokka.location:com.sudoplatform.sudoemail.types/Direction.OUTBOUND///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-direction/-o-u-t-b-o-u-n-d/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/Direction.UNKNOWN///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-direction/-u-n-k-n-o-w-n/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/Direction///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-direction/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/Direction/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-direction/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/Direction/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-direction/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/Direction/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-direction/values.html
 $dokka.location:com.sudoplatform.sudoemail.types/DraftEmailMessageMetadata///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-draft-email-message-metadata/index.html
@@ -356,6 +361,7 @@ $dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus.ENCRYPTED///Po
 $dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus.UNENCRYPTED///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/-u-n-e-n-c-r-y-p-t-e-d/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus.UNKNOWN///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/-u-n-k-n-o-w-n/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/EncryptionStatus/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-encryption-status/values.html
 $dokka.location:com.sudoplatform.sudoemail.types/InternetMessageFormatHeader///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-internet-message-format-header/index.html
@@ -438,6 +444,7 @@ $dokka.location:com.sudoplatform.sudoemail.types/SendEmailMessageResult/id/#/Poi
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder.ASC///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-sort-order/-a-s-c/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder.DESC///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-sort-order/-d-e-s-c/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-sort-order/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/SortOrder/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-sort-order/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder/toSortOrderInput/#com.sudoplatform.sudoemail.types.SortOrder/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-sort-order/to-sort-order-input.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-sort-order/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/SortOrder/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-sort-order/values.html
@@ -449,6 +456,7 @@ $dokka.location:com.sudoplatform.sudoemail.types/State.SENT///PointingToDeclarat
 $dokka.location:com.sudoplatform.sudoemail.types/State.UNDELIVERED///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-state/-u-n-d-e-l-i-v-e-r-e-d/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/State.UNKNOWN///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-state/-u-n-k-n-o-w-n/index.html
 $dokka.location:com.sudoplatform.sudoemail.types/State///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-state/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/State/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-state/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/State/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-state/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/State/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-state/values.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/-a-e-s_-c-b-c_-p-k-c-s7-p-a-d-d-i-n-g/index.html
@@ -456,6 +464,7 @@ $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm.Companion/fromString/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/-companion/from-string.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm.Companion/isAlgorithmSupported/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/-companion/is-algorithm-supported.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/index.html
+$dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm/entries/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/entries.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm/toString/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/to-string.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm/valueOf/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/value-of.html
 $dokka.location:com.sudoplatform.sudoemail.types/SymmetricKeyEncryptionAlgorithm/values/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types/-symmetric-key-encryption-algorithm/values.html

@@ -277,7 +277,7 @@ internal class DefaultSudoEmailClient(
      * and allow us to retry. The value of `version` doesn't need to be kept up-to-date with the
      * version of the code.
      */
-    private val version: String = "15.2.1"
+    private val version: String = "16.0.0"
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =

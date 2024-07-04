@@ -6,10 +6,10 @@ Your users will be able to easily create and add email addresses to their Sudos.
 Please see the [Sudo Platform Developer Docs](https://sudoplatform.com/docs) for an overview of Email in the Sudo Platform.
 
 ## Version Support
-| Technology             | Supported version |
-| ---------------------- | ----------------- |
-| Min. Deployment Target | 26                |
-| Kotlin version         | 1.8+              |
+| Technology          | Supported version |
+| ------------------- | ----------------- |
+| Min. API Level      | 26                |
+| Kotlin version      | 1.9+              |
 
 ## Integration Instructions
 Visit the [Email section](https://sudoplatform.com/docs/email) of the Sudo Platform Developer Docs for SDK integration instructions.

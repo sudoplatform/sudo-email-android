@@ -16,9 +16,9 @@ android {
 
     defaultConfig {
         minSdkVersion 26
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode = 1
-        versionName = "15.2.1"
+        versionName = "16.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -76,7 +76,7 @@ android {
 }
 
 ext {
-    coroutine_version = '1.8.0'
+    coroutine_version = '1.8.1'
     kotlintest_version = "3.4.2"
 }
 
@@ -85,7 +85,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutine_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutine_version"
-    implementation('org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3')
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
 
     // AWS
     //
@@ -96,16 +96,16 @@ dependencies {
     implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
 
     // Sudo Platform
-    implementation 'com.sudoplatform:sudokeymanager:7.3.0'
-    implementation "com.sudoplatform:sudologging:4.0.0"
-    implementation "com.sudoplatform:sudoconfigmanager:7.0.2"
-    implementation 'com.sudoplatform:sudouser:18.0.1'
-    implementation 'com.sudoplatform:sudoapiclient:9.0.0'
-    implementation 'com.sudoplatform:sudonotification:2.0.0'
+    implementation 'com.sudoplatform:sudokeymanager:8.0.0'
+    implementation "com.sudoplatform:sudologging:5.0.0"
+    implementation "com.sudoplatform:sudoconfigmanager:8.0.0"
+    implementation 'com.sudoplatform:sudouser:19.0.0'
+    implementation 'com.sudoplatform:sudoapiclient:10.0.0'
+    implementation 'com.sudoplatform:sudonotification:3.0.0'
 
     implementation 'com.sun.mail:jakarta.mail:2.0.1'
     implementation 'com.sun.activation:jakarta.activation:2.0.1'
-    implementation 'com.google.firebase:firebase-messaging-ktx:23.4.1'
+    implementation 'com.google.firebase:firebase-messaging-ktx:24.0.0'
 
     // Testing
     testImplementation "junit:junit:4.13.2"
@@ -115,23 +115,23 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:5.12.0'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:5.3.1'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
-    testImplementation "androidx.test:core:1.5.0"
+    testImplementation "androidx.test:core:1.6.1"
     testImplementation 'org.robolectric:robolectric:4.12.1'
     testImplementation "com.jakewharton.timber:timber:5.0.1"
     testImplementation 'commons-codec:commons-codec:1.17.0'
 
     androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
-    androidTestImplementation "androidx.test.ext:junit:1.1.5"
-    androidTestImplementation "androidx.test:runner:1.5.2"
-    androidTestImplementation "androidx.test:core:1.5.0"
+    androidTestImplementation "androidx.test.ext:junit:1.2.1"
+    androidTestImplementation "androidx.test:runner:1.6.1"
+    androidTestImplementation "androidx.test:core:1.6.1"
     androidTestImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
     androidTestImplementation "com.jakewharton.timber:timber:5.0.1"
     // Awaitility >= 4.x.x brings incompatible hamcrest 2.1 with it
     androidTestImplementation 'org.awaitility:awaitility-kotlin:3.1.6'
 
-    androidTestImplementation 'com.sudoplatform:sudoentitlements:10.0.0'
-    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:8.0.0'
-    androidTestImplementation 'com.sudoplatform:sudoprofiles:14.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoentitlements:11.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:9.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoprofiles:15.0.0'
 }
 
 // Returns a list of `configurations` which should not be scanned for vulnerabilities
@@ -189,7 +189,7 @@ licenseTools {
 // Yaml parser
 import org.yaml.snakeyaml.Yaml
 
-task checkLicenseHaveRequiredFields {
+tasks.register('checkLicenseHaveRequiredFields') {
     description = "Check every license entry has the mandatory fields"
     group = "verification"
 
@@ -235,7 +235,8 @@ jacoco {
     toolVersion = "0.8.10"
 }
 
-task jacocoTestReport(type: JacocoReport, dependsOn: "testDebugUnitTest") {
+tasks.register('jacocoTestReport', JacocoReport) {
+    dependsOn "testDebugUnitTest"
     group = "Reporting"
     description = "Generate Jacoco coverage reports"
     classDirectories.setFrom(
