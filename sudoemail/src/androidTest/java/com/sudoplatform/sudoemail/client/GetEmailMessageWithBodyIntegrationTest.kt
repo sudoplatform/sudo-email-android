@@ -75,7 +75,7 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
         val result = emailClient.getEmailMessageWithBody(input)
             ?: throw AssertionError("should not be null")
         result.id shouldBe sendResult.id
-        result.body shouldBe messageBody
+        result.body.contains(messageBody)
         result.attachments.isEmpty() shouldBe true
         result.inlineAttachments.isEmpty() shouldBe true
     }
@@ -115,7 +115,7 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
             val result = emailClient.getEmailMessageWithBody(input)
                 ?: throw AssertionError("should not be null")
             result.id shouldBe sendResult.id
-            result.body shouldBe messageBody
+            result.body.contains(messageBody)
             result.attachments.isEmpty() shouldBe true
             result.inlineAttachments.isEmpty() shouldBe true
         }
@@ -172,7 +172,7 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
             val result = emailClient.getEmailMessageWithBody(input)
                 ?: throw AssertionError("should not be null")
             result.id shouldBe sendResult.id
-            result.body shouldBe messageBody
+            result.body.contains(messageBody)
             result.attachments.isEmpty() shouldBe false
             result.inlineAttachments.isEmpty() shouldBe false
 

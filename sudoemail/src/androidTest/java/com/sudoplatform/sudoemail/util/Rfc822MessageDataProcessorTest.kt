@@ -40,6 +40,119 @@ class Rfc822MessageDataProcessorTest {
     val context: Context = ApplicationProvider.getApplicationContext()
 
     @Test
+    fun shouldEncodeBasicMessage() {
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+            from = "Foo Bar <foo@bar.com>",
+            to = listOf("Ted Bear <ted.bear@toys.org>"),
+            cc = listOf("Andy Pandy <andy.pandy@toys.org>"),
+            bcc = listOf("bar@foo.com"),
+            subject = "Greetings from the toys",
+            body = "Hello there from all the toys.",
+            isHtml = false,
+            encryptionStatus = EncryptionStatus.UNENCRYPTED,
+        )
+
+        val message = String(rfc822Data)
+
+        message.shouldContainOrderedStrings(
+            listOf(
+                "From: Foo Bar <foo@bar.com>",
+                "To: Ted Bear <ted.bear@toys.org>",
+                "Cc: Andy Pandy <andy.pandy@toys.org>",
+                "Bcc: bar@foo.com",
+                "Subject: Greetings from the toys",
+                "Content-Type: text/plain",
+                "Hello there from all the toys.",
+            ),
+        )
+    }
+
+    @Test
+    fun shouldEncodeHtmlMessage() {
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+            from = "Foo Bar <foo@bar.com>",
+            to = listOf("Ted Bear <ted.bear@toys.org>"),
+            cc = listOf("Andy Pandy <andy.pandy@toys.org>"),
+            bcc = listOf("bar@foo.com"),
+            subject = "Greetings from the toys",
+            body = "Hello<div>there</div><div>from all the toys</div>",
+            isHtml = true,
+            encryptionStatus = EncryptionStatus.UNENCRYPTED,
+        )
+
+        val message = String(rfc822Data)
+
+        message.shouldContainOrderedStrings(
+            listOf(
+                "From: Foo Bar <foo@bar.com>",
+                "To: Ted Bear <ted.bear@toys.org>",
+                "Cc: Andy Pandy <andy.pandy@toys.org>",
+                "Bcc: bar@foo.com",
+                "Subject: Greetings from the toys",
+                "Content-Type: text/html; charset=UTF-8",
+                "Hello<div>there</div><div>from all the toys</div>",
+            ),
+        )
+    }
+
+    @Test
+    fun shouldEncodeMessageWithAttachments() {
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+            from = "Foo Bar <foo@bar.com>",
+            to = listOf("Ted Bear <ted.bear@toys.org>"),
+            cc = listOf("Andy Pandy <andy.pandy@toys.org>"),
+            bcc = listOf("bar@foo.com"),
+            subject = "Greetings from the toys",
+            body = "<div \"ltr\"><br>\n" +
+                "<img \n" +
+                "src=\"file:///path/to/my/image/some_pic.png\" height=\"156\"\n" +
+                "alt=\"ii_ia6yo3z92_14d962f8450cc6f1\" width=144>\n" +
+                "<br>\n" +
+                "Hello there from all the toys<br></div>",
+            inlineAttachments = listOf(
+                EmailAttachment(
+                    fileName = "some_pic.png",
+                    contentId = "ii_ia6yo3z92_14d962f8450cc6f1",
+                    mimeType = "image/png",
+                    inlineAttachment = true,
+                    data = "This is an inline attachment".toByteArray(),
+                ),
+            ),
+            attachments = listOf(
+                EmailAttachment(
+                    fileName = "Path",
+                    contentId = "1234",
+                    mimeType = "image/png",
+                    inlineAttachment = false,
+                    data = "sample data".toByteArray(),
+                ),
+            ),
+            isHtml = true,
+            encryptionStatus = EncryptionStatus.UNENCRYPTED,
+        )
+
+        val message = String(rfc822Data)
+
+        message.shouldContainOrderedStrings(
+            listOf(
+                "From: Foo Bar <foo@bar.com>",
+                "To: Ted Bear <ted.bear@toys.org>",
+                "Cc: Andy Pandy <andy.pandy@toys.org>",
+                "Bcc: bar@foo.com",
+                "Subject: Greetings from the toys",
+                "Content-Type: text/html; charset=UTF-8",
+                "Hello there from all the toys<br></div>",
+                "Content-Type: image/png; name=some_pic.png",
+                "Content-Disposition: inline; filename=some_pic.png",
+                "This is an inline attachment",
+                "Content-Type: image/png; name=Path",
+                "Content-Disposition: attachment; filename=Path",
+                "sample data",
+            ),
+        )
+    }
+
+    @Test
     fun shouldParseBasicMessage() {
         val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
             from = "Foo Bar <foo@bar.com>",

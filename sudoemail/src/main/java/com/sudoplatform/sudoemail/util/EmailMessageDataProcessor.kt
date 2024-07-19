@@ -30,6 +30,7 @@ interface EmailMessageDataProcessor {
         body: String? = null,
         attachments: List<EmailAttachment>? = null,
         inlineAttachments: List<EmailAttachment>? = null,
+        isHtml: Boolean = false,
         encryptionStatus: EncryptionStatus = EncryptionStatus.UNENCRYPTED,
     ): ByteArray
 

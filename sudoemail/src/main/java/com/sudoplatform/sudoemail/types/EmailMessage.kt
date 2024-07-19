@@ -154,7 +154,7 @@ data class PartialEmailMessage(
     @Parcelize
     data class EmailAddress(
         val emailAddress: String,
-        val displayName: String? = null,
+        val displayName: String? = "",
     ) : Parcelable {
 
         override fun toString(): String {

@@ -74,6 +74,7 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
         body: String?,
         attachments: List<EmailAttachment>?,
         inlineAttachments: List<EmailAttachment>?,
+        isHtml: Boolean,
         encryptionStatus: EncryptionStatus,
     ): ByteArray {
         val message = MimeMessage(session)
@@ -118,16 +119,20 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
         relatedWrapper.setContent(relatedMultipart)
 
         val bodyText = body ?: ""
-        when (encryptionStatus) {
-            EncryptionStatus.ENCRYPTED -> {
+        when {
+            encryptionStatus == EncryptionStatus.ENCRYPTED -> {
                 messageBodyPart.setText(CANNED_TEXT_BODY, "UTF-8")
                 topMultiPart.addBodyPart(messageBodyPart)
             }
-
+            isHtml -> {
+                val cleanHtml = bodyText.replace("\n", "<br>")
+                messageBodyPart.setContent(cleanHtml, MimeTypes.TEXT_HTML_UTF8)
+                relatedMultipart.addBodyPart(messageBodyPart)
+                topMultiPart.addBodyPart(relatedWrapper)
+            }
             else -> {
                 messageBodyPart.setText(bodyText, "UTF-8")
                 messageBodyPart.setHeader("Content-Transfer-Encoding", "QUOTED-PRINTABLE")
-                messageBodyPart.setHeader("Content-Disposition", "inline")
                 messageBodyPart.setHeader("Content-Type", MimeTypes.TEXT_PLAIN)
                 relatedMultipart.addBodyPart(messageBodyPart)
                 topMultiPart.addBodyPart(relatedWrapper)
@@ -266,7 +271,7 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
         }.joinToString(separator = if (isHtml) "\n<br>\n" else "\n\n").let { text ->
             // There can be instances where a HTML body is not wrapped in <html> tags, add them.
             if (isHtml && !HTML_TAG_BODY_REGEX.containsMatchIn(text)) {
-                "<html>$text<html>"
+                "<html>$text</html>"
             } else {
                 text
             }

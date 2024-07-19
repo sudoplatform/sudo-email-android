@@ -328,6 +328,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     any(),
                     any(),
                     any(),
+                    any(),
                 )
             } doReturn ByteArray(42)
         }
@@ -446,6 +447,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                any(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -506,6 +508,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                any(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -563,6 +566,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 anyString(),
                 anyString(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -637,6 +641,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 anyString(),
                 anyString(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -719,6 +724,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                any(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -782,6 +788,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 anyString(),
                 anyString(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -867,6 +874,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                any(),
             )
             verify(mockEmailCryptoService).encrypt(
                 any(),
@@ -930,6 +938,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 anyString(),
                 anyString(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -1004,6 +1013,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                any(),
             )
             verify(mockS3Client, times(4)).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client, times(4)).delete(anyString())
@@ -1034,6 +1044,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 anyString(),
                 anyString(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -1081,6 +1092,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                         any(),
                         anyString(),
                         anyString(),
+                        any(),
                         any(),
                         any(),
                         any(),
@@ -1150,6 +1162,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                any(),
             )
             verify(mockEmailCryptoService).encrypt(
                 any(),
@@ -1192,6 +1205,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                         any(),
                         anyString(),
                         anyString(),
+                        any(),
                         any(),
                         any(),
                         any(),
@@ -1246,6 +1260,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 anyString(),
                 anyString(),
+                any(),
                 any(),
                 any(),
                 any(),
