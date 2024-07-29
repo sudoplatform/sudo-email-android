@@ -25,6 +25,7 @@ import com.sudoplatform.sudoemail.types.SortOrder
  *  pagination call, otherwise it will throw an exception. The same arguments should be
  *  supplied to this method if using a previously generated [nextToken].
  * @property sortOrder [SortOrder] The direction in which the email messages are sorted. Defaults to descending.
+ * @property includeDeletedMessages [Boolean] Indicates whether or not to include deleted messages. Defaults to false.
  */
 data class ListEmailMessagesForEmailAddressIdInput(
     val emailAddressId: String,
@@ -33,4 +34,5 @@ data class ListEmailMessagesForEmailAddressIdInput(
     val limit: Int? = SudoEmailClient.DEFAULT_EMAIL_MESSAGE_LIMIT,
     val nextToken: String? = null,
     val sortOrder: SortOrder = SortOrder.DESC,
+    val includeDeletedMessages: Boolean = false,
 )

@@ -23,6 +23,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
+import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeLessThan
@@ -127,7 +128,11 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val ownershipProof = getOwnershipProof(sudo)
         ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProofToken = ownershipProof, alias = "Ted Bear")
+        val emailAddress = provisionEmailAddress(
+            emailClient,
+            ownershipProofToken = ownershipProof,
+            alias = "Ted Bear",
+        )
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
@@ -153,15 +158,35 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 }
                 outbound.size shouldBe messageCount
                 with(outbound[0]) {
-                    from shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
+                    from shouldBe listOf(
+                        EmailMessage.EmailAddress(
+                            emailAddress.emailAddress,
+                            emailAddress.alias,
+                        ),
+                    )
+                    to shouldBe listOf(
+                        EmailMessage.EmailAddress(
+                            emailAddress.emailAddress,
+                            emailAddress.alias,
+                        ),
+                    )
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
                 }
                 inbound.size shouldBe messageCount
                 with(inbound[0]) {
-                    from shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
-                    to shouldBe listOf(EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias))
+                    from shouldBe listOf(
+                        EmailMessage.EmailAddress(
+                            emailAddress.emailAddress,
+                            emailAddress.alias,
+                        ),
+                    )
+                    to shouldBe listOf(
+                        EmailMessage.EmailAddress(
+                            emailAddress.emailAddress,
+                            emailAddress.alias,
+                        ),
+                    )
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
                 }
@@ -775,6 +800,82 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 listEmailMessages.result.nextToken shouldBe null
                 listEmailMessages.result.failed[0].cause
                     .shouldBeInstanceOf<DeviceKeyManager.DeviceKeyManagerException.DecryptionException>()
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+    }
+
+    @Test
+    fun listEmailMessagesShouldRespectIncludeDeletedMessagesFlag() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        var messageId = ""
+        val messageCount = 2
+        for (i in 0 until messageCount) {
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
+            messageId = result.id
+        }
+
+        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
+            is ListAPIResult.Success -> {
+                listEmailMessages.result.items shouldHaveSize messageCount * 2
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        val deleteResult = emailClient.deleteEmailMessage(messageId)
+        deleteResult shouldNotBe null
+
+        // Without flag
+        val inputWithoutFlag = ListEmailMessagesInput()
+        when (
+            val listEmailMessages = emailClient.listEmailMessages(inputWithoutFlag)
+        ) {
+            is ListAPIResult.Success -> {
+                listEmailMessages.result.items shouldHaveSize (messageCount * 2) - 1
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        // With flag
+        val inputWithFlag = ListEmailMessagesInput(
+            includeDeletedMessages = true,
+        )
+        when (
+            val listEmailMessages = emailClient.listEmailMessages(inputWithFlag)
+        ) {
+            is ListAPIResult.Success -> {
+                listEmailMessages.result.items shouldHaveSize messageCount * 2
             }
 
             else -> {

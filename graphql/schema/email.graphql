@@ -30,6 +30,7 @@ enum EmailMessageState {
   UNDELIVERED
   FAILED
   RECEIVED
+  DELETED
 }
 
 enum EmailMessageDirection {
@@ -111,6 +112,7 @@ input ListEmailMessagesInput {
   limit: Int
   sortOrder: SortOrder
   nextToken: String
+  includeDeletedMessages: Boolean
 }
 
 input ListEmailMessagesForEmailAddressIdInput {
@@ -119,6 +121,7 @@ input ListEmailMessagesForEmailAddressIdInput {
   limit: Int
   sortOrder: SortOrder
   nextToken: String
+  includeDeletedMessages: Boolean
 }
 
 input ListEmailMessagesForEmailFolderIdInput {
@@ -127,6 +130,7 @@ input ListEmailMessagesForEmailFolderIdInput {
   limit: Int
   sortOrder: SortOrder
   nextToken: String
+  includeDeletedMessages: Boolean
 }
 
 input LookupEmailAddressesPublicInfoInput {
@@ -295,6 +299,7 @@ type SealedEmailMessage {
   rfc822Header: SealedAttribute!
   size: Float!
   encryptionStatus: EmailMessageEncryptionStatus
+  deletedAtEpochMs: Float
 }
 
 type UpdatedEmailMessageSuccess {

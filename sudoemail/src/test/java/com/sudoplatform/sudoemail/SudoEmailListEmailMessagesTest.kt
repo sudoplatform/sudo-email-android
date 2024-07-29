@@ -297,6 +297,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                             Date().time.toDouble(),
                         )
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    it.variables().input().includeDeletedMessages() shouldBe false
                 },
             )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -387,6 +388,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                             Date().time.toDouble(),
                         )
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    it.variables().input().includeDeletedMessages() shouldBe false
                 },
             )
         verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -478,6 +480,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                                 Date().time.toDouble(),
                             )
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -569,6 +572,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                                 Date().time.toDouble(),
                             )
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.ASC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -660,6 +664,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                                 Date().time.toDouble(),
                             )
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -728,6 +733,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                         it.variables().input().nextToken() shouldBe null
                         it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -820,6 +826,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                         it.variables().input().nextToken() shouldBe "dummyNextToken"
                         it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -881,6 +888,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                         it.variables().input().nextToken() shouldBe null
                         it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
         }
@@ -932,6 +940,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                         it.variables().input().nextToken() shouldBe null
                         it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
         }
@@ -1016,6 +1025,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe null
                     it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    it.variables().input().includeDeletedMessages() shouldBe false
                 },
             )
     }
@@ -1062,6 +1072,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe null
                     it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    it.variables().input().includeDeletedMessages() shouldBe false
                 },
             )
     }
@@ -1096,6 +1107,7 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     it.variables().input().nextToken() shouldBe null
                     it.variables().input().specifiedDateRange() shouldBe null
                     it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    it.variables().input().includeDeletedMessages() shouldBe false
                 },
             )
     }
@@ -1127,7 +1139,91 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                         it.variables().input().nextToken() shouldBe null
                         it.variables().input().specifiedDateRange() shouldBe null
                         it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                        it.variables().input().includeDeletedMessages() shouldBe false
                     },
                 )
         }
+
+    @Test
+    fun `listEmailMessages() should pass includeDeletedMessages flag properly`() = runTest {
+        queryHolder.callback shouldBe null
+
+        val input = ListEmailMessagesInput(
+            limit = 1,
+            nextToken = null,
+            includeDeletedMessages = true,
+        )
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+            client.listEmailMessages(input)
+        }
+        deferredResult.start()
+
+        delay(100L)
+        queryHolder.callback shouldNotBe null
+        queryHolder.callback?.onResponse(queryResponse)
+
+        val result = deferredResult.await()
+        result shouldNotBe null
+
+        val listEmailMessages = deferredResult.await()
+        listEmailMessages shouldNotBe null
+
+        when (listEmailMessages) {
+            is ListAPIResult.Success -> {
+                listEmailMessages.result.items.isEmpty() shouldBe false
+                listEmailMessages.result.items.size shouldBe 1
+                listEmailMessages.result.nextToken shouldBe null
+
+                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                with(listEmailMessages.result.items[0]) {
+                    id shouldBe "id"
+                    owner shouldBe "owner"
+                    owners shouldBe emptyList()
+                    emailAddressId shouldBe "emailAddressId"
+                    clientRefId shouldBe "clientRefId"
+                    from.shouldContainExactlyInAnyOrder(addresses)
+                    to.shouldContainExactlyInAnyOrder(addresses)
+                    cc.shouldContainExactlyInAnyOrder(addresses)
+                    replyTo.shouldContainExactlyInAnyOrder(addresses)
+                    bcc.isEmpty() shouldBe true
+                    direction shouldBe Direction.INBOUND
+                    subject shouldBe "testSubject"
+                    hasAttachments shouldBe false
+                    seen shouldBe false
+                    state shouldBe State.DELIVERED
+                    createdAt shouldBe Date(1L)
+                    updatedAt shouldBe Date(1L)
+                    date shouldBe null
+                }
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        verify(mockAppSyncClient)
+            .query<
+                ListEmailMessagesQuery.Data,
+                ListEmailMessagesQuery,
+                ListEmailMessagesQuery.Variables,
+                >(
+                check {
+                    it.variables().input().limit() shouldBe 1
+                    it.variables().input().nextToken() shouldBe null
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()
+                        ?.startDateEpochMs()?.shouldBeLessThan(
+                            Date().time.toDouble(),
+                        )
+                    it.variables().input().specifiedDateRange()?.sortDateEpochMs()?.endDateEpochMs()
+                        ?.shouldBeLessThan(
+                            Date().time.toDouble(),
+                        )
+                    it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
+                    it.variables().input().includeDeletedMessages() shouldBe true
+                },
+            )
+        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+    }
 }

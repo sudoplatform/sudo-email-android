@@ -1390,6 +1390,7 @@ internal class DefaultSudoEmailClient(
                 .nextToken(input.nextToken)
                 .specifiedDateRange(input.dateRange.toEmailMessageDateRangeInput())
                 .sortOrder(input.sortOrder.toSortOrderInput(input.sortOrder))
+                .includeDeletedMessages(input.includeDeletedMessages)
                 .build()
 
             val query = ListEmailMessagesQuery.builder()
@@ -1457,6 +1458,7 @@ internal class DefaultSudoEmailClient(
                 .nextToken(input.nextToken)
                 .specifiedDateRange(input.dateRange.toEmailMessageDateRangeInput())
                 .sortOrder(input.sortOrder.toSortOrderInput(input.sortOrder))
+                .includeDeletedMessages(input.includeDeletedMessages)
                 .build()
 
             val query = ListEmailMessagesForEmailAddressIdQuery.builder()
@@ -1524,6 +1526,7 @@ internal class DefaultSudoEmailClient(
                 .nextToken(input.nextToken)
                 .specifiedDateRange(input.dateRange.toEmailMessageDateRangeInput())
                 .sortOrder(input.sortOrder.toSortOrderInput(input.sortOrder))
+                .includeDeletedMessages(input.includeDeletedMessages)
                 .build()
 
             val query = ListEmailMessagesForEmailFolderIdQuery.builder()
