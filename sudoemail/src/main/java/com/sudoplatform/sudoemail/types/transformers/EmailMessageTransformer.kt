@@ -142,7 +142,7 @@ internal object EmailMessageTransformer {
     }
 
     private fun EmailMessageDirection.toEmailMessageDirection(): Direction {
-        for (value in Direction.values()) {
+        for (value in Direction.entries) {
             if (value.name == this.name) {
                 return value
             }
@@ -151,7 +151,7 @@ internal object EmailMessageTransformer {
     }
 
     private fun EmailMessageState.toEmailMessageState(): State {
-        for (value in State.values()) {
+        for (value in State.entries) {
             if (value.name == this.name) {
                 return value
             }
@@ -160,7 +160,7 @@ internal object EmailMessageTransformer {
     }
 
     private fun EmailMessageEncryptionStatus.toEmailMessageEncryptionStatus(): EncryptionStatus {
-        for (value in EncryptionStatus.values()) {
+        for (value in EncryptionStatus.entries) {
             if (value.name == this.name) {
                 return value
             }

@@ -18,6 +18,7 @@ import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
+import com.sudoplatform.sudoemail.types.State
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoprofiles.Sudo
@@ -977,6 +978,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         ) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items shouldHaveSize messageCount
+                listEmailMessages.result.items.first { it.id == messageId }.state shouldBe State.DELETED
             }
 
             else -> {

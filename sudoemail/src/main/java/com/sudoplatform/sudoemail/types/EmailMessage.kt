@@ -209,6 +209,9 @@ enum class State {
     /** Inbound message has been received. */
     RECEIVED,
 
+    /** Email Message has been deleted. */
+    DELETED,
+
     /** API Evolution - if this occurs, it may mean you need to update the library. */
     UNKNOWN,
 }
