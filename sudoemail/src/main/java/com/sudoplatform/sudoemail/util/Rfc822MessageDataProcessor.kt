@@ -125,15 +125,12 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
                 topMultiPart.addBodyPart(messageBodyPart)
             }
             isHtml -> {
-                val cleanHtml = bodyText.replace("\n", "<br>")
-                messageBodyPart.setContent(cleanHtml, MimeTypes.TEXT_HTML_UTF8)
+                messageBodyPart.setContent(bodyText, MimeTypes.TEXT_HTML_UTF8)
                 relatedMultipart.addBodyPart(messageBodyPart)
                 topMultiPart.addBodyPart(relatedWrapper)
             }
             else -> {
                 messageBodyPart.setText(bodyText, "UTF-8")
-                messageBodyPart.setHeader("Content-Transfer-Encoding", "QUOTED-PRINTABLE")
-                messageBodyPart.setHeader("Content-Type", MimeTypes.TEXT_PLAIN)
                 relatedMultipart.addBodyPart(messageBodyPart)
                 topMultiPart.addBodyPart(relatedWrapper)
             }

@@ -21,14 +21,17 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
 import com.sudoplatform.sudoemail.types.State
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
+import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeLessThan
-import io.kotlintest.matchers.types.shouldBeInstanceOf
+import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -41,6 +44,12 @@ import java.util.Date
 
 /**
  * Test the operation of [SudoEmailClient.listEmailMessages].
+ *
+ * Note that because this API operates at the user level,
+ * we need to be mindful in each test that deleted messages from
+ * other tests affect the pagination (if deleted messages are
+ * not included) or the actual returned results (if deleted
+ * messages are included).
  */
 @RunWith(AndroidJUnit4::class)
 class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
@@ -55,7 +64,9 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @After
     fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+        emailAddressList.map {
+            emailClient.deprovisionEmailAddress(it.id)
+        }
         sudoList.map { sudoClient.deleteSudo(it) }
         sudoClient.reset()
     }
@@ -90,7 +101,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             result.id.isBlank() shouldBe false
         }
 
-        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2) { it.emailAddressId == emailAddress.id }) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -149,7 +160,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             result.id.isBlank() shouldBe false
         }
 
-        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2) { it.emailAddressId == emailAddress.id }) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -212,32 +223,45 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
-        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
-            }
-
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
-        }
-
         val messageCount = 2
         for (i in 0 until messageCount) {
             val result = sendEmailMessage(emailClient, emailAddress)
             result.id.isBlank() shouldBe false
         }
 
-        when (val listEmailMessages = waitForMessages(1, ListEmailMessagesInput(limit = 1))) {
+        // Wait for all the messages to be there
+        when (
+            val listEmailMessages =
+                waitForMessagesByAddress(messageCount * 2, ListEmailMessagesForEmailAddressIdInput(emailAddressId = emailAddress.id))
+        ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items.size shouldBe 1
+                listEmailMessages.result.items.size shouldBe messageCount * 2
             }
 
             else -> {
                 fail("Unexpected ListAPIResult")
             }
         }
+
+        // Now list with limit 1 and verifying that no page has more than 1 message
+        var nextToken: String? = null
+        do {
+            val listEmailMessages = emailClient.listEmailMessages(
+                ListEmailMessagesInput(
+                    limit = 1,
+                    nextToken = nextToken,
+                ),
+            )
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.size shouldBeLessThanOrEqual 1
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+            nextToken = listEmailMessages.result.nextToken
+        } while (nextToken != null)
     }
 
     @Test
@@ -278,15 +302,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 ),
             ),
         )
+
         when (val listEmailMessages = waitForMessages(messageCount * 2, listEmailMessagesInput)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.size shouldBe messageCount * 2
-                listEmailMessages.result.nextToken shouldBe null
-                with(listEmailMessages.result) {
-                    items.forEachIndexed { index, element ->
-                        if (index < items.size - 1) {
-                            element.sortDate.time shouldBeGreaterThan listEmailMessages.result.items[index + 1].sortDate.time
-                        }
+                listEmailMessages.result.items.forEachIndexed { index, element ->
+                    if (index < listEmailMessages.result.items.size - 1) {
+                        element.sortDate.time shouldBeGreaterThan listEmailMessages.result.items[index + 1].sortDate.time
                     }
                 }
             }
@@ -335,10 +357,10 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 ),
             ),
         )
+
         when (val listEmailMessages = waitForMessages(messageCount * 2, listEmailMessagesInput)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.size shouldBe messageCount * 2
-                listEmailMessages.result.nextToken shouldBe null
             }
 
             else -> {
@@ -687,15 +709,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             ),
             sortOrder = SortOrder.ASC,
         )
+
         when (val listEmailMessages = waitForMessages(messageCount * 2, listEmailMessagesInput)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.size shouldBe messageCount * 2
-                listEmailMessages.result.nextToken shouldBe null
-                with(listEmailMessages.result) {
-                    items.forEachIndexed { index, element ->
-                        if (index < items.size - 1) {
-                            element.sortDate.time shouldBeLessThan listEmailMessages.result.items[index + 1].sortDate.time
-                        }
+                listEmailMessages.result.items.forEachIndexed { index, element ->
+                    if (index < listEmailMessages.result.items.size - 1) {
+                        element.sortDate.time shouldBeLessThan listEmailMessages.result.items[index + 1].sortDate.time
                     }
                 }
             }
@@ -739,15 +759,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val listEmailMessagesInput = ListEmailMessagesInput(
             sortOrder = SortOrder.DESC,
         )
+
         when (val listEmailMessages = waitForMessages(messageCount * 2, listEmailMessagesInput)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.size shouldBe messageCount * 2
-                listEmailMessages.result.nextToken shouldBe null
-                with(listEmailMessages.result) {
-                    items.forEachIndexed { index, element ->
-                        if (index < items.size - 1) {
-                            element.sortDate.time shouldBeGreaterThan listEmailMessages.result.items[index + 1].sortDate.time
-                        }
+                listEmailMessages.result.items.forEachIndexed { index, element ->
+                    if (index < listEmailMessages.result.items.size - 1) {
+                        element.sortDate.time shouldBeGreaterThan listEmailMessages.result.items[index + 1].sortDate.time
                     }
                 }
             }
@@ -788,19 +806,20 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             result.id.isBlank() shouldBe false
         }
 
-        waitForMessages(messageCount * 2)
+        waitForMessages(messageCount * 2) { it.emailAddressId == emailAddress.id }
 
         // Reset client to cause key not found errors
         emailClient.reset()
 
         val listEmailMessagesInput = ListEmailMessagesInput()
+
         when (val listEmailMessages = emailClient.listEmailMessages(listEmailMessagesInput)) {
             is ListAPIResult.Partial -> {
                 listEmailMessages.result.items.size shouldBe 0
                 listEmailMessages.result.failed.size shouldBe messageCount * 2
-                listEmailMessages.result.nextToken shouldBe null
-                listEmailMessages.result.failed[0].cause
-                    .shouldBeInstanceOf<DeviceKeyManager.DeviceKeyManagerException.DecryptionException>()
+                listEmailMessages.result.failed.forEach {
+                    it.cause should beInstanceOf<DeviceKeyManager.DeviceKeyManagerException.DecryptionException>()
+                }
             }
 
             else -> {
@@ -841,7 +860,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             messageId = result.id
         }
 
-        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
+        when (val listEmailMessages = waitForMessages(messageCount * 2) { it.emailAddressId == emailAddress.id }) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items shouldHaveSize messageCount * 2
             }
@@ -857,10 +876,10 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         // Without flag
         val inputWithoutFlag = ListEmailMessagesInput()
         when (
-            val listEmailMessages = emailClient.listEmailMessages(inputWithoutFlag)
+            val listEmailMessages = waitForMessages(messageCount * 2 - 1, inputWithoutFlag) { it.emailAddressId == emailAddress.id }
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items shouldHaveSize (messageCount * 2) - 1
+                listEmailMessages.result.items shouldHaveSize messageCount * 2 - 1
             }
 
             else -> {
@@ -873,7 +892,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             includeDeletedMessages = true,
         )
         when (
-            val listEmailMessages = emailClient.listEmailMessages(inputWithFlag)
+            val listEmailMessages = waitForMessages(messageCount * 2, inputWithFlag) { it.emailAddressId == emailAddress.id }
         ) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items shouldHaveSize messageCount * 2

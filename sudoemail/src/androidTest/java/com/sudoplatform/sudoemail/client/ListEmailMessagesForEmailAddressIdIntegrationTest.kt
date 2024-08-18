@@ -29,6 +29,7 @@ import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeLessThan
+import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
 import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -254,24 +255,35 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             result.id.isBlank() shouldBe false
         }
 
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            limit = 1,
+        // First, wait for all the messages to be there
+        waitForMessagesByAddress(
+            messageCount * 2,
+            ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = emailAddress.id,
+            ),
         )
-        when (
-            val listEmailMessages = waitForMessages(
-                1,
-                listEmailMessagesInput,
-            )
-        ) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.size shouldBe 1
-            }
 
-            else -> {
-                fail("Unexpected ListAPIResult")
+        // Now read them all paginated
+        var nextToken: String? = null
+        do {
+            val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
+                emailAddressId = emailAddress.id,
+                limit = 1,
+                nextToken = nextToken,
+            )
+
+            val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.size shouldBeLessThanOrEqual 1
+                    nextToken = listEmailMessages.result.nextToken
+                }
+
+                else -> {
+                    fail("Unable to list email messages for folder")
+                }
             }
-        }
+        } while (nextToken != null)
     }
 
     @Test

@@ -62,6 +62,8 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         val result = emailClient.deleteEmailMessage(sendResult.id)
         result shouldBe sendResult.id
+
+        waitForMessages(1)
     }
 
     @Test

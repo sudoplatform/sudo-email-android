@@ -129,6 +129,7 @@ import com.sudoplatform.sudoemail.types.transformers.toDate
 import com.sudoplatform.sudoemail.util.EmailAddressParser
 import com.sudoplatform.sudoemail.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
+import com.sudoplatform.sudoemail.util.replaceInlinePathsWithCids
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
@@ -1000,6 +1001,12 @@ internal class DefaultSudoEmailClient(
         val config = getConfigurationData()
         val emailMessageMaxOutboundMessageSize = config.emailMessageMaxOutboundMessageSize
 
+        val cleanBody = if (inlineAttachments.isNotEmpty()) {
+            replaceInlinePathsWithCids(body, inlineAttachments) ?: body
+        } else {
+            body
+        }
+
         try {
             val clientRefId = UUID.randomUUID().toString()
             val objectId =
@@ -1011,7 +1018,7 @@ internal class DefaultSudoEmailClient(
                 cc = emailMessageHeader.cc.map { it.toString() },
                 bcc = emailMessageHeader.bcc.map { it.toString() },
                 subject = emailMessageHeader.subject,
-                body,
+                cleanBody,
                 attachments,
                 inlineAttachments,
                 isHtml = true,

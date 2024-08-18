@@ -27,6 +27,7 @@ import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeLessThan
+import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
 import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -222,25 +223,35 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
 
-        val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
-            inboxFolder.id,
-            limit = 1,
+        // First, wait for all the messages to be there
+        waitForMessagesByFolder(
+            2,
+            ListEmailMessagesForEmailFolderIdInput(
+                inboxFolder.id,
+            ),
         )
-        when (
-            val listEmailMessages = waitForMessagesByFolder(
-                1,
-                listEmailMessagesInput,
-            )
-        ) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.items[0].folderId shouldBe inboxFolder.id
-            }
 
-            else -> {
-                fail("Unexpected ListAPIResult")
+        // Now read them all paginated
+        var nextToken: String? = null
+        do {
+            val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
+                folderId = inboxFolder.id,
+                limit = 1,
+                nextToken = nextToken,
+            )
+
+            val listEmailMessages = emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.size shouldBeLessThanOrEqual 1
+                    nextToken = listEmailMessages.result.nextToken
+                }
+
+                else -> {
+                    fail("Unable to list email messages for folder")
+                }
             }
-        }
+        } while (nextToken != null)
     }
 
     @Test

@@ -19,9 +19,11 @@ import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
+import com.sudoplatform.sudoemail.types.PartialResult
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
@@ -347,37 +349,194 @@ abstract class BaseIntegrationTest {
             }
     }
 
-    /** Wait for multiple messages to arrive. */
+    /** Wait for multiple messages matching a condition to arrive. */
     protected fun waitForMessages(
         count: Int,
         listInput: ListEmailMessagesInput = ListEmailMessagesInput(),
+        predicate: (EmailMessage) -> Boolean = { true },
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
-        return await
+        val items = mutableListOf<EmailMessage>()
+        val failed = mutableListOf<PartialResult<PartialEmailMessage>>()
+
+        await
             .atMost(Duration.ONE_MINUTE)
             .pollInterval(Duration.TWO_HUNDRED_MILLISECONDS)
             .untilCallTo {
                 runBlocking {
                     with(emailClient) {
-                        listEmailMessages(listInput)
+                        items.removeAll { true }
+                        failed.removeAll { true }
+                        var nextToken: String? = null
+                        do {
+                            val input = ListEmailMessagesInput(
+                                dateRange = listInput.dateRange,
+                                sortOrder = listInput.sortOrder,
+                                includeDeletedMessages = listInput.includeDeletedMessages,
+                                limit = listInput.limit,
+                                cachePolicy = listInput.cachePolicy,
+                                nextToken = nextToken,
+                            )
+
+                            when (val listEmailMessages = listEmailMessages(input)) {
+                                is ListAPIResult.Success -> {
+                                    items.addAll(listEmailMessages.result.items)
+                                    nextToken = listEmailMessages.result.nextToken
+                                }
+
+                                is ListAPIResult.Partial -> {
+                                    items.addAll(listEmailMessages.result.items)
+                                    failed.addAll(listEmailMessages.result.failed)
+                                    nextToken = listEmailMessages.result.nextToken
+                                }
+                            }
+                        } while (nextToken != null)
                     }
                 }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == count }
+            } has { items.filter(predicate).size == count }
+
+        if (failed.size > 0) {
+            return ListAPIResult.Partial(
+                result = ListAPIResult.ListPartialResult(
+                    items = items.filter(predicate),
+                    failed = failed,
+                    nextToken = null,
+                ),
+            )
+        } else {
+            return ListAPIResult.Success(
+                result = ListAPIResult.ListSuccessResult(
+                    items = items.filter(predicate),
+                    nextToken = null,
+                ),
+            )
+        }
     }
 
-    /** Wait for multiple messages to arrive. */
+    /** Wait for multiple messages to arrive for a folder */
     protected fun waitForMessagesByFolder(
         count: Int,
         listInput: ListEmailMessagesForEmailFolderIdInput,
+        atMost: Duration? = Duration.ONE_MINUTE,
+        pollInterval: Duration? = Duration.TWO_HUNDRED_MILLISECONDS,
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
-        return await
+        val items = mutableListOf<EmailMessage>()
+        val failed = mutableListOf<PartialResult<PartialEmailMessage>>()
+
+        await
+            .atMost(atMost)
+            .pollInterval(pollInterval)
+            .untilCallTo {
+                runBlocking {
+                    with(emailClient) {
+                        items.removeAll { true }
+                        failed.removeAll { true }
+                        var nextToken: String? = null
+                        do {
+                            val input = ListEmailMessagesForEmailFolderIdInput(
+                                folderId = listInput.folderId,
+                                dateRange = listInput.dateRange,
+                                sortOrder = listInput.sortOrder,
+                                includeDeletedMessages = listInput.includeDeletedMessages,
+                                limit = listInput.limit,
+                                cachePolicy = listInput.cachePolicy,
+                                nextToken = nextToken,
+                            )
+
+                            when (val listEmailMessages = listEmailMessagesForEmailFolderId(input)) {
+                                is ListAPIResult.Success -> {
+                                    items.addAll(listEmailMessages.result.items)
+                                    nextToken = listEmailMessages.result.nextToken
+                                }
+
+                                is ListAPIResult.Partial -> {
+                                    items.addAll(listEmailMessages.result.items)
+                                    failed.addAll(listEmailMessages.result.failed)
+                                    nextToken = listEmailMessages.result.nextToken
+                                }
+                            }
+                        } while (nextToken != null)
+                    }
+                }
+            } has { items.size == count }
+
+        if (failed.size > 0) {
+            return ListAPIResult.Partial(
+                result = ListAPIResult.ListPartialResult(
+                    items = items,
+                    failed = failed,
+                    nextToken = null,
+                ),
+            )
+        } else {
+            return ListAPIResult.Success(
+                result = ListAPIResult.ListSuccessResult(
+                    items = items,
+                    nextToken = null,
+                ),
+            )
+        }
+    }
+
+    /** Wait for multiple messages to arrive for an address */
+    protected fun waitForMessagesByAddress(
+        count: Int,
+        listInput: ListEmailMessagesForEmailAddressIdInput,
+    ): ListAPIResult<EmailMessage, PartialEmailMessage> {
+        val items = mutableListOf<EmailMessage>()
+        val failed = mutableListOf<PartialResult<PartialEmailMessage>>()
+
+        await
             .atMost(Duration.ONE_MINUTE)
             .pollInterval(Duration.TWO_HUNDRED_MILLISECONDS)
             .untilCallTo {
                 runBlocking {
                     with(emailClient) {
-                        listEmailMessagesForEmailFolderId(listInput)
+                        items.removeAll { true }
+                        failed.removeAll { true }
+                        var nextToken: String? = null
+                        do {
+                            val input = ListEmailMessagesForEmailAddressIdInput(
+                                emailAddressId = listInput.emailAddressId,
+                                dateRange = listInput.dateRange,
+                                sortOrder = listInput.sortOrder,
+                                includeDeletedMessages = listInput.includeDeletedMessages,
+                                limit = listInput.limit,
+                                cachePolicy = listInput.cachePolicy,
+                                nextToken = nextToken,
+                            )
+
+                            when (val listEmailMessages = listEmailMessagesForEmailAddressId(input)) {
+                                is ListAPIResult.Success -> {
+                                    items.addAll(listEmailMessages.result.items)
+                                    nextToken = listEmailMessages.result.nextToken
+                                }
+
+                                is ListAPIResult.Partial -> {
+                                    items.addAll(listEmailMessages.result.items)
+                                    failed.addAll(listEmailMessages.result.failed)
+                                    nextToken = listEmailMessages.result.nextToken
+                                }
+                            }
+                        } while (nextToken != null)
                     }
                 }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == count }
+            } has { items.size == count }
+
+        if (failed.size > 0) {
+            return ListAPIResult.Partial(
+                result = ListAPIResult.ListPartialResult(
+                    items = items,
+                    failed = failed,
+                    nextToken = null,
+                ),
+            )
+        } else {
+            return ListAPIResult.Success(
+                result = ListAPIResult.ListSuccessResult(
+                    items = items,
+                    nextToken = null,
+                ),
+            )
+        }
     }
 }

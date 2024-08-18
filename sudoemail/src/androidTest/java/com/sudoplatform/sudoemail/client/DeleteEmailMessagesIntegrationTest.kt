@@ -83,8 +83,15 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val result = emailClient.deleteEmailMessages(sentEmailIds.toList())
         result.status shouldBe BatchOperationStatus.SUCCESS
 
-        updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
+        await
+            .atMost(Duration.TEN_SECONDS)
+            .pollInterval(Duration.FIVE_HUNDRED_MILLISECONDS)
+            .untilAsserted {
+                runBlocking {
+                    updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+                    updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
+                }
+            }
     }
 
     @Test

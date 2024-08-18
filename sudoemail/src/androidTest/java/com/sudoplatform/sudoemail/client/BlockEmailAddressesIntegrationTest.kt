@@ -11,11 +11,7 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
-import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.EmailMessage
-import com.sudoplatform.sudoemail.types.ListAPIResult
-import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoprofiles.Sudo
@@ -23,12 +19,8 @@ import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.awaitility.Duration
-import org.awaitility.kotlin.await
-import org.awaitility.kotlin.has
-import org.awaitility.kotlin.untilCallTo
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -176,7 +168,8 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         val listFoldersInput = ListEmailFoldersForEmailAddressIdInput(senderReceiverEmailAddress.id)
         val inboxFolder =
             emailClient.listEmailFoldersForEmailAddressId(listFoldersInput).items.find { it.folderName == "INBOX" }
-
+        inboxFolder shouldNotBe null
+        val inboxFolderId = inboxFolder?.id ?: fail("inbox folder unexpectedly null")
         // Send message while unblocked
         sendEmailMessage(
             emailClient,
@@ -185,13 +178,11 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         )
 
         // Make sure message was received
-        waitForMessages(
+        waitForMessagesByFolder(
             count = 1,
-            listInput = inboxFolder?.id?.let {
-                ListEmailMessagesForEmailFolderIdInput(
-                    it,
-                )
-            },
+            listInput = ListEmailMessagesForEmailFolderIdInput(
+                folderId = inboxFolderId,
+            ),
         )
 
         // Block the sender
@@ -212,16 +203,13 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         // Wait for messages to potentially arrive even though they shouldn't
         // Increase timeout from default 10 seconds and wait 60 seconds for first poll
         // Should still have the original message, but not latest one
-        waitForMessages(
-            Duration.TWO_MINUTES,
-            Duration.ONE_MINUTE,
-            1,
-            inboxFolder?.id?.let {
-                ListEmailMessagesForEmailFolderIdInput(
-                    it,
-                    cachePolicy = CachePolicy.REMOTE_ONLY,
-                )
-            },
+        waitForMessagesByFolder(
+            atMost = Duration.TWO_MINUTES,
+            pollInterval = Duration.ONE_MINUTE,
+            count = 1,
+            listInput = ListEmailMessagesForEmailFolderIdInput(
+                folderId = inboxFolderId,
+            ),
         )
 
         // Unblock the sender
@@ -238,37 +226,11 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         )
 
         // Check that it was received, should have original message plus last one
-        waitForMessages(
+        waitForMessagesByFolder(
             count = 2,
-            listInput = inboxFolder?.id?.let {
-                ListEmailMessagesForEmailFolderIdInput(
-                    it,
-                    cachePolicy = CachePolicy.REMOTE_ONLY,
-                )
-            },
+            listInput = ListEmailMessagesForEmailFolderIdInput(
+                folderId = inboxFolderId,
+            ),
         )
-    }
-
-    /** Wait for multiple messages to arrive. */
-    private fun waitForMessages(
-        timeout: Duration = Duration.ONE_MINUTE,
-        poll: Duration = Duration.TWO_HUNDRED_MILLISECONDS,
-        count: Int,
-        listInput: ListEmailMessagesForEmailFolderIdInput?,
-    ): ListAPIResult<EmailMessage, PartialEmailMessage> {
-        return await
-            .atMost(timeout)
-            .pollInterval(poll)
-            .untilCallTo {
-                runBlocking {
-                    with(emailClient) {
-                        if (listInput != null) {
-                            listEmailMessagesForEmailFolderId(listInput)
-                        } else {
-                            fail("Unexpected null for listEmailMessagesInput")
-                        }
-                    }
-                }
-            } has { (this as ListAPIResult.Success<EmailMessage>).result.items.size == count }
     }
 }
