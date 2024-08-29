@@ -10,8 +10,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.apollographql.apollo.api.Response
 import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
-import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
@@ -84,8 +84,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             .build()
     }
 
-    private val supportedDomains by before {
-        GetEmailDomainsQuery.GetEmailDomains(
+    private val configuredDomains by before {
+        GetConfiguredEmailDomainsQuery.GetConfiguredEmailDomains(
             "typename",
             listOf("foo.com", "bear.com"),
         )
@@ -228,9 +228,9 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         )
     }
 
-    private val getSupportedDomainsQueryResponse by before {
-        Response.builder<GetEmailDomainsQuery.Data>(GetEmailDomainsQuery())
-            .data(GetEmailDomainsQuery.Data(supportedDomains))
+    private val getConfiguredDomainsQueryResponse by before {
+        Response.builder<GetConfiguredEmailDomainsQuery.Data>(GetConfiguredEmailDomainsQuery())
+            .data(GetConfiguredEmailDomainsQuery.Data(configuredDomains))
             .build()
     }
 
@@ -267,7 +267,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private val sendHolder = CallbackHolder<SendEmailMessageMutation.Data>()
     private val sendEncryptedHolder = CallbackHolder<SendEncryptedEmailMessageMutation.Data>()
-    private val getSupportedDomainsHolder = CallbackHolder<GetEmailDomainsQuery.Data>()
+    private val getConfiguredDomainsHolder = CallbackHolder<GetConfiguredEmailDomainsQuery.Data>()
     private val lookupPublicInfoHolder = CallbackHolder<LookupEmailAddressesPublicInfoQuery.Data>()
     private val getConfigDataHolder = CallbackHolder<GetEmailConfigQuery.Data>()
 
@@ -286,7 +286,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
         mock<AWSAppSyncClient>().stub {
             on { mutate(any<SendEmailMessageMutation>()) } doReturn sendHolder.mutationOperation
             on { mutate(any<SendEncryptedEmailMessageMutation>()) } doReturn sendEncryptedHolder.mutationOperation
-            on { query(any<GetEmailDomainsQuery>()) } doReturn getSupportedDomainsHolder.queryOperation
+            on { query(any<GetConfiguredEmailDomainsQuery>()) } doReturn getConfiguredDomainsHolder.queryOperation
             on { query(any<LookupEmailAddressesPublicInfoQuery>()) } doReturn lookupPublicInfoHolder.queryOperation
             on { query(any<GetEmailConfigQuery>()) } doReturn getConfigDataHolder.queryOperation
         }
@@ -374,7 +374,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Before
     fun init() {
         getConfigDataHolder.callback = null
-        getSupportedDomainsHolder.callback = null
+        getConfiguredDomainsHolder.callback = null
         lookupPublicInfoHolder.callback = null
         sendHolder.callback = null
         sendEncryptedHolder.callback = null
@@ -395,7 +395,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send when no error present`() =
         runTest {
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             sendHolder.callback = null
 
@@ -419,8 +419,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             getConfigDataHolder.callback shouldNotBe null
@@ -435,7 +435,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
@@ -456,7 +456,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send with attachments when no error present`() =
         runTest {
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             sendHolder.callback = null
 
@@ -480,8 +480,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             getConfigDataHolder.callback shouldNotBe null
@@ -495,7 +495,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result shouldNotBe null
             result.id.isBlank() shouldBe false
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
@@ -517,7 +517,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send with no recipients`() =
         runTest {
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             sendHolder.callback = null
 
@@ -541,8 +541,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             getConfigDataHolder.callback shouldNotBe null
@@ -557,7 +557,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result.id.isBlank() shouldBe false
 
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
@@ -586,7 +586,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
             sendEncryptedHolder.callback = null
@@ -611,8 +611,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
@@ -630,7 +630,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result shouldNotBe null
             result.id.isBlank() shouldBe false
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
@@ -665,7 +665,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
             sendHolder.callback = null
@@ -691,8 +691,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
@@ -710,7 +710,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             result shouldNotBe null
             result.id.isBlank() shouldBe false
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
@@ -739,7 +739,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             sendHolder.callback = null
 
@@ -765,8 +765,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             getConfigDataHolder.callback shouldNotBe null
@@ -778,7 +778,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).mutate(any<SendEmailMessageMutation>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
@@ -815,7 +815,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
             sendEncryptedHolder.callback = null
@@ -843,8 +843,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
@@ -860,7 +860,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockAppSyncClient).mutate(any<SendEncryptedEmailMessageMutation>())
@@ -920,8 +920,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             getConfigDataHolder.callback shouldNotBe null
@@ -929,7 +929,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
@@ -949,7 +949,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage should throw when any in-network recipient email address does not exist`() =
         runTest {
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             lookupPublicInfoHolder.callback = null
 
             val input = SendEmailMessageInput(
@@ -975,8 +975,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
@@ -984,7 +984,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
         }
 
@@ -1000,7 +1000,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             testSendException<SudoEmailClient.EmailMessageException.UnauthorizedAddressException>("UnauthorizedAddress")
             testSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
-            verify(mockAppSyncClient, times(4)).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient, times(4)).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient, times(4)).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient, times(4)).mutate(any<SendEmailMessageMutation>())
             verify(mockEmailMessageProcessor, times(4)).encodeToInternetMessageData(
@@ -1033,7 +1033,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             )
             testEncryptedSendException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
-            verify(mockAppSyncClient, times(4)).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient, times(4)).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient, times(4)).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient, times(4)).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockAppSyncClient, times(4)).mutate(any<SendEncryptedEmailMessageMutation>())
@@ -1107,7 +1107,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
             sendHolder.callback = null
@@ -1136,8 +1136,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null
@@ -1149,7 +1149,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
             verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
@@ -1213,7 +1213,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 } doReturn ByteArray(limit + 1)
             }
 
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
             sendHolder.callback = null
@@ -1242,8 +1242,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             getConfigDataHolder.callback shouldNotBe null
@@ -1251,7 +1251,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             deferredResult.await()
 
-            verify(mockAppSyncClient).query(any<GetEmailDomainsQuery>())
+            verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
             verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
             verify(mockEmailMessageProcessor).encodeToInternetMessageData(
                 anyString(),
@@ -1269,7 +1269,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private inline fun <reified T : Exception> testSendException(apolloError: String) =
         runTest {
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
             sendHolder.callback = null
@@ -1308,8 +1308,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             getConfigDataHolder.callback shouldNotBe null
@@ -1332,7 +1332,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     .build()
             }
 
-            getSupportedDomainsHolder.callback = null
+            getConfiguredDomainsHolder.callback = null
             getConfigDataHolder.callback = null
             lookupPublicInfoHolder.callback = null
             sendHolder.callback = null
@@ -1373,8 +1373,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
 
             delay(100L)
-            getSupportedDomainsHolder.callback shouldNotBe null
-            getSupportedDomainsHolder.callback?.onResponse(getSupportedDomainsQueryResponse)
+            getConfiguredDomainsHolder.callback shouldNotBe null
+            getConfiguredDomainsHolder.callback?.onResponse(getConfiguredDomainsQueryResponse)
 
             delay(100L)
             lookupPublicInfoHolder.callback shouldNotBe null

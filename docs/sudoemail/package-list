@@ -626,6 +626,7 @@ $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deleteEmailMessages/#
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deprovisionEmailAddress/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/deprovision-email-address.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/exportKeys/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/export-keys.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/getConfigurationData/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/get-configuration-data.html
+$dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/getConfiguredEmailDomains/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/get-configured-email-domains.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/getDraftEmailMessage/#com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/get-draft-email-message.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/getEmailAddress/#com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/get-email-address.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/getEmailAddressBlocklist/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/get-email-address-blocklist.html

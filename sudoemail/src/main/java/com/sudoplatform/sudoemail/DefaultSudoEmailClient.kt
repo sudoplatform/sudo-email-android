@@ -21,6 +21,7 @@ import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
+import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
@@ -328,6 +329,35 @@ internal class DefaultSudoEmailClient(
                 throw interpretEmailDomainError(queryResponse.errors().first())
             }
             return queryResponse.data()?.emailDomains?.domains() ?: emptyList()
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+
+                is ApolloException -> throw SudoEmailClient.EmailAddressException.FailedException(
+                    cause = e,
+                )
+
+                else -> throw interpretEmailAddressException(e)
+            }
+        }
+    }
+
+    @Throws(SudoEmailClient.EmailAddressException::class)
+    override suspend fun getConfiguredEmailDomains(): List<String> {
+        try {
+            val query = GetConfiguredEmailDomainsQuery.builder().build()
+
+            val queryResponse = appSyncClient.query(query)
+                .enqueueFirst()
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors()}")
+                throw interpretEmailDomainError(queryResponse.errors().first())
+            }
+            return queryResponse.data()?.configuredEmailDomains?.domains() ?: emptyList()
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
@@ -783,7 +813,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult {
         val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments) = input
         try {
-            val domains = getSupportedEmailDomains()
+            val domains = getConfiguredEmailDomains()
 
             val allRecipients = mutableListOf<EmailMessage.EmailAddress>().apply {
                 addAll(emailMessageHeader.to)

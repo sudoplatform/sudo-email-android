@@ -409,7 +409,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val emailDomains = emailClient.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+        val emailDomains = emailClient.getConfiguredEmailDomains()
         val inNetworkNotFoundAddress = "notfoundaddress@${emailDomains.first()}"
 
         shouldThrow<SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException> {
@@ -725,7 +725,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         receiverEmailAddress shouldNotBe null
         emailAddressList.add(receiverEmailAddress)
 
-        val emailDomains = emailClient.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+        val emailDomains = emailClient.getConfiguredEmailDomains()
         val inNetworkNotFoundAddress = "notfoundaddress@${emailDomains.first()}"
 
         shouldThrow<SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException> {

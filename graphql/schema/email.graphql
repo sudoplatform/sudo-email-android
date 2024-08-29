@@ -389,10 +389,16 @@ type GetEmailAddressBlocklistResponse {
   blockedAddresses: [BlockedEmailAddress!]!
 }
 
+type ConfiguredDomains {
+  domains: [String!]!
+}
+
 type Query {
   getEmailConfig: EmailConfigurationData!
 
   getEmailDomains: SupportedDomains!
+
+  getConfiguredEmailDomains: ConfiguredDomains!
 
   checkEmailAddressAvailability(
     input: CheckEmailAddressAvailabilityInput!

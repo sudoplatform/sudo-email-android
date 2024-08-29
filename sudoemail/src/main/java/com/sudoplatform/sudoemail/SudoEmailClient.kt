@@ -456,7 +456,8 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun getConfigurationData(): ConfigurationData
 
     /**
-     * Get a list of the supported email domains.
+     * Get a list of the supported email domains. Primarily intended to be used to perform a domain search
+     * which occurs prior to provisioning an email address.
      *
      * @param cachePolicy [CachePolicy] Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
      * be aware that this will only return cached results of identical API calls.
@@ -466,6 +467,18 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailAddressException::class)
     suspend fun getSupportedEmailDomains(cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): List<String>
+
+    /**
+     * Get a list of all of the configured domains. Primarily intended to be used as part of performing
+     * an email send operation in order to fetch all domains configured for the service so that appropriate
+     * encryption decisions can be made.
+     *
+     * @return A list of all configured domains.
+     *
+     * @throws [EmailAddressException].
+     */
+    @Throws(EmailAddressException::class)
+    suspend fun getConfiguredEmailDomains(): List<String>
 
     /**
      * Check if an email address is available to be provisioned within a domain.

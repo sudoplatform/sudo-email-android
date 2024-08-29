@@ -33,6 +33,12 @@ query GetEmailDomains {
   }
 }
 
+query GetConfiguredEmailDomains {
+  getConfiguredEmailDomains {
+    domains
+  }
+}
+
 query CheckEmailAddressAvailability(
   $input: CheckEmailAddressAvailabilityInput!
 ) {

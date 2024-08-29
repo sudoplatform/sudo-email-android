@@ -481,6 +481,41 @@
         "possibleTypes": null
       },
       {
+        "kind": "OBJECT",
+        "name": "ConfiguredDomains",
+        "description": null,
+        "fields": [
+          {
+            "name": "domains",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "INPUT_OBJECT",
         "name": "CreatePublicKeyInput",
         "description": null,
@@ -3087,6 +3122,22 @@
               "ofType": {
                 "kind": "OBJECT",
                 "name": "AvailableAddresses",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "getConfiguredEmailDomains",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "ConfiguredDomains",
                 "ofType": null
               }
             },
