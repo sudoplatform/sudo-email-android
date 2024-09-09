@@ -20,6 +20,7 @@ import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
@@ -92,7 +93,12 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             result.createdAt shouldNotBe null
         }
 
-        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
+        when (
+            val listEmailMessages = waitForMessagesByAddress(
+                count = messageCount * 2,
+                listInput = ListEmailMessagesForEmailAddressIdInput(emailAddressId = emailAddress.id),
+            )
+        ) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND

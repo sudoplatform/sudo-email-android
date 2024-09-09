@@ -52,6 +52,14 @@ internal val DEFAULT_LAST_RULE = NotificationFilterItem(
 )
 
 internal fun isRuleMatchingEmailAddressId(rule: String?, emailAddressId: String): Boolean {
+    return isRuleMatchingSingleMeta(rule, "emailAddressId", emailAddressId)
+}
+
+internal fun isRuleMatchingSudoId(rule: String?, sudoId: String): Boolean {
+    return isRuleMatchingSingleMeta(rule, "sudoId", sudoId)
+}
+
+internal fun isRuleMatchingSingleMeta(rule: String?, metaName: String, metaValue: String): Boolean {
     if (rule == null) {
         return false
     }
@@ -65,7 +73,7 @@ internal fun isRuleMatchingEmailAddressId(rule: String?, emailAddressId: String)
         // "var meta.emailAddressId == emailAddressId
         if (lhs is JsonObject && rhs is JsonPrimitive && rhs.isString) {
             val v = lhs["var"]
-            if (v is JsonPrimitive && v.isString && v.content == "meta.emailAddressId" && rhs.content == emailAddressId) {
+            if (v is JsonPrimitive && v.isString && v.content == "meta.$metaName" && rhs.content == metaValue) {
                 return true
             }
         }
@@ -73,7 +81,7 @@ internal fun isRuleMatchingEmailAddressId(rule: String?, emailAddressId: String)
         // "emailAddressId == var meta.emailAddressId
         else if (rhs is JsonObject && lhs is JsonPrimitive && lhs.isString) {
             val v = rhs["var"]
-            if (v is JsonPrimitive && v.isString && v.content == "meta.emailAddressId" && lhs.content == emailAddressId) {
+            if (v is JsonPrimitive && v.isString && v.content == "meta.$metaName" && lhs.content == metaValue) {
                 return true
             }
         }
@@ -109,49 +117,35 @@ fun NotificationConfiguration.initEmailNotifications(): NotificationConfiguratio
     )
 }
 
-/**
- * Extension function to add rules to a [NotificationConfiguration] for enabling
- * or disabling notifications for a particular email address ID.
- *
- * Once all notification configurations across all Sudo platform SDKs have
- * been performed, call the
- * [com.sudoplatform.sudonotification.SudoNotificationClient.setNotificationConfiguration]
- * to set the full notification configuration for your application.
- *
- * @param emailAddressId
- *      ID of email address to set notification enablement for
- *
- * @param enabled
- *      Whether or not notifications are to be enabled or disabled for the
- *      email address with the specified ID.
- *
- * @return New NotificationConfiguration with updated rules
- */
-fun NotificationConfiguration.setEmailNotificationsForAddressId(emailAddressId: String, enabled: Boolean): NotificationConfiguration {
+internal fun NotificationConfiguration.setEmailNotificationsForSingleMeta(
+    metaName: String,
+    metaValue: String,
+    enabled: Boolean,
+): NotificationConfiguration {
     // Start with any rules for other services
     val newRules = this.configs
         .filter { it.name != Constants.SERVICE_NAME }.toMutableList()
 
     // Then find all the email service rules except our defaults and
-    // any existing rule matching this email address ID.
+    // any existing rule matching this meta.
     val newEmServiceRules = this.configs
         .filter { it.name == Constants.SERVICE_NAME }
         // Filter out any current or historic default rules.
         // We'll add current default rules back in
         .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
-        // Filter out any rule specific to our emailAddressId
-        .filter { !isRuleMatchingEmailAddressId(it.rules, emailAddressId) }
+        // Filter out any rule specific to our meta name and value
+        .filter { !isRuleMatchingSingleMeta(it.rules, metaName, metaValue) }
 
     // Re-add DEFAULT_FIRST_RULE
     newRules.add(DEFAULT_FIRST_RULE)
 
-    // Re-add email service rules for other addresses
+    // Re-add other email service rules
     newRules.addAll(newEmServiceRules)
 
-    // If we're disabling notifications for this email address then
+    // If we're disabling notifications for this meta value then
     // add an explicit rule for that
     if (!enabled) {
-        val newJsonRule: JsonObject = JsonObject(
+        val newJsonRule = JsonObject(
             mapOf(
                 Pair(
                     "==",
@@ -159,10 +153,10 @@ fun NotificationConfiguration.setEmailNotificationsForAddressId(emailAddressId: 
                         listOf(
                             JsonObject(
                                 mapOf(
-                                    Pair("var", JsonPrimitive("meta.emailAddressId")),
+                                    Pair("var", JsonPrimitive("meta.$metaName")),
                                 ),
                             ),
-                            JsonPrimitive(emailAddressId),
+                            JsonPrimitive(metaValue),
                         ),
                     ),
                 ),
@@ -186,6 +180,57 @@ fun NotificationConfiguration.setEmailNotificationsForAddressId(emailAddressId: 
     )
 }
 
+/**
+ * Extension function to add rules to a [NotificationConfiguration] for enabling
+ * or disabling email service notifications for a particular email address ID.
+ *
+ * Once all notification configurations across all Sudo platform SDKs have
+ * been performed, call the
+ * [com.sudoplatform.sudonotification.SudoNotificationClient.setNotificationConfiguration]
+ * to set the full notification configuration for your application.
+ *
+ * @param emailAddressId
+ *      ID of email address to set email service notification enablement for
+ *
+ * @param enabled
+ *      Whether or not email service notifications are to be enabled or disabled for the
+ *      email address with the specified ID.
+ *
+ * @return New NotificationConfiguration with updated rules
+ */
+fun NotificationConfiguration.setEmailNotificationsForAddressId(emailAddressId: String, enabled: Boolean): NotificationConfiguration {
+    return setEmailNotificationsForSingleMeta("emailAddressId", emailAddressId, enabled)
+}
+
+/**
+ * Extension function to add rules to a [NotificationConfiguration] for enabling
+ * or disabling email service notifications for a particular sudo ID.
+ *
+ * Once all notification configurations across all Sudo platform SDKs have
+ * been performed, call the
+ * [com.sudoplatform.sudonotification.SudoNotificationClient.setNotificationConfiguration]
+ * to set the full notification configuration for your application.
+ *
+ * @param sudoId
+ *      ID of Sudo to set email service notification enablement for
+ *
+ * @param enabled
+ *      Whether or not email service notifications are to be enabled or disabled for the
+ *      Sudo with the specified ID.
+ *
+ * @return New NotificationConfiguration with updated rules
+ */
+fun NotificationConfiguration.setEmailNotificationsForSudoId(sudoId: String, enabled: Boolean): NotificationConfiguration {
+    return setEmailNotificationsForSingleMeta("sudoId", sudoId, enabled)
+}
+
+/**
+ * Test whether or not email service notifications are enabled for a particular email address
+ *
+ * @param emailAddressId ID of email address to test
+ *
+ * @return Whether or not email service notifications are enabled for the email address with the specified ID
+ */
 fun NotificationConfiguration.isEmailNotificationForAddressIdEnabled(emailAddressId: String): Boolean {
     val emailAddressRule = this.configs
         .filter { it.name == Constants.SERVICE_NAME }
@@ -200,4 +245,27 @@ fun NotificationConfiguration.isEmailNotificationForAddressIdEnabled(emailAddres
     // matching rule explicitly enables them.
     return emailAddressRule == null ||
         emailAddressRule.status == NotificationConfiguration.ENABLE_STR
+}
+
+/**
+ * Test whether or not email service notifications are enabled for a particular Sudo
+ *
+ * @param sudoId ID of Sudo to test
+ *
+ * @return Whether or not email service notifications are enabled for the Sudo with the specified ID
+ */
+fun NotificationConfiguration.isEmailNotificationForSudoIdEnabled(sudoId: String): Boolean {
+    val sudoRule = this.configs
+        .filter { it.name == Constants.SERVICE_NAME }
+        // Filter out any current or historic default rules.
+        // We'll add current default rules back in
+        .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
+        // Filter out any rule specific to our sudoId
+        .find { isRuleMatchingSudoId(it.rules, sudoId) }
+
+    // Notifications are enabled for this Sudo if either there
+    // is no matching rule (because the default enables it) or if the
+    // matching rule explicitly enables them.
+    return sudoRule == null ||
+        sudoRule.status == NotificationConfiguration.ENABLE_STR
 }
