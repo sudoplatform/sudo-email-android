@@ -7,10 +7,10 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloHttpException
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -19,25 +19,24 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Protocol
-import okhttp3.Request
-import okhttp3.ResponseBody.Companion.toResponseBody
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -55,20 +54,20 @@ import java.util.concurrent.CancellationException
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
 
-    private val queryResult by before {
-        GetConfiguredEmailDomainsQuery.GetConfiguredEmailDomains(
-            "typename",
-            listOf("foo.com", "bar.com"),
-        )
-    }
+    private val domains = listOf("foo.com", "bar.com")
 
     private val queryResponse by before {
-        Response.builder<GetConfiguredEmailDomainsQuery.Data>(GetConfiguredEmailDomainsQuery())
-            .data(GetConfiguredEmailDomainsQuery.Data(queryResult))
-            .build()
+        JSONObject(
+            """
+                {
+                    'getConfiguredEmailDomains': {
+                        '__typename': 'GetConfiguredEmailDomains',
+                        'domains': $domains
+                    }
+                }
+            """.trimIndent(),
+        )
     }
-
-    private val queryHolder = CallbackHolder<GetConfiguredEmailDomainsQuery.Data>()
 
     private val mockContext by before {
         mock<Context>()
@@ -78,9 +77,21 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { query(any<GetConfiguredEmailDomainsQuery>()) } doReturn queryHolder.queryOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(queryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -123,7 +134,7 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -139,18 +150,13 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        queryHolder.callback = null
-    }
-
     @After
     fun fini() {
         verifyNoMoreInteractions(
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -159,101 +165,134 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
 
     @Test
     fun `getConfiguredEmailDomains() should return results when no error present`() = runTest {
-        queryHolder.callback shouldBe null
-
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getConfiguredEmailDomains()
         }
         deferredResult.start()
-
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(queryResponse)
-
         val result = deferredResult.await()
+
         result shouldNotBe null
         result.isEmpty() shouldBe false
         result.size shouldBe 2
         result shouldContainExactlyInAnyOrder listOf("bar.com", "foo.com")
 
-        verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfiguredEmailDomains() should return empty list output when query result data is empty`() = runTest {
-        queryHolder.callback shouldBe null
-
-        val queryResultWithEmptyList by before {
-            GetConfiguredEmailDomainsQuery.GetConfiguredEmailDomains(
-                "typename",
-                emptyList(),
+        val queryResponseWithEmptyList by before {
+            JSONObject(
+                """
+                {
+                    'getConfiguredEmailDomains': {
+                        '__typename': 'GetConfiguredEmailDomains',
+                        'domains': []
+                    }
+                }
+                """.trimIndent(),
             )
         }
-
-        val responseWithEmptyList by before {
-            Response.builder<GetConfiguredEmailDomainsQuery.Data>(GetConfiguredEmailDomainsQuery())
-                .data(GetConfiguredEmailDomainsQuery.Data(queryResultWithEmptyList))
-                .build()
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(queryResponseWithEmptyList.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getConfiguredEmailDomains()
         }
         deferredResult.start()
-
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(responseWithEmptyList)
-
         val result = deferredResult.await()
+
         result shouldNotBe null
         result.isEmpty() shouldBe true
         result.size shouldBe 0
 
-        verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfiguredEmailDomains() should return empty list output when query response is null`() = runTest {
-        queryHolder.callback shouldBe null
-
-        val responseWithNullData by before {
-            Response.builder<GetConfiguredEmailDomainsQuery.Data>(GetConfiguredEmailDomainsQuery())
-                .data(null)
-                .build()
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getConfiguredEmailDomains()
         }
         deferredResult.start()
-
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(responseWithNullData)
-
         val result = deferredResult.await()
+
         result shouldNotBe null
         result.isEmpty() shouldBe true
         result.size shouldBe 0
 
-        verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfiguredEmailDomains() should throw when response has error`() = runTest {
-        queryHolder.callback shouldBe null
-
-        val error = com.apollographql.apollo.api.Error(
-            "mock",
+        val testError = GraphQLResponse.Error(
+            "Test generated error",
+            emptyList(),
             emptyList(),
             mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
         )
-
-        val responseWithNullData by before {
-            Response.builder<GetConfiguredEmailDomainsQuery.Data>(GetConfiguredEmailDomainsQuery())
-                .errors(listOf(error))
-                .build()
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -262,55 +301,67 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
             }
         }
         deferredResult.start()
-
-        delay(100L)
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onResponse(responseWithNullData)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
-    fun `getSupportedEmailDomains() should throw when http error occurs`() = runTest {
-        queryHolder.callback shouldBe null
-
+    fun `getConfiguredEmailDomains() should throw when http error occurs`() = runTest {
+        val testError = GraphQLResponse.Error(
+            "mock",
+            null,
+            null,
+            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+        )
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
+        }
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.getConfiguredEmailDomains()
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        val request = Request.Builder()
-            .get()
-            .url("http://www.smh.com.au")
-            .build()
-        val responseBody = "{}".toResponseBody("application/json; charset=utf-8".toMediaType())
-        val forbidden = okhttp3.Response.Builder()
-            .protocol(Protocol.HTTP_1_1)
-            .code(HttpURLConnection.HTTP_FORBIDDEN)
-            .request(request)
-            .message("Forbidden")
-            .body(responseBody)
-            .build()
-
-        queryHolder.callback shouldNotBe null
-        queryHolder.callback?.onHttpError(ApolloHttpException(forbidden))
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfiguredEmailDomains() should throw when unknown error occurs`() = runTest {
-        queryHolder.callback shouldBe null
-
-        mockAppSyncClient.stub {
-            on { query(any<GetConfiguredEmailDomainsQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow RuntimeException("Mock Runtime Exception")
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -319,23 +370,39 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
             }
         }
         deferredResult.start()
-
-        delay(100L)
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfiguredEmailDomains() should not block coroutine cancellation exception`() = runTest {
-        mockAppSyncClient.stub {
-            on { query(any<GetConfiguredEmailDomainsQuery>()) } doThrow CancellationException("Mock Cancellation Exception")
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow CancellationException("Mock Cancellation Exception")
         }
 
         shouldThrow<CancellationException> {
             client.getConfiguredEmailDomains()
         }
 
-        verify(mockAppSyncClient).query(any<GetConfiguredEmailDomainsQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 }

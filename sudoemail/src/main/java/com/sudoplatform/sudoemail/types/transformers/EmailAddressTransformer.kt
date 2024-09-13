@@ -7,7 +7,6 @@
 package com.sudoplatform.sudoemail.types.transformers
 
 import com.amazonaws.util.Base64
-import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
@@ -36,12 +35,12 @@ internal object EmailAddressTransformer {
         val symmetricKeyId = deviceKeyManager.getCurrentSymmetricKeyId() ?: throw KeyNotFoundException("Symmetric key not found")
         val encryptedAlias = deviceKeyManager.encryptWithSymmetricKeyId(symmetricKeyId, this.toByteArray(Charsets.UTF_8))
         val base64EncodedEncryptedAlias = String(Base64.encode(encryptedAlias), Charsets.UTF_8)
-        return SealedAttributeInput.builder()
-            .algorithm(SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString())
-            .base64EncodedSealedData(base64EncodedEncryptedAlias)
-            .keyId(symmetricKeyId)
-            .plainTextType("string")
-            .build()
+        return SealedAttributeInput(
+            algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+            base64EncodedSealedData = base64EncodedEncryptedAlias,
+            keyId = symmetricKeyId,
+            plainTextType = "string",
+        )
     }
 
     /**
@@ -55,10 +54,7 @@ internal object EmailAddressTransformer {
         deviceKeyManager: DeviceKeyManager,
         emailAddress: EmailAddressFragment,
     ): EmailAddress {
-        val emailAddressWithoutFolders = emailAddress.fragments().emailAddressWithoutFolders()
-            ?: throw SudoEmailClient.EmailAddressException.FailedException(
-                "unexpected null EmailAddress in EmailAddressWithoutFolders",
-            )
+        val emailAddressWithoutFolders = emailAddress.emailAddressWithoutFolders
         val emailAddressWithoutFoldersEntity = this.toEntity(
             deviceKeyManager,
             emailAddressWithoutFolders = emailAddressWithoutFolders,
@@ -75,7 +71,7 @@ internal object EmailAddressTransformer {
             updatedAt = emailAddressWithoutFoldersEntity.updatedAt,
             lastReceivedAt = emailAddressWithoutFoldersEntity.lastReceivedAt,
             alias = emailAddressWithoutFoldersEntity.alias,
-            folders = emailAddress.folders().toFolders(),
+            folders = emailAddress.folders.toFolders(),
         )
     }
 
@@ -91,19 +87,19 @@ internal object EmailAddressTransformer {
         emailAddressWithoutFolders: EmailAddressWithoutFolders,
     ): EmailAddress {
         return EmailAddress(
-            id = emailAddressWithoutFolders.id(),
-            owner = emailAddressWithoutFolders.owner(),
-            owners = emailAddressWithoutFolders.owners().toEmailAddressOwners(),
-            emailAddress = emailAddressWithoutFolders.emailAddress(),
-            size = emailAddressWithoutFolders.size(),
-            numberOfEmailMessages = emailAddressWithoutFolders.numberOfEmailMessages(),
-            version = emailAddressWithoutFolders.version(),
-            createdAt = emailAddressWithoutFolders.createdAtEpochMs().toDate(),
-            updatedAt = emailAddressWithoutFolders.updatedAtEpochMs().toDate(),
-            lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs().toDate(),
-            alias = emailAddressWithoutFolders.alias()?.let {
-                val sealedAttribute = it.fragments().sealedAttribute()
-                val symmetricKeyInfo = KeyInfo(sealedAttribute.keyId(), KeyType.SYMMETRIC_KEY, sealedAttribute.algorithm())
+            id = emailAddressWithoutFolders.id,
+            owner = emailAddressWithoutFolders.owner,
+            owners = emailAddressWithoutFolders.owners.toEmailAddressOwners(),
+            emailAddress = emailAddressWithoutFolders.emailAddress,
+            size = emailAddressWithoutFolders.size,
+            numberOfEmailMessages = emailAddressWithoutFolders.numberOfEmailMessages,
+            version = emailAddressWithoutFolders.version,
+            createdAt = emailAddressWithoutFolders.createdAtEpochMs.toDate(),
+            updatedAt = emailAddressWithoutFolders.updatedAtEpochMs.toDate(),
+            lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs.toDate(),
+            alias = emailAddressWithoutFolders.alias?.let {
+                val sealedAttribute = it.sealedAttribute
+                val symmetricKeyInfo = KeyInfo(sealedAttribute.keyId, KeyType.SYMMETRIC_KEY, sealedAttribute.algorithm)
                 val aliasUnsealer = Unsealer(deviceKeyManager, symmetricKeyInfo)
                 aliasUnsealer.unseal(it)
             },
@@ -121,7 +117,7 @@ internal object EmailAddressTransformer {
         emailAddress: EmailAddressFragment,
     ): PartialEmailAddress {
         val partialEmailAddressWithoutFolders = this.toPartialEntity(
-            emailAddressWithoutFolders = emailAddress.fragments().emailAddressWithoutFolders()!!,
+            emailAddressWithoutFolders = emailAddress.emailAddressWithoutFolders,
         )
         return PartialEmailAddress(
             id = partialEmailAddressWithoutFolders.id,
@@ -134,7 +130,7 @@ internal object EmailAddressTransformer {
             createdAt = partialEmailAddressWithoutFolders.createdAt,
             updatedAt = partialEmailAddressWithoutFolders.updatedAt,
             lastReceivedAt = partialEmailAddressWithoutFolders.lastReceivedAt,
-            folders = emailAddress.folders().toFolders(),
+            folders = emailAddress.folders.toFolders(),
         )
     }
 
@@ -142,32 +138,32 @@ internal object EmailAddressTransformer {
         emailAddressWithoutFolders: EmailAddressWithoutFolders,
     ): EmailAddress {
         return EmailAddress(
-            id = emailAddressWithoutFolders.id(),
-            owner = emailAddressWithoutFolders.owner(),
-            owners = emailAddressWithoutFolders.owners().toEmailAddressOwners(),
-            emailAddress = emailAddressWithoutFolders.emailAddress(),
-            size = emailAddressWithoutFolders.size(),
-            numberOfEmailMessages = emailAddressWithoutFolders.numberOfEmailMessages(),
-            version = emailAddressWithoutFolders.version(),
-            createdAt = emailAddressWithoutFolders.createdAtEpochMs().toDate(),
-            updatedAt = emailAddressWithoutFolders.updatedAtEpochMs().toDate(),
-            lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs().toDate(),
+            id = emailAddressWithoutFolders.id,
+            owner = emailAddressWithoutFolders.owner,
+            owners = emailAddressWithoutFolders.owners.toEmailAddressOwners(),
+            emailAddress = emailAddressWithoutFolders.emailAddress,
+            size = emailAddressWithoutFolders.size,
+            numberOfEmailMessages = emailAddressWithoutFolders.numberOfEmailMessages,
+            version = emailAddressWithoutFolders.version,
+            createdAt = emailAddressWithoutFolders.createdAtEpochMs.toDate(),
+            updatedAt = emailAddressWithoutFolders.updatedAtEpochMs.toDate(),
+            lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs.toDate(),
             folders = emptyList(),
         )
     }
 
     private fun EmailAddressFragment.Folder.toEmailFolder(): EmailFolder {
         return EmailFolder(
-            id = fragments().emailFolder().id(),
-            owner = fragments().emailFolder().owner(),
-            owners = fragments().emailFolder().owners().toEmailFolderOwners(),
-            emailAddressId = fragments().emailFolder().emailAddressId(),
-            folderName = fragments().emailFolder().folderName(),
-            size = fragments().emailFolder().size(),
-            unseenCount = fragments().emailFolder().unseenCount().toInt(),
-            version = fragments().emailFolder().version(),
-            createdAt = fragments().emailFolder().createdAtEpochMs().toDate(),
-            updatedAt = fragments().emailFolder().updatedAtEpochMs().toDate(),
+            id = emailFolder.id,
+            owner = emailFolder.owner,
+            owners = emailFolder.owners.toEmailFolderOwners(),
+            emailAddressId = emailFolder.emailAddressId,
+            folderName = emailFolder.folderName,
+            size = emailFolder.size,
+            unseenCount = emailFolder.unseenCount.toInt(),
+            version = emailFolder.version,
+            createdAt = emailFolder.createdAtEpochMs.toDate(),
+            updatedAt = emailFolder.updatedAtEpochMs.toDate(),
         )
     }
 
@@ -178,7 +174,7 @@ internal object EmailAddressTransformer {
     }
 
     private fun EmailAddressWithoutFolders.Owner.toOwner(): Owner {
-        return Owner(id = id(), issuer = issuer())
+        return Owner(id = id, issuer = issuer)
     }
 
     private fun List<EmailAddressWithoutFolders.Owner>.toEmailAddressOwners(): List<Owner> {
@@ -188,7 +184,7 @@ internal object EmailAddressTransformer {
     }
 
     private fun EmailFolderFragment.Owner.toOwner(): Owner {
-        return Owner(id = id(), issuer = issuer())
+        return Owner(id = id, issuer = issuer)
     }
 
     private fun List<EmailFolderFragment.Owner>.toEmailFolderOwners(): List<Owner> {

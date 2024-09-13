@@ -8,7 +8,6 @@ package com.sudoplatform.sudoemail
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.sudoplatform.sudoapiclient.ApiClientManager
 import com.sudoplatform.sudoconfigmanager.DefaultSudoConfigManager
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
@@ -19,7 +18,6 @@ import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.types.BatchOperationResult
-import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.ConfigurationData
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
@@ -65,6 +63,7 @@ import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import org.json.JSONException
 import java.util.Objects
 
@@ -149,7 +148,7 @@ interface SudoEmailClient : AutoCloseable {
     class Builder internal constructor() {
         private var context: Context? = null
         private var sudoUserClient: SudoUserClient? = null
-        private var appSyncClient: AWSAppSyncClient? = null
+        private var graphQLClient: GraphQLClient? = null
         private var keyManager: KeyManagerInterface? = null
         private var logger: Logger =
             Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
@@ -173,12 +172,12 @@ interface SudoEmailClient : AutoCloseable {
         }
 
         /**
-         * Provide an [AWSAppSyncClient] for the [SudoEmailClient] to use
-         * (optional input). If this is not supplied, an [AWSAppSyncClient] will
+         * Provide a [GraphQLClient] for the [SudoEmailClient] to use
+         * (optional input). If this is not supplied, an [GraphQLClient] will
          * be constructed and used.
          */
-        fun setAppSyncClient(appSyncClient: AWSAppSyncClient) = also {
-            this.appSyncClient = appSyncClient
+        fun setGraphQLClient(graphQLClient: GraphQLClient) = also {
+            this.graphQLClient = graphQLClient
         }
 
         /**
@@ -231,7 +230,7 @@ interface SudoEmailClient : AutoCloseable {
             Objects.requireNonNull(context, "Context must be provided.")
             Objects.requireNonNull(sudoUserClient, "SudoUserClient must be provided.")
 
-            val appSyncClient = appSyncClient ?: ApiClientManager.getClient(
+            val client = graphQLClient ?: ApiClientManager.getClient(
                 this@Builder.context!!,
                 this@Builder.sudoUserClient!!,
                 CONFIG_EMAIL_SERVICE,
@@ -262,7 +261,7 @@ interface SudoEmailClient : AutoCloseable {
 
             return DefaultSudoEmailClient(
                 context = context!!,
-                appSyncClient = appSyncClient,
+                graphQLClient = client,
                 sudoUserClient = sudoUserClient!!,
                 logger = logger,
                 serviceKeyManager = serviceKeyManager,
@@ -459,14 +458,12 @@ interface SudoEmailClient : AutoCloseable {
      * Get a list of the supported email domains. Primarily intended to be used to perform a domain search
      * which occurs prior to provisioning an email address.
      *
-     * @param cachePolicy [CachePolicy] Determines how the data will be fetched. When using [CachePolicy.CACHE_ONLY],
-     * be aware that this will only return cached results of identical API calls.
      * @return A list of supported domains.
      *
      * @throws [EmailAddressException].
      */
     @Throws(EmailAddressException::class)
-    suspend fun getSupportedEmailDomains(cachePolicy: CachePolicy = CachePolicy.REMOTE_ONLY): List<String>
+    suspend fun getSupportedEmailDomains(): List<String>
 
     /**
      * Get a list of all of the configured domains. Primarily intended to be used as part of performing

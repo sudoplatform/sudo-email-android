@@ -11,7 +11,6 @@ import android.net.Uri
 import android.os.StrictMode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
-import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailFolder
@@ -231,7 +230,7 @@ abstract class BaseIntegrationTest {
     }
 
     protected suspend fun getEmailDomains(client: SudoEmailClient): List<String> {
-        return client.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+        return client.getSupportedEmailDomains()
     }
 
     protected fun generateSafeLocalPart(prefix: String? = null): String {
@@ -272,7 +271,7 @@ abstract class BaseIntegrationTest {
         keyId: String? = null,
         prefix: String? = null,
     ): EmailAddress {
-        val emailDomains = client.getSupportedEmailDomains(CachePolicy.REMOTE_ONLY)
+        val emailDomains = client.getSupportedEmailDomains()
         emailDomains.size shouldBeGreaterThanOrEqual 1
 
         val localPart = generateSafeLocalPart(prefix)
@@ -373,7 +372,6 @@ abstract class BaseIntegrationTest {
                                 sortOrder = listInput.sortOrder,
                                 includeDeletedMessages = listInput.includeDeletedMessages,
                                 limit = listInput.limit,
-                                cachePolicy = listInput.cachePolicy,
                                 nextToken = nextToken,
                             )
 
@@ -438,7 +436,6 @@ abstract class BaseIntegrationTest {
                                 sortOrder = listInput.sortOrder,
                                 includeDeletedMessages = listInput.includeDeletedMessages,
                                 limit = listInput.limit,
-                                cachePolicy = listInput.cachePolicy,
                                 nextToken = nextToken,
                             )
 
@@ -501,7 +498,6 @@ abstract class BaseIntegrationTest {
                                 sortOrder = listInput.sortOrder,
                                 includeDeletedMessages = listInput.includeDeletedMessages,
                                 limit = listInput.limit,
-                                cachePolicy = listInput.cachePolicy,
                                 nextToken = nextToken,
                             )
 

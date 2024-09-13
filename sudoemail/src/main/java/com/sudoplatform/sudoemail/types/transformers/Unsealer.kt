@@ -97,16 +97,16 @@ internal class Unsealer(
      * Unseal the fields of the GraphQL [EmailAddressWithoutFolders.Alias] type.
      */
     fun unseal(value: EmailAddressWithoutFolders.Alias): String {
-        val alias = value.fragments().sealedAttribute()
-        return unsealValue(alias.algorithm(), alias.base64EncodedSealedData())
+        val alias = value.sealedAttribute
+        return unsealValue(alias.algorithm, alias.base64EncodedSealedData)
     }
 
     /**
      * Unseal the fields of the GraphQL [BlockedAddress.SealedValue] type
      */
     fun unseal(value: BlockedAddress.SealedValue): String {
-        val sealedValue = value.fragments().sealedAttribute()
-        return unsealValue(sealedValue.algorithm(), sealedValue.base64EncodedSealedData())
+        val sealedValue = value.sealedAttribute
+        return unsealValue(sealedValue.algorithm, sealedValue.base64EncodedSealedData)
     }
 
     private fun unsealValue(algorithm: String, base64EncodedSealedData: String): String {

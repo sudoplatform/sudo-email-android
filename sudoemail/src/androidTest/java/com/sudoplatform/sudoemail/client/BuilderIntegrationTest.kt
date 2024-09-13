@@ -65,12 +65,12 @@ class BuilderIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun shouldNotThrowIfAllItemsAreProvidedToBuilder() {
-        val appSyncClient = ApiClientManager.getClient(context, userClient)
+        val graphQLClient = ApiClientManager.getClient(context, userClient)
 
         SudoEmailClient.builder()
             .setContext(context)
             .setSudoUserClient(userClient)
-            .setAppSyncClient(appSyncClient)
+            .setGraphQLClient(graphQLClient)
             .setKeyManager(keyManager)
             .setLogger(logger)
             .build()

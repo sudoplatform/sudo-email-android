@@ -7,7 +7,6 @@
 package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailMessage
@@ -95,7 +94,7 @@ class MailServiceInteroperabilityTest(private val externalAddress: String) : Bas
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val listInput = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            val listInput = ListEmailAddressesInput()
             when (val listEmailAddresses = emailClient.listEmailAddresses(listInput)) {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress

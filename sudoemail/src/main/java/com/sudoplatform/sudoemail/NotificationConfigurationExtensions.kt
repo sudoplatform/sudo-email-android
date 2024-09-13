@@ -14,7 +14,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import okhttp3.internal.toImmutableList
 
 // By default, disable all notifications we do not know how to handle
 internal val DEFAULT_FIRST_RULE_STRING = JsonObject(
@@ -113,7 +112,7 @@ fun NotificationConfiguration.initEmailNotifications(): NotificationConfiguratio
     newConfigs.add(DEFAULT_LAST_RULE)
 
     return NotificationConfiguration(
-        configs = newConfigs.toImmutableList(),
+        configs = newConfigs.toList(),
     )
 }
 
@@ -176,7 +175,7 @@ internal fun NotificationConfiguration.setEmailNotificationsForSingleMeta(
     newRules.add(DEFAULT_LAST_RULE)
 
     return NotificationConfiguration(
-        configs = newRules.toImmutableList(),
+        configs = newRules.toList(),
     )
 }
 

@@ -7,12 +7,11 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloHttpException
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailAddressInput
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -21,23 +20,22 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Protocol
-import okhttp3.ResponseBody.Companion.toResponseBody
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -46,6 +44,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import java.net.HttpURLConnection
 import java.util.Date
+import java.util.concurrent.CancellationException
 
 /**
  * Test the correct operation of [SudoEmailClient.deprovisionEmailAddress]
@@ -53,46 +52,34 @@ import java.util.Date
  */
 class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
-    private val owners by before {
-        listOf(EmailAddressWithoutFolders.Owner("typename", "ownerId", "issuer"))
-    }
-
-    private val mutationInput = DeprovisionEmailAddressInput.builder()
-        .emailAddressId("emailAddressId")
-        .build()
-
-    private val mutationResult by before {
-        DeprovisionEmailAddressMutation.DeprovisionEmailAddress(
-            "typename",
-            DeprovisionEmailAddressMutation.DeprovisionEmailAddress.Fragments(
-                EmailAddressWithoutFolders(
-                    "typename",
-                    "emailAddressId",
-                    "owner",
-                    owners,
-                    "identityId",
-                    "keyRingId",
-                    emptyList(),
-                    1,
-                    1.0,
-                    1.0,
-                    1.0,
-                    "example@sudoplatform.com",
-                    0.0,
-                    0,
-                    null,
-                ),
-            ),
+    private val mutationResponse by before {
+        JSONObject(
+            """
+                {
+                    'deprovisionEmailAddress': {
+                        '__typename': 'EmailAddressWithoutFolders',
+                        'id': 'emailAddressId',
+                        'owner': 'owner',
+                        'owners': [{
+                            '__typename': 'Owner',
+                            'id': 'ownerId',
+                            'issuer': 'issuer'
+                        }],
+                        'identityId': 'identityId',
+                        'keyRingId': 'keyRingId',
+                        'keyIds': [],
+                        'version': 1,
+                        'createdAtEpochMs': 1.0,
+                        'updatedAtEpochMs': 1.0,
+                        'lastReceivedAtEpochMs': '1.0',
+                        'emailAddress': 'example@sudoplatform.com',
+                        'size': 0.0,
+                        'numberOfEmailMessages': 0
+                    }
+                }
+            """.trimIndent(),
         )
     }
-
-    private val response by before {
-        Response.builder<DeprovisionEmailAddressMutation.Data>(DeprovisionEmailAddressMutation(mutationInput))
-            .data(DeprovisionEmailAddressMutation.Data(mutationResult))
-            .build()
-    }
-
-    private val holder = CallbackHolder<DeprovisionEmailAddressMutation.Data>()
 
     private val mockContext by before {
         mock<Context>()
@@ -102,9 +89,21 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { mutate(any<DeprovisionEmailAddressMutation>()) } doReturn holder.mutationOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(DeprovisionEmailAddressMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(mutationResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -145,7 +144,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -161,18 +160,13 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        holder.callback = null
-    }
-
     @After
     fun fini() {
         verifyNoMoreInteractions(
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -181,20 +175,13 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `deprovisionEmailAddress() should return results when no error present`() = runTest {
-        holder.callback shouldBe null
-
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.deprovisionEmailAddress("emailAddressId")
         }
         deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(response)
-
         val result = deferredResult.await()
-        result shouldNotBe null
 
+        result shouldNotBe null
         with(result) {
             id shouldBe "emailAddressId"
             owner shouldBe "owner"
@@ -210,17 +197,31 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             alias shouldBe null
         }
 
-        verify(mockAppSyncClient).mutate(any<DeprovisionEmailAddressMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe DeprovisionEmailAddressMutation.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `deprovisionEmailAddress() should throw when mutation response is null`() = runTest {
-        holder.callback shouldBe null
-
-        val nullResponse by before {
-            Response.builder<DeprovisionEmailAddressMutation.Data>(DeprovisionEmailAddressMutation(mutationInput))
-                .data(null)
-                .build()
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(DeprovisionEmailAddressMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -229,62 +230,82 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(nullResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<DeprovisionEmailAddressMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe DeprovisionEmailAddressMutation.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `deprovisionEmailAddress() should throw when response has an email address not found error`() = runTest {
-        holder.callback shouldBe null
-
-        val errorDeprovisionResponse by before {
-            val error = com.apollographql.apollo.api.Error(
-                "mock",
-                emptyList(),
-                mapOf("errorType" to "AddressNotFound"),
-            )
-            Response.builder<DeprovisionEmailAddressMutation.Data>(DeprovisionEmailAddressMutation(mutationInput))
-                .errors(listOf(error))
-                .data(null)
-                .build()
+        val testError = GraphQLResponse.Error(
+            "Test generated error",
+            emptyList(),
+            emptyList(),
+            mapOf("errorType" to "EmailValidation"),
+        )
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(DeprovisionEmailAddressMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+            shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(errorDeprovisionResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<DeprovisionEmailAddressMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe DeprovisionEmailAddressMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as DeprovisionEmailAddressInput
+                input.emailAddressId shouldBe "emailAddressId"
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `deprovisionEmailAddress() should throw when response has an unauthorized address error`() = runTest {
-        holder.callback shouldBe null
-
-        val errorDeprovisionResponse by before {
-            val error = com.apollographql.apollo.api.Error(
-                "mock",
-                emptyList(),
-                mapOf("errorType" to "UnauthorizedAddress"),
-            )
-            Response.builder<DeprovisionEmailAddressMutation.Data>(DeprovisionEmailAddressMutation(mutationInput))
-                .errors(listOf(error))
-                .data(null)
-                .build()
+        val testError = GraphQLResponse.Error(
+            "Test generated error",
+            emptyList(),
+            emptyList(),
+            mapOf("errorType" to "UnauthorizedAddress"),
+        )
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(DeprovisionEmailAddressMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -293,55 +314,70 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(errorDeprovisionResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<DeprovisionEmailAddressMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe DeprovisionEmailAddressMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as DeprovisionEmailAddressInput
+                input.emailAddressId shouldBe "emailAddressId"
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `deprovisionEmailAddress() should throw when http error occurs`() = runTest {
-        holder.callback shouldBe null
+        val testError = GraphQLResponse.Error(
+            "mock",
+            null,
+            null,
+            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+        )
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(DeprovisionEmailAddressMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
+        }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.DeprovisionFailedException> {
+            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.deprovisionEmailAddress("emailAddressId")
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        val request = okhttp3.Request.Builder()
-            .get()
-            .url("http://www.smh.com.au")
-            .build()
-        val responseBody = "{}".toResponseBody("application/json; charset=utf-8".toMediaType())
-        val forbidden = okhttp3.Response.Builder()
-            .protocol(Protocol.HTTP_1_1)
-            .code(HttpURLConnection.HTTP_FORBIDDEN)
-            .request(request)
-            .message("Forbidden")
-            .body(responseBody)
-            .build()
-
-        holder.callback shouldNotBe null
-        holder.callback?.onHttpError(ApolloHttpException(forbidden))
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<DeprovisionEmailAddressMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe DeprovisionEmailAddressMutation.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `deprovisionEmailAddress() should throw when unknown error occurs`() = runTest {
-        holder.callback shouldBe null
-
-        mockAppSyncClient.stub {
-            on { mutate(any<DeprovisionEmailAddressMutation>()) } doThrow RuntimeException("Mock Runtime Exception")
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(DeprovisionEmailAddressMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow RuntimeException("Mock Runtime Exception")
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -350,19 +386,27 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             }
         }
         deferredResult.start()
-        delay(100L)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<DeprovisionEmailAddressMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe DeprovisionEmailAddressMutation.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `deprovisionEmailAddress() should not suppress CancellationException`() = runTest {
-        holder.callback shouldBe null
-
-        mockAppSyncClient.stub {
-            on { mutate(any<DeprovisionEmailAddressMutation>()) } doThrow CancellationException("Mock Cancellation Exception")
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(DeprovisionEmailAddressMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow CancellationException("Mock Cancellation Exception")
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -371,10 +415,14 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             }
         }
         deferredResult.start()
-        delay(100L)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<DeprovisionEmailAddressMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe DeprovisionEmailAddressMutation.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 }

@@ -7,11 +7,11 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
-import com.sudoplatform.sudoemail.graphql.fragment.EmailConfigurationData
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -19,20 +19,24 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -40,6 +44,7 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
+import java.util.concurrent.CancellationException
 
 /**
  * Test the correct operation of [SudoEmailClient.getConfigurationData]
@@ -48,30 +53,23 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetConfigurationDataTest : BaseTests() {
 
-    private val queryResult by before {
-        GetEmailConfigQuery.GetEmailConfig(
-            "typeName",
-            GetEmailConfigQuery.GetEmailConfig.Fragments(
-                EmailConfigurationData(
-                    "typename",
-                    10,
-                    5,
-                    200,
-                    100,
-                    5,
-                    10,
-                ),
-            ),
+    private val queryResponse by before {
+        JSONObject(
+            """
+                {
+                    'getEmailConfig': {
+                        '__typename': 'EmailConfigurationData',
+                        'deleteEmailMessagesLimit': 10,
+                        'updateEmailMessagesLimit': 5,
+                        'emailMessageMaxInboundMessageSize': 200,
+                        'emailMessageMaxOutboundMessageSize': 100,
+                        'emailMessageRecipientsLimit': 5,
+                        'encryptedEmailMessageRecipientsLimit': 10
+                    }
+                }
+            """.trimIndent(),
         )
     }
-
-    private val response by before {
-        Response.builder<GetEmailConfigQuery.Data>(GetEmailConfigQuery())
-            .data(GetEmailConfigQuery.Data(queryResult))
-            .build()
-    }
-
-    private var holder = CallbackHolder<GetEmailConfigQuery.Data>()
 
     private val mockContext by before {
         mock<Context>()
@@ -81,9 +79,21 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { query(any<GetEmailConfigQuery>()) } doReturn holder.queryOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(queryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -102,7 +112,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     private val mockS3Client by before {
         mock<S3Client>().stub {
-            onBlocking { upload(any(), ArgumentMatchers.anyString(), anyOrNull()) } doReturn "42"
+            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
         }
     }
 
@@ -124,7 +134,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -140,18 +150,13 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        holder.callback = null
-    }
-
     @After
     fun fini() {
         verifyNoMoreInteractions(
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -160,20 +165,13 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     @Test
     fun `getConfigurationData() should return results when no error present`() = runTest {
-        holder.callback shouldBe null
-
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.getConfigurationData()
         }
         deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(response)
-
         val result = deferredResult.await()
-        result shouldNotBe null
 
+        result shouldNotBe null
         with(result) {
             deleteEmailMessagesLimit shouldBe 10
             updateEmailMessagesLimit shouldBe 5
@@ -183,15 +181,25 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             encryptedEmailMessageRecipientsLimit shouldBe 10
         }
 
-        verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfigurationData() should throw when unknown error occurs`() = runTest {
-        holder.callback shouldBe null
-
-        mockAppSyncClient.stub {
-            on { query(any<GetEmailConfigQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow RuntimeException("Mock Runtime Exception")
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -200,21 +208,33 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             }
         }
         deferredResult.start()
-        delay(100L)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfigurationData() should throw when no config data is returned`() = runTest {
-        holder.callback shouldBe null
-
-        val noDataResponse by before {
-            Response.builder<GetEmailConfigQuery.Data>(GetEmailConfigQuery())
-                .data(null)
-                .build()
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -223,28 +243,39 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             }
         }
         deferredResult.start()
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(noDataResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `getConfigurationData() should throw when query response contains errors`() = runTest {
-        holder.callback shouldBe null
-
-        val testError = com.apollographql.apollo.api.Error(
+        val testError = GraphQLResponse.Error(
             "Test generated error",
             null,
             null,
+            null,
         )
-        val errorResponse by before {
-            Response.builder<GetEmailConfigQuery.Data>(GetEmailConfigQuery())
-                .errors(listOf(testError))
-                .build()
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -253,12 +284,39 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             }
         }
         deferredResult.start()
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(errorResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetEmailConfigQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
+    }
+
+    @Test
+    fun `getConfigurationData() should not block coroutine cancellation exception`() = runBlocking<Unit> {
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow CancellationException("Mock Cancellation Exception")
+        }
+
+        shouldThrow<CancellationException> {
+            client.getConfigurationData()
+        }
+
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 }

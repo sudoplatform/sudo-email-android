@@ -7,13 +7,11 @@
 package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
-import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -22,6 +20,7 @@ import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldMatch
 import io.kotlintest.shouldBe
@@ -29,17 +28,18 @@ import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -53,83 +53,62 @@ import org.robolectric.RobolectricTestRunner
  * using mocks and spies
  */
 @RunWith(RobolectricTestRunner::class)
-class SudoEmailCreateDraftEmailTest : BaseTests() {
+class SudoEmailCreateDraftEmailMessageTest : BaseTests() {
     private val uuidRegex = Regex("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
 
-    private val owners by before {
-        listOf(EmailAddressWithoutFolders.Owner("typename", "ownerId", "issuer"))
-    }
-
-    private val folderOwners by before {
-        listOf(EmailFolder.Owner("typename", "ownerId", "issuer"))
-    }
-
-    private val folders by before {
-        listOf(
-            EmailAddress.Folder(
-                "typename",
-                EmailAddress.Folder.Fragments(
-                    EmailFolder(
-                        "EmailFolder",
-                        "folderId",
-                        "owner",
-                        folderOwners,
-                        1,
-                        0.0,
-                        0.0,
-                        "emailAddressId",
-                        "folderName",
-                        1.0,
-                        1.0,
-                        1.0,
-                    ),
-                ),
-            ),
-        )
-    }
-
-    private val emailAddressResult by before {
-        GetEmailAddressQuery.GetEmailAddress(
-            "typename",
-            GetEmailAddressQuery.GetEmailAddress.Fragments(
-                EmailAddress(
-                    "typename",
-                    folders,
-                    EmailAddress.Fragments(
-                        EmailAddressWithoutFolders(
-                            "typename",
-                            "emailAddressId",
-                            "owner",
-                            owners,
-                            "identityId",
-                            "keyRingId",
-                            emptyList(),
-                            1,
-                            1.0,
-                            1.0,
-                            1.0,
-                            "example@sudoplatform.com",
-                            0.0,
-                            0,
-                            null,
-                        ),
-                    ),
-                ),
-            ),
-        )
-    }
-
     private val input by before {
-        "emailAddressId"
+        CreateDraftEmailMessageInput(
+            "rfc822data".toByteArray(),
+            "senderEmailAddressId",
+        )
     }
 
     private val emailAddressQueryResponse by before {
-        Response.builder<GetEmailAddressQuery.Data>(GetEmailAddressQuery(input))
-            .data(GetEmailAddressQuery.Data(emailAddressResult))
-            .build()
+        JSONObject(
+            """
+                {
+                    'getEmailAddress': {
+                        '__typename': 'EmailAddress',
+                        'id': 'emailAddressId',
+                        'owner': 'owner',
+                        'owners': [{
+                            '__typename': 'Owner',
+                            'id': 'ownerId',
+                            'issuer': 'issuer'
+                        }],
+                        'identityId': 'identityId',
+                        'keyRingId': 'keyRingId',
+                        'keyIds': [],
+                        'version': '1',
+                        'createdAtEpochMs': 1.0,
+                        'updatedAtEpochMs': 1.0,
+                        'lastReceivedAtEpochMs': 1.0,
+                        'emailAddress': 'example@sudoplatform.com',
+                        'size': 0.0,
+                        'numberOfEmailMessages': 0,
+                        'folders': [{
+                            '__typename': 'EmailFolder',
+                            'id': 'folderId',
+                            'owner': 'owner',
+                            'owners': [{
+                                '__typename': 'Owner',
+                                'id': 'ownerId',
+                                'issuer': 'issuer'
+                            }],
+                            'version': 1,
+                            'createdAtEpochMs': 1.0,
+                            'updatedAtEpochMs': 1.0,
+                            'emailAddressId': 'emailAddressId',
+                            'folderName': 'folderName',
+                            'size': 0.0,
+                            'unseenCount': 0.0,
+                            'ttl': 1.0
+                        }]
+                    }
+                }
+            """.trimIndent(),
+        )
     }
-
-    private val holder = CallbackHolder<GetEmailAddressQuery.Data>()
 
     private val context by before {
         InstrumentationRegistry.getInstrumentation().targetContext
@@ -152,9 +131,21 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         }
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { query(any<GetEmailAddressQuery>()) } doReturn holder.queryOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(emailAddressQueryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -191,7 +182,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -207,18 +198,13 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        holder.callback = null
-    }
-
     @After
     fun fini() {
         verifyNoMoreInteractions(
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -228,50 +214,47 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
 
     @Test
     fun `createDraftEmailMessage() should log and throw an error if send address not found`() = runTest {
-        holder.callback shouldBe null
-
-        val error = com.apollographql.apollo.api.Error(
+        val error = GraphQLResponse.Error(
             "mock",
-            emptyList(),
+            null,
+            null,
             mapOf("errorType" to "AddressNotFound"),
         )
-
-        val mockQuery by before {
-            GetEmailAddressQuery(input)
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(error)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
-
-        val nullEmailResponse by before {
-            Response.builder<GetEmailAddressQuery.Data>(mockQuery)
-                .errors(listOf(error))
-                .data(null)
-                .build()
-        }
-
-        val createDraftInput = CreateDraftEmailMessageInput(
-            "rfc822data".toByteArray(),
-            "senderEmailAddressId",
-        )
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                client.createDraftEmailMessage(createDraftInput)
+                client.createDraftEmailMessage(input)
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(nullEmailResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `createDraftEmailMessage() should log and throw an error if s3 upload errors`() = runTest {
-        holder.callback shouldBe null
-
         val error = CancellationException("Unknown exception")
 
         mockS3Client.stub {
@@ -284,26 +267,22 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
             } doThrow error
         }
 
-        val createDraftInput = CreateDraftEmailMessageInput(
-            "rfc822data".toByteArray(),
-            "senderEmailAddressId",
-        )
-
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
-                client.createDraftEmailMessage(createDraftInput)
+                client.createDraftEmailMessage(input)
             }
         }
 
         deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(emailAddressQueryResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService).sealString(
             check {
@@ -318,7 +297,7 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
                 it shouldNotBe null
             },
             check {
-                it shouldContain createDraftInput.senderEmailAddressId
+                it shouldContain input.senderEmailAddressId
             },
             check {
                 it shouldNotBe null
@@ -328,35 +307,28 @@ class SudoEmailCreateDraftEmailTest : BaseTests() {
 
     @Test
     fun `createDraftEmailMessage() should return uuid on success`() = runTest {
-        holder.callback shouldBe null
-
-        val createDraftInput = CreateDraftEmailMessageInput(
-            "rfc822data".toByteArray(),
-            "senderEmailAddressId",
-        )
-
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.createDraftEmailMessage(createDraftInput)
+            client.createDraftEmailMessage(input)
         }
-
         deferredResult.start()
-        delay(100L)
-
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(emailAddressQueryResponse)
-
         val result = deferredResult.await()
         result shouldMatch uuidRegex
 
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        verify(mockSealingService).sealString("symmetricKeyId", createDraftInput.rfc822Data)
+        verify(mockSealingService).sealString("symmetricKeyId", input.rfc822Data)
         verify(mockS3Client).upload(
             check {
                 it shouldNotBe null
             },
             check {
-                it shouldContain createDraftInput.senderEmailAddressId
+                it shouldContain input.senderEmailAddressId
             },
             check {
                 it shouldNotBe null

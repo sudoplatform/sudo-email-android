@@ -11,7 +11,6 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
-import com.sudoplatform.sudoemail.types.CachePolicy
 import com.sudoplatform.sudoemail.types.DateRange
 import com.sudoplatform.sudoemail.types.Direction
 import com.sudoplatform.sudoemail.types.EmailAddress
@@ -80,7 +79,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -238,7 +237,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -272,8 +271,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                 nextToken = nextToken,
             )
 
-            val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
-            when (listEmailMessages) {
+            when (val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)) {
                 is ListAPIResult.Success -> {
                     listEmailMessages.result.items.size shouldBeLessThanOrEqual 1
                     nextToken = listEmailMessages.result.nextToken
@@ -299,7 +297,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -362,7 +360,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -422,7 +420,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            val input = ListEmailAddressesInput()
             when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -477,7 +475,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            val input = ListEmailAddressesInput()
             when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -532,7 +530,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            val input = ListEmailAddressesInput()
             when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -581,7 +579,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            val input = ListEmailAddressesInput()
             when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -626,7 +624,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+            val input = ListEmailAddressesInput()
             when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -670,7 +668,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -734,7 +732,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -813,7 +811,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
@@ -869,7 +867,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput(CachePolicy.REMOTE_ONLY)
+        val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
                 listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress

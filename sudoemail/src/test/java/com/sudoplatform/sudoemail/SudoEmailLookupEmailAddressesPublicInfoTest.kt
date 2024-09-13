@@ -7,12 +7,11 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloHttpException
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -21,23 +20,23 @@ import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInp
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Protocol
-import okhttp3.ResponseBody.Companion.toResponseBody
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -46,6 +45,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput as LookupEmailAddressesPublicInfoRequest
 
 /**
@@ -55,42 +55,41 @@ import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInp
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
 
-    private val emailAddressPublicInfo by before {
-        EmailAddressPublicInfo(
-            "typename",
-            "emailAddress",
-            "keyId",
-            "publicKey",
-        )
-    }
-
     private val input by before {
-        LookupEmailAddressesPublicInfoRequest.builder()
-            .emailAddresses(mutableListOf("emailAddress"))
-            .build()
-    }
-
-    private val queryResult by before {
-        LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-            "typename",
-            listOf(
-                LookupEmailAddressesPublicInfoQuery.Item(
-                    "typename",
-                    LookupEmailAddressesPublicInfoQuery.Item.Fragments(emailAddressPublicInfo),
-                ),
-            ),
+        LookupEmailAddressesPublicInfoInput(
+            listOf("emailAddress"),
         )
     }
 
-    private val response by before {
-        Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-            LookupEmailAddressesPublicInfoQuery(input),
+    private val queryResponse by before {
+        JSONObject(
+            """
+                {
+                    'lookupEmailAddressesPublicInfo': {
+                        'items': [{
+                            '__typename': 'EmailAddressPublicInfo',
+                            'emailAddress': 'emailAddress',
+                            'keyId': 'keyId',
+                            'publicKey': 'publicKey'
+                        }],
+                        'nextToken': null
+                    }
+                }
+            """.trimIndent(),
         )
-            .data(LookupEmailAddressesPublicInfoQuery.Data(queryResult))
-            .build()
     }
 
-    private var holder = CallbackHolder<LookupEmailAddressesPublicInfoQuery.Data>()
+    private val queryResponseWithEmptyList by before {
+        JSONObject(
+            """
+                {
+                    'lookupEmailAddressesPublicInfo': {
+                        'items': []
+                    }
+                }
+            """.trimIndent(),
+        )
+    }
 
     private val mockContext by before {
         mock<Context>()
@@ -100,9 +99,21 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { query(any<LookupEmailAddressesPublicInfoQuery>()) } doReturn holder.queryOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(queryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -143,7 +154,7 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -159,18 +170,13 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        holder.callback = null
-    }
-
     @After
     fun fini() {
         verifyNoMoreInteractions(
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -179,54 +185,47 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
 
     @Test
     fun `lookupEmailAddressesPublicInfo() should return results when no error present`() = runTest {
-        holder.callback shouldBe null
-
-        val input = LookupEmailAddressesPublicInfoInput(emailAddresses = listOf("emailAddress"))
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.lookupEmailAddressesPublicInfo(input)
         }
         deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(response)
-
         val result = deferredResult.await()
+
         result shouldNotBe null
         result.count() shouldBe 1
-
         with(result[0]) {
             emailAddress shouldBe "emailAddress"
             keyId shouldBe "keyId"
             publicKey shouldBe "publicKey"
         }
 
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
+                input.emailAddresses shouldBe listOf("emailAddress")
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `lookupEmailAddressesPublicInfo() should return empty result when query result data is empty`() = runTest {
-        holder.callback shouldBe null
-
-        val emptyInput by before {
-            LookupEmailAddressesPublicInfoRequest.builder()
-                .emailAddresses(emptyList())
-                .build()
-        }
-
-        val emptyQueryResult by before {
-            LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
-                "typename",
-                emptyList(),
-            )
-        }
-
-        val emptyResponse by before {
-            Response.builder<LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery(emptyInput),
-            )
-                .data(LookupEmailAddressesPublicInfoQuery.Data(emptyQueryResult))
-                .build()
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(queryResponseWithEmptyList.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
         val input = LookupEmailAddressesPublicInfoInput(emptyList())
@@ -234,70 +233,121 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
             client.lookupEmailAddressesPublicInfo(input)
         }
         deferredResult.start()
-
-        delay(100L)
-        holder.callback shouldNotBe null
-        holder.callback?.onResponse(emptyResponse)
-
         val result = deferredResult.await()
+
         result shouldBe emptyList()
 
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
+                val queryInput = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
+                queryInput.emailAddresses shouldBe emptyList()
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `lookupEmailAddressesPublicInfo() should throw when http error occurs`() = runTest {
-        holder.callback shouldBe null
+        val testError = GraphQLResponse.Error(
+            "mock",
+            null,
+            null,
+            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+        )
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
+        }
 
-        val input = LookupEmailAddressesPublicInfoInput(listOf("emailAddress"))
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.lookupEmailAddressesPublicInfo(input)
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        val request = okhttp3.Request.Builder()
-            .get()
-            .url("http://www.smh.com.au")
-            .build()
-        val responseBody = "{}".toResponseBody("application/json; charset=utf-8".toMediaType())
-        val forbidden = okhttp3.Response.Builder()
-            .protocol(Protocol.HTTP_1_1)
-            .code(HttpURLConnection.HTTP_FORBIDDEN)
-            .request(request)
-            .message("Forbidden")
-            .body(responseBody)
-            .build()
-
-        holder.callback shouldNotBe null
-        holder.callback?.onHttpError(ApolloHttpException(forbidden))
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
+                input.emailAddresses shouldBe listOf("emailAddress")
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `lookupEmailAddressesPublicInfo() should throw when unknown error occurs`() = runTest {
-        holder.callback shouldBe null
-
-        mockAppSyncClient.stub {
-            on { query(any<LookupEmailAddressesPublicInfoQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow
+                RuntimeException("Mock Runtime Exception")
         }
 
-        val input = LookupEmailAddressesPublicInfoInput(listOf("emailAddress"))
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
                 client.lookupEmailAddressesPublicInfo(input)
             }
         }
         deferredResult.start()
-        delay(100L)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<LookupEmailAddressesPublicInfoQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
+                input.emailAddresses shouldBe listOf("emailAddress")
+            },
+            any(),
+            any(),
+        )
+    }
+
+    @Test
+    fun `lookupEmailAddressesPublicInfo() should not block coroutine cancellation exception`() = runTest {
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow
+                CancellationException("Mock Cancellation Exception")
+        }
+
+        shouldThrow<CancellationException> {
+            client.lookupEmailAddressesPublicInfo(input)
+        }
+
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
+                input.emailAddresses shouldBe listOf("emailAddress")
+            },
+            any(),
+            any(),
+        )
     }
 }

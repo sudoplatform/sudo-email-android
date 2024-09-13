@@ -7,15 +7,12 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloHttpException
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
+import com.apollographql.apollo3.api.Optional
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
-import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
-import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
-import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
-import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -33,27 +30,24 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerException
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotlintest.matchers.doubles.shouldBeLessThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Protocol
-import okhttp3.Request
-import okhttp3.ResponseBody.Companion.toResponseBody
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -75,62 +69,102 @@ import com.sudoplatform.sudoemail.graphql.type.SortOrder as SortOrderEntity
 class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     private val input by before {
-        ListEmailMessagesForEmailAddressIdRequest.builder()
-            .emailAddressId("emailAddressId")
-            .build()
-    }
-
-    private val queryResultItem by before {
-        ListEmailMessagesForEmailAddressIdQuery.Item(
-            "typename",
-            ListEmailMessagesForEmailAddressIdQuery.Item.Fragments(
-                SealedEmailMessage(
-                    "typename",
-                    "id",
-                    "owner",
-                    emptyList(),
-                    "emailAddressId",
-                    1,
-                    1.0,
-                    1.0,
-                    1.0,
-                    "folderId",
-                    "previousFolderId",
-                    EmailMessageDirection.INBOUND,
-                    false,
-                    EmailMessageState.DELIVERED,
-                    "clientRefId",
-                    SealedEmailMessage.Rfc822Header(
-                        "typename",
-                        "algorithm",
-                        "keyId",
-                        "plainText",
-                        mockSeal(unsealedHeaderDetailsString),
-                    ),
-                    1.0,
-                    EmailMessageEncryptionStatus.UNENCRYPTED,
-                ),
+        ListEmailMessagesForEmailAddressIdInput(
+            emailAddressId = "emailAddressId",
+            limit = 1,
+            nextToken = null,
+            dateRange = EmailMessageDateRange(
+                sortDate = DateRange(Date(), Date()),
             ),
-        )
-    }
-
-    private val queryResult by before {
-        ListEmailMessagesForEmailAddressIdQuery.ListEmailMessagesForEmailAddressId(
-            "typename",
-            listOf(queryResultItem),
-            null,
+            sortOrder = SortOrder.DESC,
         )
     }
 
     private val queryResponse by before {
-        Response.builder<ListEmailMessagesForEmailAddressIdQuery.Data>(
-            ListEmailMessagesForEmailAddressIdQuery(input),
+        JSONObject(
+            """
+                {
+                    'listEmailMessagesForEmailAddressId': {
+                        'items': [{
+                            '__typename': 'SealedEmailMessage',
+                            'id': 'id',
+                            'owner': 'owner',
+                            'owners': [],
+                            'emailAddressId': 'emailAddressId',
+                            'version': 1,
+                            'createdAtEpochMs': 1.0,
+                            'updatedAtEpochMs': 1.0,
+                            'sortDateEpochMs': 1.0,
+                            'folderId': 'folderId',
+                            'previousFolderId': 'previousFolderId',
+                            'direction': 'INBOUND',
+                            'seen': false,
+                            'state': 'DELIVERED',
+                            'clientRefId': 'clientRefId',
+                            'rfc822Header': {
+                                'algorithm': 'algorithm',
+                                'keyId': 'keyId',
+                                'plainTextType': 'plainText',
+                                'base64EncodedSealedData': '${mockSeal(unsealedHeaderDetailsString)}'
+                             },
+                            'size': 1.0,
+                            'encryptionStatus': 'UNENCRYPTED'
+                        }],
+                        'nextToken': null
+                    }
+                }
+            """.trimIndent(),
         )
-            .data(ListEmailMessagesForEmailAddressIdQuery.Data(queryResult))
-            .build()
     }
 
-    private val queryHolder = CallbackHolder<ListEmailMessagesForEmailAddressIdQuery.Data>()
+    private val queryResponseWithNextToken by before {
+        JSONObject(
+            """
+                {
+                    'listEmailMessagesForEmailAddressId': {
+                        'items': [{
+                            '__typename': 'SealedEmailMessage',
+                            'id': 'id',
+                            'owner': 'owner',
+                            'owners': [],
+                            'emailAddressId': 'emailAddressId',
+                            'version': 1,
+                            'createdAtEpochMs': 1.0,
+                            'updatedAtEpochMs': 1.0,
+                            'sortDateEpochMs': 1.0,
+                            'folderId': 'folderId',
+                            'previousFolderId': 'previousFolderId',
+                            'direction': 'INBOUND',
+                            'seen': false,
+                            'state': 'DELIVERED',
+                            'clientRefId': 'clientRefId',
+                            'rfc822Header': {
+                                'algorithm': 'algorithm',
+                                'keyId': 'keyId',
+                                'plainTextType': 'plainText',
+                                'base64EncodedSealedData': '${mockSeal(unsealedHeaderDetailsString)}'
+                             },
+                            'size': 1.0,
+                            'encryptionStatus': 'UNENCRYPTED'
+                        }],
+                        'nextToken': 'dummyNextToken'
+                    }
+                }
+            """.trimIndent(),
+        )
+    }
+
+    private val queryResponseWithEmptyList by before {
+        JSONObject(
+            """
+                {
+                    'listEmailMessagesForEmailAddressId': {
+                        'items': []
+                    }
+                }
+            """.trimIndent(),
+        )
+    }
 
     private val mockContext by before {
         mock<Context>()
@@ -140,9 +174,21 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { query(any<ListEmailMessagesForEmailAddressIdQuery>()) } doReturn queryHolder.queryOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(queryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -189,7 +235,7 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -205,18 +251,13 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        queryHolder.callback = null
-    }
-
     @After
     fun fini() {
         verifyNoMoreInteractions(
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -226,29 +267,14 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
     @Test
     fun `listEmailMessagesForEmailAddressId() should return results when no error present`() =
         runTest {
-            queryHolder.callback shouldBe null
-
-            val input = ListEmailMessagesForEmailAddressIdInput(
-                emailAddressId = "emailAddressId",
-                limit = 1,
-                nextToken = null,
-                dateRange = EmailMessageDateRange(
-                    sortDate = DateRange(Date(), Date()),
-                ),
-                sortOrder = SortOrder.DESC,
-            )
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
 
             val listEmailMessages = deferredResult.await()
@@ -288,28 +314,19 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 1
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.startDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.endDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -322,29 +339,14 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                     unsealedHeaderDetailsWithDateString.toByteArray()
             }
 
-            queryHolder.callback shouldBe null
-
-            val input = ListEmailMessagesForEmailAddressIdInput(
-                emailAddressId = "emailAddressId",
-                limit = 1,
-                nextToken = null,
-                dateRange = EmailMessageDateRange(
-                    sortDate = DateRange(Date(), Date()),
-                ),
-                sortOrder = SortOrder.DESC,
-            )
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
 
             val listEmailMessages = deferredResult.await()
@@ -384,28 +386,19 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 1
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.startDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.endDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -418,29 +411,14 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                     unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
             }
 
-            queryHolder.callback shouldBe null
-
-            val input = ListEmailMessagesForEmailAddressIdInput(
-                emailAddressId = "emailAddressId",
-                limit = 1,
-                nextToken = null,
-                dateRange = EmailMessageDateRange(
-                    sortDate = DateRange(Date(), Date()),
-                ),
-                sortOrder = SortOrder.DESC,
-            )
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
 
             val listEmailMessages = deferredResult.await()
@@ -480,28 +458,19 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 1
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.startDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.endDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -514,29 +483,14 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                     unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
             }
 
-            queryHolder.callback shouldBe null
-
-            val input = ListEmailMessagesForEmailAddressIdInput(
-                emailAddressId = "emailAddressId",
-                limit = 1,
-                nextToken = null,
-                dateRange = EmailMessageDateRange(
-                    sortDate = DateRange(Date(), Date()),
-                ),
-                sortOrder = SortOrder.ASC,
-            )
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
 
             val listEmailMessages = deferredResult.await()
@@ -576,28 +530,19 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 1
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.startDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.endDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.ASC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -610,29 +555,14 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                     unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
             }
 
-            queryHolder.callback shouldBe null
-
-            val input = ListEmailMessagesForEmailAddressIdInput(
-                emailAddressId = "emailAddressId",
-                limit = 1,
-                nextToken = null,
-                dateRange = EmailMessageDateRange(
-                    updatedAt = DateRange(Date(), Date()),
-                ),
-                sortOrder = SortOrder.DESC,
-            )
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listEmailMessagesForEmailAddressId(
                     input,
                 )
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
 
             val listEmailMessages = deferredResult.await()
@@ -672,37 +602,26 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 1
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange()?.updatedAtEpochMs()
-                            ?.startDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().specifiedDateRange()?.updatedAtEpochMs()
-                            ?.endDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success result using default inputs when no error present`() =
-        runTest() {
-            queryHolder.callback shouldBe null
-
+        runTest {
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
             )
@@ -710,12 +629,8 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val listEmailMessages = deferredResult.await()
+
             listEmailMessages shouldNotBe null
 
             when (listEmailMessages) {
@@ -751,21 +666,20 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -773,29 +687,20 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success result when populating nextToken`() =
         runTest {
-            queryHolder.callback shouldBe null
-
-            val queryResultWithNextToken by before {
-                ListEmailMessagesForEmailAddressIdQuery.ListEmailMessagesForEmailAddressId(
-                    "typename",
-                    listOf(queryResultItem),
-                    "dummyNextToken",
-                )
-            }
-            val queryInput by before {
-                ListEmailMessagesForEmailAddressIdRequest.builder()
-                    .emailAddressId("emailAddressId")
-                    .nextToken("dummyNextToken")
-                    .build()
-            }
-            val responseWithNextToken by before {
-                Response.builder<ListEmailMessagesForEmailAddressIdQuery.Data>(
-                    ListEmailMessagesForEmailAddressIdQuery(
-                        queryInput,
-                    ),
-                )
-                    .data(ListEmailMessagesForEmailAddressIdQuery.Data(queryResultWithNextToken))
-                    .build()
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(queryResponseWithNextToken.toString(), null),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
 
             val input = ListEmailMessagesForEmailAddressIdInput(
@@ -806,12 +711,8 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(responseWithNextToken)
-
             val listEmailMessages = deferredResult.await()
+
             listEmailMessages shouldNotBe null
 
             when (listEmailMessages) {
@@ -847,44 +748,41 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe "dummyNextToken"
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.Present("dummyNextToken")
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success empty list result when query result data is empty`() =
-        runTest() {
-            queryHolder.callback shouldBe null
-
-            val queryResultWithEmptyList by before {
-                ListEmailMessagesForEmailAddressIdQuery.ListEmailMessagesForEmailAddressId(
-                    "typename",
-                    emptyList(),
-                    null,
-                )
-            }
-
-            val responseWithEmptyList by before {
-                Response.builder<ListEmailMessagesForEmailAddressIdQuery.Data>(
-                    ListEmailMessagesForEmailAddressIdQuery(input),
-                )
-                    .data(ListEmailMessagesForEmailAddressIdQuery.Data(queryResultWithEmptyList))
-                    .build()
+        runTest {
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(queryResponseWithEmptyList.toString(), null),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
 
             val input = ListEmailMessagesForEmailAddressIdInput(
@@ -894,12 +792,8 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(responseWithEmptyList)
-
             val listEmailMessages = deferredResult.await()
+
             listEmailMessages shouldNotBe null
 
             when (listEmailMessages) {
@@ -914,34 +808,39 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should return success empty list result when query result data is null`() =
-        runTest() {
-            queryHolder.callback shouldBe null
-
-            val responseWithNullData by before {
-                Response.builder<ListEmailMessagesForEmailAddressIdQuery.Data>(
-                    ListEmailMessagesForEmailAddressIdQuery(input),
-                )
-                    .data(null)
-                    .build()
+        runTest {
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(null, null),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
 
             val input = ListEmailMessagesForEmailAddressIdInput(
@@ -951,12 +850,8 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(responseWithNullData)
-
             val listEmailMessages = deferredResult.await()
+
             listEmailMessages shouldNotBe null
 
             when (listEmailMessages) {
@@ -971,21 +866,20 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
@@ -1004,12 +898,8 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 client.listEmailMessagesForEmailAddressId(input)
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val listEmailMessages = deferredResult.await()
+
             listEmailMessages shouldNotBe null
 
             when (listEmailMessages) {
@@ -1039,16 +929,34 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient).query(any<ListEmailMessagesForEmailAddressIdQuery>())
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should throw when unsealing fails`() =
         runTest {
-            mockAppSyncClient.stub {
-                on { query(any<ListEmailMessagesForEmailAddressIdQuery>()) } doThrow
-                    Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doThrow Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
             }
 
             val input = ListEmailMessagesForEmailAddressIdInput(
@@ -1060,29 +968,48 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
             deferredResult.start()
-            delay(100L)
+            deferredResult.await()
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should throw when http error occurs`() =
         runTest {
-            queryHolder.callback shouldBe null
+            val testError = GraphQLResponse.Error(
+                "mock",
+                null,
+                null,
+                mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+            )
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                }.thenAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(null, listOf(testError)),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
+            }
 
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
@@ -1093,52 +1020,35 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
             deferredResult.start()
-            delay(100L)
-
-            val request = Request.Builder()
-                .get()
-                .url("http://www.smh.com.au")
-                .build()
-            val responseBody = "{}".toResponseBody("application/json; charset=utf-8".toMediaType())
-            val forbidden = okhttp3.Response.Builder()
-                .protocol(Protocol.HTTP_1_1)
-                .code(HttpURLConnection.HTTP_FORBIDDEN)
-                .request(request)
-                .message("Forbidden")
-                .body(responseBody)
-                .build()
-
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onHttpError(ApolloHttpException(forbidden))
-
             deferredResult.await()
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should throw when unknown error occurs()`() =
         runTest {
-            queryHolder.callback shouldBe null
-
-            mockAppSyncClient.stub {
-                on { query(any<ListEmailMessagesForEmailAddressIdQuery>()) } doThrow RuntimeException(
-                    "Mock Runtime Exception",
-                )
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
             }
 
             val input = ListEmailMessagesForEmailAddressIdInput(
@@ -1150,34 +1060,35 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
             deferredResult.start()
-
-            delay(100L)
             deferredResult.await()
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should not block coroutine cancellation exception`() =
         runTest {
-            mockAppSyncClient.stub {
-                on { query(any<ListEmailMessagesForEmailAddressIdQuery>()) } doThrow CancellationException(
-                    "Mock Cancellation Exception",
-                )
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doThrow CancellationException("Mock Cancellation Exception")
             }
 
             val input = ListEmailMessagesForEmailAddressIdInput(
@@ -1189,30 +1100,27 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
             deferredResult.start()
-            delay(100L)
+            deferredResult.await()
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange() shouldBe null
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe false
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
     fun `listEmailMessagesForEmailAddressId() should pass includeDeletedMessages flag properly`() =
         runTest {
-            queryHolder.callback shouldBe null
-
             val input = ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = "emailAddressId",
                 limit = 10,
@@ -1227,11 +1135,6 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 )
             }
             deferredResult.start()
-
-            delay(100L)
-            queryHolder.callback shouldNotBe null
-            queryHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
             result shouldNotBe null
 
@@ -1272,28 +1175,20 @@ class SudoEmailListEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
             }
 
-            verify(mockAppSyncClient)
-                .query<
-                    ListEmailMessagesForEmailAddressIdQuery.Data,
-                    ListEmailMessagesForEmailAddressIdQuery,
-                    ListEmailMessagesForEmailAddressIdQuery.Variables,
-                    >(
-                    check {
-                        it.variables().input().emailAddressId() shouldBe "emailAddressId"
-                        it.variables().input().limit() shouldBe 10
-                        it.variables().input().nextToken() shouldBe null
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.startDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().specifiedDateRange()?.sortDateEpochMs()
-                            ?.endDateEpochMs()?.shouldBeLessThan(
-                                Date().time.toDouble(),
-                            )
-                        it.variables().input().sortOrder() shouldBe SortOrderEntity.DESC
-                        it.variables().input().includeDeletedMessages() shouldBe true
-                    },
-                )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailAddressIdRequest
+                    queryInput.emailAddressId shouldBe "emailAddressId"
+                    queryInput.limit shouldBe Optional.Present(10)
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.specifiedDateRange shouldBe Optional.absent()
+                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    queryInput.includeDeletedMessages shouldBe Optional.Present(true)
+                },
+                any(),
+                any(),
+            )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }

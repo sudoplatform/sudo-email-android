@@ -32,6 +32,10 @@ import org.robolectric.RobolectricTestRunner
 import java.util.Base64
 import java.util.Date
 
+/**
+ * Test the correct operation of the [SudoEmailNotifiableClient] using mocks
+ * and spies.
+ */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailNotifiableClientTest : BaseTests() {
 

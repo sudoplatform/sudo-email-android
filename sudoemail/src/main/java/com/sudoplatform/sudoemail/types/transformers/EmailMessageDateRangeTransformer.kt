@@ -6,6 +6,7 @@
 
 package com.sudoplatform.sudoemail.types.transformers
 
+import com.apollographql.apollo3.api.Optional
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDateRangeInput
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.transformers.DateRangeTransformer.toDateRangeInput
@@ -23,10 +24,9 @@ internal object EmailMessageDateRangeTransformer {
         if (this == null) {
             return null
         }
-        return EmailMessageDateRangeInput
-            .builder()
-            .sortDateEpochMs(sortDate.toDateRangeInput())
-            .updatedAtEpochMs(updatedAt.toDateRangeInput())
-            .build()
+        return EmailMessageDateRangeInput(
+            sortDateEpochMs = Optional.presentIfNotNull(sortDate.toDateRangeInput()),
+            updatedAtEpochMs = Optional.presentIfNotNull(updatedAt.toDateRangeInput()),
+        )
     }
 }

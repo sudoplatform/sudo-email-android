@@ -26,12 +26,12 @@ internal object EmailConfigurationTransformer {
         emailConfigurationData: EmailConfigurationData,
     ): ConfigurationData {
         return ConfigurationData(
-            deleteEmailMessagesLimit = emailConfigurationData.deleteEmailMessagesLimit(),
-            updateEmailMessagesLimit = emailConfigurationData.updateEmailMessagesLimit(),
-            emailMessageMaxInboundMessageSize = emailConfigurationData.emailMessageMaxInboundMessageSize(),
-            emailMessageMaxOutboundMessageSize = emailConfigurationData.emailMessageMaxOutboundMessageSize(),
-            emailMessageRecipientsLimit = emailConfigurationData.emailMessageRecipientsLimit(),
-            encryptedEmailMessageRecipientsLimit = emailConfigurationData.encryptedEmailMessageRecipientsLimit(),
+            deleteEmailMessagesLimit = emailConfigurationData.deleteEmailMessagesLimit,
+            updateEmailMessagesLimit = emailConfigurationData.updateEmailMessagesLimit,
+            emailMessageMaxInboundMessageSize = emailConfigurationData.emailMessageMaxInboundMessageSize,
+            emailMessageMaxOutboundMessageSize = emailConfigurationData.emailMessageMaxOutboundMessageSize,
+            emailMessageRecipientsLimit = emailConfigurationData.emailMessageRecipientsLimit,
+            encryptedEmailMessageRecipientsLimit = emailConfigurationData.encryptedEmailMessageRecipientsLimit,
         )
     }
 }

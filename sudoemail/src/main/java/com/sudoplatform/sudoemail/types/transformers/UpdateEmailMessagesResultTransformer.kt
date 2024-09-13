@@ -28,31 +28,28 @@ internal object UpdateEmailMessagesResultTransformer {
     fun toEntity(
         result: UpdateEmailMessagesResult,
     ): BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult> {
-        val status: BatchOperationStatus =
-            if (result.status() == UpdateEmailMessagesStatus.FAILED) {
-                BatchOperationStatus.FAILURE
-            } else if (result.status() == UpdateEmailMessagesStatus.PARTIAL) {
-                BatchOperationStatus.PARTIAL
-            } else {
-                BatchOperationStatus.SUCCESS
-            }
+        val status: BatchOperationStatus = when (result.status) {
+            UpdateEmailMessagesStatus.SUCCESS -> BatchOperationStatus.SUCCESS
+            UpdateEmailMessagesStatus.FAILED -> BatchOperationStatus.FAILURE
+            else -> BatchOperationStatus.PARTIAL
+        }
 
         val successMessages: List<UpdatedEmailMessageSuccess> =
-            result.successMessages()
+            result.successMessages
                 ?.map {
                     UpdatedEmailMessageSuccess(
-                        it.id(),
-                        it.createdAtEpochMs().toDate(),
-                        it.updatedAtEpochMs().toDate(),
+                        it.id,
+                        it.createdAtEpochMs.toDate(),
+                        it.updatedAtEpochMs.toDate(),
                     )
                 }
                 ?: emptyList()
         val failureMessages: List<EmailMessageOperationFailureResult> =
-            result.failedMessages()
+            result.failedMessages
                 ?.map {
                     EmailMessageOperationFailureResult(
-                        it.id(),
-                        it.errorType(),
+                        it.id,
+                        it.errorType,
                     )
                 }
                 ?: emptyList()

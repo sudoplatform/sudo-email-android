@@ -144,14 +144,11 @@ class UnsealerTest : BaseTests() {
     fun `unseal EmailAddressWithoutFolders Alias should throw for unsupported algorithm`() {
         val sealedAlias = EmailAddressWithoutFolders.Alias(
             "Alias",
-            EmailAddressWithoutFolders.Alias.Fragments(
-                SealedAttribute(
-                    "SealedAttribute",
-                    "unsupported-algorithm",
-                    symmetricKeyId,
-                    "json-string",
-                    sealString("alias"),
-                ),
+            SealedAttribute(
+                "unsupported-algorithm",
+                symmetricKeyId,
+                "json-string",
+                sealString("alias"),
             ),
         )
 
@@ -164,14 +161,11 @@ class UnsealerTest : BaseTests() {
     fun `unseal EmailAddressWithoutFolders Alias`() {
         val sealedAlias = EmailAddressWithoutFolders.Alias(
             "Alias",
-            EmailAddressWithoutFolders.Alias.Fragments(
-                SealedAttribute(
-                    "SealedAttribute",
-                    SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                    symmetricKeyId,
-                    "json-string",
-                    sealString("alias"),
-                ),
+            SealedAttribute(
+                SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                symmetricKeyId,
+                "json-string",
+                sealString("alias"),
             ),
         )
 
@@ -183,14 +177,11 @@ class UnsealerTest : BaseTests() {
     fun `unseal BlockedAddress SealedValue`() {
         val sealedBlockedValue = BlockedAddress.SealedValue(
             "SealedValue",
-            BlockedAddress.SealedValue.Fragments(
-                SealedAttribute(
-                    "SealedAttribute",
-                    SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                    symmetricKeyId,
-                    "string",
-                    sealString("dummyValue"),
-                ),
+            SealedAttribute(
+                SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                symmetricKeyId,
+                "string",
+                sealString("dummyValue"),
             ),
         )
 

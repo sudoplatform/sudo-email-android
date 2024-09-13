@@ -7,12 +7,11 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
-import com.sudoplatform.sudoemail.graphql.fragment.UnblockAddressesResult
-import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -23,19 +22,23 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
@@ -53,34 +56,36 @@ import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput as Unb
 class SudoEmailUnblockAddressesTest : BaseTests() {
     private val owner = "mockOwner"
     private var addresses: List<String> = emptyList()
-    private val input by before {
-        UnblockEmailAddressesRequest.builder()
-            .owner(owner)
-            .unblockedAddresses(addresses)
-            .build()
-    }
 
-    private val mutationResult by before {
-        UnblockEmailAddressesMutation.UnblockEmailAddresses(
-            "typename",
-            UnblockEmailAddressesMutation.UnblockEmailAddresses.Fragments(
-                UnblockAddressesResult(
-                    "typename",
-                    BlockEmailAddressesBulkUpdateStatus.SUCCESS,
-                    emptyList(),
-                    emptyList(),
-                ),
-            ),
+    private val mutationSuccessResponse by before {
+        JSONObject(
+            """
+                {
+                    'unblockEmailAddresses': {
+                        '__typename': 'UnblockAddressesResult',
+                        'status': 'SUCCESS',
+                        'failedAddresses': [],
+                        'successAddresses': []
+                    }
+                }
+            """.trimIndent(),
         )
     }
 
-    private val mutationResponse by before {
-        Response.builder<UnblockEmailAddressesMutation.Data>(UnblockEmailAddressesMutation(input))
-            .data(UnblockEmailAddressesMutation.Data(mutationResult))
-            .build()
+    private val mutationFailedResponse by before {
+        JSONObject(
+            """
+                {
+                    'unblockEmailAddresses': {
+                        '__typename': 'UnblockAddressesResult',
+                        'status': 'FAILED',
+                        'failedAddresses': [],
+                        'successAddresses': []
+                    }
+                }
+            """.trimIndent(),
+        )
     }
-
-    private val callbackHolder = CallbackHolder<UnblockEmailAddressesMutation.Data>()
 
     private val mockContext by before {
         mock<Context>()
@@ -92,9 +97,21 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         }
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { mutate(any<UnblockEmailAddressesMutation>()) } doReturn callbackHolder.mutationOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(UnblockEmailAddressesMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(mutationSuccessResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -127,7 +144,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -145,7 +162,6 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     @Before
     fun init() {
-        callbackHolder.callback = null
         addresses = listOf(
             "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
             "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
@@ -159,7 +175,7 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -170,7 +186,6 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
     @Test
     fun `unblockEmailAddresses() should throw an InvalidInputException if passed an empty array`() =
         runTest {
-            callbackHolder.callback shouldBe null
             val addresses = emptyList<String>()
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -179,14 +194,12 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 }
             }
             deferredResult.start()
-
-            delay(100L)
+            deferredResult.await()
         }
 
     @Test
     fun `unblockEmailAddresses() should throw an InvalidInputException if passed an array with duplicate emails`() =
         runTest {
-            callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
             val uuid = UUID.randomUUID()
             val addresses = listOf(
@@ -200,40 +213,34 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 }
             }
             deferredResult.start()
+            deferredResult.await()
 
-            delay(100L)
             verify(mockUserClient).getSubject()
         }
 
     @Test
     fun `unblockEmailAddresses() should return success when no errors present`() =
         runTest {
-            callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.unblockEmailAddresses(addresses)
             }
             deferredResult.start()
-
-            delay(100L)
-            callbackHolder.callback shouldNotBe null
-            callbackHolder.callback?.onResponse(mutationResponse)
-
             val result = deferredResult.await()
-            result shouldNotBe null
 
+            result shouldNotBe null
             result.status shouldBe BatchOperationStatus.SUCCESS
 
-            verify(mockAppSyncClient).mutate<
-                UnblockEmailAddressesMutation.Data,
-                UnblockEmailAddressesMutation,
-                UnblockEmailAddressesMutation.Variables,
-                >(
-                org.mockito.kotlin.check {
-                    it.variables().input().owner() shouldBe "mockOwner"
-                    it.variables().input().unblockedAddresses().size shouldBe addresses.size
+            verify(mockApiCategory).mutate<String>(
+                check {
+                    it.query shouldBe UnblockEmailAddressesMutation.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as UnblockEmailAddressesRequest
+                    input.owner shouldBe "mockOwner"
+                    input.unblockedAddresses.size shouldBe addresses.size
                 },
+                any(),
+                any(),
             )
             verify(mockUserClient).getSubject()
         }
@@ -241,98 +248,108 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
     @Test
     fun `unblockEmailAddresses() should return failure when api returns failed status`() =
         runTest {
-            callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
 
-            val failureResponse by before {
-                Response.builder<UnblockEmailAddressesMutation.Data>(
-                    UnblockEmailAddressesMutation(
-                        input,
-                    ),
-                )
-                    .data(
-                        UnblockEmailAddressesMutation.Data(
-                            UnblockEmailAddressesMutation.UnblockEmailAddresses(
-                                "typename",
-                                UnblockEmailAddressesMutation.UnblockEmailAddresses.Fragments(
-                                    UnblockAddressesResult(
-                                        "typename",
-                                        BlockEmailAddressesBulkUpdateStatus.FAILED,
-                                        emptyList(),
-                                        emptyList(),
-                                    ),
-                                ),
-                            ),
-                        ),
+            mockApiCategory.stub {
+                on {
+                    mutate<String>(
+                        argThat { this.query.equals(UnblockEmailAddressesMutation.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
                     )
-                    .build()
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(mutationFailedResponse.toString(), null),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.unblockEmailAddresses(addresses)
             }
             deferredResult.start()
-
-            delay(100L)
-            callbackHolder.callback shouldNotBe null
-            callbackHolder.callback?.onResponse(failureResponse)
-
             val result = deferredResult.await()
-            result shouldNotBe null
 
+            result shouldNotBe null
             result.status shouldBe BatchOperationStatus.FAILURE
 
-            verify(mockAppSyncClient).mutate<
-                UnblockEmailAddressesMutation.Data,
-                UnblockEmailAddressesMutation,
-                UnblockEmailAddressesMutation.Variables,
-                >(
-                org.mockito.kotlin.check {
-                    it.variables().input().owner() shouldBe "mockOwner"
-                    it.variables().input().unblockedAddresses().size shouldBe addresses.size
+            verify(mockApiCategory).mutate<String>(
+                check {
+                    it.query shouldBe UnblockEmailAddressesMutation.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as UnblockEmailAddressesRequest
+                    input.owner shouldBe "mockOwner"
+                    input.unblockedAddresses.size shouldBe addresses.size
                 },
+                any(),
+                any(),
             )
             verify(mockUserClient).getSubject()
         }
 
     @Test
     fun `unblockEmailAddresses() should return proper lists on partial`() = runTest {
-        callbackHolder.callback shouldBe null
         addresses.size shouldNotBe 0
 
         val expectedHashedValues = addresses.map {
             StringHasher.hashString("$owner|${EmailAddressParser.normalize(it)}")
         }
 
-        val partialResponse by before {
-            Response.builder<UnblockEmailAddressesMutation.Data>(UnblockEmailAddressesMutation(input))
-                .data(
-                    UnblockEmailAddressesMutation.Data(
-                        UnblockEmailAddressesMutation.UnblockEmailAddresses(
-                            "typename",
-                            UnblockEmailAddressesMutation.UnblockEmailAddresses.Fragments(
-                                UnblockAddressesResult(
-                                    "typename",
-                                    BlockEmailAddressesBulkUpdateStatus.PARTIAL,
-                                    listOf(expectedHashedValues[0]),
-                                    listOf(expectedHashedValues[1]),
-                                ),
-                            ),
-                        ),
-                    ),
-                )
-                .build()
+        val mutationPartialResponse by before {
+            JSONObject(
+                """
+                {
+                    'unblockEmailAddresses': {
+                        '__typename': 'BlockEmailAddressesResult',
+                        'status': 'PARTIAL',
+                        'failedAddresses': ['${expectedHashedValues[0]}'],
+                        'successAddresses': ['${expectedHashedValues[1]}']
+                    }
+                }
+                """.trimIndent(),
+            )
         }
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(UnblockEmailAddressesMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(mutationPartialResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
+        }
+//
+//        val partialResponse by before {
+//            Response.builder<UnblockEmailAddressesMutation.Data>(UnblockEmailAddressesMutation(input))
+//                .data(
+//                    UnblockEmailAddressesMutation.Data(
+//                        UnblockEmailAddressesMutation.UnblockEmailAddresses(
+//                            "typename",
+//                            UnblockEmailAddressesMutation.UnblockEmailAddresses.Fragments(
+//                                UnblockAddressesResult(
+//                                    "typename",
+//                                    BlockEmailAddressesBulkUpdateStatus.PARTIAL,
+//                                    listOf(expectedHashedValues[0]),
+//                                    listOf(expectedHashedValues[1]),
+//                                ),
+//                            ),
+//                        ),
+//                    ),
+//                )
+//                .build()
+//        }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.unblockEmailAddresses(addresses)
         }
         deferredResult.start()
-
-        delay(100L)
-        callbackHolder.callback shouldNotBe null
-        callbackHolder.callback?.onResponse(partialResponse)
-
         val result = deferredResult.await()
         result shouldNotBe null
 
@@ -340,15 +357,15 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         result.failureValues?.shouldContain(addresses[0])
         result.successValues?.shouldContain(addresses[1])
 
-        verify(mockAppSyncClient).mutate<
-            UnblockEmailAddressesMutation.Data,
-            UnblockEmailAddressesMutation,
-            UnblockEmailAddressesMutation.Variables,
-            >(
-            org.mockito.kotlin.check {
-                it.variables().input().owner() shouldBe "mockOwner"
-                it.variables().input().unblockedAddresses().size shouldBe addresses.size
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe UnblockEmailAddressesMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as UnblockEmailAddressesRequest
+                input.owner shouldBe "mockOwner"
+                input.unblockedAddresses.size shouldBe addresses.size
             },
+            any(),
+            any(),
         )
         verify(mockUserClient).getSubject()
     }
@@ -356,46 +373,48 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
     @Test
     fun `unblockEmailAddresses() should throw an error if response contains errors`() =
         runTest {
-            callbackHolder.callback shouldBe null
             addresses.size shouldNotBe 0
 
-            val errorResponse by before {
-                val error = com.apollographql.apollo.api.Error(
-                    "mock",
-                    emptyList(),
-                    mapOf("errorType" to "SystemError"),
-                )
-                Response.builder<UnblockEmailAddressesMutation.Data>(
-                    UnblockEmailAddressesMutation(
-                        input,
-                    ),
-                )
-                    .errors(listOf(error))
-                    .build()
+            val error = GraphQLResponse.Error(
+                "mock",
+                null,
+                null,
+                mapOf("errorType" to "SystemError"),
+            )
+            mockApiCategory.stub {
+                on {
+                    mutate<String>(
+                        argThat { this.query.equals(UnblockEmailAddressesMutation.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(null, listOf(error)),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
+
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
                     client.unblockEmailAddresses(addresses)
                 }
             }
             deferredResult.start()
-
-            delay(100L)
-            callbackHolder.callback shouldNotBe null
-            callbackHolder.callback?.onResponse(errorResponse)
-
             val result = deferredResult.await()
             result shouldNotBe null
 
-            verify(mockAppSyncClient).mutate<
-                UnblockEmailAddressesMutation.Data,
-                UnblockEmailAddressesMutation,
-                UnblockEmailAddressesMutation.Variables,
-                >(
-                org.mockito.kotlin.check {
-                    it.variables().input().owner() shouldBe "mockOwner"
-                    it.variables().input().unblockedAddresses().size shouldBe addresses.size
+            verify(mockApiCategory).mutate<String>(
+                check {
+                    it.query shouldBe UnblockEmailAddressesMutation.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as UnblockEmailAddressesRequest
+                    input.owner shouldBe "mockOwner"
+                    input.unblockedAddresses.size shouldBe addresses.size
                 },
+                any(),
+                any(),
             )
             verify(mockUserClient).getSubject()
         }

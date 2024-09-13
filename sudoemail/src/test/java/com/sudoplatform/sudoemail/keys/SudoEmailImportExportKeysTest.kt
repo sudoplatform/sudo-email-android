@@ -8,7 +8,7 @@ package com.sudoplatform.sudoemail.keys
 
 import android.content.Context
 import android.util.Base64
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
+import com.amplifyframework.api.ApiCategory
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.DefaultSudoEmailClient
 import com.sudoplatform.sudoemail.SudoEmailClient
@@ -19,6 +19,7 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManager
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
@@ -50,9 +51,8 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-        }
+    private val mockApiCategory by before {
+        mock<ApiCategory>()
     }
 
     private val mockKeyManager by before {
@@ -90,7 +90,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -113,7 +113,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -146,7 +146,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         }
         val errorClient = DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -184,7 +184,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
 
         val errorClient = DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -225,7 +225,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         val serviceKeyManager = DefaultServiceKeyManager(keyNameSpace, mockUserClient, keyManager, mockLogger)
         val emailClient = DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             serviceKeyManager,

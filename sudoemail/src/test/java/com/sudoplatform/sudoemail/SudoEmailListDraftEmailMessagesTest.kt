@@ -7,16 +7,15 @@
 package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.ObjectMetadata
-import com.apollographql.apollo.api.Response
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
+import com.apollographql.apollo3.api.Optional
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
-import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -26,21 +25,24 @@ import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -65,131 +67,114 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
 
     private val mockS3ObjectMetadata = ObjectMetadata()
 
-    private val owners by before {
-        listOf(EmailAddressWithoutFolders.Owner("typename", "ownerId", "issuer"))
-    }
-
-    private val folderOwners by before {
-        listOf(EmailFolder.Owner("typename", "ownerId", "issuer"))
-    }
-
-    private val folders by before {
-        listOf(
-            EmailAddress.Folder(
-                "typename",
-                EmailAddress.Folder.Fragments(
-                    EmailFolder(
-                        "EmailFolder",
-                        "folderId",
-                        "owner",
-                        folderOwners,
-                        1,
-                        1.0,
-                        1.0,
-                        "emailAddressId",
-                        "folderName",
-                        0.0,
-                        0.0,
-                        1.0,
-                    ),
-                ),
-            ),
+    private val emailAddressQueryResponse by before {
+        JSONObject(
+            """
+                {
+                    'getEmailAddress': {
+                        '__typename': 'EmailAddress',
+                        'id': 'emailAddressId',
+                        'owner': 'owner',
+                        'owners': [{
+                            '__typename': 'Owner',
+                            'id': 'ownerId',
+                            'issuer': 'issuer'
+                        }],
+                        'identityId': 'identityId',
+                        'keyRingId': 'keyRingId',
+                        'keyIds': [],
+                        'version': '1',
+                        'createdAtEpochMs': 1.0,
+                        'updatedAtEpochMs': 1.0,
+                        'lastReceivedAtEpochMs': 1.0,
+                        'emailAddress': 'example@sudoplatform.com',
+                        'size': 0.0,
+                        'numberOfEmailMessages': 0,
+                        'folders': [{
+                            '__typename': 'EmailFolder',
+                            'id': 'folderId',
+                            'owner': 'owner',
+                            'owners': [{
+                                '__typename': 'Owner',
+                                'id': 'ownerId',
+                                'issuer': 'issuer'
+                            }],
+                            'version': 1,
+                            'createdAtEpochMs': 1.0,
+                            'updatedAtEpochMs': 1.0,
+                            'emailAddressId': 'emailAddressId',
+                            'folderName': 'folderName',
+                            'size': 0.0,
+                            'unseenCount': 0.0,
+                            'ttl': 1.0
+                        }]
+                    }
+                }
+            """.trimIndent(),
         )
-    }
-
-    private val listEmailAddressesResult by before {
-        ListEmailAddressesQuery.ListEmailAddresses(
-            "typename",
-            listOf(
-                ListEmailAddressesQuery.Item(
-                    "typename",
-                    ListEmailAddressesQuery.Item.Fragments(
-                        EmailAddress(
-                            "typename",
-                            folders,
-                            EmailAddress.Fragments(
-                                EmailAddressWithoutFolders(
-                                    "typename",
-                                    "emailAddressId",
-                                    "owner",
-                                    owners,
-                                    "identityId",
-                                    "keyRingId",
-                                    emptyList(),
-                                    1,
-                                    1.0,
-                                    1.0,
-                                    1.0,
-                                    "example@sudoplatform.com",
-                                    0.0,
-                                    0,
-                                    null,
-                                ),
-                            ),
-                        ),
-                    ),
-                ),
-            ),
-            null,
-        )
-    }
-
-    private val emailAddressResult by before {
-        GetEmailAddressQuery.GetEmailAddress(
-            "typename",
-            GetEmailAddressQuery.GetEmailAddress.Fragments(
-                EmailAddress(
-                    "typename",
-                    folders,
-                    EmailAddress.Fragments(
-                        EmailAddressWithoutFolders(
-                            "typename",
-                            "emailAddressId",
-                            "owner",
-                            owners,
-                            "identityId",
-                            "keyRingId",
-                            emptyList(),
-                            1,
-                            1.0,
-                            1.0,
-                            1.0,
-                            "example@sudoplatform.com",
-                            0.0,
-                            0,
-                            null,
-                        ),
-                    ),
-                ),
-            ),
-        )
-    }
-
-    private val input by before {
-        ListEmailAddressesInput.builder()
-            .limit(null)
-            .nextToken(null)
-            .build()
-    }
-
-    private val mockEmailAddressIdInput by before {
-        "emailAddressId"
     }
 
     private val listEmailAddressesQueryResponse by before {
-        Response.builder<ListEmailAddressesQuery.Data>(ListEmailAddressesQuery(input))
-            .data(ListEmailAddressesQuery.Data(listEmailAddressesResult))
-            .build()
+        JSONObject(
+            """
+                {
+                    'listEmailAddresses': {
+                        'items': [{
+                            '__typename': 'EmailAddress',
+                            'id': 'emailAddressId',
+                            'owner': 'owner',
+                            'owners': [{
+                                '__typename': 'Owner',
+                                'id': 'ownerId',
+                                'issuer': 'issuer'
+                            }],
+                            'identityId': 'identityId',
+                            'keyRingId': 'keyRingId',
+                            'keyIds': [],
+                            'version': '1',
+                            'createdAtEpochMs': 1.0,
+                            'updatedAtEpochMs': 1.0,
+                            'lastReceivedAtEpochMs': 1.0,
+                            'emailAddress': 'example@sudoplatform.com',
+                            'size': 0.0,
+                            'numberOfEmailMessages': 0,
+                            'folders': [{
+                                '__typename': 'EmailFolder',
+                                'id': 'folderId',
+                                'owner': 'owner',
+                                'owners': [{
+                                    '__typename': 'Owner',
+                                    'id': 'ownerId',
+                                    'issuer': 'issuer'
+                                }],
+                                'version': 1,
+                                'createdAtEpochMs': 1.0,
+                                'updatedAtEpochMs': 1.0,
+                                'emailAddressId': 'emailAddressId',
+                                'folderName': 'folderName',
+                                'size': 0.0,
+                                'unseenCount': 0.0,
+                                'ttl': 1.0
+                            }]
+                        }],
+                        'nextToken': null
+                    }
+                }
+            """.trimIndent(),
+        )
     }
 
-    private val getEmailAddressQueryResponse by before {
-        Response.builder<GetEmailAddressQuery.Data>(GetEmailAddressQuery(mockEmailAddressIdInput))
-            .data(GetEmailAddressQuery.Data(emailAddressResult))
-            .build()
+    private val listEmailAddressesQueryResponseWithEmptyList by before {
+        JSONObject(
+            """
+                {
+                    'listEmailAddresses': {
+                        'items': []
+                    }
+                }
+            """.trimIndent(),
+        )
     }
-
-    private val listEmailHolder = CallbackHolder<ListEmailAddressesQuery.Data>()
-    private val getEmailHolder = CallbackHolder<GetEmailAddressQuery.Data>()
 
     private val context by before {
         InstrumentationRegistry.getInstrumentation().targetContext
@@ -215,10 +200,34 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
         DefaultServiceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { query(any<ListEmailAddressesQuery>()) } doReturn listEmailHolder.queryOperation
-            on { query(any<GetEmailAddressQuery>()) } doReturn getEmailHolder.queryOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(emailAddressQueryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
+            on {
+                query<String>(
+                    argThat { this.query.equals(ListEmailAddressesQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(listEmailAddressesQueryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -269,7 +278,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -287,8 +296,6 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
 
     @Before
     fun init() {
-        listEmailHolder.callback = null
-        getEmailHolder.callback = null
         mockS3ObjectMetadata.lastModified = timestamp
         mockS3ObjectMetadata.userMetadata = mockUserMetadata
     }
@@ -298,7 +305,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
         verifyNoMoreInteractions(
             mockUserClient,
             mockKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -309,24 +316,12 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
 
     @Test
     fun `listDraftEmailMessages() should return results when no error present`() = runTest {
-        listEmailHolder.callback shouldBe null
-        getEmailHolder.callback shouldBe null
-
         val emailAddressId = "emailAddressId"
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.listDraftEmailMessages()
         }
         deferredResult.start()
-
-        delay(100L)
-        listEmailHolder.callback shouldNotBe null
-        listEmailHolder.callback?.onResponse(listEmailAddressesQueryResponse)
-
-        delay(100L)
-        getEmailHolder.callback shouldNotBe null
-        getEmailHolder.callback?.onResponse(getEmailAddressQueryResponse)
-
         val result = deferredResult.await()
 
         result.size shouldBe 2
@@ -339,8 +334,23 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
         result[1].updatedAt.time shouldBe timestamp.time
         result[1].rfc822Data shouldNotBe null
 
-        verify(mockAppSyncClient).query(any<ListEmailAddressesQuery>())
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe ListEmailAddressesQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as ListEmailAddressesInput
+                input.limit shouldBe Optional.present(10)
+                input.nextToken shouldBe Optional.absent()
+            },
+            any(),
+            any(),
+        )
         verify(mockS3Client, times(2)).getObjectMetadata(anyString())
         verify(mockS3Client, times(2)).download(anyString())
         verify(mockS3Client).list(
@@ -356,10 +366,15 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
 
     @Test
     fun `listDraftEmailMessages() should throw an error if an unknown error occurs`() = runTest {
-        listEmailHolder.callback shouldBe null
-
-        mockAppSyncClient.stub {
-            on { query(any<ListEmailAddressesQuery>()) } doThrow RuntimeException("Mock Runtime Exception")
+        mockApiCategory.stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(ListEmailAddressesQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow
+                RuntimeException("Mock Runtime Exception")
         }
 
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -368,53 +383,62 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
             }
         }
         deferredResult.start()
-
-        delay(100L)
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<ListEmailAddressesQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe ListEmailAddressesQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as ListEmailAddressesInput
+                input.limit shouldBe Optional.present(10)
+                input.nextToken shouldBe Optional.absent()
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
     fun `listDraftEmailMessages() should return an empty list if no addresses found for user`() =
         runTest {
-            listEmailHolder.callback shouldBe null
-
-            val queryResultWithEmptyList by before {
-                ListEmailAddressesQuery.ListEmailAddresses(
-                    "typename",
-                    emptyList(),
-                    null,
-                )
-            }
-
-            val responseWithEmptyList by before {
-                Response.builder<ListEmailAddressesQuery.Data>(ListEmailAddressesQuery(input))
-                    .data(ListEmailAddressesQuery.Data(queryResultWithEmptyList))
-                    .build()
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(ListEmailAddressesQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(listEmailAddressesQueryResponseWithEmptyList.toString(), null),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.listDraftEmailMessages()
             }
             deferredResult.start()
-            delay(100L)
-
-            listEmailHolder.callback shouldNotBe null
-            listEmailHolder.callback?.onResponse(responseWithEmptyList)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
             result.size shouldBe 0
 
-            verify(mockAppSyncClient).query(any<ListEmailAddressesQuery>())
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe ListEmailAddressesQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as ListEmailAddressesInput
+                    input.limit shouldBe Optional.present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
     fun `listDraftEmailMessages() should return an empty list if no drafts found`() = runTest {
-        listEmailHolder.callback shouldBe null
-        getEmailHolder.callback shouldBe null
-
         val emailAddressId = "emailAddressId"
 
         mockS3Client.stub {
@@ -427,20 +451,27 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
             client.listDraftEmailMessages()
         }
         deferredResult.start()
-
-        delay(100L)
-        listEmailHolder.callback shouldNotBe null
-        listEmailHolder.callback?.onResponse(listEmailAddressesQueryResponse)
-
-        delay(100L)
-        getEmailHolder.callback shouldNotBe null
-        getEmailHolder.callback?.onResponse(getEmailAddressQueryResponse)
-
         val result = deferredResult.await()
+
         result.size shouldBe 0
 
-        verify(mockAppSyncClient).query(any<ListEmailAddressesQuery>())
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe ListEmailAddressesQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as ListEmailAddressesInput
+                input.limit shouldBe Optional.present(10)
+                input.nextToken shouldBe Optional.absent()
+            },
+            any(),
+            any(),
+        )
         verify(mockS3Client).list(
             check {
                 it shouldBe "transientBucket"
@@ -453,9 +484,6 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
 
     @Test
     fun `listDraftEmailMessages() should throw an error if draft message is not found`() = runTest {
-        listEmailHolder.callback shouldBe null
-        getEmailHolder.callback shouldBe null
-
         val emailAddressId = "emailAddressId"
 
         val error = AmazonS3Exception("Not found")
@@ -473,19 +501,25 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
         }
 
         deferredResult.start()
-
-        delay(100L)
-        listEmailHolder.callback shouldNotBe null
-        listEmailHolder.callback?.onResponse(listEmailAddressesQueryResponse)
-
-        delay(100L)
-        getEmailHolder.callback shouldNotBe null
-        getEmailHolder.callback?.onResponse(getEmailAddressQueryResponse)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).query(any<ListEmailAddressesQuery>())
-        verify(mockAppSyncClient).query(any<GetEmailAddressQuery>())
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe ListEmailAddressesQuery.OPERATION_DOCUMENT
+                val input = it.variables["input"] as ListEmailAddressesInput
+                input.limit shouldBe Optional.present(10)
+                input.nextToken shouldBe Optional.absent()
+            },
+            any(),
+            any(),
+        )
         verify(mockS3Client).getObjectMetadata(anyString())
         verify(mockS3Client).download(anyString())
         verify(mockS3Client).list(

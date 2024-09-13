@@ -7,13 +7,12 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import com.amazonaws.util.Base64
-import com.apollographql.apollo.api.Response
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
-import com.sudoplatform.sudoemail.graphql.fragment.GetEmailAddressBlocklistResponse
-import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -22,22 +21,24 @@ import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doReturnConsecutively
 import org.mockito.kotlin.mock
@@ -55,11 +56,6 @@ import com.sudoplatform.sudoemail.graphql.type.GetEmailAddressBlocklistInput as 
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     private val owner = "mockOwner"
-    private val input by before {
-        GetEmailAddressBlocklistRequest.builder()
-            .owner(owner)
-            .build()
-    }
     private val mockData = listOf(
         mapOf(
             "sealedData" to String(Base64.encode("dummySealedData1".toByteArray())),
@@ -73,62 +69,52 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
         ),
     )
 
-    private val mockBlocklist by before {
-        listOf(
-            GetEmailAddressBlocklistResponse.BlockedAddress(
-                "typename",
-                GetEmailAddressBlocklistResponse.SealedValue(
-                    "typename",
-                    GetEmailAddressBlocklistResponse.SealedValue.Fragments(
-                        SealedAttribute(
-                            "typename",
-                            "algorithm",
-                            "keyId",
-                            "string",
-                            mockData[0]["sealedData"] as String,
-                        ),
-                    ),
-                ),
-                mockData[0]["hashedValue"] as String,
-            ),
-            GetEmailAddressBlocklistResponse.BlockedAddress(
-                "typename",
-                GetEmailAddressBlocklistResponse.SealedValue(
-                    "typename",
-                    GetEmailAddressBlocklistResponse.SealedValue.Fragments(
-                        SealedAttribute(
-                            "typename",
-                            "algorithm",
-                            "keyId",
-                            "string",
-                            mockData[1]["sealedData"] as String,
-                        ),
-                    ),
-                ),
-                mockData[1]["hashedValue"] as String,
-            ),
-        )
-    }
-
-    private val queryResult by before {
-        GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist(
-            "typename",
-            GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist.Fragments(
-                GetEmailAddressBlocklistResponse(
-                    "typename",
-                    mockBlocklist,
-                ),
-            ),
-        )
-    }
-
     private val queryResponse by before {
-        Response.builder<GetEmailAddressBlocklistQuery.Data>(GetEmailAddressBlocklistQuery(input))
-            .data(GetEmailAddressBlocklistQuery.Data(queryResult))
-            .build()
+        JSONObject(
+            """
+            {
+                'getEmailAddressBlocklist': {
+                    '__typename': 'typename',
+                    'blockedAddresses': [{
+                        '__typename': 'BlockedAddress',
+                        'sealedValue': {
+                            '__typename': 'SealedAttribute',
+                            'algorithm': 'algorithm',
+                            'keyId': 'keyId',
+                            'plainTextType': 'string',
+                            'base64EncodedSealedData': '${mockData[0]["sealedData"] as String}'
+                        },
+                        'hashedBlockedValue': '${mockData[0]["hashedValue"] as String}'
+                    },
+                    {
+                        '__typename': 'BlockedAddress',
+                        'sealedValue': {
+                            '__typename': 'SealedAttribute',
+                            'algorithm': 'algorithm',
+                            'keyId': 'keyId',
+                            'plainTextType': 'string',
+                            'base64EncodedSealedData': '${mockData[1]["sealedData"] as String}'
+                        },
+                        'hashedBlockedValue': '${mockData[1]["hashedValue"] as String}'
+                    }]
+                }
+            }
+            """.trimIndent(),
+        )
     }
 
-    private val callbackHolder = CallbackHolder<GetEmailAddressBlocklistQuery.Data>()
+    private val queryResponseWithEmptyList by before {
+        JSONObject(
+            """
+            {
+                'getEmailAddressBlocklist': {
+                    '__typename': 'typename',
+                    'blockedAddresses': []
+                }
+            }
+            """.trimIndent(),
+        )
+    }
 
     private val mockContext by before {
         mock<Context>()
@@ -140,9 +126,21 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
         }
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { query(any<GetEmailAddressBlocklistQuery>()) } doReturn callbackHolder.queryOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(queryResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -185,7 +183,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -201,11 +199,6 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        callbackHolder.callback = null
-    }
-
     @After
     fun fini() {
         verifyNoMoreInteractions(
@@ -213,7 +206,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockAppSyncClient,
+            mockApiCategory,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -224,21 +217,26 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     @Test
     fun `getEmailAddressBlocklist() should throw an error if response contains errors`() =
         runTest {
-            callbackHolder shouldNotBe null
-
-            val errorResponse by before {
-                val error = com.apollographql.apollo.api.Error(
-                    "mock",
-                    emptyList(),
-                    mapOf("errorType" to "SystemError"),
-                )
-                Response.builder<GetEmailAddressBlocklistQuery.Data>(
-                    GetEmailAddressBlocklistQuery(
-                        input,
-                    ),
-                )
-                    .errors(listOf(error))
-                    .build()
+            val error = GraphQLResponse.Error(
+                "mock",
+                null,
+                null,
+                mapOf("errorType" to "SystemError"),
+            )
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(null, listOf(error)),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -247,22 +245,18 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 }
             }
             deferredResult.start()
-
-            delay(100L)
-            callbackHolder.callback shouldNotBe null
-            callbackHolder.callback?.onResponse(errorResponse)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
 
-            verify(mockAppSyncClient).query<
-                GetEmailAddressBlocklistQuery.Data,
-                GetEmailAddressBlocklistQuery,
-                GetEmailAddressBlocklistQuery.Variables,
-                >(
+            verify(mockApiCategory).query<String>(
                 check {
-                    it.variables().input().owner() shouldBe owner
+                    it.query shouldBe GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as GetEmailAddressBlocklistRequest
+                    input.owner shouldBe owner
                 },
+                any(),
+                any(),
             )
             verify(mockUserClient).getSubject()
         }
@@ -270,50 +264,39 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     @Test
     fun `getEmailAddressBlocklist() should return an empty list if no addresses are returned`() =
         runTest {
-            callbackHolder shouldNotBe null
-
-            val emptyResponse by before {
-                Response.builder<GetEmailAddressBlocklistQuery.Data>(
-                    GetEmailAddressBlocklistQuery(
-                        input,
-                    ),
-                ).data(
-                    GetEmailAddressBlocklistQuery.Data(
-                        GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist(
-                            "typename",
-                            GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist.Fragments(
-                                GetEmailAddressBlocklistResponse(
-                                    "typename",
-                                    emptyList(),
-                                ),
-                            ),
-                        ),
-                    ),
-                ).build()
+            mockApiCategory.stub {
+                on {
+                    query<String>(
+                        argThat { this.query.equals(GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT) },
+                        any(),
+                        any(),
+                    )
+                } doAnswer {
+                    @Suppress("UNCHECKED_CAST")
+                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                        GraphQLResponse(queryResponseWithEmptyList.toString(), null),
+                    )
+                    mock<GraphQLOperation<String>>()
+                }
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailAddressBlocklist()
             }
             deferredResult.start()
-
-            delay(100L)
-            callbackHolder.callback shouldNotBe null
-            callbackHolder.callback?.onResponse(emptyResponse)
-
             val result = deferredResult.await()
-            result shouldNotBe null
 
+            result shouldNotBe null
             result.size shouldBe 0
 
-            verify(mockAppSyncClient).query<
-                GetEmailAddressBlocklistQuery.Data,
-                GetEmailAddressBlocklistQuery,
-                GetEmailAddressBlocklistQuery.Variables,
-                >(
+            verify(mockApiCategory).query<String>(
                 check {
-                    it.variables().input().owner() shouldBe owner
+                    it.query shouldBe GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as GetEmailAddressBlocklistRequest
+                    input.owner shouldBe owner
                 },
+                any(),
+                any(),
             )
             verify(mockUserClient).getSubject()
         }
@@ -321,36 +304,27 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     @Test
     fun `getEmailAddressBlocklist() returns array of unsealed values on success`() =
         runTest {
-            callbackHolder shouldNotBe null
-
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailAddressBlocklist()
             }
             deferredResult.start()
-
-            delay(100L)
-            callbackHolder.callback shouldNotBe null
-            callbackHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
+
             result shouldNotBe null
-
-            result.size shouldBe mockBlocklist.size
-
             result.mapIndexed { index, unsealedBlockedAddress ->
                 unsealedBlockedAddress.hashedBlockedValue shouldBe mockData[index]["hashedValue"]
                 unsealedBlockedAddress.address shouldBe (mockData[index]["unsealedData"] as ByteArray).decodeToString()
                 unsealedBlockedAddress.status shouldBe UnsealedBlockedAddressStatus.Completed
             }
 
-            verify(mockAppSyncClient).query<
-                GetEmailAddressBlocklistQuery.Data,
-                GetEmailAddressBlocklistQuery,
-                GetEmailAddressBlocklistQuery.Variables,
-                >(
+            verify(mockApiCategory).query<String>(
                 check {
-                    it.variables().input().owner() shouldBe owner
+                    it.query shouldBe GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as GetEmailAddressBlocklistRequest
+                    input.owner shouldBe owner
                 },
+                any(),
+                any(),
             )
             val argumentCaptor = argumentCaptor<ByteArray>()
             verify(mockSealingService, times(2)).unsealString(
@@ -380,21 +354,12 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 } doReturn mockData[1]["unsealedData"] as ByteArray
             }
 
-            callbackHolder shouldNotBe null
-
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
                 client.getEmailAddressBlocklist()
             }
             deferredResult.start()
-
-            delay(100L)
-            callbackHolder.callback shouldNotBe null
-            callbackHolder.callback?.onResponse(queryResponse)
-
             val result = deferredResult.await()
             result shouldNotBe null
-
-            result.size shouldBe mockBlocklist.size
 
             result[0].address shouldBe ""
             result[0].hashedBlockedValue shouldBe mockData[0]["hashedValue"]
@@ -404,14 +369,14 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             result[1].hashedBlockedValue shouldBe mockData[1]["hashedValue"]
             result[1].status shouldBe UnsealedBlockedAddressStatus.Completed
 
-            verify(mockAppSyncClient).query<
-                GetEmailAddressBlocklistQuery.Data,
-                GetEmailAddressBlocklistQuery,
-                GetEmailAddressBlocklistQuery.Variables,
-                >(
+            verify(mockApiCategory).query<String>(
                 check {
-                    it.variables().input().owner() shouldBe owner
+                    it.query shouldBe GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT
+                    val input = it.variables["input"] as GetEmailAddressBlocklistRequest
+                    input.owner shouldBe owner
                 },
+                any(),
+                any(),
             )
 
             val argumentCaptor = argumentCaptor<ByteArray>()

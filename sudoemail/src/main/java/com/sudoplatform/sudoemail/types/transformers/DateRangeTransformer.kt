@@ -22,10 +22,9 @@ internal object DateRangeTransformer {
         if (this == null) {
             return null
         }
-        return DateRangeInput
-            .builder()
-            .endDateEpochMs(endDate.time.toDouble())
-            .startDateEpochMs(startDate.time.toDouble())
-            .build()
+        return DateRangeInput(
+            endDateEpochMs = endDate.time.toDouble(),
+            startDateEpochMs = startDate.time.toDouble(),
+        )
     }
 }

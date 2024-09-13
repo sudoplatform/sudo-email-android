@@ -27,18 +27,18 @@ internal object EmailFolderTransformer {
         result: List<ListEmailFoldersForEmailAddressIdQuery.Item>,
     ): List<EmailFolder> {
         return result.map {
-            val emailFolder = it.fragments().emailFolder()
+            val emailFolder = it.emailFolder
             EmailFolder(
-                id = emailFolder.id(),
-                owner = emailFolder.owner(),
-                owners = emailFolder.owners().toOwners(),
-                emailAddressId = emailFolder.emailAddressId(),
-                folderName = emailFolder.folderName(),
-                size = emailFolder.size(),
-                unseenCount = emailFolder.unseenCount().toInt(),
-                version = emailFolder.version(),
-                createdAt = emailFolder.createdAtEpochMs().toDate(),
-                updatedAt = emailFolder.updatedAtEpochMs().toDate(),
+                id = emailFolder.id,
+                owner = emailFolder.owner,
+                owners = emailFolder.owners.toOwners(),
+                emailAddressId = emailFolder.emailAddressId,
+                folderName = emailFolder.folderName,
+                size = emailFolder.size,
+                unseenCount = emailFolder.unseenCount.toInt(),
+                version = emailFolder.version,
+                createdAt = emailFolder.createdAtEpochMs.toDate(),
+                updatedAt = emailFolder.updatedAtEpochMs.toDate(),
             )
         }
     }
@@ -50,6 +50,6 @@ internal object EmailFolderTransformer {
     }
 
     private fun EmailFolderFragment.Owner.toOwner(): Owner {
-        return Owner(id = id(), issuer = issuer())
+        return Owner(id = id, issuer = issuer)
     }
 }

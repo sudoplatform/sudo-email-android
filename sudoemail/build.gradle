@@ -1,13 +1,8 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.amazonaws.appsync'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
 apply plugin: "org.owasp.dependencycheck"
 apply plugin: "org.jetbrains.kotlin.plugin.serialization"
-
-node {
-    version = "16.18.0"
-}
 
 android {
     compileSdk 34
@@ -18,7 +13,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 34
         versionCode = 1
-        versionName = "16.0.2"
+        versionName = "17.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -93,15 +88,22 @@ dependencies {
     // Follow the process at https://anonyome.atlassian.net/wiki/spaces/PLA/pages/840073287/AWS+Android+SDK+versions+to+use+for+platform+SDKs
     // for updating AWS SDK versions.
     implementation "com.amazonaws:aws-android-sdk-core:$aws_version!!"
-    implementation "com.amazonaws:aws-android-sdk-appsync:$appsync_version!!"
+
+    // Amplify
+    implementation "com.amplifyframework:core-kotlin:$amplify_version"
+    implementation "com.amplifyframework:aws-api-appsync:$amplify_version"
+    implementation "com.amplifyframework:aws-api:$amplify_version"
+
+    // Apollo Codegen
+    implementation("com.apollographql.apollo3:apollo-runtime:4.0.0-beta.7")
 
     // Sudo Platform
     implementation 'com.sudoplatform:sudokeymanager:8.0.0'
     implementation "com.sudoplatform:sudologging:5.0.0"
     implementation "com.sudoplatform:sudoconfigmanager:8.0.0"
-    implementation 'com.sudoplatform:sudouser:19.0.0'
-    implementation 'com.sudoplatform:sudoapiclient:10.0.0'
-    implementation 'com.sudoplatform:sudonotification:3.0.0'
+    implementation 'com.sudoplatform:sudouser:20.0.0'
+    implementation 'com.sudoplatform:sudoapiclient:11.1.1'
+    implementation 'com.sudoplatform:sudonotification:4.0.0'
 
     implementation 'com.sun.mail:jakarta.mail:2.0.1'
     implementation 'com.sun.activation:jakarta.activation:2.0.1'
@@ -109,6 +111,7 @@ dependencies {
 
     // Testing
     testImplementation "junit:junit:4.13.2"
+    testImplementation 'org.json:json:20240303'
     testImplementation "io.kotlintest:kotlintest-assertions:$kotlintest_version"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutine_version"
     testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
@@ -116,7 +119,7 @@ dependencies {
     testImplementation 'org.mockito.kotlin:mockito-kotlin:5.3.1'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation "androidx.test:core:1.6.1"
-    testImplementation 'org.robolectric:robolectric:4.12.1'
+    testImplementation 'org.robolectric:robolectric:4.12.2'
     testImplementation "com.jakewharton.timber:timber:5.0.1"
     testImplementation 'commons-codec:commons-codec:1.17.0'
 
@@ -129,9 +132,9 @@ dependencies {
     // Awaitility >= 4.x.x brings incompatible hamcrest 2.1 with it
     androidTestImplementation 'org.awaitility:awaitility-kotlin:3.1.6'
 
-    androidTestImplementation 'com.sudoplatform:sudoentitlements:11.0.0'
-    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:9.0.0'
-    androidTestImplementation 'com.sudoplatform:sudoprofiles:15.0.0'
+    androidTestImplementation 'com.sudoplatform:sudoentitlements:12.0.2'
+    androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:10.1.0'
+    androidTestImplementation 'com.sudoplatform:sudoprofiles:16.0.0'
 }
 
 // Returns a list of `configurations` which should not be scanned for vulnerabilities
@@ -176,8 +179,12 @@ afterEvaluate {
             }
         }
     }
+    tasks.named("sourceReleaseJar") {
+        dependsOn("generateServiceApolloSources")
+    }
 }
 
+// https://github.com/cookpad/LicenseToolsPlugin
 apply plugin: "com.cookpad.android.plugin.license-tools"
 licenseTools {
     licensesYaml = file("licenses.yml")
@@ -223,9 +230,20 @@ kotlinter {
     reporters = ['checkstyle', 'plain']
 }
 
-// Apollo Code Generation
+// Exclude the apollographql-generated classes from linting
+tasks.formatKotlinMain {
+    exclude { it.file.path.contains("generated/")}
+}
+
+tasks.lintKotlinMain {
+    exclude { it.file.path.contains("generated/")}
+}
+
+apply plugin: "com.apollographql.apollo3"
 apollo {
-    outputPackageName = "com.sudoplatform.sudoemail.graphql"
+    service("service") {
+        packageName.set("com.sudoplatform.sudoemail.graphql")
+    }
 }
 
 // Jacoco test coverage

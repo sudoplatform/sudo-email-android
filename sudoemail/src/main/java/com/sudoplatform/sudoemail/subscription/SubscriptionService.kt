@@ -6,10 +6,8 @@
 
 package com.sudoplatform.sudoemail.subscription
 
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.amazonaws.mobileconnectors.appsync.AppSyncSubscriptionCall
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloException
+import com.amplifyframework.api.ApiException
+import com.amplifyframework.api.graphql.GraphQLResponse
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageCreatedSubscription
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageDeletedSubscription
@@ -20,6 +18,7 @@ import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +29,7 @@ import kotlinx.coroutines.launch
  * Manage the subscriptions of email message modifications.
  */
 internal class SubscriptionService(
-    private val appSyncClient: AWSAppSyncClient,
+    private val graphQLClient: GraphQLClient,
     private val deviceKeyManager: DeviceKeyManager,
     private val userClient: SudoUserClient,
     private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
@@ -52,24 +51,28 @@ internal class SubscriptionService(
         deleteSubscriptionManager.replaceSubscriber(id, subscriber)
 
         scope.launch {
-            if (createSubscriptionManager.watcher == null && createSubscriptionManager.pendingWatcher == null) {
-                val watcher = appSyncClient.subscribe(
-                    OnEmailMessageCreatedSubscription.builder()
-                        .owner(userSubject)
-                        .build(),
+            if (createSubscriptionManager.watcher == null) {
+                val watcher = graphQLClient.subscribe<OnEmailMessageCreatedSubscription, OnEmailMessageCreatedSubscription.Data>(
+                    OnEmailMessageCreatedSubscription.OPERATION_DOCUMENT,
+                    mapOf("owner" to userSubject),
+                    createCallback.onSubscriptionEstablished,
+                    createCallback.onSubscription,
+                    createCallback.onSubscriptionCompleted,
+                    createCallback.onFailure,
                 )
-                createSubscriptionManager.pendingWatcher = watcher
-                watcher.execute(createCallback)
+                createSubscriptionManager.watcher = watcher
             }
 
-            if (deleteSubscriptionManager.watcher == null && deleteSubscriptionManager.pendingWatcher == null) {
-                val watcher = appSyncClient.subscribe(
-                    OnEmailMessageDeletedSubscription.builder()
-                        .owner(userSubject)
-                        .build(),
+            if (deleteSubscriptionManager.watcher == null) {
+                val watcher = graphQLClient.subscribe<OnEmailMessageDeletedSubscription, OnEmailMessageDeletedSubscription.Data>(
+                    OnEmailMessageDeletedSubscription.OPERATION_DOCUMENT,
+                    mapOf("owner" to userSubject),
+                    deleteCallback.onSubscriptionEstablished,
+                    deleteCallback.onSubscription,
+                    deleteCallback.onSubscriptionCompleted,
+                    deleteCallback.onFailure,
                 )
-                deleteSubscriptionManager.pendingWatcher = watcher
-                watcher.execute(deleteCallback)
+                deleteSubscriptionManager.watcher = watcher
             }
         }.join()
     }
@@ -89,61 +92,47 @@ internal class SubscriptionService(
         scope.cancel()
     }
 
-    private val createCallback = object : AppSyncSubscriptionCall.StartedCallback<OnEmailMessageCreatedSubscription.Data> {
-        override fun onFailure(e: ApolloException) {
-            logger.error("EmailMessage created subscription error $e")
-            createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
-        }
-
-        override fun onResponse(response: Response<OnEmailMessageCreatedSubscription.Data>) {
-            scope.launch {
-                val newEmailMessage = response.data()?.onEmailMessageCreated()
-                    ?: return@launch
-                createSubscriptionManager.emailMessageChanged(
-                    EmailMessageTransformer.toEntity(deviceKeyManager, newEmailMessage.fragments().sealedEmailMessage()),
-                )
-            }
-        }
-
-        override fun onCompleted() {
-            createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
-        }
-
-        override fun onStarted() {
-            createSubscriptionManager
-                .watcher = createSubscriptionManager.pendingWatcher
+    private val createCallback = object {
+        val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageCreatedSubscription.Data>) -> Unit = {
             createSubscriptionManager.connectionStatusChanged(
                 Subscriber.ConnectionState.CONNECTED,
             )
         }
-    }
-
-    private val deleteCallback = object : AppSyncSubscriptionCall.StartedCallback<OnEmailMessageDeletedSubscription.Data> {
-        override fun onFailure(e: ApolloException) {
-            logger.error("EmailMessage delete subscription error $e")
-            deleteSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
-        }
-
-        override fun onResponse(response: Response<OnEmailMessageDeletedSubscription.Data>) {
+        val onSubscription: (GraphQLResponse<OnEmailMessageCreatedSubscription.Data>) -> Unit = {
             scope.launch {
-                val deletedEmailMessage = response.data()?.onEmailMessageDeleted()
-                    ?: return@launch
-                deleteSubscriptionManager.emailMessageChanged(
-                    EmailMessageTransformer.toEntity(deviceKeyManager, deletedEmailMessage.fragments().sealedEmailMessage()),
+                val createEmailMessage = it.data?.onEmailMessageCreated ?: return@launch
+                createSubscriptionManager.emailMessageChanged(
+                    EmailMessageTransformer.toEntity(deviceKeyManager, createEmailMessage.sealedEmailMessage),
                 )
             }
         }
-
-        override fun onCompleted() {
-            deleteSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
+        val onSubscriptionCompleted = {
+            createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
         }
+        val onFailure: (ApiException) -> Unit = {
+            logger.error("Email message create subscription error $it")
+        }
+    }
 
-        override fun onStarted() {
-            deleteSubscriptionManager
-                .watcher = deleteSubscriptionManager.pendingWatcher
+    private val deleteCallback = object {
+        val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageDeletedSubscription.Data>) -> Unit = {
             deleteSubscriptionManager.connectionStatusChanged(
                 Subscriber.ConnectionState.CONNECTED,
             )
+        }
+        val onSubscription: (GraphQLResponse<OnEmailMessageDeletedSubscription.Data>) -> Unit = {
+            scope.launch {
+                val deleteEmailMessage = it.data?.onEmailMessageDeleted ?: return@launch
+                deleteSubscriptionManager.emailMessageChanged(
+                    EmailMessageTransformer.toEntity(deviceKeyManager, deleteEmailMessage.sealedEmailMessage),
+                )
+            }
+        }
+        val onSubscriptionCompleted = {
+            deleteSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
+        }
+        val onFailure: (ApiException) -> Unit = {
+            logger.error("Email message delete subscription error $it")
         }
     }
 }

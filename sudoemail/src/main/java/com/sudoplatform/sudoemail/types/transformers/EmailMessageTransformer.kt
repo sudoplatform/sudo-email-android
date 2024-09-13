@@ -55,28 +55,28 @@ internal object EmailMessageTransformer {
         sealedEmailMessage: SealedEmailMessage,
     ): EmailMessage {
         val unsealedRfc822Header = EmailHeaderDetailsUnsealer.toEmailHeaderDetails(
-            sealedEmailMessage.rfc822Header().base64EncodedSealedData(),
-            sealedEmailMessage.rfc822Header().keyId(),
-            sealedEmailMessage.rfc822Header().algorithm(),
+            sealedEmailMessage.rfc822Header.base64EncodedSealedData,
+            sealedEmailMessage.rfc822Header.keyId,
+            sealedEmailMessage.rfc822Header.algorithm,
             deviceKeyManager,
         )
 
         return EmailMessage(
-            id = sealedEmailMessage.id(),
-            clientRefId = sealedEmailMessage.clientRefId(),
-            owner = sealedEmailMessage.owner(),
-            owners = sealedEmailMessage.owners().toOwners(),
-            emailAddressId = sealedEmailMessage.emailAddressId(),
-            folderId = sealedEmailMessage.folderId(),
-            previousFolderId = sealedEmailMessage.previousFolderId(),
-            seen = sealedEmailMessage.seen(),
-            direction = sealedEmailMessage.direction().toEmailMessageDirection(),
-            state = sealedEmailMessage.state().toEmailMessageState(),
-            version = sealedEmailMessage.version(),
-            sortDate = sealedEmailMessage.sortDateEpochMs().toDate(),
-            createdAt = sealedEmailMessage.createdAtEpochMs().toDate(),
-            updatedAt = sealedEmailMessage.updatedAtEpochMs().toDate(),
-            size = sealedEmailMessage.size(),
+            id = sealedEmailMessage.id,
+            clientRefId = sealedEmailMessage.clientRefId,
+            owner = sealedEmailMessage.owner,
+            owners = sealedEmailMessage.owners.toOwners(),
+            emailAddressId = sealedEmailMessage.emailAddressId,
+            folderId = sealedEmailMessage.folderId,
+            previousFolderId = sealedEmailMessage.previousFolderId,
+            seen = sealedEmailMessage.seen,
+            direction = sealedEmailMessage.direction.toEmailMessageDirection(),
+            state = sealedEmailMessage.state.toEmailMessageState(),
+            version = sealedEmailMessage.version,
+            sortDate = sealedEmailMessage.sortDateEpochMs.toDate(),
+            createdAt = sealedEmailMessage.createdAtEpochMs.toDate(),
+            updatedAt = sealedEmailMessage.updatedAtEpochMs.toDate(),
+            size = sealedEmailMessage.size,
             from = unsealedRfc822Header.from,
             to = unsealedRfc822Header.to,
             cc = unsealedRfc822Header.cc,
@@ -84,7 +84,7 @@ internal object EmailMessageTransformer {
             replyTo = unsealedRfc822Header.replyTo,
             subject = unsealedRfc822Header.subject,
             hasAttachments = unsealedRfc822Header.hasAttachments,
-            encryptionStatus = sealedEmailMessage.encryptionStatus()
+            encryptionStatus = sealedEmailMessage.encryptionStatus
                 ?.toEmailMessageEncryptionStatus() ?: EncryptionStatus.UNENCRYPTED,
             date = unsealedRfc822Header.date,
         )
@@ -100,22 +100,22 @@ internal object EmailMessageTransformer {
         sealedEmailMessage: SealedEmailMessage,
     ): PartialEmailMessage {
         return PartialEmailMessage(
-            id = sealedEmailMessage.id(),
-            clientRefId = sealedEmailMessage.clientRefId(),
-            owner = sealedEmailMessage.owner(),
-            owners = sealedEmailMessage.owners().toOwners(),
-            emailAddressId = sealedEmailMessage.emailAddressId(),
-            folderId = sealedEmailMessage.folderId(),
-            previousFolderId = sealedEmailMessage.previousFolderId(),
-            seen = sealedEmailMessage.seen(),
-            direction = sealedEmailMessage.direction().toEmailMessageDirection(),
-            state = sealedEmailMessage.state().toEmailMessageState(),
-            version = sealedEmailMessage.version(),
-            sortDate = sealedEmailMessage.sortDateEpochMs().toDate(),
-            createdAt = sealedEmailMessage.createdAtEpochMs().toDate(),
-            updatedAt = sealedEmailMessage.updatedAtEpochMs().toDate(),
-            size = sealedEmailMessage.size(),
-            encryptionStatus = sealedEmailMessage.encryptionStatus()
+            id = sealedEmailMessage.id,
+            clientRefId = sealedEmailMessage.clientRefId,
+            owner = sealedEmailMessage.owner,
+            owners = sealedEmailMessage.owners.toOwners(),
+            emailAddressId = sealedEmailMessage.emailAddressId,
+            folderId = sealedEmailMessage.folderId,
+            previousFolderId = sealedEmailMessage.previousFolderId,
+            seen = sealedEmailMessage.seen,
+            direction = sealedEmailMessage.direction.toEmailMessageDirection(),
+            state = sealedEmailMessage.state.toEmailMessageState(),
+            version = sealedEmailMessage.version,
+            sortDate = sealedEmailMessage.sortDateEpochMs.toDate(),
+            createdAt = sealedEmailMessage.createdAtEpochMs.toDate(),
+            updatedAt = sealedEmailMessage.updatedAtEpochMs.toDate(),
+            size = sealedEmailMessage.size,
+            encryptionStatus = sealedEmailMessage.encryptionStatus
                 ?.toEmailMessageEncryptionStatus()
                 ?: EncryptionStatus.UNENCRYPTED,
         )
@@ -199,6 +199,6 @@ internal object EmailMessageTransformer {
     }
 
     private fun SealedEmailMessage.Owner.toOwner(): Owner {
-        return Owner(id = id(), issuer = issuer())
+        return Owner(id = id, issuer = issuer)
     }
 }

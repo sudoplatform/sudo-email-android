@@ -25,9 +25,9 @@ internal object EmailAddressPublicInfoTransformer {
         emailAddressPublicInfoFragment: EmailAddressPublicInfoFragment,
     ): EmailAddressPublicInfo {
         return EmailAddressPublicInfo(
-            emailAddress = emailAddressPublicInfoFragment.emailAddress(),
-            keyId = emailAddressPublicInfoFragment.keyId(),
-            publicKey = emailAddressPublicInfoFragment.publicKey(),
+            emailAddress = emailAddressPublicInfoFragment.emailAddress,
+            keyId = emailAddressPublicInfoFragment.keyId,
+            publicKey = emailAddressPublicInfoFragment.publicKey,
         )
     }
 }

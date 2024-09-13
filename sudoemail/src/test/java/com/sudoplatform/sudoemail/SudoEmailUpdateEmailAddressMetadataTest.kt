@@ -7,40 +7,37 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloHttpException
-import com.sudoplatform.sudoemail.graphql.CallbackHolder
+import com.amplifyframework.api.ApiCategory
+import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amplifyframework.api.graphql.GraphQLResponse
+import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
-import com.sudoplatform.sudoemail.graphql.type.EmailAddressMetadataUpdateValuesInput
-import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
-import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
-import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Protocol
-import okhttp3.ResponseBody.Companion.toResponseBody
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -50,7 +47,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
 import java.util.concurrent.CancellationException
-import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput as UpdateEmailAddressMetadataRequest
+import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput as UpdateEmailAddressMetadataRequest
 
 /**
  * Test the correct operation of [SudoEmailClient.updateEmailAddressMetadata]
@@ -59,35 +56,22 @@ import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput a
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
-    private val sealedAttributeInput by before {
-        SealedAttributeInput.builder()
-            .keyId("keyId")
-            .algorithm("algorithm")
-            .plainTextType("string")
-            .base64EncodedSealedData("John Doe")
-            .build()
-    }
-
-    private val updateValues by before {
-        EmailAddressMetadataUpdateValuesInput.builder()
-            .alias(sealedAttributeInput)
-            .build()
-    }
-
     private val input by before {
-        UpdateEmailAddressMetadataInput.builder()
-            .id("emailAddressId")
-            .values(updateValues)
-            .build()
+        UpdateEmailAddressMetadataInput(
+            "emailAddressId",
+            "John Doe",
+        )
     }
 
     private val mutationResponse by before {
-        Response.builder<UpdateEmailAddressMetadataMutation.Data>(UpdateEmailAddressMetadataMutation(input))
-            .data(UpdateEmailAddressMetadataMutation.Data("emailAddressId"))
-            .build()
+        JSONObject(
+            """
+                {
+                    'updateEmailAddressMetadata': 'emailAddressId'
+                }
+            """.trimIndent(),
+        )
     }
-
-    private val mutationHolder = CallbackHolder<UpdateEmailAddressMetadataMutation.Data>()
 
     private val mockContext by before {
         mock<Context>()
@@ -97,9 +81,21 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockAppSyncClient by before {
-        mock<AWSAppSyncClient>().stub {
-            on { mutate(any<UpdateEmailAddressMetadataMutation>()) } doReturn mutationHolder.mutationOperation
+    private val mockApiCategory by before {
+        mock<ApiCategory>().stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(mutationResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
     }
 
@@ -138,7 +134,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            mockAppSyncClient,
+            GraphQLClient(mockApiCategory),
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -154,156 +150,177 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         )
     }
 
-    @Before
-    fun init() {
-        mutationHolder.callback = null
-    }
-
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockAppSyncClient, mockS3Client)
+        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockApiCategory, mockS3Client)
     }
 
     @Test
     fun `updateEmailAddressMetadata() should return results when no error present`() = runTest {
-        mutationHolder.callback shouldBe null
-
-        val input = UpdateEmailAddressMetadataRequest(
-            "emailAddressId",
-            "John Doe",
-        )
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             client.updateEmailAddressMetadata(input)
         }
         deferredResult.start()
-
-        delay(100L)
-        mutationHolder.callback shouldNotBe null
-        mutationHolder.callback?.onResponse(mutationResponse)
-
         val result = deferredResult.await()
-        result shouldBe "emailAddressId"
 
-        verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
+        result shouldBe "emailAddressId"
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+                input.id shouldBe "emailAddressId"
+            },
+            any(),
+            any(),
+        )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should throw when response is null`() = runTest {
-        mutationHolder.callback shouldBe null
-
-        val nullResponse by before {
-            Response.builder<UpdateEmailAddressMetadataMutation.Data>(UpdateEmailAddressMetadataMutation(input))
-                .data(null)
-                .build()
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
         }
 
-        val input = UpdateEmailAddressMetadataRequest(
-            "emailAddressId",
-            "John Doe",
-        )
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
                 client.updateEmailAddressMetadata(input)
             }
         }
         deferredResult.start()
+        deferredResult.await()
 
-        delay(100L)
-        mutationHolder.callback shouldNotBe null
-        mutationHolder.callback?.onResponse(nullResponse)
-
-        verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+                input.id shouldBe "emailAddressId"
+            },
+            any(),
+            any(),
+        )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should throw when unsealing fails`() = runTest {
-        mockAppSyncClient.stub {
-            on { mutate(any<UpdateEmailAddressMetadataMutation>()) } doThrow Unsealer.UnsealerException.UnsupportedAlgorithmException(
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow Unsealer.UnsealerException.UnsupportedAlgorithmException(
                 "Mock Unsealer Exception",
             )
         }
 
-        val input = UpdateEmailAddressMetadataRequest(
-            "emailAddressId",
-            "John Doe",
-        )
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnsealingException> {
                 client.updateEmailAddressMetadata(input)
             }
         }
         deferredResult.start()
-        delay(100L)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+                input.id shouldBe "emailAddressId"
+            },
+            any(),
+            any(),
+        )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should throw when http error occurs`() = runTest {
-        mutationHolder.callback shouldBe null
-
-        val input = UpdateEmailAddressMetadataRequest(
-            "emailAddressId",
-            "John Doe",
+        val testError = GraphQLResponse.Error(
+            "mock",
+            null,
+            null,
+            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
         )
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            }.thenAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(null, listOf(testError)),
+                )
+                mock<GraphQLOperation<String>>()
+            }
+        }
+
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
+            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 client.updateEmailAddressMetadata(input)
             }
         }
         deferredResult.start()
-        delay(100L)
-
-        val request = okhttp3.Request.Builder()
-            .get()
-            .url("http://www.smh.com.au")
-            .build()
-        val responseBody = "{}".toResponseBody("application/json; charset=utf-8".toMediaType())
-        val forbidden = okhttp3.Response.Builder()
-            .protocol(Protocol.HTTP_1_1)
-            .code(HttpURLConnection.HTTP_FORBIDDEN)
-            .request(request)
-            .message("Forbidden")
-            .body(responseBody)
-            .build()
-
-        mutationHolder.callback shouldNotBe null
-        mutationHolder.callback?.onHttpError(ApolloHttpException(forbidden))
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+                input.id shouldBe "emailAddressId"
+            },
+            any(),
+            any(),
+        )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() = runTest {
-        mutationHolder.callback shouldBe null
-
-        mockAppSyncClient.stub {
-            on { mutate(any<UpdateEmailAddressMetadataMutation>()) } doThrow RuntimeException("Mock Runtime Exception")
+        mockApiCategory.stub {
+            on {
+                mutate<String>(
+                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doThrow RuntimeException("Mock Runtime Exception")
         }
 
-        val input = UpdateEmailAddressMetadataRequest(
-            "emailAddressId",
-            "John Doe",
-        )
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
                 client.updateEmailAddressMetadata(input)
             }
         }
         deferredResult.start()
-        delay(100L)
-
         deferredResult.await()
 
-        verify(mockAppSyncClient).mutate(any<UpdateEmailAddressMetadataMutation>())
+        verify(mockApiCategory).mutate<String>(
+            check {
+                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
+                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+                input.id shouldBe "emailAddressId"
+            },
+            any(),
+            any(),
+        )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
@@ -313,18 +330,12 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             on { getCurrentSymmetricKeyId() } doThrow CancellationException("mock")
         }
 
-        val input = UpdateEmailAddressMetadataRequest(
-            "emailAddressId",
-            "John Doe",
-        )
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             shouldThrow<CancellationException> {
                 client.updateEmailAddressMetadata(input)
             }
         }
         deferredResult.start()
-        delay(100L)
-
         deferredResult.await()
 
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
