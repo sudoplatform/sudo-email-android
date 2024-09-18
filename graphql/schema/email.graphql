@@ -479,7 +479,7 @@ type Subscription {
   onEmailAddressCreated(owner: ID!): EmailAddress
 
   onEmailMessageCreated(
-    owner: String!
+    owner: ID!
     direction: EmailMessageDirection
   ): SealedEmailMessage
 

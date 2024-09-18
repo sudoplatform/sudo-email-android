@@ -10,14 +10,14 @@ subscription OnEmailMessageDeletedWithId($owner: ID!, $id: ID!) {
   }
 }
 
-subscription onEmailMessageCreated($owner: String!) {
+subscription onEmailMessageCreated($owner: ID!) {
   onEmailMessageCreated(owner: $owner) {
     ...SealedEmailMessage
   }
 }
 
 subscription onEmailMessageCreatedWithDirection(
-    $owner: String!
+    $owner: ID!
     $direction: EmailMessageDirection!
 ) {
   onEmailMessageCreated(owner: $owner, direction: $direction) {
