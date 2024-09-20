@@ -484,4 +484,6 @@ type Subscription {
   ): SealedEmailMessage
 
   onEmailMessageDeleted(owner: ID!, id: ID): SealedEmailMessage
+
+  onEmailMessageUpdated(owner: ID!, id: ID): SealedEmailMessage
 }

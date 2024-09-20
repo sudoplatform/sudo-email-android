@@ -24,3 +24,15 @@ subscription onEmailMessageCreatedWithDirection(
     ...SealedEmailMessage
   }
 }
+
+subscription OnEmailMessageUpdated($owner: ID!) {
+  onEmailMessageUpdated(owner: $owner) {
+    ...SealedEmailMessage
+  }
+}
+
+subscription OnEmailMessageUpdatedWithId($owner: ID!, $id: ID!) {
+  onEmailMessageUpdated(owner: $owner, id: $id) {
+    ...SealedEmailMessage
+  }
+}
