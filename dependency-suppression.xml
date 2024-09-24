@@ -90,6 +90,14 @@
       <cve>CVE-2022-3171</cve>
       <cve>CVE-2022-3510</cve>
       <cve>CVE-2021-22569</cve>
+      <cve>CVE-2024-7254</cve>
+   </suppress>
+   <suppress until="2024-12-30">
+      <notes><![CDATA[
+   file name: protobuf-java-3.22.3.jar (shaded: com.google.protobuf:protobuf-java:3.22.3)
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java@.*$</packageUrl>
+      <cve>CVE-2024-7254</cve>
    </suppress>
    <suppress until="2024-12-30">
       <notes><![CDATA[

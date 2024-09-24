@@ -13,7 +13,7 @@ import com.sudoplatform.sudoemail.types.EmailMessage
  */
 internal class EmailMessageSubscriptionManager<T> : SubscriptionManager<T, EmailMessageSubscriber>() {
 
-    internal fun emailMessageChanged(emailMessage: EmailMessage) {
+    internal fun emailMessageChanged(emailMessage: EmailMessage, type: EmailMessageSubscriber.ChangeType) {
         var subscribersToNotify: ArrayList<EmailMessageSubscriber>
         synchronized(this) {
             // Take a copy of the subscribers to notify in synchronized block
@@ -23,7 +23,7 @@ internal class EmailMessageSubscriptionManager<T> : SubscriptionManager<T, Email
 
         // Notify subscribers.
         for (subscriber in subscribersToNotify) {
-            subscriber.emailMessageChanged(emailMessage)
+            subscriber.emailMessageChanged(emailMessage, type)
         }
     }
 }

@@ -125,6 +125,7 @@ internal class SubscriptionService(
                         deviceKeyManager,
                         createEmailMessage.sealedEmailMessage,
                     ),
+                    EmailMessageSubscriber.ChangeType.CREATED,
                 )
             }
         }
@@ -151,6 +152,7 @@ internal class SubscriptionService(
                         deviceKeyManager,
                         deleteEmailMessage.sealedEmailMessage,
                     ),
+                    EmailMessageSubscriber.ChangeType.DELETED,
                 )
             }
         }
@@ -177,6 +179,7 @@ internal class SubscriptionService(
                         deviceKeyManager,
                         updateEmailMessage.sealedEmailMessage,
                     ),
+                    EmailMessageSubscriber.ChangeType.UPDATED,
                 )
             }
         }

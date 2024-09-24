@@ -14,9 +14,33 @@ import com.sudoplatform.sudoemail.types.EmailMessage
 interface EmailMessageSubscriber : Subscriber {
 
     /**
+     * Type of change the message has undergone
+     *
+     * @enum ChangeType
+     */
+    enum class ChangeType {
+
+        /**
+         * The message was created
+         */
+        CREATED,
+
+        /**
+         * The message was updated
+         */
+        UPDATED,
+
+        /**
+         * The message was deleted
+         */
+        DELETED,
+    }
+
+    /**
      * Notifies the subscriber of a modified [EmailMessage].
      *
      * @param emailMessage [EmailMessage] The modified email message.
+     * @param type [ChangeType] The type of change the message has undergone.
      */
-    fun emailMessageChanged(emailMessage: EmailMessage)
+    fun emailMessageChanged(emailMessage: EmailMessage, type: ChangeType)
 }

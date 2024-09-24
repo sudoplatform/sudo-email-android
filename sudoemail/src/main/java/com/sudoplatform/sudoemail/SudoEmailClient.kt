@@ -984,7 +984,7 @@ interface SudoEmailClient : AutoCloseable {
 suspend fun SudoEmailClient.subscribeToEmailMessages(
     id: String,
     onConnectionChange: (status: Subscriber.ConnectionState) -> Unit = {},
-    onEmailMessageChanged: (emailMessage: EmailMessage) -> Unit,
+    onEmailMessageChanged: (emailMessage: EmailMessage, type: EmailMessageSubscriber.ChangeType) -> Unit,
 ) =
     subscribeToEmailMessages(
         id,
@@ -993,8 +993,8 @@ suspend fun SudoEmailClient.subscribeToEmailMessages(
                 onConnectionChange.invoke(state)
             }
 
-            override fun emailMessageChanged(emailMessage: EmailMessage) {
-                onEmailMessageChanged.invoke(emailMessage)
+            override fun emailMessageChanged(emailMessage: EmailMessage, type: EmailMessageSubscriber.ChangeType) {
+                onEmailMessageChanged.invoke(emailMessage, type)
             }
         },
     )

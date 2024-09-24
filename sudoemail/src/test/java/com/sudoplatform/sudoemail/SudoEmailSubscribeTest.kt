@@ -12,6 +12,7 @@ import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
@@ -81,6 +82,10 @@ class SudoEmailSubscribeTest : BaseTests() {
         mock<EmailCryptoService>()
     }
 
+    private val mockEmailMessageSubscriber by before {
+        mock<EmailMessageSubscriber>()
+    }
+
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
@@ -119,13 +124,13 @@ class SudoEmailSubscribeTest : BaseTests() {
         }
 
         shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            client.subscribeToEmailMessages("id", mock())
+            client.subscribeToEmailMessages("id", mockEmailMessageSubscriber)
         }
 
         shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
             client.subscribeToEmailMessages(
                 "id",
-                onEmailMessageChanged = {},
+                mockEmailMessageSubscriber,
             )
         }
 
