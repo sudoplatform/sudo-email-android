@@ -45,6 +45,8 @@ data class SimplifiedEmailMessage(
     val isHtml: Boolean,
     val attachments: List<EmailAttachment> = emptyList(),
     val inlineAttachments: List<EmailAttachment> = emptyList(),
+    val replyingMessageId: String? = null,
+    val forwardingMessageId: String? = null,
 ) : Parcelable
 
 private const val EMAIL_HEADER_NAME_ENCRYPTION = "X-Sudoplatform-Encryption"
@@ -76,6 +78,8 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
         inlineAttachments: List<EmailAttachment>?,
         isHtml: Boolean,
         encryptionStatus: EncryptionStatus,
+        replyingMessageId: String?,
+        forwardingMessageId: String?,
     ): ByteArray {
         val message = MimeMessage(session)
         message.setFrom(InternetAddress(from))
@@ -158,6 +162,13 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
 
             // Add inline attachments to the "related" multipart
             relatedMultipart.addBodyPart(attachmentBodyPart)
+        }
+
+        if (!replyingMessageId.isNullOrEmpty()) {
+            message.setHeader("In-Reply-To", "<$replyingMessageId>")
+        }
+        if (!forwardingMessageId.isNullOrEmpty()) {
+            message.setHeader("References", "<$forwardingMessageId>")
         }
 
         message.setContent(topMultiPart)

@@ -97,6 +97,8 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                             'previousFolderId': 'previousFolderId',
                             'direction': 'INBOUND',
                             'seen': false,
+                            'repliedTo': false,
+                            'forwarded': false,
                             'state': 'DELIVERED',
                             'clientRefId': 'clientRefId',
                             'rfc822Header': {
@@ -134,6 +136,8 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                             'previousFolderId': 'previousFolderId',
                             'direction': 'INBOUND',
                             'seen': false,
+                            'repliedTo': false,
+                            'forwarded': false,
                             'state': 'DELIVERED',
                             'clientRefId': 'clientRefId',
                             'rfc822Header': {

@@ -25,10 +25,14 @@ import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.awaitility.Duration
+import org.awaitility.kotlin.await
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
@@ -497,6 +501,186 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
             encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
+        }
+    }
+
+    @Test
+    fun sendEmailWithReplyingMessageIdShouldUpdateRepliedToState() = runTest {
+        try {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val listEmailsInput = ListEmailAddressesInput()
+            when (val listEmailAddresses = emailClient.listEmailAddresses(listEmailsInput)) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.isEmpty() shouldBe false
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            // Send an initial message
+            val firstSendResult = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
+            )
+            with(firstSendResult) {
+                id.isBlank() shouldBe false
+                createdAt shouldNotBe null
+            }
+
+            // Get id of received sent message
+            var inboundMessageId = ""
+            when (val listEmailMessages = waitForMessages(2)) {
+                is ListAPIResult.Success -> {
+                    val inbound = listEmailMessages.result.items.filter {
+                        it.direction == Direction.INBOUND
+                    }
+                    inbound.size shouldBeGreaterThan 0
+                    with(inbound[0]) {
+                        from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                        to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                        hasAttachments shouldBe false
+                        size shouldBeGreaterThan 0.0
+                        encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
+                        repliedTo shouldBe false
+                        inboundMessageId = id
+                    }
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            // Send another message in reply to the first message
+            val replyingMessageResult = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
+                replyingMessageId = inboundMessageId,
+            )
+            with(replyingMessageResult) {
+                id.isBlank() shouldBe false
+                createdAt shouldNotBe null
+            }
+
+            // Verify `repliedTo` state of first message was updated
+            await
+                .atMost(Duration.ONE_MINUTE)
+                .pollInterval(Duration.ONE_SECOND)
+                .untilAsserted {
+                    runBlocking {
+                        val retrievedMessage = emailClient.getEmailMessage(GetEmailMessageInput(inboundMessageId))
+                            ?: fail("Email message not found")
+                        with(retrievedMessage) {
+                            repliedTo shouldBe true
+                        }
+                    }
+                }
+        } catch (e: Throwable) {
+            val msg = "Unexpected error $e"
+            logger.error(msg)
+            fail(msg)
+        }
+    }
+
+    @Test
+    fun sendEmailWithForwardingMessageIdShouldUpdateForwardedState() = runTest {
+        try {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val listEmailsInput = ListEmailAddressesInput()
+            when (val listEmailAddresses = emailClient.listEmailAddresses(listEmailsInput)) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.isEmpty() shouldBe false
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            // Send an initial message
+            val firstSendResult = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
+            )
+            with(firstSendResult) {
+                id.isBlank() shouldBe false
+                createdAt shouldNotBe null
+            }
+
+            // Get id of received sent message
+            var inboundMessageId = ""
+            when (val listEmailMessages = waitForMessages(2)) {
+                is ListAPIResult.Success -> {
+                    val inbound = listEmailMessages.result.items.filter {
+                        it.direction == Direction.INBOUND
+                    }
+                    inbound.size shouldBeGreaterThan 0
+                    with(inbound[0]) {
+                        from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                        to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                        hasAttachments shouldBe false
+                        size shouldBeGreaterThan 0.0
+                        encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
+                        repliedTo shouldBe false
+                        inboundMessageId = id
+                    }
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            // Send another message forwarding the first message
+            val forwardingMessageResult = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
+                forwardingMessageId = inboundMessageId,
+            )
+            with(forwardingMessageResult) {
+                id.isBlank() shouldBe false
+                createdAt shouldNotBe null
+            }
+
+            // Verify `forwarded` state of first message was updated
+            await
+                .atMost(Duration.ONE_MINUTE)
+                .pollInterval(Duration.ONE_SECOND)
+                .untilAsserted {
+                    runBlocking {
+                        val retrievedMessage = emailClient.getEmailMessage(GetEmailMessageInput(inboundMessageId))
+                            ?: fail("Email message not found")
+                        with(retrievedMessage) {
+                            forwarded shouldBe true
+                        }
+                    }
+                }
+        } catch (e: Throwable) {
+            val msg = "Unexpected error $e"
+            logger.error(msg)
+            fail(msg)
         }
     }
 

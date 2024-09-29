@@ -722,7 +722,8 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult {
-        val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments) = input
+        val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments, replyingMessageId, forwardingMessageId) = input
+
         try {
             val domains = getConfiguredEmailDomains()
 
@@ -769,6 +770,8 @@ internal class DefaultSudoEmailClient(
                         attachments,
                         inlineAttachments,
                         emailAddressesPublicInfo,
+                        replyingMessageId,
+                        forwardingMessageId,
                     )
                 } else {
                     // Process non-encrypted email message
@@ -778,6 +781,8 @@ internal class DefaultSudoEmailClient(
                         body,
                         attachments,
                         inlineAttachments,
+                        replyingMessageId,
+                        forwardingMessageId,
                     )
                 }
             }
@@ -788,6 +793,8 @@ internal class DefaultSudoEmailClient(
                 body,
                 attachments,
                 inlineAttachments,
+                replyingMessageId,
+                forwardingMessageId,
             )
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
@@ -802,6 +809,8 @@ internal class DefaultSudoEmailClient(
         attachments: List<EmailAttachment>,
         inlineAttachments: List<EmailAttachment>,
         emailAddressesPublicInfo: List<EmailAddressPublicInfo>,
+        replyingMessageId: String? = null,
+        forwardingMessageId: String? = null,
     ): SendEmailMessageResult {
         var s3ObjectKey = ""
 
@@ -814,6 +823,8 @@ internal class DefaultSudoEmailClient(
                 inlineAttachments,
                 EncryptionStatus.ENCRYPTED,
                 emailAddressesPublicInfo,
+                replyingMessageId = replyingMessageId,
+                forwardingMessageId = forwardingMessageId,
             )
 
             val s3EmailObjectInput = S3EmailObjectInput(
@@ -821,6 +832,17 @@ internal class DefaultSudoEmailClient(
                 region = region,
                 bucket = transientBucket,
             )
+
+            val inReplyToHeaderValue = if (replyingMessageId != null) {
+                Optional.presentIfNotNull(replyingMessageId)
+            } else {
+                Optional.Absent
+            }
+            val referencesHeaderValue = if (forwardingMessageId != null) {
+                Optional.presentIfNotNull(listOf(forwardingMessageId))
+            } else {
+                Optional.Absent
+            }
             val rfc822HeaderInput = Rfc822HeaderInput(
                 from = emailMessageHeader.from.toString(),
                 to = emailMessageHeader.to.map { it.toString() },
@@ -829,7 +851,10 @@ internal class DefaultSudoEmailClient(
                 replyTo = emailMessageHeader.replyTo.map { it.toString() },
                 subject = Optional.presentIfNotNull(emailMessageHeader.subject),
                 hasAttachments = Optional.presentIfNotNull(attachments.isNotEmpty() || inlineAttachments.isNotEmpty()),
+                inReplyTo = inReplyToHeaderValue,
+                references = referencesHeaderValue,
             )
+
             val mutationInput = SendEncryptedEmailMessageRequest(
                 emailAddressId = senderEmailAddressId,
                 message = s3EmailObjectInput,
@@ -873,6 +898,8 @@ internal class DefaultSudoEmailClient(
         body: String,
         attachments: List<EmailAttachment>,
         inlineAttachments: List<EmailAttachment>,
+        replyingMessageId: String? = null,
+        forwardingMessageId: String? = null,
     ): SendEmailMessageResult {
         var s3ObjectKey = ""
 
@@ -884,6 +911,8 @@ internal class DefaultSudoEmailClient(
                 attachments,
                 inlineAttachments,
                 EncryptionStatus.UNENCRYPTED,
+                replyingMessageId = replyingMessageId,
+                forwardingMessageId = forwardingMessageId,
             )
 
             val s3EmailObject = S3EmailObjectInput(
@@ -935,6 +964,8 @@ internal class DefaultSudoEmailClient(
         inlineAttachments: List<EmailAttachment>,
         encryptionStatus: EncryptionStatus,
         emailAddressesPublicInfo: List<EmailAddressPublicInfo> = emptyList(),
+        replyingMessageId: String? = null,
+        forwardingMessageId: String? = null,
     ): String {
         val config = getConfigurationData()
         val emailMessageMaxOutboundMessageSize = config.emailMessageMaxOutboundMessageSize
@@ -961,6 +992,8 @@ internal class DefaultSudoEmailClient(
                 inlineAttachments,
                 isHtml = true,
                 EncryptionStatus.UNENCRYPTED,
+                replyingMessageId,
+                forwardingMessageId,
             )
 
             if (encryptionStatus == EncryptionStatus.ENCRYPTED) {
@@ -980,6 +1013,8 @@ internal class DefaultSudoEmailClient(
                     inlineAttachments,
                     isHtml = false,
                     encryptionStatus = encryptionStatus,
+                    replyingMessageId,
+                    forwardingMessageId,
                 )
             }
 

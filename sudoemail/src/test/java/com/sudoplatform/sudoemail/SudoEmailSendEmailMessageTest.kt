@@ -43,6 +43,7 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
@@ -50,6 +51,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
@@ -313,6 +315,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                     any(),
                     any(),
                     any(),
+                    anyOrNull(),
+                    anyOrNull(),
                 )
             } doReturn ByteArray(42)
         }
@@ -428,6 +432,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -480,6 +486,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -546,6 +554,148 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should return results for non-E2E encrypted send with replyingMessageId`() =
+        runTest {
+            val replyingMessageId = "replying message id"
+            val input = SendEmailMessageInput(
+                "emailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+                replyingMessageId = replyingMessageId,
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.sendEmailMessage(input)
+            }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.id.isBlank() shouldBe false
+
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).mutate<String>(
+                check {
+                    it.query shouldBe SendEmailMessageMutation.OPERATION_DOCUMENT
+                    val mutationInput = it.variables["input"] as SendEmailMessageRequest
+                    mutationInput.emailAddressId shouldBe emailAddressId
+                    mutationInput.message shouldBe S3EmailObjectInput("transientBucket", "42", "region")
+                },
+                any(),
+                any(),
+            )
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+                any(),
+                eq(replyingMessageId),
+                isNull(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should return results for non-E2E encrypted send with forwardingMessageId`() =
+        runTest {
+            val forwardingMessageId = "forwarding message id"
+            val input = SendEmailMessageInput(
+                "emailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bar.com"),
+                    listOf(EmailMessage.EmailAddress("to@bar.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+                forwardingMessageId = forwardingMessageId,
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.sendEmailMessage(input)
+            }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.id.isBlank() shouldBe false
+
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).mutate<String>(
+                check {
+                    it.query shouldBe SendEmailMessageMutation.OPERATION_DOCUMENT
+                    val mutationInput = it.variables["input"] as SendEmailMessageRequest
+                    mutationInput.emailAddressId shouldBe emailAddressId
+                    mutationInput.message shouldBe S3EmailObjectInput("transientBucket", "42", "region")
+                },
+                any(),
+                any(),
+            )
+            verify(mockEmailMessageProcessor).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+                any(),
+                isNull(),
+                eq(forwardingMessageId),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -622,6 +772,178 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
+            )
+            verify(mockEmailCryptoService).encrypt(
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should return results for E2E encrypted send with replyingMessageId`() =
+        runTest {
+            val replyingMessageId = "replying message id"
+            val input = SendEmailMessageInput(
+                "emailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+                replyingMessageId = replyingMessageId,
+            )
+            val rfc822Header = rfc822HeaderInput.copy(inReplyTo = Optional.presentIfNotNull(replyingMessageId))
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.sendEmailMessage(input)
+            }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.id.isBlank() shouldBe false
+
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
+                    queryInput.emailAddresses shouldBe listOf("to@bear.com", "cc@bear.com", "bcc@bear.com", "from@bear.com")
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).mutate<String>(
+                check {
+                    it.query shouldBe SendEncryptedEmailMessageMutation.OPERATION_DOCUMENT
+                    val mutationInput = it.variables["input"] as SendEncryptedEmailMessageRequest
+                    mutationInput.emailAddressId shouldBe emailAddressId
+                    mutationInput.message shouldBe S3EmailObjectInput("transientBucket", "42", "region")
+                    mutationInput.rfc822Header shouldBe rfc822Header
+                },
+                any(),
+                any(),
+            )
+            verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+                any(),
+                eq(replyingMessageId),
+                isNull(),
+            )
+            verify(mockEmailCryptoService).encrypt(
+                any(),
+                any(),
+            )
+            verify(mockS3Client).upload(any(), anyString(), anyOrNull())
+            verify(mockS3Client).delete(anyString())
+        }
+
+    @Test
+    fun `sendEmailMessage() should return results for E2E encrypted send with forwardingMessageId`() =
+        runTest {
+            val forwardingMessageId = "forwarding message id"
+            val input = SendEmailMessageInput(
+                "emailAddressId",
+                InternetMessageFormatHeader(
+                    EmailMessage.EmailAddress("from@bear.com"),
+                    listOf(EmailMessage.EmailAddress("to@bear.com")),
+                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                    "email message subject",
+                ),
+                "email message body",
+                emptyList(),
+                emptyList(),
+                forwardingMessageId = forwardingMessageId,
+            )
+            val rfc822Header = rfc822HeaderInput.copy(references = Optional.presentIfNotNull(listOf(forwardingMessageId)))
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                client.sendEmailMessage(input)
+            }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.id.isBlank() shouldBe false
+
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
+                    val queryInput = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
+                    queryInput.emailAddresses shouldBe listOf("to@bear.com", "cc@bear.com", "bcc@bear.com", "from@bear.com")
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).mutate<String>(
+                check {
+                    it.query shouldBe SendEncryptedEmailMessageMutation.OPERATION_DOCUMENT
+                    val mutationInput = it.variables["input"] as SendEncryptedEmailMessageRequest
+                    mutationInput.emailAddressId shouldBe emailAddressId
+                    mutationInput.message shouldBe S3EmailObjectInput("transientBucket", "42", "region")
+                    mutationInput.rfc822Header shouldBe rfc822Header
+                },
+                any(),
+                any(),
+            )
+            verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+                any(),
+                isNull(),
+                eq(forwardingMessageId),
             )
             verify(mockEmailCryptoService).encrypt(
                 any(),
@@ -701,6 +1023,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -768,6 +1092,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client).delete(anyString())
@@ -860,6 +1186,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockEmailCryptoService).encrypt(
                 any(),
@@ -930,6 +1258,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockS3Client).upload(any(), anyString(), anyOrNull())
         }
@@ -1022,6 +1352,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockS3Client, times(4)).upload(any(), anyString(), anyOrNull())
             verify(mockS3Client, times(4)).delete(anyString())
@@ -1080,6 +1412,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockEmailCryptoService, times(4)).encrypt(
                 any(),
@@ -1136,6 +1470,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                         any(),
                         any(),
                         any(),
+                        isNull(),
+                        isNull(),
                     )
                 } doReturn ByteArray(limit + 1)
             }
@@ -1195,6 +1531,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
             verify(mockEmailCryptoService).encrypt(
                 any(),
@@ -1249,6 +1587,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                         any(),
                         any(),
                         any(),
+                        isNull(),
+                        isNull(),
                     )
                 } doReturn ByteArray(limit + 1)
             }
@@ -1301,6 +1641,8 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 any(),
                 any(),
                 any(),
+                isNull(),
+                isNull(),
             )
         }
 

@@ -25,6 +25,8 @@ import java.util.Date
  * @property previousFolderId [String] Unique identifier of the previous email folder which the message
  *  was assigned to, if any.
  * @property seen [Boolean] True if the user has previously seen the email message.
+ * @property repliedTo [Boolean] True if the email message has been replied to.
+ * @property forwarded [Boolean] True if the email message has been forwarded.
  * @property direction [Direction] Direction of the email message.
  * @property state [State] Current state of the email message.
  * @property version [Int] Current version of the email message.
@@ -56,6 +58,8 @@ data class EmailMessage(
     val folderId: String,
     val previousFolderId: String? = null,
     val seen: Boolean = false,
+    val repliedTo: Boolean = false,
+    val forwarded: Boolean = false,
     val direction: Direction,
     val state: State,
     val version: Int,
@@ -114,6 +118,8 @@ data class EmailMessage(
  * @property previousFolderId [String] Unique identifier of the previous email folder which the message
  *  was assigned to, if any.
  * @property seen [Boolean] True if the user has previously seen the email message.
+ * @property repliedTo [Boolean] True if the email message has been replied to.
+ * @property forwarded [Boolean] True if the email message has been forwarded.
  * @property direction [Direction] Direction of the email message.
  * @property state [State] Current state of the email message.
  * @property version [Int] Current version of the email message.
@@ -134,6 +140,8 @@ data class PartialEmailMessage(
     val folderId: String,
     val previousFolderId: String? = null,
     val seen: Boolean = false,
+    val repliedTo: Boolean = false,
+    val forwarded: Boolean = false,
     val direction: Direction,
     val state: State,
     val version: Int,

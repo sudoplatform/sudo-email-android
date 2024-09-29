@@ -60,6 +60,8 @@ class ParcelTest {
             folderId = "folderId",
             previousFolderId = "previousFolderId",
             seen = false,
+            repliedTo = false,
+            forwarded = false,
             direction = Direction.OUTBOUND,
             state = State.SENT,
             version = 1,

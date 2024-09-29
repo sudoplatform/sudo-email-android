@@ -35,6 +35,8 @@ internal data class EmailHeaderDetails(
     val hasAttachments: Boolean = false,
     val subject: String? = null,
     val date: Date? = null,
+    val inReplyTo: String? = null,
+    val references: List<String>? = null,
 )
 
 /**
@@ -70,6 +72,8 @@ internal object EmailMessageTransformer {
             folderId = sealedEmailMessage.folderId,
             previousFolderId = sealedEmailMessage.previousFolderId,
             seen = sealedEmailMessage.seen,
+            repliedTo = sealedEmailMessage.repliedTo,
+            forwarded = sealedEmailMessage.forwarded,
             direction = sealedEmailMessage.direction.toEmailMessageDirection(),
             state = sealedEmailMessage.state.toEmailMessageState(),
             version = sealedEmailMessage.version,
@@ -108,6 +112,8 @@ internal object EmailMessageTransformer {
             folderId = sealedEmailMessage.folderId,
             previousFolderId = sealedEmailMessage.previousFolderId,
             seen = sealedEmailMessage.seen,
+            repliedTo = sealedEmailMessage.repliedTo,
+            forwarded = sealedEmailMessage.forwarded,
             direction = sealedEmailMessage.direction.toEmailMessageDirection(),
             state = sealedEmailMessage.state.toEmailMessageState(),
             version = sealedEmailMessage.version,

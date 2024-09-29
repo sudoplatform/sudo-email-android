@@ -300,6 +300,8 @@ abstract class BaseIntegrationTest {
         attachments: List<EmailAttachment> = emptyList(),
         inlineAttachments: List<EmailAttachment> = emptyList(),
         subject: String? = null,
+        replyingMessageId: String? = null,
+        forwardingMessageId: String? = null,
     ): SendEmailMessageResult {
         val messageSubject = subject ?: "Hello ${UUID.randomUUID()}"
         val emailBody = body ?: buildString {
@@ -321,6 +323,8 @@ abstract class BaseIntegrationTest {
             emailBody,
             attachments,
             inlineAttachments,
+            replyingMessageId,
+            forwardingMessageId,
         )
         return client.sendEmailMessage(sendEmailMessageInput)
     }

@@ -150,6 +150,8 @@ input Rfc822HeaderInput {
   subject: String
   hasAttachments: Boolean
   dateEpochMs: Float
+  inReplyTo: String
+  references: [String!]
 }
 
 input SendEmailMessageInput {
@@ -294,6 +296,8 @@ type SealedEmailMessage {
   previousFolderId: ID
   direction: EmailMessageDirection!
   seen: Boolean!
+  repliedTo: Boolean!
+  forwarded: Boolean!
   state: EmailMessageState!
   clientRefId: String
   rfc822Header: SealedAttribute!

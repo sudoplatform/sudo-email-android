@@ -22,6 +22,8 @@ import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
  *  Default is an empty list.
  * @property inlineAttachment [List<EmailAttachment>] List of inline attachments to be sent with the message.
  *  Default is an empty list.
+ * @property replyingMessageId [String] Identifier of the message being replied to. Defaults to null.
+ * @property forwardingMessageId [String] Identifier of the message being forwarded. Defaults to null.
  */
 data class SendEmailMessageInput(
     val senderEmailAddressId: String,
@@ -29,4 +31,6 @@ data class SendEmailMessageInput(
     val body: String,
     val attachments: List<EmailAttachment> = emptyList(),
     val inlineAttachment: List<EmailAttachment> = emptyList(),
+    var replyingMessageId: String? = null,
+    val forwardingMessageId: String? = null,
 )

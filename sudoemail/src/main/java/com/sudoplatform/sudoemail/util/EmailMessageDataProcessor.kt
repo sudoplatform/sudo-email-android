@@ -32,6 +32,8 @@ interface EmailMessageDataProcessor {
         inlineAttachments: List<EmailAttachment>? = null,
         isHtml: Boolean = false,
         encryptionStatus: EncryptionStatus = EncryptionStatus.UNENCRYPTED,
+        replyingMessageId: String? = null,
+        forwardingMessageId: String? = null,
     ): ByteArray
 
     /**

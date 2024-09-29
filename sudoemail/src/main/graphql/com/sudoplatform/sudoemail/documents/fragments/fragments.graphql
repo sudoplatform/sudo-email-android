@@ -98,6 +98,8 @@ fragment SealedEmailMessage on SealedEmailMessage {
     previousFolderId
     direction
     seen
+    repliedTo
+    forwarded
     state
     clientRefId
     rfc822Header {
