@@ -19,6 +19,7 @@ import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.ConfigurationData
+import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
@@ -640,7 +641,7 @@ interface SudoEmailClient : AutoCloseable {
      *
      * @param input [UpdateEmailMessagesInput] Parameters used to update a list of email messages.
      * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email messages identifiers that succeeded or failed to be updated.
+     *  of email messages that succeeded or failed to be updated.
      *
      * @throws [EmailMessageException].
      */
@@ -658,33 +659,36 @@ interface SudoEmailClient : AutoCloseable {
      *
      * This API returns a [BatchOperationResult]:
      * - On Success, all email messages succeeded to delete.
-     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
-     *     of identifiers of the email messages that failed and succeeded to delete.
-     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
-     *     email messages that failed to delete.
+     * - On Partial, only a partial amount of messages succeeded to delete. Result includes two lists;
+     *     one containing identifiers of email messages that were successfully deleted, and the other
+     *     containing identifiers and failure reasons of email messages that failed to delete.
+     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of and
+     *     failure reasons of email messages that failed to delete.
      *
      * @param ids [List<String>] A list of one or more identifiers of the email messages to be deleted.
      *  There is a limit of 100 email message identifiers per request. Exceeding this will cause an exception.
      *  to be thrown.
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email messages identifiers that succeeded or failed to be deleted.
+     * @return A success, partial or failed [BatchOperationResult] result containing a list of ids of email
+     *  messages that failed to delete, and/or a list of ids of email messages that were successfully deleted.
      *
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun deleteEmailMessages(ids: List<String>): BatchOperationResult<String, String>
+    suspend fun deleteEmailMessages(
+        ids: List<String>,
+    ): BatchOperationResult<DeleteEmailMessageSuccessResult, EmailMessageOperationFailureResult>
 
     /**
      * Delete a single [EmailMessage] using the [id] parameter.
      *
      * @param id [String] Identifier of the [EmailMessage] to be deleted.
-     * @returns The identifier of the [EmailMessage] that was deleted or null if the email message
-     *  could not be deleted.
+     * @returns Result of object containing the identifier of the [EmailMessage] that was deleted,
+     *  or null if the email message could not be deleted.
      *
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun deleteEmailMessage(id: String): String?
+    suspend fun deleteEmailMessage(id: String): DeleteEmailMessageSuccessResult?
 
     /**
      * Get an [EmailMessage] using its identifier.
@@ -819,23 +823,24 @@ interface SudoEmailClient : AutoCloseable {
      *
      * This API returns a [BatchOperationResult]:
      * - On Success, all email messages succeeded to delete.
-     * - On Partial, only a partial amount of messages succeeded to delete. Result includes a list
-     *     of identifiers of the email messages that failed and succeeded to delete.
-     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of
-     *     email messages that failed to delete and associated error type.
+     * - On Partial, only a partial amount of messages succeeded to delete. Result includes two lists;
+     *     one containing identifiers of email messages that were successfully deleted, and the other
+     *     containing identifiers and failure reasons of email messages that failed to delete.
+     * - On Failure, all email messages failed to delete. Result contains a list of identifiers of and
+     *     failure reasons of email messages that failed to delete.
      *
      * @param input [DeleteDraftEmailMessagesInput] Input parameters containing a list of draft email message
      * identifiers and an email address identifier.
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email messages that succeeded and a list of identifiers of messages that failed and an associated
-     *  error type.
+     * @return A success, partial or failed [BatchOperationResult] result containing a list of ids of email
+     *  messages that failed to delete with an associated error type, and/or a list of ids of email messages
+     *  that were successfully deleted.
      *
      * @throws [EmailAddressException], [EmailMessageException].
      */
     @Throws(EmailAddressException::class, EmailMessageException::class)
     suspend fun deleteDraftEmailMessages(
         input: DeleteDraftEmailMessagesInput,
-    ): BatchOperationResult<String, EmailMessageOperationFailureResult>
+    ): BatchOperationResult<DeleteEmailMessageSuccessResult, EmailMessageOperationFailureResult>
 
     /**
      * Retrieves a draft email message.

@@ -11,7 +11,9 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -124,10 +126,13 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             input.addAll(sentEmailIds)
             input.addAll(nonExistentIds)
 
+            val successValues = sentEmailIds.map { DeleteEmailMessageSuccessResult(it) }
+            val failureValues = nonExistentIds.map { EmailMessageOperationFailureResult(it, "Failed to delete email message") }
+
             val result = emailClient.deleteEmailMessages(input)
             result.status shouldBe BatchOperationStatus.PARTIAL
-            result.successValues shouldContainExactlyInAnyOrder sentEmailIds
-            result.failureValues shouldContainExactlyInAnyOrder nonExistentIds
+            result.successValues shouldContainExactlyInAnyOrder successValues
+            result.failureValues shouldContainExactlyInAnyOrder failureValues
 
             await.atMost(Duration.TEN_SECONDS) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
                 runBlocking {

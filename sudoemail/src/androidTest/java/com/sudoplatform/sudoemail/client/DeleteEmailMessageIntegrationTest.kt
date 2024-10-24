@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
+import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
@@ -61,7 +62,7 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
         waitForMessages(2)
 
         val result = emailClient.deleteEmailMessage(sendResult.id)
-        result shouldBe sendResult.id
+        result shouldBe DeleteEmailMessageSuccessResult(sendResult.id)
 
         waitForMessages(1)
     }

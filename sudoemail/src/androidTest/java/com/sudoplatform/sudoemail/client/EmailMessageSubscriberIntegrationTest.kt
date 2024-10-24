@@ -14,6 +14,7 @@ import com.sudoplatform.sudoemail.subscribeToEmailMessages
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.Direction
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
@@ -182,7 +183,7 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
         updateResult.failureValues?.isEmpty() shouldBe true
 
         val deleteResult = emailClient.deleteEmailMessage(sentMessageId)
-        deleteResult shouldBe sentMessageId
+        deleteResult shouldBe DeleteEmailMessageSuccessResult(sentMessageId)
 
         delay(3000L)
         // Ensure that the callback has been called for each change type

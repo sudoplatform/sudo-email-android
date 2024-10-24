@@ -18,6 +18,7 @@ import com.sudoplatform.sudoemail.s3.S3Exception
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
@@ -294,7 +295,9 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.PARTIAL
-            result.successValues?.shouldContain(draftIds[0])
+            result.successValues?.shouldContain(
+                DeleteEmailMessageSuccessResult(draftIds[0]),
+            )
             result.failureValues?.shouldHaveSize(1)
             result.failureValues?.first() shouldBe EmailMessageOperationFailureResult(
                 draftIds[1],

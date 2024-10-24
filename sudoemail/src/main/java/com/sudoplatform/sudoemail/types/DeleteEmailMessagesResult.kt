@@ -18,3 +18,13 @@ internal data class DeleteEmailMessagesResult(
     val successIds: List<String>,
     val failureIds: List<String>,
 )
+
+/**
+ * Representation of the result of a successful email message delete operation
+ * in the Sudo Platform Email SDK.
+ *
+ * @property id [String] The unique identifier of the email message that was deleted.
+ */
+data class DeleteEmailMessageSuccessResult(
+    val id: String,
+)

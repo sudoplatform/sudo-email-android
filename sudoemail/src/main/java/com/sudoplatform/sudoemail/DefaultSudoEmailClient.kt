@@ -68,6 +68,7 @@ import com.sudoplatform.sudoemail.subscription.SubscriptionService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.ConfigurationData
+import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.DeleteEmailMessagesResult
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
@@ -1084,9 +1085,17 @@ internal class DefaultSudoEmailClient(
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun deleteEmailMessages(ids: List<String>): BatchOperationResult<String, String> {
+    override suspend fun deleteEmailMessages(
+        ids: List<String>,
+    ): BatchOperationResult<DeleteEmailMessageSuccessResult, EmailMessageOperationFailureResult> {
         val idSet = ids.toSet()
         val result = executeDeleteEmailMessages(idSet)
+        val successValues = result.successIds.map {
+            DeleteEmailMessageSuccessResult(it)
+        }
+        val failureValues = result.failureIds.map {
+            EmailMessageOperationFailureResult(it, "Failed to delete email message")
+        }
 
         val status = if (result.successIds.size == idSet.size) {
             BatchOperationStatus.SUCCESS
@@ -1095,15 +1104,15 @@ internal class DefaultSudoEmailClient(
         } else {
             BatchOperationStatus.PARTIAL
         }
-        return BatchOperationResult.createSame(status, result.successIds, result.failureIds)
+        return BatchOperationResult.createDifferent(status, successValues, failureValues)
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun deleteEmailMessage(id: String): String? {
+    override suspend fun deleteEmailMessage(id: String): DeleteEmailMessageSuccessResult? {
         val idSet = setOf(id)
         val result = executeDeleteEmailMessages(idSet)
         if (result.successIds.size == idSet.size) {
-            return result.successIds.first()
+            return DeleteEmailMessageSuccessResult(result.successIds.first())
         }
         return null
     }
@@ -1563,7 +1572,7 @@ internal class DefaultSudoEmailClient(
     )
     override suspend fun deleteDraftEmailMessages(
         input: DeleteDraftEmailMessagesInput,
-    ): BatchOperationResult<String, EmailMessageOperationFailureResult> {
+    ): BatchOperationResult<DeleteEmailMessageSuccessResult, EmailMessageOperationFailureResult> {
         val (ids, emailAddressId) = input
 
         throwIfEmailAddressNotFound(emailAddressId)
@@ -1587,7 +1596,9 @@ internal class DefaultSudoEmailClient(
         } else {
             BatchOperationStatus.PARTIAL
         }
-        return BatchOperationResult.createDifferent(status, successIds, failureIds)
+        val successValues = successIds.map { DeleteEmailMessageSuccessResult(it) }
+
+        return BatchOperationResult.createDifferent(status, successValues, failureIds)
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)

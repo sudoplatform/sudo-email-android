@@ -18,6 +18,8 @@ import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
+import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
@@ -259,8 +261,8 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.PARTIAL
-            result.successValues shouldBe listOf("id2")
-            result.failureValues shouldBe listOf("id1")
+            result.successValues shouldBe listOf(DeleteEmailMessageSuccessResult("id2"))
+            result.failureValues shouldBe listOf(EmailMessageOperationFailureResult("id1", "Failed to delete email message"))
 
             verify(mockApiCategory).mutate<String>(
                 check {

@@ -170,7 +170,7 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
         val result = deferredResult.await()
 
         result shouldNotBe null
-        result?.isBlank() shouldBe false
+        result?.id?.isBlank() shouldBe false
 
         verify(mockApiCategory).mutate<String>(
             check {
