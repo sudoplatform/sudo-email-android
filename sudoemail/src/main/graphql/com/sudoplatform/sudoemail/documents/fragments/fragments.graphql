@@ -80,6 +80,9 @@ fragment EmailFolder on EmailFolder {
     size
     unseenCount
     ttl
+    customFolderName {
+      ...SealedAttribute
+    }
 }
 
 fragment SealedEmailMessage on SealedEmailMessage {

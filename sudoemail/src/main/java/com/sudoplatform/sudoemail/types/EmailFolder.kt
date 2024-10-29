@@ -23,6 +23,7 @@ import java.util.Date
  * @property version [Int] Current version of the email folder.
  * @property createdAt [Date] When the email folder was created.
  * @property updatedAt [Date] When the email folder was last updated.
+ * @property customFolderName [String] Custom name assigned to the email folder.
  */
 @Parcelize
 data class EmailFolder(
@@ -36,4 +37,5 @@ data class EmailFolder(
     val version: Int,
     val createdAt: Date,
     val updatedAt: Date,
+    val customFolderName: String?,
 ) : Parcelable

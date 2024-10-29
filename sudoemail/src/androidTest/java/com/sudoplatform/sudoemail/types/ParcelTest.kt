@@ -37,6 +37,7 @@ class ParcelTest {
             1,
             createdAt = Date(42L),
             updatedAt = Date(43L),
+            customFolderName = null,
         )
         val provisionedEmailAddress = EmailAddress(
             id = "emailAddressId",

@@ -237,6 +237,11 @@ input GetEmailAddressBlocklistInput {
   owner: ID!
 }
 
+input CreateCustomEmailFolderInput {
+  emailAddressId: ID!
+  customFolderName: SealedAttributeInput!
+}
+
 type EmailConfigurationData {
   deleteEmailMessagesLimit: Int!
   updateEmailMessagesLimit: Int!
@@ -281,6 +286,7 @@ type EmailFolder {
   version: Int!
   createdAtEpochMs: Float!
   updatedAtEpochMs: Float!
+  customFolderName: SealedAttribute
 }
 
 type SealedEmailMessage {
@@ -477,6 +483,8 @@ type Mutation {
   blockEmailAddresses(input: BlockEmailAddressesInput!): BlockEmailAddressesBulkUpdateResult!
 
   unblockEmailAddresses(input: UnblockEmailAddressesInput!): BlockEmailAddressesBulkUpdateResult!
+
+  createCustomEmailFolder(input: CreateCustomEmailFolderInput!): EmailFolder!
 }
 
 type Subscription {

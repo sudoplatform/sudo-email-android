@@ -37,6 +37,7 @@ import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
+import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
@@ -611,6 +612,17 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailFolderException::class)
     suspend fun listEmailFoldersForEmailAddressId(input: ListEmailFoldersForEmailAddressIdInput): ListOutput<EmailFolder>
+
+    /**
+     * Create a custom named [EmailFolder].
+     *
+     * @param input [CreateCustomEmailFolderInput] Parameters used to create the new folder.
+     * @return The newly created [EmailFolder].
+     *
+     * @throws [EmailFolderException].
+     */
+    @Throws(EmailFolderException::class)
+    suspend fun createCustomEmailFolder(input: CreateCustomEmailFolderInput): EmailFolder
 
     /**
      * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.

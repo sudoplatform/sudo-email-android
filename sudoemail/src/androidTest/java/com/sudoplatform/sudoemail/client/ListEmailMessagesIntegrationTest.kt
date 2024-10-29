@@ -40,6 +40,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
+import kotlin.time.Duration
 
 /**
  * Test the operation of [SudoEmailClient.listEmailMessages].
@@ -210,7 +211,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldRespectLimit() = runTest {
+    fun listEmailMessagesShouldRespectLimit() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)

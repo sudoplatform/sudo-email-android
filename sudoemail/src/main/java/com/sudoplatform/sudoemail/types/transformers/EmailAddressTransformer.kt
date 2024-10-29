@@ -71,7 +71,7 @@ internal object EmailAddressTransformer {
             updatedAt = emailAddressWithoutFoldersEntity.updatedAt,
             lastReceivedAt = emailAddressWithoutFoldersEntity.lastReceivedAt,
             alias = emailAddressWithoutFoldersEntity.alias,
-            folders = emailAddress.folders.toFolders(),
+            folders = emailAddress.folders.toFolders(deviceKeyManager),
         )
     }
 
@@ -114,6 +114,7 @@ internal object EmailAddressTransformer {
      * @return The [PartialEmailAddress] entity type.
      */
     fun toPartialEntity(
+        deviceKeyManager: DeviceKeyManager,
         emailAddress: EmailAddressFragment,
     ): PartialEmailAddress {
         val partialEmailAddressWithoutFolders = this.toPartialEntity(
@@ -130,7 +131,7 @@ internal object EmailAddressTransformer {
             createdAt = partialEmailAddressWithoutFolders.createdAt,
             updatedAt = partialEmailAddressWithoutFolders.updatedAt,
             lastReceivedAt = partialEmailAddressWithoutFolders.lastReceivedAt,
-            folders = emailAddress.folders.toFolders(),
+            folders = emailAddress.folders.toFolders(deviceKeyManager),
         )
     }
 
@@ -152,7 +153,7 @@ internal object EmailAddressTransformer {
         )
     }
 
-    private fun EmailAddressFragment.Folder.toEmailFolder(): EmailFolder {
+    private fun EmailAddressFragment.Folder.toEmailFolder(deviceKeyManager: DeviceKeyManager): EmailFolder {
         return EmailFolder(
             id = emailFolder.id,
             owner = emailFolder.owner,
@@ -164,12 +165,18 @@ internal object EmailAddressTransformer {
             version = emailFolder.version,
             createdAt = emailFolder.createdAtEpochMs.toDate(),
             updatedAt = emailFolder.updatedAtEpochMs.toDate(),
+            customFolderName = emailFolder.customFolderName?.let {
+                val sealedAttribute = it.sealedAttribute
+                val symmetricKeyInfo = KeyInfo(sealedAttribute.keyId, KeyType.SYMMETRIC_KEY, sealedAttribute.algorithm)
+                val folderNameUnsealer = Unsealer(deviceKeyManager, symmetricKeyInfo)
+                folderNameUnsealer.unseal(it)
+            },
         )
     }
 
-    private fun List<EmailAddressFragment.Folder>.toFolders(): List<EmailFolder> {
+    private fun List<EmailAddressFragment.Folder>.toFolders(deviceKeyManager: DeviceKeyManager): List<EmailFolder> {
         return this.map {
-            it.toEmailFolder()
+            it.toEmailFolder(deviceKeyManager)
         }
     }
 

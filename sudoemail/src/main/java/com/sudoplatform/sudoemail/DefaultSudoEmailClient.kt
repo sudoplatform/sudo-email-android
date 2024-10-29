@@ -16,6 +16,7 @@ import com.amplifyframework.api.graphql.GraphQLResponse
 import com.apollographql.apollo3.api.Optional
 import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
+import com.sudoplatform.sudoemail.graphql.CreateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
@@ -93,6 +94,7 @@ import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
+import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
@@ -147,6 +149,7 @@ import java.util.concurrent.CancellationException
 import java.util.zip.GZIPInputStream
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput as BlockEmailAddressesRequest
 import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput as CheckEmailAddressAvailabilityRequest
+import com.sudoplatform.sudoemail.graphql.type.CreateCustomEmailFolderInput as CreateCustomEmailFolderRequest
 import com.sudoplatform.sudoemail.graphql.type.GetEmailAddressBlocklistInput as GetEmailAddressBlocklistRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesForSudoIdInput as ListEmailAddressesForSudoIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput as ListEmailAddressesRequest
@@ -569,7 +572,7 @@ internal class DefaultSudoEmailClient(
                     success.add(unsealedEmailAddress)
                 } catch (e: Exception) {
                     val partialEmailAddress = EmailAddressTransformer
-                        .toPartialEntity(sealedEmailAddress.emailAddress)
+                        .toPartialEntity(serviceKeyManager, sealedEmailAddress.emailAddress)
                     val partialResult = PartialResult(partialEmailAddress, e)
                     partials.add(partialResult)
                 }
@@ -625,7 +628,7 @@ internal class DefaultSudoEmailClient(
                     success.add(unsealedEmailAddress)
                 } catch (e: Exception) {
                     val partialEmailAddress = EmailAddressTransformer
-                        .toPartialEntity(sealedEmailAddress.emailAddress)
+                        .toPartialEntity(serviceKeyManager, sealedEmailAddress.emailAddress)
                     val partialResult = PartialResult(partialEmailAddress, e)
                     partials.add(partialResult)
                 }
@@ -708,8 +711,47 @@ internal class DefaultSudoEmailClient(
                     emptyList(),
                     null,
                 )
-            val emailFolders = EmailFolderTransformer.toEntity(result.items)
+            val emailFolders = EmailFolderTransformer.toEntity(serviceKeyManager, result.items)
             return ListOutput(emailFolders, result.nextToken)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailFolderException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw interpretEmailFolderException(e)
+            }
+        }
+    }
+
+    @Throws(SudoEmailClient.EmailFolderException::class)
+    override suspend fun createCustomEmailFolder(input: CreateCustomEmailFolderInput): EmailFolder {
+        try {
+            val symmetricKeyId = this.serviceKeyManager.getCurrentSymmetricKeyId()
+                ?: throw KeyNotFoundException(SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG)
+
+            val sealedFolderName = sealingService.sealString(
+                symmetricKeyId,
+                input.customFolderName.toByteArray(),
+            )
+            val mutationInput = CreateCustomEmailFolderRequest(
+                emailAddressId = input.emailAddressId,
+                customFolderName = SealedAttributeInput(
+                    keyId = symmetricKeyId,
+                    algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                    plainTextType = "string",
+                    base64EncodedSealedData = (String(Base64.encode(sealedFolderName))),
+                ),
+            )
+            val mutationResponse = graphQLClient.mutate<CreateCustomEmailFolderMutation, CreateCustomEmailFolderMutation.Data>(
+                CreateCustomEmailFolderMutation.OPERATION_DOCUMENT,
+                mapOf("input" to mutationInput),
+            )
+            if (mutationResponse.hasErrors()) {
+                throw interpretEmailFolderError(mutationResponse.errors.first())
+            }
+            val folder = EmailFolderTransformer.toEntity(this.serviceKeyManager, mutationResponse.data.createCustomEmailFolder.emailFolder)
+            return folder
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {

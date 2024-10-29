@@ -10,6 +10,7 @@ import androidx.annotation.VisibleForTesting
 import com.amazonaws.util.Base64
 import com.sudoplatform.sudoemail.graphql.fragment.BlockedAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
+import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -105,6 +106,14 @@ internal class Unsealer(
      * Unseal the fields of the GraphQL [BlockedAddress.SealedValue] type
      */
     fun unseal(value: BlockedAddress.SealedValue): String {
+        val sealedValue = value.sealedAttribute
+        return unsealValue(sealedValue.algorithm, sealedValue.base64EncodedSealedData)
+    }
+
+    /**
+     * Unseal the fields of the GraphQL [EmailFolder.CustomFolderName] type.
+     */
+    fun unseal(value: EmailFolder.CustomFolderName): String {
         val sealedValue = value.sealedAttribute
         return unsealValue(sealedValue.algorithm, sealedValue.base64EncodedSealedData)
     }
