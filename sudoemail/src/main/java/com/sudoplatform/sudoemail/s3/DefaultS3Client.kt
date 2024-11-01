@@ -19,13 +19,13 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * Default S3 client implementation.
@@ -56,7 +56,13 @@ class DefaultS3Client(
             .build()
     }
 
-    override suspend fun upload(data: ByteArray, objectId: String, metadata: Map<String, String>?): String = suspendCoroutine { cont ->
+    override suspend fun upload(
+        data:
+        ByteArray,
+        objectId:
+        String,
+        metadata: Map<String, String>?,
+    ): String = suspendCancellableCoroutine { cont ->
         this.logger.debug("Uploading a RFC822 data to S3.")
 
         val s3Key = this.constructS3KeyWithCredentials(objectId)
@@ -79,15 +85,21 @@ class DefaultS3Client(
                 when (state) {
                     TransferState.COMPLETED -> {
                         this@DefaultS3Client.logger.info("S3 upload completed successfully.")
-                        cont.resume(s3Key)
+                        if (cont.isActive) {
+                            cont.resume(s3Key)
+                        }
                     }
                     TransferState.CANCELED -> {
                         this@DefaultS3Client.logger.error("S3 upload was cancelled.")
-                        cont.resumeWithException(S3Exception.UploadException("Upload was cancelled."))
+                        if (cont.isActive) {
+                            cont.resumeWithException(S3Exception.UploadException("Upload was cancelled."))
+                        }
                     }
                     TransferState.FAILED -> {
                         this@DefaultS3Client.logger.error("S3 upload failed.")
-                        cont.resumeWithException(S3Exception.UploadException("Upload failed."))
+                        if (cont.isActive) {
+                            cont.resumeWithException(S3Exception.UploadException("Upload failed."))
+                        }
                     }
                     else -> this@DefaultS3Client.logger.info("S3 upload state changed: $state.")
                 }
@@ -98,12 +110,14 @@ class DefaultS3Client(
             }
 
             override fun onError(id: Int, e: Exception?) {
-                cont.resumeWithException(S3Exception.UploadException(e?.message, cause = e))
+                if (cont.isActive) {
+                    cont.resumeWithException(S3Exception.UploadException(e?.message, cause = e))
+                }
             }
         })
     }
 
-    override suspend fun download(key: String): ByteArray = suspendCoroutine { cont ->
+    override suspend fun download(key: String): ByteArray = suspendCancellableCoroutine { cont ->
         this.logger.debug("Downloading a RFC822 data from S3.")
 
         val s3Key = this.constructS3KeyWithCredentials(key)
@@ -116,15 +130,21 @@ class DefaultS3Client(
                 when (state) {
                     TransferState.COMPLETED -> {
                         this@DefaultS3Client.logger.info("S3 download completed successfully.")
-                        cont.resume(tmpFile.readBytes())
+                        if (cont.isActive) {
+                            cont.resume(tmpFile.readBytes())
+                        }
                     }
                     TransferState.CANCELED -> {
                         this@DefaultS3Client.logger.error("S3 download was cancelled.")
-                        cont.resumeWithException(S3Exception.DownloadException("Download was cancelled."))
+                        if (cont.isActive) {
+                            cont.resumeWithException(S3Exception.DownloadException("Download was cancelled."))
+                        }
                     }
                     TransferState.FAILED -> {
                         this@DefaultS3Client.logger.error("S3 download failed.")
-                        cont.resumeWithException(S3Exception.DownloadException("Download failed."))
+                        if (cont.isActive) {
+                            cont.resumeWithException(S3Exception.DownloadException("Download failed."))
+                        }
                     }
                     else -> this@DefaultS3Client.logger.info("S3 download state changed: $state.")
                 }
@@ -137,7 +157,9 @@ class DefaultS3Client(
             }
 
             override fun onError(id: Int, e: Exception?) {
-                cont.resumeWithException(S3Exception.DownloadException(e?.message, cause = e))
+                if (cont.isActive) {
+                    cont.resumeWithException(S3Exception.DownloadException(e?.message, cause = e))
+                }
             }
         })
     }
