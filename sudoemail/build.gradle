@@ -103,7 +103,7 @@ dependencies {
     implementation "com.sudoplatform:sudoconfigmanager:8.0.0"
     implementation 'com.sudoplatform:sudouser:20.0.0'
     implementation 'com.sudoplatform:sudoapiclient:11.1.1'
-    implementation 'com.sudoplatform:sudonotification:4.0.0'
+    implementation 'com.sudoplatform:sudonotification:4.0.1'
 
     implementation 'com.sun.mail:jakarta.mail:2.0.1'
     implementation 'com.sun.activation:jakarta.activation:2.0.1'

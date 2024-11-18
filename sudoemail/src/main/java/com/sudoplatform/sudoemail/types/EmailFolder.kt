@@ -37,5 +37,5 @@ data class EmailFolder(
     val version: Int,
     val createdAt: Date,
     val updatedAt: Date,
-    val customFolderName: String?,
+    val customFolderName: String? = null,
 ) : Parcelable
