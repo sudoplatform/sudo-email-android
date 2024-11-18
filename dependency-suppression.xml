@@ -49,6 +49,7 @@
       <cve>CVE-2023-34462</cve>
       <cve>CVE-2022-24823</cve>
       <cve>CVE-2024-29025</cve>
+      <cve>CVE-2024-47535</cve>
    </suppress>
    <suppress until="2024-12-30">
       <notes><![CDATA[

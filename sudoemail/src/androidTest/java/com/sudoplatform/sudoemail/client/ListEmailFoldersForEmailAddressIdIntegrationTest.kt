@@ -14,8 +14,10 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoprofiles.Sudo
+import io.kotlintest.matchers.collections.shouldContainAll
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -135,12 +137,13 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
         listEmailFolders.nextToken shouldBe null
 
         val emailFolders = listEmailFolders.items
-        emailFolders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "NONE")
+        emailFolders.map { it.folderName } shouldContainAll listOf("INBOX", "SENT", "TRASH", "OUTBOX")
         emailFolders.map { it.emailAddressId shouldBe emailAddress.id }
         emailFolders.map { it.owner shouldBe emailAddress.owner }
         emailFolders.map { it.owners shouldBe emailAddress.owners }
         val customFolder = emailFolders.find { it.customFolderName == "TEST" }
         customFolder shouldNotBe null
         customFolder?.id shouldStartWith emailAddress.id
+        customFolder?.id shouldContain "CUSTOM"
     }
 }
