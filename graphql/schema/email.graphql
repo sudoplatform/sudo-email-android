@@ -242,6 +242,11 @@ input CreateCustomEmailFolderInput {
   customFolderName: SealedAttributeInput!
 }
 
+input DeleteCustomEmailFolderInput {
+  emailAddressId: ID!
+  emailFolderId: ID!
+}
+
 type EmailConfigurationData {
   deleteEmailMessagesLimit: Int!
   updateEmailMessagesLimit: Int!
@@ -485,6 +490,8 @@ type Mutation {
   unblockEmailAddresses(input: UnblockEmailAddressesInput!): BlockEmailAddressesBulkUpdateResult!
 
   createCustomEmailFolder(input: CreateCustomEmailFolderInput!): EmailFolder!
+
+  deleteCustomEmailFolder(input: DeleteCustomEmailFolderInput!): EmailFolder
 }
 
 type Subscription {

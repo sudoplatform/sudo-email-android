@@ -18,8 +18,10 @@ import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
 import com.sudoplatform.sudoemail.types.State
+import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldHaveSize
@@ -988,6 +990,73 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items shouldHaveSize messageCount
                 listEmailMessages.result.items.first { it.id == messageId }.state shouldBe State.DELETED
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+    }
+
+    @Test
+    fun listEmailMessagesForEmailFolderIdShouldWorkForCustomFolders() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
+            ?: fail("EmailFolder could not be found")
+
+        var messageId = ""
+        val messageCount = 2
+        for (i in 0 until messageCount) {
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
+            messageId = result.id
+        }
+        when (
+            val listEmailMessages = waitForMessagesByFolder(
+                messageCount,
+                ListEmailMessagesForEmailFolderIdInput(
+                    sentFolder.id,
+                ),
+            )
+        ) {
+            is ListAPIResult.Success -> {
+                val messages = listEmailMessages.result.items
+                messages.size shouldBe messageCount
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        val customFolder = emailClient.createCustomEmailFolder(CreateCustomEmailFolderInput(emailAddress.id, "CUSTOM"))
+
+        emailClient.updateEmailMessages(
+            UpdateEmailMessagesInput(listOf(messageId), UpdateEmailMessagesInput.UpdatableValues(folderId = customFolder.id)),
+        )
+
+        when (
+            val listEmailMessages = waitForMessagesByFolder(
+                1,
+                ListEmailMessagesForEmailFolderIdInput(
+                    customFolder.id,
+                ),
+            )
+        ) {
+            is ListAPIResult.Success -> {
+                val messages = listEmailMessages.result.items
+                messages.size shouldBe 1
+                messages[0].id shouldBe messageId
             }
 
             else -> {

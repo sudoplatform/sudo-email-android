@@ -17,6 +17,7 @@ import com.apollographql.apollo3.api.Optional
 import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
 import com.sudoplatform.sudoemail.graphql.CreateCustomEmailFolderMutation
+import com.sudoplatform.sudoemail.graphql.DeleteCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
@@ -96,6 +97,7 @@ import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMe
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
@@ -150,6 +152,7 @@ import java.util.zip.GZIPInputStream
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput as BlockEmailAddressesRequest
 import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput as CheckEmailAddressAvailabilityRequest
 import com.sudoplatform.sudoemail.graphql.type.CreateCustomEmailFolderInput as CreateCustomEmailFolderRequest
+import com.sudoplatform.sudoemail.graphql.type.DeleteCustomEmailFolderInput as DeleteCustomEmailFolderRequest
 import com.sudoplatform.sudoemail.graphql.type.GetEmailAddressBlocklistInput as GetEmailAddressBlocklistRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesForSudoIdInput as ListEmailAddressesForSudoIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput as ListEmailAddressesRequest
@@ -754,6 +757,38 @@ internal class DefaultSudoEmailClient(
             return folder
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailFolderException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw interpretEmailFolderException(e)
+            }
+        }
+    }
+
+    @Throws(SudoEmailClient.EmailFolderException::class)
+    override suspend fun deleteCustomEmailFolder(input: DeleteCustomEmailFolderInput): EmailFolder? {
+        try {
+            val mutationInput = DeleteCustomEmailFolderRequest(
+                emailFolderId = input.emailFolderId,
+                emailAddressId = input.emailAddressId,
+            )
+
+            val mutationResponse = graphQLClient.mutate<DeleteCustomEmailFolderMutation, DeleteCustomEmailFolderMutation.Data>(
+                DeleteCustomEmailFolderMutation.OPERATION_DOCUMENT,
+                mapOf("input" to mutationInput),
+            )
+            if (mutationResponse.hasErrors()) {
+                throw interpretEmailFolderError(mutationResponse.errors.first())
+            }
+            val result = mutationResponse.data?.deleteCustomEmailFolder
+            result?.let {
+                return EmailFolderTransformer.toEntity(this.serviceKeyManager, result.emailFolder)
+            }
+            return null
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            print("unexpected error $e")
             when (e) {
                 is NotAuthorizedException -> throw SudoEmailClient.EmailFolderException.AuthenticationException(
                     cause = e,
