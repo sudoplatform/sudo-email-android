@@ -247,6 +247,16 @@ input DeleteCustomEmailFolderInput {
   emailFolderId: ID!
 }
 
+input CustomEmailFolderUpdateValuesInput {
+  customFolderName: SealedAttributeInput
+}
+
+input UpdateCustomEmailFolderInput {
+  emailAddressId: ID!
+  emailFolderId: ID!
+  values: CustomEmailFolderUpdateValuesInput!
+}
+
 type EmailConfigurationData {
   deleteEmailMessagesLimit: Int!
   updateEmailMessagesLimit: Int!
@@ -492,6 +502,8 @@ type Mutation {
   createCustomEmailFolder(input: CreateCustomEmailFolderInput!): EmailFolder!
 
   deleteCustomEmailFolder(input: DeleteCustomEmailFolderInput!): EmailFolder
+
+  updateCustomEmailFolder(input: UpdateCustomEmailFolderInput!): EmailFolder!
 }
 
 type Subscription {

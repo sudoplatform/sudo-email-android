@@ -55,6 +55,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
@@ -636,6 +637,17 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailFolderException::class)
     suspend fun deleteCustomEmailFolder(input: DeleteCustomEmailFolderInput): EmailFolder?
+
+    /**
+     * Update a custom named [EmailFolder].
+     *
+     * @param input [UpdateCustomEmailFolderInput] Parameters used to update the folder.
+     * @return The updated [EmailFolder].
+     *
+     * @throws [EmailFolderException]
+     */
+    @Throws(EmailFolderException::class)
+    suspend fun updateCustomEmailFolder(input: UpdateCustomEmailFolderInput): EmailFolder
 
     /**
      * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data.

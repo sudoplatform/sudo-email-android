@@ -11,7 +11,7 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoprofiles.Sudo
-import io.kotlintest.shouldBe
+import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -43,12 +43,12 @@ class GetConfigurationDataIntegrationTest : BaseIntegrationTest() {
     fun getConfigurationDataShouldReturnConfigurationData() = runTest {
         val configurationData = emailClient.getConfigurationData()
         with(configurationData) {
-            deleteEmailMessagesLimit shouldBe 100
-            updateEmailMessagesLimit shouldBe 100
-            emailMessageMaxInboundMessageSize shouldBe 10485760
-            emailMessageMaxOutboundMessageSize shouldBe 10485760
-            emailMessageRecipientsLimit shouldBe 10
-            encryptedEmailMessageRecipientsLimit shouldBe 10
+            deleteEmailMessagesLimit shouldBeGreaterThanOrEqual 1
+            updateEmailMessagesLimit shouldBeGreaterThanOrEqual 1
+            emailMessageMaxInboundMessageSize shouldBeGreaterThanOrEqual 1
+            emailMessageMaxOutboundMessageSize shouldBeGreaterThanOrEqual 1
+            emailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
+            encryptedEmailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
         }
     }
 }

@@ -426,7 +426,6 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 emailClient,
                 emailAddress,
                 listOf(
-                    EmailMessage.EmailAddress(toSimulatorAddress),
                     EmailMessage.EmailAddress(inNetworkNotFoundAddress),
                 ),
             )

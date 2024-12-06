@@ -65,7 +65,13 @@ mutation CreateCustomEmailFolder($input: CreateCustomEmailFolderInput!) {
 }
 
 mutation DeleteCustomEmailFolder($input: DeleteCustomEmailFolderInput!) {
-   deleteCustomEmailFolder(input: $input) {
-     ...EmailFolder
-   }
- }
+  deleteCustomEmailFolder(input: $input) {
+   ...EmailFolder
+  }
+}
+
+mutation UpdateCustomEmailFolder($input: UpdateCustomEmailFolderInput!) {
+  updateCustomEmailFolder(input: $input) {
+    ...EmailFolder
+  }
+}

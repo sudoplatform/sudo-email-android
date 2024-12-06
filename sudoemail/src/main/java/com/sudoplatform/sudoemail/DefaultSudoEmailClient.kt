@@ -37,12 +37,14 @@ import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
+import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.graphql.type.BlockedAddressHashAlgorithm
 import com.sudoplatform.sudoemail.graphql.type.BlockedEmailAddressInput
+import com.sudoplatform.sudoemail.graphql.type.CustomEmailFolderUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessagesInput
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.EmailAddressMetadataUpdateValuesInput
@@ -113,6 +115,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
@@ -165,6 +168,7 @@ import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput as Pro
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.SendEncryptedEmailMessageInput as SendEncryptedEmailMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput as UnblockEmailAddressesRequest
+import com.sudoplatform.sudoemail.graphql.type.UpdateCustomEmailFolderInput as UpdateCustomEmailFolderRequest
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput as UpdateEmailAddressMetadataRequest
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as UpdateEmailMessagesRequest
 
@@ -214,9 +218,6 @@ internal class DefaultSudoEmailClient(
 ) : SudoEmailClient {
 
     companion object {
-        /** Maximum limit of number of identifiers that can be deleted per request. */
-        private const val ID_REQUEST_LIMIT = 100
-
         /** Content encoding values for email message data. */
         private const val CRYPTO_CONTENT_ENCODING = "sudoplatform-crypto"
         private const val BINARY_DATA_CONTENT_ENCODING = "sudoplatform-binary-data"
@@ -239,7 +240,8 @@ internal class DefaultSudoEmailClient(
         private const val EMAIL_ADDRESS_UNAVAILABLE_MSG = "Email address is not available"
         private const val EMAIL_ADDRESS_UNAUTHORIZED_MSG = "Unauthorized email address"
         private const val EMAIL_MESSAGE_NOT_FOUND_MSG = "Email message not found"
-        private const val LIMIT_EXCEEDED_ERROR_MSG = "Input cannot exceed $ID_REQUEST_LIMIT"
+        private const val ID_LIMIT_EXCEEDED_ERROR_MSG = "Input cannot exceed "
+        private const val RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG = "Number of recipients cannot exceed "
         private const val INVALID_ARGUMENT_ERROR_MSG = "Invalid input"
         private const val SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG = "Symmetric key not found"
         private const val PUBLIC_KEY_NOT_FOUND_ERROR_MSG = "Public Key not found"
@@ -798,9 +800,58 @@ internal class DefaultSudoEmailClient(
         }
     }
 
+    @Throws(SudoEmailClient.EmailFolderException::class)
+    override suspend fun updateCustomEmailFolder(input: UpdateCustomEmailFolderInput): EmailFolder {
+        try {
+            val symmetricKeyId = this.serviceKeyManager.getCurrentSymmetricKeyId()
+                ?: throw KeyNotFoundException(SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG)
+            var sealedFolderName: SealedAttributeInput? = null
+
+            if (input.customFolderName !== null) {
+                val sealedFolderNameStr = sealingService.sealString(
+                    symmetricKeyId,
+                    input.customFolderName.toByteArray(),
+                )
+                sealedFolderName = SealedAttributeInput(
+                    keyId = symmetricKeyId,
+                    algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                    plainTextType = "string",
+                    base64EncodedSealedData = (String(Base64.encode(sealedFolderNameStr))),
+                )
+            }
+            val updateValuesInput = CustomEmailFolderUpdateValuesInput(
+                customFolderName = Optional.presentIfNotNull(sealedFolderName),
+            )
+            val mutationInput = UpdateCustomEmailFolderRequest(
+                emailFolderId = input.emailFolderId,
+                emailAddressId = input.emailAddressId,
+                values = updateValuesInput,
+            )
+            val mutationResponse = graphQLClient.mutate<UpdateCustomEmailFolderMutation, UpdateCustomEmailFolderMutation.Data>(
+                UpdateCustomEmailFolderMutation.OPERATION_DOCUMENT,
+                mapOf("input" to mutationInput),
+            )
+            if (mutationResponse.hasErrors()) {
+                throw interpretEmailFolderError(mutationResponse.errors.first())
+            }
+            val folder = EmailFolderTransformer.toEntity(this.serviceKeyManager, mutationResponse.data.updateCustomEmailFolder.emailFolder)
+            return folder
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            print("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailFolderException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw interpretEmailFolderException(e)
+            }
+        }
+    }
+
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult {
         val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments, replyingMessageId, forwardingMessageId) = input
+        val (emailMessageRecipientsLimit, encryptedEmailMessageRecipientsLimit, emailMessageMaxOutboundMessageSize) = getConfigurationData()
 
         try {
             val domains = getConfiguredEmailDomains()
@@ -811,17 +862,19 @@ internal class DefaultSudoEmailClient(
                 addAll(emailMessageHeader.bcc)
             }.map { it.emailAddress }
 
-            // Identify whether recipients are internal or external based on their domains
-            val (internalRecipients, externalRecipients) = allRecipients.partition { recipient ->
-                domains.any { domain ->
+            // Check if all recipient domains are ours
+            val allRecipientsInternal = allRecipients.isNotEmpty() && allRecipients.all {
+                    recipient ->
+                domains.any {
+                        domain ->
                     recipient.contains(domain)
                 }
             }
 
-            if (internalRecipients.isNotEmpty()) {
-                // Lookup public key information for each internal recipient and sender
+            if (allRecipientsInternal) {
+                // Lookup public key information for each recipient and sender
                 val recipientsAndSender = mutableListOf<String>().apply {
-                    addAll(internalRecipients)
+                    addAll(allRecipients)
                     add(emailMessageHeader.from.emailAddress)
                 }
                 val lookupPublicInfoInput = LookupEmailAddressesPublicInfoInput(
@@ -830,18 +883,21 @@ internal class DefaultSudoEmailClient(
                 val emailAddressesPublicInfo = lookupEmailAddressesPublicInfo(lookupPublicInfoInput)
 
                 // Check whether internal recipient addresses and associated public keys exist in the platform
-                val isInNetworkAddresses = internalRecipients.all { recipient ->
+                val isInNetworkAddresses = allRecipients.all { recipient ->
                     emailAddressesPublicInfo.any { info -> info.emailAddress == recipient }
                 }
                 if (!isInNetworkAddresses) {
                     throw SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException(
                         IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG,
                     )
-                }
-
-                return if (externalRecipients.isEmpty()) {
+                } else {
+                    if (allRecipients.size > encryptedEmailMessageRecipientsLimit) {
+                        throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                            "$RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG$encryptedEmailMessageRecipientsLimit",
+                        )
+                    }
                     // Process encrypted email message
-                    sendInNetworkEmailMessage(
+                    return sendInNetworkEmailMessage(
                         senderEmailAddressId,
                         emailMessageHeader,
                         body,
@@ -850,19 +906,14 @@ internal class DefaultSudoEmailClient(
                         emailAddressesPublicInfo,
                         replyingMessageId,
                         forwardingMessageId,
-                    )
-                } else {
-                    // Process non-encrypted email message
-                    sendOutOfNetworkEmailMessage(
-                        senderEmailAddressId,
-                        emailMessageHeader,
-                        body,
-                        attachments,
-                        inlineAttachments,
-                        replyingMessageId,
-                        forwardingMessageId,
+                        emailMessageMaxOutboundMessageSize,
                     )
                 }
+            }
+            if (allRecipients.size > emailMessageRecipientsLimit) {
+                throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                    "$RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG$emailMessageRecipientsLimit",
+                )
             }
             // Process non-encrypted email message
             return sendOutOfNetworkEmailMessage(
@@ -873,6 +924,7 @@ internal class DefaultSudoEmailClient(
                 inlineAttachments,
                 replyingMessageId,
                 forwardingMessageId,
+                emailMessageMaxOutboundMessageSize,
             )
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
@@ -889,6 +941,7 @@ internal class DefaultSudoEmailClient(
         emailAddressesPublicInfo: List<EmailAddressPublicInfo>,
         replyingMessageId: String? = null,
         forwardingMessageId: String? = null,
+        emailMessageMaxOutboundMessageSize: Int,
     ): SendEmailMessageResult {
         var s3ObjectKey = ""
 
@@ -903,6 +956,7 @@ internal class DefaultSudoEmailClient(
                 emailAddressesPublicInfo,
                 replyingMessageId = replyingMessageId,
                 forwardingMessageId = forwardingMessageId,
+                emailMessageMaxOutboundMessageSize,
             )
 
             val s3EmailObjectInput = S3EmailObjectInput(
@@ -978,6 +1032,7 @@ internal class DefaultSudoEmailClient(
         inlineAttachments: List<EmailAttachment>,
         replyingMessageId: String? = null,
         forwardingMessageId: String? = null,
+        emailMessageMaxOutboundMessageSize: Int,
     ): SendEmailMessageResult {
         var s3ObjectKey = ""
 
@@ -991,6 +1046,7 @@ internal class DefaultSudoEmailClient(
                 EncryptionStatus.UNENCRYPTED,
                 replyingMessageId = replyingMessageId,
                 forwardingMessageId = forwardingMessageId,
+                emailMessageMaxOutboundMessageSize = emailMessageMaxOutboundMessageSize,
             )
 
             val s3EmailObject = S3EmailObjectInput(
@@ -1044,10 +1100,8 @@ internal class DefaultSudoEmailClient(
         emailAddressesPublicInfo: List<EmailAddressPublicInfo> = emptyList(),
         replyingMessageId: String? = null,
         forwardingMessageId: String? = null,
+        emailMessageMaxOutboundMessageSize: Int,
     ): String {
-        val config = getConfigurationData()
-        val emailMessageMaxOutboundMessageSize = config.emailMessageMaxOutboundMessageSize
-
         val cleanBody = if (inlineAttachments.isNotEmpty()) {
             replaceInlinePathsWithCids(body, inlineAttachments) ?: body
         } else {
@@ -1116,11 +1170,12 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun updateEmailMessages(input: UpdateEmailMessagesInput):
         BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult> {
+        val config = getConfigurationData()
         val idSet = input.ids.toSet()
         try {
-            if (idSet.size > ID_REQUEST_LIMIT) {
+            if (idSet.size > config.updateEmailMessagesLimit) {
                 throw SudoEmailClient.EmailMessageException.LimitExceededException(
-                    LIMIT_EXCEEDED_ERROR_MSG,
+                    "$ID_LIMIT_EXCEEDED_ERROR_MSG${config.updateEmailMessagesLimit}",
                 )
             }
             if (idSet.isEmpty()) {
@@ -1195,10 +1250,11 @@ internal class DefaultSudoEmailClient(
     }
 
     private suspend fun executeDeleteEmailMessages(idSet: Set<String>): DeleteEmailMessagesResult {
+        val config = getConfigurationData()
         try {
-            if (idSet.size > ID_REQUEST_LIMIT) {
+            if (idSet.size > config.deleteEmailMessagesLimit) {
                 throw SudoEmailClient.EmailMessageException.LimitExceededException(
-                    LIMIT_EXCEEDED_ERROR_MSG,
+                    "$ID_LIMIT_EXCEEDED_ERROR_MSG${config.deleteEmailMessagesLimit}",
                 )
             }
             if (idSet.isEmpty()) {

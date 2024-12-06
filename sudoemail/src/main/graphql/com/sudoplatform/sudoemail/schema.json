@@ -647,6 +647,29 @@
       },
       {
         "kind": "INPUT_OBJECT",
+        "name": "CustomEmailFolderUpdateValuesInput",
+        "description": null,
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "customFolderName",
+            "description": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "SealedAttributeInput",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
         "name": "DateRangeInput",
         "description": null,
         "fields": null,
@@ -2722,6 +2745,39 @@
               "ofType": {
                 "kind": "OBJECT",
                 "name": "BlockEmailAddressesBulkUpdateResult",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "updateCustomEmailFolder",
+            "description": null,
+            "args": [
+              {
+                "name": "input",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "UpdateCustomEmailFolderInput",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "EmailFolder",
                 "ofType": null
               }
             },
@@ -4954,6 +5010,65 @@
                     "ofType": null
                   }
                 }
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "UpdateCustomEmailFolderInput",
+        "description": null,
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "emailAddressId",
+            "description": null,
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "emailFolderId",
+            "description": null,
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "values",
+            "description": null,
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "CustomEmailFolderUpdateValuesInput",
+                "ofType": null
               }
             },
             "defaultValue": null,

@@ -156,14 +156,16 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun deleteEmailMessagesShouldAllowInputLimitEdgeCase() = runTest {
-        val input = Array(100) { it.toString() }.toList()
+        val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
+        val input = Array(deleteEmailMessagesLimit) { it.toString() }.toList()
         val result = emailClient.deleteEmailMessages(input)
         result.status shouldBe BatchOperationStatus.FAILURE
     }
 
     @Test
     fun deleteEmailMessagesShouldThrowWhenInputLimitExceeded() = runTest {
-        val input = Array(101) { it.toString() }.toList()
+        val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
+        val input = Array(deleteEmailMessagesLimit + 1) { it.toString() }.toList()
         shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
             emailClient.deleteEmailMessages(input)
         }

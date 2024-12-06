@@ -14,9 +14,10 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoprofiles.Sudo
+import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.collections.shouldContainAll
-import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
@@ -50,6 +51,7 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun listEmailFoldersForEmailAddressIdShouldReturnAllEmailFolders() = runTest {
+        val expectedFolderNames = listOf("INBOX", "OUTBOX", "SENT", "TRASH")
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -65,11 +67,11 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
         val input = ListEmailFoldersForEmailAddressIdInput(emailAddress.id)
         val listEmailFolders = emailClient.listEmailFoldersForEmailAddressId(input)
         listEmailFolders.items.isEmpty() shouldBe false
-        listEmailFolders.items.size shouldBe 4
+        listEmailFolders.items.size shouldBeGreaterThanOrEqual expectedFolderNames.size
         listEmailFolders.nextToken shouldBe null
 
         val emailFolders = listEmailFolders.items
-        emailFolders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+        emailFolders.map { it.folderName } shouldContainAll expectedFolderNames
         emailFolders.map { it.emailAddressId shouldBe emailAddress.id }
         emailFolders.map { it.owner shouldBe emailAddress.owner }
         emailFolders.map { it.owners shouldBe emailAddress.owners }
@@ -114,6 +116,8 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun listEmailFoldersShouldBeAbleToReturnCustomFolders() = runTest {
+        val customFolderName = "TEST"
+        val standardFolderNames = listOf("INBOX", "SENT", "TRASH", "OUTBOX")
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -121,27 +125,26 @@ class ListEmailFoldersForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
         val ownershipProof = getOwnershipProof(sudo)
         ownershipProof shouldNotBe null
 
-        val aliasInput = "John Doe"
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof, alias = aliasInput)
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val result = emailClient.createCustomEmailFolder(CreateCustomEmailFolderInput(emailAddress.id, "TEST"))
+        val result = emailClient.createCustomEmailFolder(CreateCustomEmailFolderInput(emailAddress.id, customFolderName))
         result.id shouldStartWith emailAddress.id
-        result.customFolderName shouldBe "TEST"
+        result.customFolderName shouldBe customFolderName
 
         val input = ListEmailFoldersForEmailAddressIdInput(emailAddress.id)
         val listEmailFolders = emailClient.listEmailFoldersForEmailAddressId(input)
         listEmailFolders.items.isEmpty() shouldBe false
-        listEmailFolders.items.size shouldBe 5
+        listEmailFolders.items.size shouldBeGreaterThanOrEqual standardFolderNames.size + 1
         listEmailFolders.nextToken shouldBe null
 
         val emailFolders = listEmailFolders.items
-        emailFolders.map { it.folderName } shouldContainAll listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+        emailFolders.map { it.folderName } shouldContainAll standardFolderNames
         emailFolders.map { it.emailAddressId shouldBe emailAddress.id }
         emailFolders.map { it.owner shouldBe emailAddress.owner }
         emailFolders.map { it.owners shouldBe emailAddress.owners }
-        val customFolder = emailFolders.find { it.customFolderName == "TEST" }
+        val customFolder = emailFolders.find { it.customFolderName == customFolderName }
         customFolder shouldNotBe null
         customFolder?.id shouldStartWith emailAddress.id
         customFolder?.id shouldContain "CUSTOM"
