@@ -12,7 +12,6 @@ import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.amplifyframework.core.Consumer
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
-import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessagesInput
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -42,12 +41,10 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
-import java.util.UUID
 import java.util.concurrent.CancellationException
 
 /**
@@ -95,26 +92,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockDeleteEmailMessagesLimit = 10
-
-    private val getEmailConfigQueryResponse by before {
-        JSONObject(
-            """
-                {
-                    'getEmailConfig': {
-                        '__typename': 'EmailConfigurationData',
-                        'deleteEmailMessagesLimit': $mockDeleteEmailMessagesLimit,
-                        'updateEmailMessagesLimit': 5,
-                        'emailMessageMaxInboundMessageSize': 200,
-                        'emailMessageMaxOutboundMessageSize': 100,
-                        'emailMessageRecipientsLimit': 5,
-                        'encryptedEmailMessageRecipientsLimit': 10
-                    }
-                }
-            """.trimIndent(),
-        )
-    }
-
     private val mockApiCategory by before {
         mock<ApiCategory>().stub {
             on {
@@ -127,19 +104,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 @Suppress("UNCHECKED_CAST")
                 (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
                     GraphQLResponse(mutationResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
-            }
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
-            } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(getEmailConfigQueryResponse.toString(), null),
                 )
                 mock<GraphQLOperation<String>>()
             }
@@ -245,13 +209,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 any(),
                 any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
         }
 
     @Test
@@ -271,13 +228,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                     it.query shouldBe DeleteEmailMessagesMutation.OPERATION_DOCUMENT
                     val mutationInput = it.variables["input"] as DeleteEmailMessagesInput
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
-                },
-                any(),
-                any(),
-            )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
                 },
                 any(),
                 any(),
@@ -323,44 +273,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 any(),
                 any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
-        }
-
-    @Test
-    fun `deleteEmailMessages() should throw LimitExceededException when passed too many ids`() =
-        runTest {
-            val ids = mutableListOf<String>()
-            for (i in 0..mockDeleteEmailMessagesLimit + 1) {
-                ids.add(UUID.randomUUID().toString())
-            }
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-                    client.deleteEmailMessages(ids)
-                }
-            }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
-            verify(mockApiCategory, times(0)).mutate<String>(
-                check {
-                    it.query shouldBe DeleteEmailMessagesMutation.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
         }
 
     @Test
@@ -395,13 +307,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                     it.query shouldBe DeleteEmailMessagesMutation.OPERATION_DOCUMENT
                     val mutationInput = it.variables["input"] as DeleteEmailMessagesInput
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
-                },
-                any(),
-                any(),
-            )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
                 },
                 any(),
                 any(),
@@ -450,13 +355,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 any(),
                 any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
         }
 
     @Test
@@ -499,13 +397,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             any(),
             any(),
         )
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
     }
 
     @Test
@@ -533,13 +424,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 it.query shouldBe DeleteEmailMessagesMutation.OPERATION_DOCUMENT
                 val mutationInput = it.variables["input"] as DeleteEmailMessagesInput
                 mutationInput.messageIds shouldBe listOf("id1", "id2")
-            },
-            any(),
-            any(),
-        )
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
             },
             any(),
             any(),
@@ -572,13 +456,6 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                     it.query shouldBe DeleteEmailMessagesMutation.OPERATION_DOCUMENT
                     val mutationInput = it.variables["input"] as DeleteEmailMessagesInput
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
-                },
-                any(),
-                any(),
-            )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
                 },
                 any(),
                 any(),

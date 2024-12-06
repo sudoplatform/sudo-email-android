@@ -280,8 +280,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun updateEmailMessagesShouldAllowInputLimitEdgeCase() = runTest {
-        val (updateEmailMessagesLimit) = emailClient.getConfigurationData()
-        val inputIds = Array(updateEmailMessagesLimit) { it.toString() }.toList()
+        val inputIds = Array(100) { it.toString() }.toList()
         val input = UpdateEmailMessagesInput(
             inputIds,
             UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
@@ -292,8 +291,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun updateEmailMessagesShouldThrowWhenInputLimitExceeded() = runTest {
-        val (updateEmailMessagesLimit) = emailClient.getConfigurationData()
-        val inputIds = Array(updateEmailMessagesLimit + 1) { it.toString() }.toList()
+        val inputIds = Array(101) { it.toString() }.toList()
         val input = UpdateEmailMessagesInput(
             inputIds,
             UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
