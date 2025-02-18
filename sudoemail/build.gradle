@@ -98,7 +98,7 @@ dependencies {
     implementation("com.apollographql.apollo3:apollo-runtime:4.0.0-beta.7")
 
     // Sudo Platform
-    implementation 'com.sudoplatform:sudokeymanager:8.0.0'
+    implementation 'com.sudoplatform:sudokeymanager:8.1.0'
     implementation "com.sudoplatform:sudologging:5.0.0"
     implementation "com.sudoplatform:sudoconfigmanager:8.0.0"
     implementation 'com.sudoplatform:sudouser:20.0.0'

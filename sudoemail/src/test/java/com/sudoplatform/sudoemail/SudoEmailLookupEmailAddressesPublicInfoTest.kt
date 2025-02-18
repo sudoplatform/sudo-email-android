@@ -16,6 +16,7 @@ import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.types.PublicKeyFormat
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -70,7 +71,13 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
                             '__typename': 'EmailAddressPublicInfo',
                             'emailAddress': 'emailAddress',
                             'keyId': 'keyId',
-                            'publicKey': 'publicKey'
+                            'publicKey': 'publicKey',
+                            'publicKeyDetails': {
+                                '__typename': 'EmailAddressPublicKey',
+                                'publicKey': 'publicKey',
+                                'keyFormat': 'RSA_PUBLIC_KEY',
+                                'algorithm': 'algorithm'
+                            }
                         }],
                         'nextToken': null
                     }
@@ -197,6 +204,9 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
             emailAddress shouldBe "emailAddress"
             keyId shouldBe "keyId"
             publicKey shouldBe "publicKey"
+            publicKeyDetails.publicKey shouldBe "publicKey"
+            publicKeyDetails.keyFormat shouldBe PublicKeyFormat.RSA_PUBLIC_KEY
+            publicKeyDetails.algorithm shouldBe "algorithm"
         }
 
         verify(mockApiCategory).query<String>(

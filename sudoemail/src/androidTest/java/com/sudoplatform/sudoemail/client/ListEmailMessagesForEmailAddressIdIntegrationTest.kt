@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
+import com.sudoplatform.sudoemail.MessageDetails
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
@@ -27,6 +28,7 @@ import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.matchers.numerics.shouldBeLessThan
 import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
 import io.kotlintest.matchers.types.shouldBeInstanceOf
@@ -44,6 +46,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
+import java.util.UUID
 
 /**
  * Test the operation of [SudoEmailClient.listEmailMessagesForEmailAddressId].
@@ -67,7 +70,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListResult() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListResult() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -91,10 +94,22 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListResult" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
 
         when (
             val listEmailMessages = waitForMessages(
@@ -225,7 +240,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldRespectLimit() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldRespectLimit() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -249,10 +264,22 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldRespectLimit" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
 
         // First, wait for all the messages to be there
         waitForMessagesByAddress(
@@ -285,7 +312,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldRespectSortDateRange() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldRespectSortDateRange() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -309,10 +336,22 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldRespectSortDateRange" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -348,7 +387,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldRespectUpdatedAtDateRange() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldRespectUpdatedAtDateRange() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -372,10 +411,22 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldRespectUpdatedAtDateRange" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -656,7 +707,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListAscending() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListAscending() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -680,10 +731,22 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListAscending" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -720,7 +783,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListDescending() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListDescending() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -744,10 +807,22 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListDescending" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -799,7 +874,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldReturnPartialResult() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldReturnPartialResult() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -823,10 +898,22 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldReturnPartialResult" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
 
         waitForMessages(messageCount * 2)
 
@@ -855,7 +942,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
     }
 
     @Test
-    fun listEmailMessagesForEmailAddressIdShouldRespectIncludeDeletedMessagesFlag() = runTest {
+    fun listEmailMessagesForEmailAddressIdShouldRespectIncludeDeletedMessagesFlag() = runTest(timeout = kotlin.time.Duration.parse("3m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -880,11 +967,23 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         var messageId = ""
         val messageCount = 2
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
-            messageId = result.id
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesForEmailAddressIdShouldReturnPartialResult" +
+                        " ${UUID.randomUUID()}",
+                ),
+            )
         }
+        val sendResults = sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
+        messageId = sendResults[0].id
         when (
             val listEmailMessages = waitForMessages(
                 messageCount * 2,
@@ -930,7 +1029,8 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(inputWithFlag)
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items shouldHaveSize messageCount * 2
+                // Allowing for messages that were retried and deleted here
+                listEmailMessages.result.items.size shouldBeGreaterThanOrEqual messageCount * 2
                 listEmailMessages.result.items.first { it.id == messageId }.state shouldBe State.DELETED
             }
 

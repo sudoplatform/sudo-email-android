@@ -14,7 +14,10 @@ import com.sudoplatform.sudoemail.secure.types.PUBLIC_KEY_ID_JSON
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.types.EmailAddressPublicKey
 import com.sudoplatform.sudoemail.types.EmailAttachment
+import com.sudoplatform.sudoemail.types.PublicKeyFormat
+import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -26,9 +29,11 @@ import org.junit.After
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.inOrder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
@@ -45,9 +50,21 @@ class EmailCryptoServiceTest : BaseTests() {
         EmailAddressPublicInfo(
             "foo@bar.com",
             "keyId1",
-            "publicKey1",
+            EmailAddressPublicKey(
+                "publicKey1",
+                PublicKeyFormat.RSA_PUBLIC_KEY,
+                "algorithm",
+            ),
         ),
-        EmailAddressPublicInfo("foo@bar.com", "keyId2", "publicKey2"),
+        EmailAddressPublicInfo(
+            "foo@bar.com",
+            "keyId2",
+            EmailAddressPublicKey(
+                "publicKey2",
+                PublicKeyFormat.RSA_PUBLIC_KEY,
+                "algorithm",
+            ),
+        ),
     )
 
     private val encryptedData = Base64.getEncoder().encodeToString("encryptedData".toByteArray())
@@ -85,7 +102,7 @@ class EmailCryptoServiceTest : BaseTests() {
             on { generateRandomSymmetricKey() } doReturn ByteArray(42)
             on { createRandomData(anyInt()) } doReturn ByteArray(42)
             on { encryptWithSymmetricKey(any(), any(), any()) } doReturn ByteArray(42)
-            on { encryptWithPublicKey(any(), any(), any()) } doReturn ByteArray(42)
+            on { encryptWithPublicKey(any(), any(), any(), any()) } doReturn ByteArray(42)
             on { privateKeyExists(anyString()) } doReturn true
             on { decryptWithKeyPairId(any(), anyString(), any()) } doReturn ByteArray(42)
             on { decryptWithSymmetricKey(any(), any(), any()) } doReturn ByteArray(42)
@@ -110,9 +127,21 @@ class EmailCryptoServiceTest : BaseTests() {
             EmailAddressPublicInfo(
                 "foo@bar.com",
                 "keyId1",
-                encryptedData,
+                EmailAddressPublicKey(
+                    encryptedData,
+                    PublicKeyFormat.RSA_PUBLIC_KEY,
+                    "algorithm",
+                ),
             ),
-            EmailAddressPublicInfo("foo@bar.com", "keyId2", encryptedData),
+            EmailAddressPublicInfo(
+                "foo@bar.com",
+                "keyId2",
+                EmailAddressPublicKey(
+                    encryptedData,
+                    PublicKeyFormat.SPKI,
+                    "algorithm",
+                ),
+            ),
         )
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
             emailCryptoService.encrypt(stubData.toByteArray(), stubPublicInfo)
@@ -145,7 +174,19 @@ class EmailCryptoServiceTest : BaseTests() {
         verify(mockDeviceKeyManager).generateRandomSymmetricKey()
         verify(mockDeviceKeyManager).createRandomData(anyInt())
         verify(mockDeviceKeyManager).encryptWithSymmetricKey(any(), any(), any())
-        verify(mockDeviceKeyManager, times(2)).encryptWithPublicKey(any(), any(), any())
+        val deviceKeyManagerOrder = inOrder(mockDeviceKeyManager)
+        deviceKeyManagerOrder.verify(mockDeviceKeyManager).encryptWithPublicKey(
+            any(),
+            any(),
+            eq(KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY),
+            eq(KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1),
+        )
+        deviceKeyManagerOrder.verify(mockDeviceKeyManager).encryptWithPublicKey(
+            any(),
+            any(),
+            eq(KeyManagerInterface.PublicKeyFormat.SPKI),
+            eq(KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1),
+        )
     }
 
     @Test

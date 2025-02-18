@@ -7,6 +7,8 @@
 package com.sudoplatform.sudoemail.types.transformers
 
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.types.EmailAddressPublicKey
+import com.sudoplatform.sudoemail.types.PublicKeyFormat
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo as EmailAddressPublicInfoFragment
 
 /**
@@ -24,10 +26,18 @@ internal object EmailAddressPublicInfoTransformer {
     fun toEntity(
         emailAddressPublicInfoFragment: EmailAddressPublicInfoFragment,
     ): EmailAddressPublicInfo {
+        val keyFormat: PublicKeyFormat = PublicKeyFormatTransformer.toEntity(
+            emailAddressPublicInfoFragment.publicKeyDetails.emailAddressPublicKey.keyFormat,
+        )
+        val publicKeyDetails = EmailAddressPublicKey(
+            publicKey = emailAddressPublicInfoFragment.publicKeyDetails.emailAddressPublicKey.publicKey,
+            keyFormat = keyFormat,
+            algorithm = emailAddressPublicInfoFragment.publicKeyDetails.emailAddressPublicKey.algorithm,
+        )
         return EmailAddressPublicInfo(
             emailAddress = emailAddressPublicInfoFragment.emailAddress,
             keyId = emailAddressPublicInfoFragment.keyId,
-            publicKey = emailAddressPublicInfoFragment.publicKey,
+            publicKeyDetails = publicKeyDetails,
         )
     }
 }

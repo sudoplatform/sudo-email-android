@@ -13,6 +13,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
+import com.sudoplatform.sudoemail.util.Constants.DEFAULT_PUBLIC_KEY_ALGORITHM
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 
 /**
@@ -29,13 +30,10 @@ internal class Unsealer(
 
         /** RSA block size in bytes */
         const val BLOCK_SIZE_RSA = 256
-
-        /** Algorithm used when creating/registering public keys. */
-        const val DEFAULT_ALGORITHM = "RSAEncryptionOAEPAESCBC"
     }
 
     private val algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm = when (keyInfo.algorithm) {
-        DEFAULT_ALGORITHM -> KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+        DEFAULT_PUBLIC_KEY_ALGORITHM -> KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
         else -> KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_PKCS1
     }
 

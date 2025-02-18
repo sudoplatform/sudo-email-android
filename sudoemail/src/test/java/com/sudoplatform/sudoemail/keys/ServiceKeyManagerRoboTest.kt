@@ -136,6 +136,7 @@ class ServiceKeyManagerRoboTest : BaseTests() {
         val secretData2 = serviceKeyManager.encryptWithPublicKey(
             newKeyPair.publicKey,
             clearData2,
+            KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY,
             KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
         )
         val decryptedData2 = serviceKeyManager.decryptWithKeyPairId(

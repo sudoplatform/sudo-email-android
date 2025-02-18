@@ -12,6 +12,7 @@ import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.amplifyframework.core.Consumer
 import com.apollographql.apollo3.api.Optional
+import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -43,10 +44,12 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
+import java.util.UUID
 import java.util.concurrent.CancellationException
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as UpdateEmailMessagesRequest
 
@@ -118,6 +121,26 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
         )
     }
 
+    private val mockUpdateEmailMessagesLimit = 10
+
+    private val getEmailConfigQueryResponse by before {
+        JSONObject(
+            """
+                {
+                    'getEmailConfig': {
+                        '__typename': 'EmailConfigurationData',
+                        'deleteEmailMessagesLimit': 10,
+                        'updateEmailMessagesLimit': $mockUpdateEmailMessagesLimit,
+                        'emailMessageMaxInboundMessageSize': 200,
+                        'emailMessageMaxOutboundMessageSize': 100,
+                        'emailMessageRecipientsLimit': 5,
+                        'encryptedEmailMessageRecipientsLimit': 10
+                    }
+                }
+            """.trimIndent(),
+        )
+    }
+
     private val context by before {
         InstrumentationRegistry.getInstrumentation().targetContext
     }
@@ -138,6 +161,19 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 @Suppress("UNCHECKED_CAST")
                 (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
                     GraphQLResponse(mutationSuccessResponse.toString(), null),
+                )
+                mock<GraphQLOperation<String>>()
+            }
+            on {
+                query<String>(
+                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
+                    any(),
+                    any(),
+                )
+            } doAnswer {
+                @Suppress("UNCHECKED_CAST")
+                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
+                    GraphQLResponse(getEmailConfigQueryResponse.toString(), null),
                 )
                 mock<GraphQLOperation<String>>()
             }
@@ -230,6 +266,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 any(),
                 any(),
             )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
@@ -267,6 +310,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
                 },
                 any(),
                 any(),
@@ -325,6 +375,48 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 any(),
                 any(),
             )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+        }
+
+    @Test
+    fun `updateEmailMessages() should throw LimitExceededException when passed too many ids`() =
+        runTest {
+            val ids = mutableListOf<String>()
+            for (i in 0..mockUpdateEmailMessagesLimit + 1) {
+                ids.add(UUID.randomUUID().toString())
+            }
+            val input = UpdateEmailMessagesInput(
+                ids,
+                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
+            )
+            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+                shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
+                    client.updateEmailMessages(input)
+                }
+            }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory, times(0)).mutate<String>(
+                check {
+                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
@@ -361,6 +453,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
                 },
                 any(),
                 any(),
@@ -411,6 +510,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 any(),
                 any(),
             )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
         }
 
     @Test
@@ -455,6 +561,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             any(),
             any(),
         )
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
     }
 
     @Test
@@ -484,6 +597,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 mutationInput.messageIds shouldBe listOf("id1", "id2")
                 mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                 mutationInput.values.seen shouldBe Optional.Present(true)
+            },
+            any(),
+            any(),
+        )
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
             },
             any(),
             any(),
@@ -518,6 +638,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
                 },
                 any(),
                 any(),

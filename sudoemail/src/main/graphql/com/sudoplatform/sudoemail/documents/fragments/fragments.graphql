@@ -59,10 +59,19 @@ fragment EmailAddress on EmailAddress {
     }
 }
 
+fragment EmailAddressPublicKey on EmailAddressPublicKey {
+  publicKey
+  keyFormat
+  algorithm
+}
+
 fragment EmailAddressPublicInfo on EmailAddressPublicInfo {
-    emailAddress
-    keyId
-    publicKey
+  emailAddress
+  keyId
+  publicKey
+  publicKeyDetails  {
+    ...EmailAddressPublicKey
+  }
 }
 
 fragment EmailFolder on EmailFolder {

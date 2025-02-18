@@ -168,12 +168,18 @@ internal interface DeviceKeyManager {
      *
      * @param key [ByteArray] The public key used to encrypt the [data].
      * @param data [ByteArray] Data to be encrypted.
+     * @param format [KeyManagerInterface.PublicKeyFormat] The format of the [key].
      * @param algorithm [KeyManagerInterface.PublicKeyEncryptionAlgorithm] Algorithm to use to encrypt the [data].
      * @return The encrypted data.
      * @throws [DeviceKeyManagerException.EncryptionException] if the data cannot be encrypted.
      */
     @Throws(DeviceKeyManagerException::class)
-    fun encryptWithPublicKey(key: ByteArray, data: ByteArray, algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm): ByteArray
+    fun encryptWithPublicKey(
+        key: ByteArray,
+        data: ByteArray,
+        format: KeyManagerInterface.PublicKeyFormat,
+        algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
+    ): ByteArray
 
     /**
      * Decrypt the [data] with the symmetric key [keyId].

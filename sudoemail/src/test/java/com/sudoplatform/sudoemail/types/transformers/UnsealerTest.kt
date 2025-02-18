@@ -15,7 +15,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
-import com.sudoplatform.sudoemail.types.transformers.Unsealer.Companion.DEFAULT_ALGORITHM
+import com.sudoplatform.sudoemail.util.Constants.DEFAULT_PUBLIC_KEY_ALGORITHM
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManager
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -66,8 +66,8 @@ class UnsealerTest : BaseTests() {
 
     private val symmetricKeyId = "symmetricKey"
     private val publicKeyId = UUID.randomUUID().toString()
-    private val keyInfo = KeyInfo(publicKeyId, KeyType.PRIVATE_KEY, DEFAULT_ALGORITHM)
-    private val keyInfo2 = KeyInfo(symmetricKeyId, KeyType.SYMMETRIC_KEY, DEFAULT_ALGORITHM)
+    private val keyInfo = KeyInfo(publicKeyId, KeyType.PRIVATE_KEY, DEFAULT_PUBLIC_KEY_ALGORITHM)
+    private val keyInfo2 = KeyInfo(symmetricKeyId, KeyType.SYMMETRIC_KEY, DEFAULT_PUBLIC_KEY_ALGORITHM)
 
     private val unsealer by before {
         Unsealer(

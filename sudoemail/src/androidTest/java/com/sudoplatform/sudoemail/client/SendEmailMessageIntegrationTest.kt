@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
+import com.sudoplatform.sudoemail.MessageDetails
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.Direction
@@ -64,7 +65,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     /* Send Non-E2E email tests */
 
     @Test
-    fun sendEmailShouldReturnEmailMessageId() = runTest {
+    fun sendEmailShouldReturnEmailMessageId() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -89,12 +90,22 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         var emailId = ""
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            emailId = result.id
-            emailId.isBlank() shouldBe false
-            result.createdAt shouldNotBe null
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "sendEmailShouldReturnEmailMessageId ${UUID.randomUUID()}",
+                ),
+            )
         }
+        val sendMessageResults = sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
+        emailId = sendMessageResults[0].id
 
         when (
             val listEmailMessages = waitForMessagesByAddress(
@@ -130,7 +141,9 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEmailWithValidAttachmentShouldReturnEmailMessageIdAndCreatedAt() = runTest {
+    fun sendEmailWithValidAttachmentShouldReturnEmailMessageIdAndCreatedAt() = runTest(
+        timeout = kotlin.time.Duration.parse("2m"),
+    ) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -170,17 +183,24 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         var emailId = ""
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(
-                emailClient,
-                emailAddress,
-                attachments = listOf(attachment),
-                inlineAttachments = listOf(inlineAttachment),
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "sendEmailShouldReturnEmailMessageId ${UUID.randomUUID()}",
+                    attachments = listOf(attachment),
+                    inlineAttachments = listOf(inlineAttachment),
+                ),
             )
-            emailId = result.id
-            emailId.isBlank() shouldBe false
-            result.createdAt shouldNotBe null
         }
+        val sendMessageResults = sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
+        emailId = sendMessageResults[0].id
 
         when (val listEmailMessages = waitForMessages(messageCount * 2)) {
             is ListAPIResult.Success -> {
@@ -247,7 +267,80 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun sendEmailWithMixtureOfRecipientsShouldReturnUnencryptedStatus() = runTest {
+    fun sendEmailWithRecipientWithDisplayNameContainingComma() = runTest(timeout = kotlin.time.Duration.parse("2m")) {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val input = ListEmailAddressesInput()
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+        var emailId = ""
+        val messageDetails = mutableListOf<MessageDetails>()
+        messageDetails.add(
+            MessageDetails(
+                fromAddress = emailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress, displayName = "ooto, simulator")),
+                subject = "sendEmailShouldReturnEmailMessageId ${UUID.randomUUID()}",
+            ),
+        )
+        val sendMessageResults = sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
+        emailId = sendMessageResults[0].id
+        when (
+            val listEmailMessages = waitForMessagesByAddress(
+                count = 2,
+                listInput = ListEmailMessagesForEmailAddressIdInput(emailAddressId = emailAddress.id),
+            )
+        ) {
+            is ListAPIResult.Success -> {
+                val outbound = listEmailMessages.result.items.filter {
+                    it.direction == Direction.OUTBOUND
+                }
+                val inbound = listEmailMessages.result.items.filter {
+                    it.direction == Direction.INBOUND
+                }
+                outbound.size shouldBe 1
+                inbound.size shouldBe 1
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
+            ?: fail("Email message could not be found")
+
+        with(retrievedEmailMessage) {
+            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+            to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
+            to.firstOrNull()?.displayName shouldBe "ooto, simulator"
+            size shouldBeGreaterThan 0.0
+            encryptionStatus shouldBe EncryptionStatus.UNENCRYPTED
+        }
+    }
+
+    @Test
+    fun sendEmailWithMixtureOfRecipientsShouldReturnUnencryptedStatus() = runTest(
+        timeout = kotlin.time.Duration.parse("2m"),
+    ) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -280,20 +373,26 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         var emailId = ""
+        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(
-                emailClient,
-                emailAddress,
-                listOf(
-                    EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
-                    EmailMessage.EmailAddress(toSimulatorAddress),
+            messageDetails.add(
+                MessageDetails(
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(
+                        EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
+                        EmailMessage.EmailAddress(toSimulatorAddress),
+                    ),
+                    ccAddresses = listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress)),
+                    subject = "sendEmailWithMixtureOfRecipientsShouldReturnUnencryptedStatus ${UUID.randomUUID()}",
                 ),
-                listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress)),
             )
-            emailId = result.id
-            emailId.isBlank() shouldBe false
-            result.createdAt shouldNotBe null
         }
+        val sendMessageResults = sendAndReceiveMessagePairs(
+            emailAddress = emailAddress,
+            messageDetailsList = messageDetails,
+            client = emailClient,
+        )
+        emailId = sendMessageResults[0].id
 
         when (val listEmailMessages = waitForMessages(messageCount * 4)) {
             is ListAPIResult.Success -> {
@@ -426,7 +525,6 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 emailClient,
                 emailAddress,
                 listOf(
-                    EmailMessage.EmailAddress(toSimulatorAddress),
                     EmailMessage.EmailAddress(inNetworkNotFoundAddress),
                 ),
             )
@@ -926,6 +1024,72 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                     EmailMessage.EmailAddress(inNetworkNotFoundAddress),
                 ),
             )
+        }
+    }
+
+    @Test
+    fun sendEncryptedEmailWithRecipientWithDisplayNameContainingComma() = runTest() {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        receiverEmailAddress shouldNotBe null
+        emailAddressList.add(receiverEmailAddress)
+
+        val input = ListEmailAddressesInput()
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.isEmpty() shouldBe false
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+        var emailId = ""
+        val result = sendEmailMessage(
+            emailClient,
+            emailAddress,
+            listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress, displayName = "Kent, Clark")),
+        )
+        emailId = result.id
+        emailId.isBlank() shouldBe false
+        result.createdAt shouldNotBe null
+        emailId = result.id
+        when (val listEmailMessages = waitForMessages(2)) {
+            is ListAPIResult.Success -> {
+                val outbound = listEmailMessages.result.items.filter {
+                    it.direction == Direction.OUTBOUND
+                }
+                val inbound = listEmailMessages.result.items.filter {
+                    it.direction == Direction.INBOUND
+                }
+                outbound.size shouldBe 1
+                inbound.size shouldBe 1
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
+            ?: fail("Email message could not be found")
+
+        with(retrievedEmailMessage) {
+            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+            to.firstOrNull()?.emailAddress shouldBe receiverEmailAddress.emailAddress
+            to.firstOrNull()?.displayName shouldBe "Kent, Clark"
+            size shouldBeGreaterThan 0.0
+            encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
         }
     }
 

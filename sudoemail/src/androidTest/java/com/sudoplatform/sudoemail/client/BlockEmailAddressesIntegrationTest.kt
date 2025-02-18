@@ -8,10 +8,12 @@ package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
+import com.sudoplatform.sudoemail.MessageDetails
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoprofiles.Sudo
@@ -153,7 +155,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
 
     // This test can take a while...
     @Test
-    fun messagesFromBlockedAddressesShouldNotBeReceived() = runTest(timeout = 120.seconds) {
+    fun messagesFromBlockedAddressesShouldNotBeReceived() = runTest(timeout = 180.seconds) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -171,10 +173,17 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         inboxFolder shouldNotBe null
         val inboxFolderId = inboxFolder?.id ?: fail("inbox folder unexpectedly null")
         // Send message while unblocked
-        sendEmailMessage(
-            emailClient,
+        sendAndReceiveMessagePairs(
             senderReceiverEmailAddress,
-            body = "This message should go through & be returned as OOTO",
+            listOf(
+                MessageDetails(
+                    fromAddress = senderReceiverEmailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesShouldRespectLimit ${UUID.randomUUID()}",
+                    body = "This message should go through & be returned as OOTO",
+                ),
+            ),
+            client = emailClient,
         )
 
         // Make sure message was received
@@ -219,10 +228,17 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         unblockResult.status shouldBe BatchOperationStatus.SUCCESS
 
         // Send one more message
-        sendEmailMessage(
-            emailClient,
+        sendAndReceiveMessagePairs(
             senderReceiverEmailAddress,
-            body = "This message should also go through & be returned as OOTO",
+            listOf(
+                MessageDetails(
+                    fromAddress = senderReceiverEmailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                    subject = "listEmailMessagesShouldRespectLimit ${UUID.randomUUID()}",
+                    body = "This message should also go through & be returned as OOTO",
+                ),
+            ),
+            client = emailClient,
         )
 
         // Check that it was received, should have original message plus last one

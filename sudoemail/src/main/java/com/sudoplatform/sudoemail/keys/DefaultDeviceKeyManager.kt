@@ -179,10 +179,11 @@ internal open class DefaultDeviceKeyManager(
     override fun encryptWithPublicKey(
         key: ByteArray,
         data: ByteArray,
+        format: KeyManagerInterface.PublicKeyFormat,
         algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
     ): ByteArray {
         try {
-            return keyManager.encryptWithPublicKey(key, data, algorithm)
+            return keyManager.encryptWithPublicKey(key, data, format, algorithm)
         } catch (e: KeyManagerException) {
             logger.error("error $e")
             throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)

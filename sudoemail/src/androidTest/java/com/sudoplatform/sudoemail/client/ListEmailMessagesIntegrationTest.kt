@@ -25,6 +25,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.beInstanceOf
+import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
@@ -40,6 +41,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
+import java.util.UUID
 import kotlin.time.Duration
 
 /**
@@ -72,7 +74,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldReturnEmailMessageListResult() = runTest {
+    fun listEmailMessagesShouldReturnEmailMessageListResultForOutNetworkMessages() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -95,13 +97,21 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             }
         }
 
-        val messageCount = 2
-        for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
-        }
+        val expectedMessageCount = 3 // Two sent, one received
+        sendEmailMessage(
+            emailClient,
+            fromAddress = emailAddress,
+            toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+            subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}",
+        )
+        sendEmailMessage(
+            emailClient,
+            fromAddress = emailAddress,
+            toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = successSimulatorAddress)),
+            subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}",
+        )
 
-        when (val listEmailMessages = waitForMessages(messageCount * 2) { it.emailAddressId == emailAddress.id }) {
+        when (val listEmailMessages = waitForMessages(expectedMessageCount) { it.emailAddressId == emailAddress.id }) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -109,14 +119,24 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 val inbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.INBOUND
                 }
-                outbound.size shouldBe messageCount
-                with(outbound[0]) {
+                outbound.size shouldBe 2
+                val successMessage = outbound.find { it.to.firstOrNull()?.emailAddress == successSimulatorAddress }
+                val ootoMessage = outbound.find { it.to.firstOrNull()?.emailAddress == toSimulatorAddress }
+                successMessage shouldNotBe null
+                ootoMessage shouldNotBe null
+                with(successMessage!!) {
+                    from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                    to.firstOrNull()?.emailAddress shouldBe successSimulatorAddress
+                    hasAttachments shouldBe false
+                    size shouldBeGreaterThan 0.0
+                }
+                with(ootoMessage!!) {
                     from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                     to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
                 }
-                inbound.size shouldBe messageCount
+                inbound.size shouldBe 1
                 with(inbound[0]) {
                     from.firstOrNull()?.emailAddress shouldBe fromSimulatorAddress
                     to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
@@ -132,7 +152,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldReturnEmailMessageListResultForInNetworkMessage() = runTest {
+    fun listEmailMessagesShouldReturnEmailMessageListResultForInNetworkMessage() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -225,7 +245,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -265,7 +291,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldRespectSortDateRange() = runTest {
+    fun listEmailMessagesShouldRespectSortDateRange() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -290,7 +316,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -320,7 +352,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldRespectUpdatedAtDateRange() = runTest {
+    fun listEmailMessagesShouldRespectUpdatedAtDateRange() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -345,7 +377,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -370,7 +408,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldReturnEmptyListForOutOfDateRangeSortDate() = runTest {
+    fun listEmailMessagesShouldReturnEmptyListForOutOfDateRangeSortDate() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -395,7 +433,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -420,7 +464,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldReturnEmptyListForOutOfDateRangeUpdatedAtDate() = runTest {
+    fun listEmailMessagesShouldReturnEmptyListForOutOfDateRangeUpdatedAtDate() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -445,7 +489,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -470,7 +520,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldThrowForMultipleDateRangeSpecified() = runTest {
+    fun listEmailMessagesShouldThrowForMultipleDateRangeSpecified() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -495,7 +545,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -517,7 +573,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldReturnWhenNeitherDateRangeSpecified() = runTest {
+    fun listEmailMessagesShouldReturnWhenNeitherDateRangeSpecified() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -542,7 +598,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -563,13 +625,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 outbound.size shouldBe messageCount
                 with(outbound[0]) {
                     from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-                    to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
+                    to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
                 }
                 inbound.size shouldBe messageCount
                 with(inbound[0]) {
-                    from.firstOrNull()?.emailAddress shouldBe fromSimulatorAddress
+                    from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                     to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
@@ -584,7 +646,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun listEmailMessagesShouldThrowWhenInputStartDateGreaterThanEndDateForSortDateRange() =
-        runTest {
+        runTest(timeout = Duration.parse("2m")) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -609,7 +671,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
             val messageCount = 2
             for (i in 0 until messageCount) {
-                val result = sendEmailMessage(emailClient, emailAddress)
+                val result = sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                    toAddresses = listOf(
+                        EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                    ),
+                )
                 result.id.isBlank() shouldBe false
             }
 
@@ -628,7 +696,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun listEmailMessagesShouldThrowWhenInputStartDateGreaterThanEndDateForUpdatedAtDateRange() =
-        runTest {
+        runTest(timeout = Duration.parse("2m")) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -653,7 +721,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
             val messageCount = 2
             for (i in 0 until messageCount) {
-                val result = sendEmailMessage(emailClient, emailAddress)
+                val result = sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                    toAddresses = listOf(
+                        EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                    ),
+                )
                 result.id.isBlank() shouldBe false
             }
 
@@ -671,7 +745,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun listEmailMessagesShouldReturnEmailMessageListAscending() = runTest {
+    fun listEmailMessagesShouldReturnEmailMessageListAscending() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -696,7 +770,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -727,7 +807,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldReturnEmailMessageListDescending() = runTest {
+    fun listEmailMessagesShouldReturnEmailMessageListDescending() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -752,7 +832,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -777,7 +863,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldReturnPartialResult() = runTest {
+    fun listEmailMessagesShouldReturnPartialResult() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -802,7 +888,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
         }
 
@@ -829,7 +921,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesShouldRespectIncludeDeletedMessagesFlag() = runTest {
+    fun listEmailMessagesShouldRespectIncludeDeletedMessagesFlag() = runTest(timeout = Duration.parse("2m")) {
         val sudo = sudoClient.createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -841,10 +933,14 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
+        val recipientEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        recipientEmailAddress shouldNotBe null
+        emailAddressList.add(recipientEmailAddress)
+
         val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+                listEmailAddresses.result.items shouldContain emailAddress
             }
 
             else -> {
@@ -855,12 +951,23 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         var messageId = ""
         val messageCount = 2
         for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
+            val result = sendEmailMessage(
+                emailClient,
+                emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(recipientEmailAddress.emailAddress, recipientEmailAddress.alias),
+                ),
+            )
             result.id.isBlank() shouldBe false
             messageId = result.id
         }
 
-        when (val listEmailMessages = waitForMessages(messageCount * 2) { it.emailAddressId == emailAddress.id }) {
+        when (
+            val listEmailMessages =
+                waitForMessages(
+                    messageCount * 2,
+                ) { it.emailAddressId == emailAddress.id || it.emailAddressId == recipientEmailAddress.id }
+        ) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items shouldHaveSize messageCount * 2
             }
@@ -876,7 +983,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
         // Without flag
         val inputWithoutFlag = ListEmailMessagesInput()
         when (
-            val listEmailMessages = waitForMessages(messageCount * 2 - 1, inputWithoutFlag) { it.emailAddressId == emailAddress.id }
+            val listEmailMessages =
+                waitForMessages(
+                    messageCount * 2 - 1,
+                    inputWithoutFlag,
+                ) {
+                    it.emailAddressId == emailAddress.id || it.emailAddressId == recipientEmailAddress.id
+                }
         ) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items shouldHaveSize messageCount * 2 - 1
@@ -892,10 +1005,14 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
             includeDeletedMessages = true,
         )
         when (
-            val listEmailMessages = waitForMessages(messageCount * 2, inputWithFlag) { it.emailAddressId == emailAddress.id }
+            val listEmailMessages =
+                waitForMessages(
+                    messageCount * 2,
+                    inputWithFlag,
+                ) { it.emailAddressId == emailAddress.id || it.emailAddressId == recipientEmailAddress.id }
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items shouldHaveSize messageCount * 2
+                listEmailMessages.result.items.size shouldBe messageCount * 2
                 listEmailMessages.result.items.first { it.id == messageId }.state shouldBe State.DELETED
             }
 

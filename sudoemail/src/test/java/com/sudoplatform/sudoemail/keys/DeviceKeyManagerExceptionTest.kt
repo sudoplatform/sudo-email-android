@@ -183,12 +183,13 @@ class DeviceKeyManagerExceptionTest : BaseTests() {
     @Test
     fun encryptWithPublicKeyShouldThrowIfKeyManagerThrows() {
         mockKeyManager.stub {
-            on { encryptWithPublicKey(any<ByteArray>(), any<ByteArray>(), any()) } doThrow KeyManagerException("mock")
+            on { encryptWithPublicKey(any<ByteArray>(), any<ByteArray>(), any(), any()) } doThrow KeyManagerException("mock")
         }
         shouldThrow<DeviceKeyManager.DeviceKeyManagerException.EncryptionException> {
             serviceKeyManager.encryptWithPublicKey(
                 ByteArray(42),
                 ByteArray(42),
+                KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY,
                 KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
             )
         }

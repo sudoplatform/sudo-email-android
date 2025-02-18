@@ -11,4 +11,7 @@ package com.sudoplatform.sudoemail.util
  */
 internal object Constants {
     const val SERVICE_NAME: String = "emService"
+
+    /** Default algorithm used when creating/registering public keys. */
+    const val DEFAULT_PUBLIC_KEY_ALGORITHM = "RSAEncryptionOAEPAESCBC"
 }

@@ -18,6 +18,7 @@ import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailAttachment
+import com.sudoplatform.sudoemail.types.transformers.PublicKeyFormatTransformer
 import com.sudoplatform.sudokeymanager.KeyManagerInterface.PublicKeyEncryptionAlgorithm
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
@@ -73,9 +74,13 @@ internal class DefaultEmailCryptoService(
                 // Seal the symmetric key using the publicKey and RSA_ECB_OAEPSHA1 algorithm
                 val sealedKey =
                     SealedKey(publicInfo.keyId, symmetricKey, PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1)
+                val publicKeyFormat = PublicKeyFormatTransformer.toKeyManagerEntity(
+                    publicInfo.publicKeyDetails.keyFormat,
+                )
                 val encryptedSymmetricKey = deviceKeyManager.encryptWithPublicKey(
-                    Base64.decode(publicInfo.publicKey),
+                    Base64.decode(publicInfo.publicKeyDetails.publicKey),
                     sealedKey.symmetricKey,
+                    publicKeyFormat,
                     sealedKey.algorithm,
                 )
                 sealedKey.encryptedKey = encryptedSymmetricKey.toByteString()

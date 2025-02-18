@@ -95,10 +95,13 @@ data class EmailMessage(
     ) : Parcelable {
 
         override fun toString(): String {
-            return if (displayName?.isNotBlank() == true) {
-                "$displayName <$emailAddress>"
+            if (displayName?.isNotBlank() == true) {
+                val escapedDisplayName = displayName
+                    .replace(Regex("\\\\g"), "\\\\\\\\") // Escape backslashes
+                    .replace(Regex("\"g"), "\\\"") // Escape double quotes
+                return "\"$escapedDisplayName\" <$emailAddress>" // Wrap display name in double quotes and build email address
             } else {
-                emailAddress
+                return emailAddress
             }
         }
     }

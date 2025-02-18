@@ -98,7 +98,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun deleteEmailMessagesShouldReturnPartialResultWhenDeletingExistingAndNonExistingMessages() =
-        runTest {
+        runTest(timeout = kotlin.time.Duration.parse("2m")) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -119,7 +119,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             }
             sentEmailIds.size shouldBeGreaterThan 0
 
-            waitForMessages(messageCount * 2)
+            waitForMessages(messageCount * 2, timeout = Duration.TWO_MINUTES)
 
             val nonExistentIds = listOf("nonExistentId")
             val input = mutableListOf<String>()
@@ -156,14 +156,16 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun deleteEmailMessagesShouldAllowInputLimitEdgeCase() = runTest {
-        val input = Array(100) { it.toString() }.toList()
+        val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
+        val input = Array(deleteEmailMessagesLimit) { it.toString() }.toList()
         val result = emailClient.deleteEmailMessages(input)
         result.status shouldBe BatchOperationStatus.FAILURE
     }
 
     @Test
     fun deleteEmailMessagesShouldThrowWhenInputLimitExceeded() = runTest {
-        val input = Array(101) { it.toString() }.toList()
+        val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
+        val input = Array(deleteEmailMessagesLimit + 1) { it.toString() }.toList()
         shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
             emailClient.deleteEmailMessages(input)
         }

@@ -145,19 +145,37 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                             '__typename': 'EmailAddressPublicInfo',
                             'emailAddress': 'to@bear.com',
                             'keyId': 'keyId',
-                            'publicKey': 'publicKey'
+                            'publicKey': 'publicKey',
+                            'publicKeyDetails': {
+                                '__typename': 'EmailAddressPublicKey',
+                                'publicKey': 'publicKey',
+                                'keyFormat': 'RSA_PUBLIC_KEY',
+                                'algorithm': 'algorithm'
+                            }
                         },
                         {
                             '__typename': 'EmailAddressPublicInfo',
                             'emailAddress': 'cc@bear.com',
                             'keyId': 'keyId',
-                            'publicKey': 'publicKey'
+                            'publicKey': 'publicKey',
+                            'publicKeyDetails': {
+                                '__typename': 'EmailAddressPublicKey',
+                                'publicKey': 'publicKey',
+                                'keyFormat': 'RSA_PUBLIC_KEY',
+                                'algorithm': 'algorithm'
+                            }
                         },
                         {
                             '__typename': 'EmailAddressPublicInfo',
                             'emailAddress': 'bcc@bear.com',
                             'keyId': 'keyId',
-                            'publicKey': 'publicKey'
+                            'publicKey': 'publicKey',
+                            'publicKeyDetails': {
+                                '__typename': 'EmailAddressPublicKey',
+                                'publicKey': 'publicKey',
+                                'keyFormat': 'RSA_PUBLIC_KEY',
+                                'algorithm': 'algorithm'
+                            }
                         }],
                         'nextToken': null
                     }
@@ -981,23 +999,14 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
             verify(mockApiCategory).query<String>(
                 check {
-                    it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as LookupEmailAddressesPublicInfoRequest
-                    queryInput.emailAddresses shouldBe listOf("to@bear.com", "from@bear.com")
-                },
-                any(),
-                any(),
-            )
-            verify(mockApiCategory).query<String>(
-                check {
                     it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
                 },
                 any(),
                 any(),
@@ -1290,6 +1299,13 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
+            verify(mockApiCategory).query<String>(
+                check {
+                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
+                },
+                any(),
+                any(),
+            )
             verify(mockApiCategory).query<String>(
                 check {
                     it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
