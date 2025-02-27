@@ -217,15 +217,22 @@ enum BlockedAddressHashAlgorithm {
   SHA256
 }
 
+enum BlockedAddressAction {
+  DROP
+  SPAM
+}
+
 input BlockedEmailAddressInput {
   hashedBlockedValue: String!
   hashAlgorithm: BlockedAddressHashAlgorithm!
   sealedValue: SealedAttributeInput!
+  action: BlockedAddressAction
 }
 
 input BlockEmailAddressesInput {
   owner: ID!
   blockedAddresses: [BlockedEmailAddressInput!]!
+  emailAddressId: String
 }
 
 input UnblockEmailAddressesInput {
@@ -397,6 +404,8 @@ type BlockedEmailAddress {
   hashAlgorithm: BlockedAddressHashAlgorithm!
   # Sealed value of address to block
   sealedValue: SealedAttribute!
+  action: BlockedAddressAction
+  emailAddressId: String
 }
 
 enum BlockEmailAddressesBulkUpdateStatus {

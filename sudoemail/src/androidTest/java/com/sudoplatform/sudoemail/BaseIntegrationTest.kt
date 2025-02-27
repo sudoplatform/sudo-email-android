@@ -357,7 +357,12 @@ abstract class BaseIntegrationTest {
      *
      * This became necessary when the 'ooto@simulator.amazonses.com' address stopped reliably
      * sending responses causing tests to fail.
+     *
      */
+    @Deprecated(
+        message = "Use sendEmailMessage instead",
+        replaceWith = ReplaceWith("this.sendEmailMessage"),
+    )
     protected suspend fun sendAndReceiveMessagePairs(
         emailAddress: EmailAddress,
         messageDetailsList: List<MessageDetails>,

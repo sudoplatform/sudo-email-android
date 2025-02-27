@@ -42,6 +42,7 @@ import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
+import com.sudoplatform.sudoemail.graphql.type.BlockedAddressAction
 import com.sudoplatform.sudoemail.graphql.type.BlockedAddressHashAlgorithm
 import com.sudoplatform.sudoemail.graphql.type.BlockedEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.CustomEmailFolderUpdateValuesInput
@@ -71,6 +72,7 @@ import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.SubscriptionService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
+import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
 import com.sudoplatform.sudoemail.types.ConfigurationData
 import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.DeleteEmailMessagesResult
@@ -1889,7 +1891,11 @@ internal class DefaultSudoEmailClient(
         }
     }
 
-    override suspend fun blockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String> {
+    override suspend fun blockEmailAddresses(
+        addresses: List<String>,
+        action: BlockedEmailAddressAction?,
+        emailAddressId: String?,
+    ): BatchOperationResult<String, String> {
         if (addresses.isEmpty()) {
             throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
                 ADDRESS_BLOCKLIST_EMPTY_MSG,
@@ -1905,20 +1911,18 @@ internal class DefaultSudoEmailClient(
         val normalizedAddresses = HashSet<String>()
         val hashedBlockedValues = mutableListOf<String>()
         val sealedBlockedValues = mutableListOf<ByteArray>()
+        val prefix = emailAddressId ?: owner
         addresses.forEach { address ->
             val normalized = EmailAddressParser.normalize(address)
-            if (!normalizedAddresses.add(normalized)) {
-                throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
-                    ADDRESS_BLOCKLIST_DUPLICATE_MSG,
+            if (normalizedAddresses.add(normalized)) {
+                sealedBlockedValues.add(
+                    sealingService.sealString(
+                        symmetricKeyId,
+                        normalized.toByteArray(),
+                    ),
                 )
+                hashedBlockedValues.add(StringHasher.hashString("$prefix|$normalized"))
             }
-            sealedBlockedValues.add(
-                sealingService.sealString(
-                    symmetricKeyId,
-                    normalized.toByteArray(),
-                ),
-            )
-            hashedBlockedValues.add(StringHasher.hashString("$owner|$normalized"))
         }
 
         val blockedAddresses = List(normalizedAddresses.size) { index ->
@@ -1931,11 +1935,17 @@ internal class DefaultSudoEmailClient(
                     plainTextType = "string",
                     base64EncodedSealedData = (String(Base64.encode(sealedBlockedValues[index]))),
                 ),
+                action = Optional.presentIfNotNull(
+                    if (action == BlockedEmailAddressAction.SPAM) {
+                        BlockedAddressAction.SPAM
+                    } else { BlockedAddressAction.DROP },
+                ),
             )
         }
         val mutationInput = BlockEmailAddressesRequest(
             owner = owner,
             blockedAddresses = blockedAddresses,
+            emailAddressId = Optional.presentIfNotNull(emailAddressId),
         )
         val mutationResponse = graphQLClient.mutate<BlockEmailAddressesMutation, BlockEmailAddressesMutation.Data>(
             BlockEmailAddressesMutation.OPERATION_DOCUMENT,
@@ -2099,12 +2109,24 @@ internal class DefaultSudoEmailClient(
                         status = UnsealedBlockedAddressStatus.Failed(
                             SudoEmailClient.EmailBlocklistException.FailedException(DECODE_ERROR),
                         ),
+                        action = if (it.action == BlockedAddressAction.SPAM) {
+                            BlockedEmailAddressAction.SPAM
+                        } else {
+                            BlockedEmailAddressAction.DROP
+                        },
+                        emailAddressId = it.emailAddressId,
                     )
                 }
                 UnsealedBlockedAddress(
                     address = unsealedAddress,
                     hashedBlockedValue = hashedValue,
                     status = UnsealedBlockedAddressStatus.Completed,
+                    action = if (it.action == BlockedAddressAction.SPAM) {
+                        BlockedEmailAddressAction.SPAM
+                    } else {
+                        BlockedEmailAddressAction.DROP
+                    },
+                    emailAddressId = it.emailAddressId,
                 )
             } else {
                 UnsealedBlockedAddress(
@@ -2115,6 +2137,12 @@ internal class DefaultSudoEmailClient(
                             KEY_NOT_FOUND_ERROR,
                         ),
                     ),
+                    action = if (it.action == BlockedAddressAction.SPAM) {
+                        BlockedEmailAddressAction.SPAM
+                    } else {
+                        BlockedEmailAddressAction.DROP
+                    },
+                    emailAddressId = it.emailAddressId,
                 )
             }
         }

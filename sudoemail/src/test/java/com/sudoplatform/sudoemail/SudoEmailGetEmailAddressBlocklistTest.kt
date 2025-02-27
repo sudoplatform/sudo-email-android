@@ -17,6 +17,7 @@ import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -56,16 +57,20 @@ import com.sudoplatform.sudoemail.graphql.type.GetEmailAddressBlocklistInput as 
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     private val owner = "mockOwner"
+    private val mockEmailAddressId = "mockEmailAddressId"
     private val mockData = listOf(
         mapOf(
             "sealedData" to String(Base64.encode("dummySealedData1".toByteArray())),
             "unsealedData" to "dummyUnsealedData1".toByteArray(),
             "hashedValue" to "hashedValue1",
+            "action" to BlockedEmailAddressAction.DROP,
+            "emailAddressId" to mockEmailAddressId,
         ),
         mapOf(
             "sealedData" to String(Base64.encode("dummySealedData2".toByteArray())),
             "unsealedData" to "dummyUnsealedData2".toByteArray(),
             "hashedValue" to "hashedValue2",
+            "action" to BlockedEmailAddressAction.SPAM,
         ),
     )
 
@@ -84,7 +89,9 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                             'plainTextType': 'string',
                             'base64EncodedSealedData': '${mockData[0]["sealedData"] as String}'
                         },
-                        'hashedBlockedValue': '${mockData[0]["hashedValue"] as String}'
+                        'hashedBlockedValue': '${mockData[0]["hashedValue"] as String}',
+                        'action': '${mockData[0]["action"]}',
+                        'emailAddressId': '${mockData[0]["emailAddressId"]}'
                     },
                     {
                         '__typename': 'BlockedAddress',
@@ -95,7 +102,8 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                             'plainTextType': 'string',
                             'base64EncodedSealedData': '${mockData[1]["sealedData"] as String}'
                         },
-                        'hashedBlockedValue': '${mockData[1]["hashedValue"] as String}'
+                        'hashedBlockedValue': '${mockData[1]["hashedValue"] as String}',
+                        'action': '${mockData[1]["action"]}'
                     }]
                 }
             }
@@ -315,6 +323,8 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 unsealedBlockedAddress.hashedBlockedValue shouldBe mockData[index]["hashedValue"]
                 unsealedBlockedAddress.address shouldBe (mockData[index]["unsealedData"] as ByteArray).decodeToString()
                 unsealedBlockedAddress.status shouldBe UnsealedBlockedAddressStatus.Completed
+                unsealedBlockedAddress.action shouldBe mockData[index]["action"]
+                unsealedBlockedAddress.emailAddressId shouldBe mockData[index]["emailAddressId"]
             }
 
             verify(mockApiCategory).query<String>(
@@ -367,6 +377,7 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
 
             result[1].address shouldBe (mockData[1]["unsealedData"] as ByteArray).decodeToString()
             result[1].hashedBlockedValue shouldBe mockData[1]["hashedValue"]
+            result[1].action shouldBe mockData[1]["action"]
             result[1].status shouldBe UnsealedBlockedAddressStatus.Completed
 
             verify(mockApiCategory).query<String>(

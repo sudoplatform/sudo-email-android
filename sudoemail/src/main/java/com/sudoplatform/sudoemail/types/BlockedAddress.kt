@@ -15,6 +15,18 @@ enum class BlockedAddressHashAlgorithm {
 }
 
 /**
+ * Action to take on incoming messages from blocked addresses
+ *
+ */
+enum class BlockedEmailAddressAction {
+    /** Do nothing. Message will not appear in user's account */
+    DROP,
+
+    /** Message will be redirected to SPAM folder, if available */
+    SPAM,
+}
+
+/**
  * Representation of a blocked email address used in the Sudo Platform Email SDK
  *
  * @property createdAt [Date] When the address was blocked
@@ -23,6 +35,8 @@ enum class BlockedAddressHashAlgorithm {
  * @property owner [String] Identifier of the owner of the blocklist
  * @property owners [List<Owner>] List of identifiers of the user/accounts associated with this blocklist
  * @property sealedValue [String] The sealed value of the blocked address
+ * @property action [BlockedEmailAddressAction] The action to take on incoming messages from the blocked address
+ * @property emailAddressId [String] If present, the blocked address is only blocked for this email address.
  * @property updatedAt [Date] When the block was updated
  * @property
  */
@@ -34,6 +48,8 @@ data class BlockedAddress(
     val owner: String,
     val owners: List<Owner>,
     val sealedValue: String,
+    val action: BlockedEmailAddressAction,
+    val emailAddressId: String?,
     val updatedAt: Date,
 ) : Parcelable
 
@@ -54,9 +70,13 @@ sealed class UnsealedBlockedAddressStatus {
  * @property hashedBlockedValue [List<String>] The hashed value of the blocked address. This can be used to unblock the address in the event that unsealing fails
  * @property address [String] The plaintext address that has been blocked.
  * @property status [UnsealedBlockedAddressStatus] The status of the unsealing operation. If 'Failed' the plaintext address will be empty but the hashed value will still available
+ * @property action [BlockedEmailAddressAction] The action to take on incoming messages from the blocked address
+ * @property emailAddressId [String] If present, the blocked address is only blocked for this email address.
  */
 data class UnsealedBlockedAddress(
     val hashedBlockedValue: String,
     val address: String,
     val status: UnsealedBlockedAddressStatus,
+    val action: BlockedEmailAddressAction,
+    val emailAddressId: String?,
 )

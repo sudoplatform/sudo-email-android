@@ -166,6 +166,8 @@ fragment BlockedAddress on BlockedEmailAddress {
     sealedValue {
         ...SealedAttribute
     }
+    action
+    emailAddressId
 }
 
 fragment BlockAddressesResult on BlockEmailAddressesBulkUpdateResult {
@@ -186,5 +188,7 @@ fragment GetEmailAddressBlocklistResponse on GetEmailAddressBlocklistResponse {
       ...SealedAttribute
     }
     hashedBlockedValue
+    action
+    emailAddressId
   }
 }
