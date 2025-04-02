@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@ import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
 import com.sudoplatform.sudoemail.graphql.CreateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.DeleteCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
+import com.sudoplatform.sudoemail.graphql.DeleteMessagesByFolderIdMutation
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
@@ -47,6 +48,7 @@ import com.sudoplatform.sudoemail.graphql.type.BlockedAddressHashAlgorithm
 import com.sudoplatform.sudoemail.graphql.type.BlockedEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.CustomEmailFolderUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessagesInput
+import com.sudoplatform.sudoemail.graphql.type.DeleteMessagesByFolderIdInput
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailAddressInput
 import com.sudoplatform.sudoemail.graphql.type.EmailAddressMetadataUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
@@ -103,6 +105,7 @@ import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
@@ -1697,7 +1700,7 @@ internal class DefaultSudoEmailClient(
             rfc822Data,
             symmetricKeyId,
         )
-        s3TransientClient.upload(uploadData, s3Key, metadataObject)
+        s3EmailClient.upload(uploadData, s3Key, metadataObject)
         return draftId
     }
 
@@ -1717,7 +1720,7 @@ internal class DefaultSudoEmailClient(
         for (id in ids) {
             try {
                 val s3Key = this.constructS3KeyForDraftEmailMessage(emailAddressId, id)
-                s3TransientClient.delete(s3Key)
+                s3EmailClient.delete(s3Key)
                 successIds.add(id)
             } catch (e: Throwable) {
                 logger.error("unexpected error $e")
@@ -1782,17 +1785,36 @@ internal class DefaultSudoEmailClient(
 
         try {
             val s3Key = this.constructS3KeyForDraftEmailMessage(emailAddressId)
-            val objects = s3TransientClient.list(this.transientBucket, s3Key)
-            val draftMessageIds = objects.map {
-                it.key.substringAfterLast("/")
-            }
+            val result = mutableListOf<DraftEmailMessageWithContent>()
 
-            val result: MutableList<DraftEmailMessageWithContent> = mutableListOf()
-            draftMessageIds.map {
-                val getDraftInput = GetDraftEmailMessageInput(it, emailAddressId)
-                val draftEmailMessage = this.retrieveDraftEmailMessage(getDraftInput)
-                result.add(draftEmailMessage)
-            }
+            val objects = s3EmailClient.list(s3Key)
+            result.addAll(
+                objects.map {
+                    val id = it.key.substringAfterLast("/")
+                    val getDraftInput = GetDraftEmailMessageInput(id, emailAddressId)
+                    this.retrieveDraftEmailMessage(getDraftInput)
+                },
+            )
+
+            // Check the transient bucket for any drafts that might still be in there
+            val transientBucketObjects = s3TransientClient.list(s3Key)
+            val ids = transientBucketObjects.map { it.key.substringAfterLast("/") }
+            val migrationResults = migrateDraftsFromTransientBucket(ids, emailAddressId)
+            result.addAll(
+                migrationResults.map {
+                    val unsealedData = DraftEmailMessageTransformer.toDecodedAndDecryptedRfc822Data(
+                        this.sealingService,
+                        it.sealedRfc822Data,
+                        it.keyId,
+                    )
+                    DraftEmailMessageWithContent(
+                        id = it.draftMetadata.id,
+                        emailAddressId = it.draftMetadata.emailAddressId,
+                        updatedAt = it.draftMetadata.updatedAt,
+                        rfc822Data = unsealedData,
+                    )
+                },
+            )
             return result
         } catch (e: Throwable) {
             logger.error(e.message)
@@ -1807,7 +1829,7 @@ internal class DefaultSudoEmailClient(
         try {
             val s3Key = constructS3KeyForDraftEmailMessage(input.emailAddressId, input.id)
 
-            val metadata = s3TransientClient.getObjectMetadata(s3Key)
+            val metadata = s3EmailClient.getObjectMetadata(s3Key)
             keyId = metadata.userMetadata["keyId"]
                 ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
                     S3_KEY_ID_ERROR_MSG,
@@ -1818,7 +1840,7 @@ internal class DefaultSudoEmailClient(
                 )
             updatedAt = metadata.lastModified
 
-            val sealedRfc822Data = s3TransientClient.download(s3Key)
+            val sealedRfc822Data = s3EmailClient.download(s3Key)
             val unsealedRfc822Data = DraftEmailMessageTransformer.toDecodedAndDecryptedRfc822Data(
                 this.sealingService,
                 sealedRfc822Data,
@@ -1857,12 +1879,8 @@ internal class DefaultSudoEmailClient(
                 emailAddressIds.addAll(emailAddresses.map { it.id })
             } while (nextToken != null)
 
-            val result = emailAddressIds.flatMap { id ->
-                val s3Key = this.constructS3KeyForDraftEmailMessage(id)
-                val items = s3TransientClient.list(this.transientBucket, s3Key)
-                items.map {
-                    DraftEmailMessageMetadata(it.key.substringAfterLast("/"), id, it.lastModified)
-                }
+            val result = emailAddressIds.flatMap {
+                listDraftEmailMessageMetadataForEmailAddressId(it)
             }
             return result
         } catch (e: Throwable) {
@@ -1877,18 +1895,80 @@ internal class DefaultSudoEmailClient(
 
         try {
             val s3Key = this.constructS3KeyForDraftEmailMessage(emailAddressId)
-            val items = s3TransientClient.list(this.transientBucket, s3Key)
-            return items.map {
-                DraftEmailMessageMetadata(
-                    it.key.substringAfterLast("/"),
-                    emailAddressId,
-                    it.lastModified,
-                )
-            }
+            val result = mutableListOf<DraftEmailMessageMetadata>()
+            val objects = s3EmailClient.list(s3Key)
+            result.addAll(
+                objects.map {
+                    DraftEmailMessageMetadata(
+                        it.key.substringAfterLast("/"),
+                        emailAddressId,
+                        it.lastModified,
+                    )
+                },
+            )
+
+            // Check the transient bucket for any drafts that might still be in there
+            val transientBucketItems = s3TransientClient.list(s3Key)
+            // Let's move these items to the permanent bucket and remove them from the transient bucket
+            val ids = transientBucketItems.map { it.key.substringAfterLast("/") }
+            val migrationResults = migrateDraftsFromTransientBucket(ids, emailAddressId)
+            result.addAll(
+                migrationResults.map {
+                    it.draftMetadata
+                },
+            )
+            return result
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             throw interpretEmailMessageException(e)
         }
+    }
+
+    private data class DraftMigrationResult(
+        val draftMetadata: DraftEmailMessageMetadata,
+        val keyId: String,
+        val sealedRfc822Data: ByteArray,
+    )
+    private suspend fun migrateDraftsFromTransientBucket(
+        ids: List<String>,
+        emailAddressId: String,
+    ): List<DraftMigrationResult> {
+        val drafts = ids.map {
+            val s3Key = constructS3KeyForDraftEmailMessage(emailAddressId, it)
+
+            // Get the draft out of the transient bucket
+            val metadata = s3TransientClient.getObjectMetadata(s3Key)
+            val keyId = metadata.userMetadata["keyId"]
+                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                    S3_KEY_ID_ERROR_MSG,
+                )
+            metadata.userMetadata["algorithm"]
+                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                    S3_ALGORITHM_ERROR_MSG,
+                )
+            val updatedAt = metadata.lastModified
+
+            val sealedRfc822Data = s3TransientClient.download(s3Key)
+            val draft = DraftEmailMessageMetadata(
+                id = it,
+                emailAddressId = emailAddressId,
+                updatedAt = updatedAt,
+            )
+
+            // Save it to the permanent bucket
+            val metadataObject = mapOf(
+                "keyId" to keyId,
+                "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+            )
+            s3EmailClient.upload(sealedRfc822Data, s3Key, metadataObject)
+
+            // Delete it from the transient bucket
+            s3TransientClient.delete(s3Key)
+
+            DraftMigrationResult(draftMetadata = draft, keyId = keyId, sealedRfc822Data = sealedRfc822Data)
+        }
+
+        return drafts
     }
 
     override suspend fun blockEmailAddresses(
@@ -2148,6 +2228,28 @@ internal class DefaultSudoEmailClient(
         }
 
         return unsealedBlockedAddresses.toList()
+    }
+
+    override suspend fun deleteMessagesForFolderId(input: DeleteMessagesForFolderIdInput): String {
+        val mutationInput = DeleteMessagesByFolderIdInput(
+            folderId = input.emailFolderId,
+            emailAddressId = input.emailAddressId,
+            hardDelete = Optional.presentIfNotNull(input.hardDelete),
+        )
+
+        val mutationResponse = graphQLClient.mutate<
+            DeleteMessagesByFolderIdMutation,
+            DeleteMessagesByFolderIdMutation.Data,
+            >(
+            DeleteMessagesByFolderIdMutation.OPERATION_DOCUMENT,
+            mapOf("input" to mutationInput),
+        )
+
+        if (mutationResponse.hasErrors()) {
+            logger.error("errors = ${mutationResponse.errors}")
+            throw interpretEmailFolderError(mutationResponse.errors.first())
+        }
+        return mutationResponse.data.deleteMessagesByFolderId
     }
 
     @Throws(SudoEmailClient.EmailCryptographicKeysException::class)

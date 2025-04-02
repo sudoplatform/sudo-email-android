@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -173,6 +173,7 @@ class MailServiceInteroperabilityTest(private val externalAddress: String) : Bas
         if (argumentValue != null) {
             enabled = argumentValue.toBoolean()
         }
-        return enabled
+        // disable until a more reliable design is implemented, see PEMC-1441
+        return false
     }
 }

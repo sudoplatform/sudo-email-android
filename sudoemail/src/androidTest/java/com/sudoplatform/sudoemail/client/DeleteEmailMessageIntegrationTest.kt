@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,12 +59,12 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
         sendResult.id.isBlank() shouldBe false
         sendResult.createdAt shouldNotBe null
 
-        waitForMessages(2)
+        waitForMessages(1)
 
         val result = emailClient.deleteEmailMessage(sendResult.id)
         result shouldBe DeleteEmailMessageSuccessResult(sendResult.id)
 
-        waitForMessages(1)
+        waitForMessages(0)
     }
 
     @Test

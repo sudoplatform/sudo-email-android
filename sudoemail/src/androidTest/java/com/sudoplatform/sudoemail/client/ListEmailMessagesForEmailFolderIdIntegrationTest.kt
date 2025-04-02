@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@ package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
-import com.sudoplatform.sudoemail.MessageDetails
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
@@ -91,23 +90,20 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResult" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResult" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         when (
             val listEmailMessages = waitForMessagesByFolder(
@@ -121,7 +117,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 val inbound = listEmailMessages.result.items
                 inbound.size shouldBe messageCount
                 with(inbound[0]) {
-                    from.firstOrNull()?.emailAddress shouldBe fromSimulatorAddress
+                    from.firstOrNull()?.emailAddress shouldBe fromEmailAddress.emailAddress
                     to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
@@ -137,7 +133,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResultForInNetworkMessage() =
+    fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResultForOutOfNetworkMessage() =
         runTest {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
@@ -154,7 +150,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
+            val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
                 ?: fail("EmailFolder could not be found")
 
             val messageCount = 2
@@ -163,7 +159,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                     emailClient,
                     emailAddress,
                     toAddresses = listOf(
-                        EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                        EmailMessage.EmailAddress(successSimulatorAddress, "success"),
                     ),
                 )
                 result.id.isBlank() shouldBe false
@@ -173,14 +169,14 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 val listEmailMessages = waitForMessagesByFolder(
                     messageCount,
                     ListEmailMessagesForEmailFolderIdInput(
-                        inboxFolder.id,
+                        sentFolder.id,
                     ),
                 )
             ) {
                 is ListAPIResult.Success -> {
-                    val inbound = listEmailMessages.result.items
-                    inbound.size shouldBe messageCount
-                    with(inbound[0]) {
+                    val outbound = listEmailMessages.result.items
+                    outbound.size shouldBe messageCount
+                    with(outbound[0]) {
                         from shouldBe listOf(
                             EmailMessage.EmailAddress(
                                 emailAddress.emailAddress,
@@ -189,13 +185,13 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                         )
                         to shouldBe listOf(
                             EmailMessage.EmailAddress(
-                                emailAddress.emailAddress,
-                                emailAddress.alias,
+                                successSimulatorAddress,
+                                "success",
                             ),
                         )
                         hasAttachments shouldBe false
                         size shouldBeGreaterThan 0.0
-                        folderId shouldBe inboxFolder.id
+                        folderId shouldBe sentFolder.id
                         date.shouldBeInstanceOf<Date>()
                     }
                 }
@@ -230,23 +226,20 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             }
         }
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldRespectLimit" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailFolderIdShouldRespectLimit" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
@@ -308,23 +301,20 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldRespectSortDateRange" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailFolderIdShouldRespectSortDateRange" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
             folderId = inboxFolder.id,
@@ -386,23 +376,20 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldRespectUpdatedAtDateRange" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailFolderIdShouldRespectUpdatedAtDateRange" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
             folderId = inboxFolder.id,
@@ -724,23 +711,20 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
 
-        val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
+        val messageCount = 3
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListAscending" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListAscending" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
             folderId = inboxFolder.id,
@@ -803,23 +787,20 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
 
-        val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
+        val messageCount = 3
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListDescending" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListDescending" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
             folderId = inboxFolder.id,
@@ -951,35 +932,37 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
             ?: fail("EmailFolder could not be found")
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldReturnPartialResult" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldReturnPartialResult" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
+
+        val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
+            folderId = inboxFolder.id,
+            sortOrder = SortOrder.DESC,
         )
 
-        waitForMessages(messageCount * 2)
+        waitForMessagesByFolder(messageCount, listEmailMessagesInput)
 
         // Reset client to cause key not found errors
         emailClient.reset()
 
-        val listEmailMessagesInput = ListEmailMessagesForEmailFolderIdInput(
+        val listEmailMessagesForEmailFolderIdInput = ListEmailMessagesForEmailFolderIdInput(
             folderId = inboxFolder.id,
         )
         when (
             val listEmailMessages =
-                emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesInput)
+                emailClient.listEmailMessagesForEmailFolderId(listEmailMessagesForEmailFolderIdInput)
         ) {
             is ListAPIResult.Partial -> {
                 listEmailMessages.result.items.size shouldBe 0
@@ -1008,9 +991,6 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
 
-        val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
-            ?: fail("EmailFolder could not be found")
-
         val input = ListEmailAddressesInput()
         when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
             is ListAPIResult.Success -> {
@@ -1022,25 +1002,25 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
             }
         }
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
+        val sentFolder = getFolderByName(emailClient, fromEmailAddress.id, "SENT")
+            ?: fail("EmailFolder could not be found")
+
         var messageId = ""
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailFolderIdShouldReturnPartialResult" +
-                        " ${UUID.randomUUID()}",
-                ),
+            val sendEmailMessageResult = sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailFolderIdShouldRespectIncludeDeletedMessagesFlag" +
+                    " ${UUID.randomUUID()}",
             )
+            messageId = sendEmailMessageResult.id
         }
-        val sendMessageResults = sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
-        messageId = sendMessageResults[0].id
 
         when (
             val listEmailMessages = waitForMessagesByFolder(

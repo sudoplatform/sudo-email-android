@@ -37,7 +37,7 @@ $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/bucket/#/PointingT
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/delete/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/delete.html
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/download/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/download.html
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/getObjectMetadata/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/get-object-metadata.html
-$dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/list/#kotlin.String#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/list.html
+$dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/list/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/list.html
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/region/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/region.html
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/upload/#kotlin.ByteArray#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.String]?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/upload.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/index.html
@@ -45,7 +45,7 @@ $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/bucket/#/PointingToDeclar
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/delete/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/delete.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/download/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/download.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/getObjectMetadata/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/get-object-metadata.html
-$dokka.location:com.sudoplatform.sudoemail.s3/S3Client/list/#kotlin.String#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/list.html
+$dokka.location:com.sudoplatform.sudoemail.s3/S3Client/list/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/list.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/region/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/region.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/upload/#kotlin.ByteArray#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.String]?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/upload.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Exception.DeleteException///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html
@@ -100,6 +100,11 @@ $dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteDraftEmailMessages
 $dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteDraftEmailMessagesInput/DeleteDraftEmailMessagesInput/#kotlin.collections.List[kotlin.String]#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-draft-email-messages-input/-delete-draft-email-messages-input.html
 $dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteDraftEmailMessagesInput/emailAddressId/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-draft-email-messages-input/email-address-id.html
 $dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteDraftEmailMessagesInput/ids/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-draft-email-messages-input/ids.html
+$dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteMessagesForFolderIdInput///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-messages-for-folder-id-input/index.html
+$dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteMessagesForFolderIdInput/DeleteMessagesForFolderIdInput/#kotlin.String#kotlin.String#kotlin.Boolean?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-messages-for-folder-id-input/-delete-messages-for-folder-id-input.html
+$dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteMessagesForFolderIdInput/emailAddressId/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-messages-for-folder-id-input/email-address-id.html
+$dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteMessagesForFolderIdInput/emailFolderId/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-messages-for-folder-id-input/email-folder-id.html
+$dokka.location:com.sudoplatform.sudoemail.types.inputs/DeleteMessagesForFolderIdInput/hardDelete/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-delete-messages-for-folder-id-input/hard-delete.html
 $dokka.location:com.sudoplatform.sudoemail.types.inputs/GetDraftEmailMessageInput///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-get-draft-email-message-input/index.html
 $dokka.location:com.sudoplatform.sudoemail.types.inputs/GetDraftEmailMessageInput/GetDraftEmailMessageInput/#kotlin.String#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-get-draft-email-message-input/-get-draft-email-message-input.html
 $dokka.location:com.sudoplatform.sudoemail.types.inputs/GetDraftEmailMessageInput/emailAddressId/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.types.inputs/-get-draft-email-message-input/email-address-id.html
@@ -674,6 +679,7 @@ $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deleteCustomEmailFold
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deleteDraftEmailMessages/#com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/delete-draft-email-messages.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deleteEmailMessage/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/delete-email-message.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deleteEmailMessages/#kotlin.collections.List[kotlin.String]/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/delete-email-messages.html
+$dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deleteMessagesForFolderId/#com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/delete-messages-for-folder-id.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/deprovisionEmailAddress/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/deprovision-email-address.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/exportKeys/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/export-keys.html
 $dokka.location:com.sudoplatform.sudoemail/SudoEmailClient/getConfigurationData/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail/-sudo-email-client/get-configuration-data.html

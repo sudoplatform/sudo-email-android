@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,7 +71,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
 
         with(retrievedEmailMessage) {
             from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
+            to.firstOrNull()?.emailAddress shouldBe successSimulatorAddress
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
             date.shouldBeInstanceOf<Date>()
@@ -99,7 +99,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
             emailClient,
             emailAddress,
             toAddresses = listOf(
-                EmailMessage.EmailAddress(toSimulatorAddress, emailAddress.alias),
+                EmailMessage.EmailAddress(successSimulatorAddress, emailAddress.alias),
             ),
         )
         sendResult.id.isBlank() shouldBe false
@@ -113,7 +113,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
                 emailAddress.emailAddress,
                 emailAddress.alias,
             )
-            to shouldBe listOf(EmailMessage.EmailAddress(toSimulatorAddress, emailAddress.alias))
+            to shouldBe listOf(EmailMessage.EmailAddress(successSimulatorAddress, emailAddress.alias))
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
             date.shouldBeInstanceOf<Date>()

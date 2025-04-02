@@ -1,5 +1,5 @@
 /*
-* Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+* Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
 */
 
 package com.sudoplatform.sudoemail.keys

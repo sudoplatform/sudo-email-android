@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@ package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
-import com.sudoplatform.sudoemail.MessageDetails
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.Direction
@@ -88,28 +87,26 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             }
         }
 
-        val messageCount = 2
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         var emailId = ""
-        val messageDetails = mutableListOf<MessageDetails>()
+        val messageCount = 2
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "sendEmailShouldReturnEmailMessageId ${UUID.randomUUID()}",
-                ),
+            val sendEmailMessageResult = sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "sendEmailShouldReturnEmailMessageId" +
+                    " ${UUID.randomUUID()}",
             )
+            emailId = sendEmailMessageResult.id
         }
-        val sendMessageResults = sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
-        emailId = sendMessageResults[0].id
 
         when (
             val listEmailMessages = waitForMessagesByAddress(
-                count = messageCount * 2,
+                count = messageCount,
                 listInput = ListEmailMessagesForEmailAddressIdInput(emailAddressId = emailAddress.id),
             )
         ) {
@@ -120,7 +117,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 val inbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.INBOUND
                 }
-                outbound.size shouldBe messageCount
+                outbound.size shouldBe 0
                 inbound.size shouldBe messageCount
             }
 
@@ -132,11 +129,11 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
             ?: fail("Email message could not be found")
         with(retrievedEmailMessage) {
-            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
+            from.firstOrNull()?.emailAddress shouldBe fromEmailAddress.emailAddress
+            to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
-            encryptionStatus shouldBe EncryptionStatus.UNENCRYPTED
+            encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
         }
     }
 
@@ -181,28 +178,30 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             data = ByteArray(42),
         )
 
-        val messageCount = 2
-        var emailId = ""
-        val messageDetails = mutableListOf<MessageDetails>()
-        for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "sendEmailShouldReturnEmailMessageId ${UUID.randomUUID()}",
-                    attachments = listOf(attachment),
-                    inlineAttachments = listOf(inlineAttachment),
-                ),
-            )
-        }
-        val sendMessageResults = sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
-        emailId = sendMessageResults[0].id
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
 
-        when (val listEmailMessages = waitForMessages(messageCount * 2)) {
+        var emailId = ""
+        val messageCount = 2
+        for (i in 0 until messageCount) {
+            val sendEmailMessageResult = sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "sendEmailWithValidAttachmentShouldReturnEmailMessageIdAndCreatedAt" +
+                    " ${UUID.randomUUID()}",
+                inlineAttachments = listOf(inlineAttachment),
+            )
+            emailId = sendEmailMessageResult.id
+        }
+
+        when (
+            val listEmailMessages = waitForMessagesByAddress(
+                count = messageCount,
+                listInput = ListEmailMessagesForEmailAddressIdInput(emailAddressId = emailAddress.id),
+            )
+        ) {
             is ListAPIResult.Success -> {
                 val outbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.OUTBOUND
@@ -210,7 +209,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 val inbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.INBOUND
                 }
-                outbound.size shouldBe messageCount
+                outbound.size shouldBe 0
                 inbound.size shouldBe messageCount
             }
 
@@ -222,11 +221,11 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(emailId))
             ?: fail("Email message could not be found")
         with(retrievedEmailMessage) {
-            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
+            from.firstOrNull()?.emailAddress shouldBe fromEmailAddress.emailAddress
+            to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
             hasAttachments shouldBe true
             size shouldBeGreaterThan 0.0
-            encryptionStatus shouldBe EncryptionStatus.UNENCRYPTED
+            encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
         }
     }
 
@@ -289,21 +288,27 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 fail("Unexpected ListAPIResult")
             }
         }
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         var emailId = ""
-        val messageDetails = mutableListOf<MessageDetails>()
-        messageDetails.add(
-            MessageDetails(
-                fromAddress = emailAddress,
-                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress, displayName = "ooto, simulator")),
-                subject = "sendEmailShouldReturnEmailMessageId ${UUID.randomUUID()}",
-            ),
-        )
-        val sendMessageResults = sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
-        emailId = sendMessageResults[0].id
+        val messageCount = 2
+        for (i in 0 until messageCount) {
+            val sendEmailMessageResult = sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(
+                        emailAddress = emailAddress.emailAddress,
+                        displayName = "in, network",
+                    ),
+                ),
+                subject = "sendEmailWithRecipientWithDisplayNameContainingComma" +
+                    " ${UUID.randomUUID()}",
+            )
+            emailId = sendEmailMessageResult.id
+        }
         when (
             val listEmailMessages = waitForMessagesByAddress(
                 count = 2,
@@ -317,8 +322,8 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 val inbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.INBOUND
                 }
-                outbound.size shouldBe 1
-                inbound.size shouldBe 1
+                outbound.size shouldBe 0
+                inbound.size shouldBe messageCount
             }
 
             else -> {
@@ -329,11 +334,11 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             ?: fail("Email message could not be found")
 
         with(retrievedEmailMessage) {
-            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
-            to.firstOrNull()?.displayName shouldBe "ooto, simulator"
+            from.firstOrNull()?.emailAddress shouldBe fromEmailAddress.emailAddress
+            to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+            to.firstOrNull()?.displayName shouldBe "in, network"
             size shouldBeGreaterThan 0.0
-            encryptionStatus shouldBe EncryptionStatus.UNENCRYPTED
+            encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
         }
     }
 
@@ -371,30 +376,26 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             }
         }
 
-        val messageCount = 2
         var emailId = ""
-        val messageDetails = mutableListOf<MessageDetails>()
+        val messageCount = 2
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(
-                        EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
-                        EmailMessage.EmailAddress(toSimulatorAddress),
-                    ),
-                    ccAddresses = listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress)),
-                    subject = "sendEmailWithMixtureOfRecipientsShouldReturnUnencryptedStatus ${UUID.randomUUID()}",
+            val sendEmailMessageResult = sendEmailMessage(
+                client = emailClient,
+                fromAddress = emailAddress,
+                toAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress = receiverEmailAddress.emailAddress),
+                    EmailMessage.EmailAddress(successSimulatorAddress),
                 ),
+                ccAddresses = listOf(
+                    EmailMessage.EmailAddress(emailAddress = receiverEmailAddressTwo.emailAddress),
+                ),
+                subject = "sendEmailWithMixtureOfRecipientsShouldReturnUnencryptedStatus" +
+                    " ${UUID.randomUUID()}",
             )
+            emailId = sendEmailMessageResult.id
         }
-        val sendMessageResults = sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
-        emailId = sendMessageResults[0].id
 
-        when (val listEmailMessages = waitForMessages(messageCount * 4)) {
+        when (val listEmailMessages = waitForMessages(messageCount * 3)) {
             is ListAPIResult.Success -> {
                 listEmailMessages.result.items.isEmpty() shouldBe false
             }
@@ -410,7 +411,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
             to shouldBe listOf(
                 EmailMessage.EmailAddress(receiverEmailAddress.emailAddress),
-                EmailMessage.EmailAddress(toSimulatorAddress),
+                EmailMessage.EmailAddress(successSimulatorAddress),
             )
             cc shouldBe listOf(EmailMessage.EmailAddress(receiverEmailAddressTwo.emailAddress))
             hasAttachments shouldBe false

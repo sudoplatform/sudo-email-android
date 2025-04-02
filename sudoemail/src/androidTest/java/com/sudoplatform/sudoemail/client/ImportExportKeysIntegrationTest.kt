@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,7 +66,7 @@ class ImportExportKeysIntegrationTest : BaseIntegrationTest() {
 
         with(storedEmailMessage) {
             from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
+            to.firstOrNull()?.emailAddress shouldBe successSimulatorAddress
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,7 @@ import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
@@ -972,6 +973,16 @@ interface SudoEmailClient : AutoCloseable {
      * @return A list of the blocked addresses
      */
     suspend fun getEmailAddressBlocklist(): List<UnsealedBlockedAddress>
+
+    /**
+     * Delete all messages in an email folder.
+     * Deletion will be processed asynchronously since it may take a substantial amount of time.
+     * This method does not wait for deletion to complete. To check for completion, listen for subscriptions or check list endpoints.
+     *
+     * @param input [DeleteMessagesForFolderIdInput] Input values needed to delete messages for a folder
+     * @return [String] The id of the folder
+     */
+    suspend fun deleteMessagesForFolderId(input: DeleteMessagesForFolderIdInput): String
 
     /**
      * Import cryptographic keys from a key archive.

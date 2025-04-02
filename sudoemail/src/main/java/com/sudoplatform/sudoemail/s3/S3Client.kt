@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,12 +56,11 @@ interface S3Client {
     /**
      * Returns a list of objects from AWS S3
      *
-     * @param bucketName [String] The bucket to retrieve from.
      * @param prefix [String] The path in S3 to list objects from.
      * @return List of [S3ClientListOutput] objects that match the key.
      */
     @Throws(S3Exception::class)
-    suspend fun list(bucketName: String, prefix: String): List<S3ClientListOutput>
+    suspend fun list(prefix: String): List<S3ClientListOutput>
 
     /**
      * Returns the metadata associated with the object with the given key.

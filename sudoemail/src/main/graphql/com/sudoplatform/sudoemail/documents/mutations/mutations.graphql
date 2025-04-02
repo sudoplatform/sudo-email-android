@@ -75,3 +75,7 @@ mutation UpdateCustomEmailFolder($input: UpdateCustomEmailFolderInput!) {
     ...EmailFolder
   }
 }
+
+mutation DeleteMessagesByFolderId($input: DeleteMessagesByFolderIdInput!) {
+  deleteMessagesByFolderId(input: $input)
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
+import com.sudoplatform.sudoemail.s3.DefaultS3Client
+import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.transformers.DraftEmailMessageTransformer
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
+import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
+import com.sudoplatform.sudokeymanager.KeyManagerFactory
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -22,6 +29,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.UUID
 
 /**
  * Test the operation of [SudoEmailClient.listDraftEmailMessageMetadataForEmailAddressId].
@@ -183,5 +191,74 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
         val result = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
 
         result.size shouldBe 2
+    }
+
+    @Test
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldMigrateMessagesFromTransientBucket() = runTest {
+        val sudo = createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val config = SudoEmailClient.readConfiguration(context, logger)
+
+        val s3TransientClient = DefaultS3Client(
+            context,
+            userClient,
+            region = config.region,
+            bucket = config.transientBucket,
+            logger,
+        )
+
+        val draftIds = mutableListOf<String>()
+        for (i in 0 until 2) {
+            val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                from = emailAddress.emailAddress,
+                to = listOf(emailAddress.emailAddress),
+                subject = "Draft $i",
+            )
+            val serviceKeyManager = DefaultServiceKeyManager(
+                keyRingServiceName = "sudo-email",
+                userClient = userClient!!,
+                keyManager = KeyManagerFactory(context!!).createAndroidKeyManager(
+                    SudoEmailClient.DEFAULT_KEY_NAMESPACE,
+                    AndroidSQLiteStore.DEFAULT_DATABASE_NAME,
+                ),
+            )
+            val symmetricKeyId = serviceKeyManager.getCurrentSymmetricKeyId() ?: throw InternalError("Could not find symmetric key id")
+            val id = UUID.randomUUID().toString()
+            draftIds.add(id)
+            val s3Key = "email/${emailAddress.id}/draft/$id"
+            val metadataObject = mapOf(
+                "keyId" to symmetricKeyId,
+                "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+            )
+            val sealingService = DefaultSealingService(
+                deviceKeyManager = serviceKeyManager,
+                logger = logger,
+            )
+            val uploadData = DraftEmailMessageTransformer.toEncryptedAndEncodedRfc822Data(
+                sealingService,
+                rfc822Data,
+                symmetricKeyId,
+            )
+            s3TransientClient.upload(uploadData, s3Key, metadataObject)
+        }
+        draftIds.sort()
+        val result = emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
+
+        result.size shouldBe 2
+        result.sortedBy { it.id }.forEachIndexed { index, draftEmailMessageMetadata ->
+            draftEmailMessageMetadata.id shouldBe draftIds[index]
+            draftEmailMessageMetadata.emailAddressId shouldBe emailAddress.id
+        }
+
+        val transientBucketItems = s3TransientClient.list("email/${emailAddress.id}/draft")
+        transientBucketItems.size shouldBe 0
     }
 }

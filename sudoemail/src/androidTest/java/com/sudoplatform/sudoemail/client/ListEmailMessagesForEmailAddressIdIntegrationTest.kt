@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@ package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
-import com.sudoplatform.sudoemail.MessageDetails
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
@@ -93,27 +92,24 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             }
         }
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListResult" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListResult" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         when (
             val listEmailMessages = waitForMessages(
-                messageCount * 2,
+                messageCount,
                 ListEmailMessagesForEmailAddressIdInput(
                     emailAddress.id,
                 ),
@@ -126,17 +122,10 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
                 val inbound = listEmailMessages.result.items.filter {
                     it.direction == Direction.INBOUND
                 }
-                outbound.size shouldBe messageCount
-                with(outbound[0]) {
-                    from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-                    to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
-                    hasAttachments shouldBe false
-                    size shouldBeGreaterThan 0.0
-                    date.shouldBeInstanceOf<Date>()
-                }
+                outbound.size shouldBe 0
                 inbound.size shouldBe messageCount
                 with(inbound[0]) {
-                    from.firstOrNull()?.emailAddress shouldBe fromSimulatorAddress
+                    from.firstOrNull()?.emailAddress shouldBe fromEmailAddress.emailAddress
                     to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                     hasAttachments shouldBe false
                     size shouldBeGreaterThan 0.0
@@ -263,27 +252,24 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             }
         }
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldRespectLimit" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldRespectLimit" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         // First, wait for all the messages to be there
         waitForMessagesByAddress(
-            messageCount * 2,
+            messageCount,
             ListEmailMessagesForEmailAddressIdInput(
                 emailAddressId = emailAddress.id,
             ),
@@ -335,23 +321,20 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             }
         }
 
-        val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
+        val messageCount = 3
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldRespectSortDateRange" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldRespectSortDateRange" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -364,12 +347,12 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         )
         when (
             val listEmailMessages = waitForMessages(
-                messageCount * 2,
+                messageCount,
                 listEmailMessagesInput,
             )
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items.size shouldBe messageCount * 2
+                listEmailMessages.result.items.size shouldBe messageCount
                 listEmailMessages.result.nextToken shouldBe null
                 with(listEmailMessages.result) {
                     items.forEachIndexed { index, element ->
@@ -410,23 +393,20 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             }
         }
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldRespectUpdatedAtDateRange" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldRespectUpdatedAtDateRange" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -439,12 +419,12 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         )
         when (
             val listEmailMessages = waitForMessages(
-                messageCount * 2,
+                messageCount,
                 listEmailMessagesInput,
             )
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items.size shouldBe messageCount * 2
+                listEmailMessages.result.items.size shouldBe messageCount
                 listEmailMessages.result.nextToken shouldBe null
                 listEmailMessages.result.items.forEach {
                     it.emailAddressId shouldBe emailAddress.id
@@ -730,23 +710,20 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             }
         }
 
-        val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
+        val messageCount = 3
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListAscending" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListAscending" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -760,12 +737,12 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         )
         when (
             val listEmailMessages = waitForMessages(
-                messageCount * 2,
+                messageCount,
                 listEmailMessagesInput,
             )
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items.size shouldBe messageCount * 2
+                listEmailMessages.result.items.size shouldBe messageCount
                 listEmailMessages.result.nextToken shouldBe null
                 with(listEmailMessages.result) {
                     items.forEachIndexed { index, element ->
@@ -806,23 +783,20 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             }
         }
 
-        val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
+        val messageCount = 3
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListDescending" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldReturnEmailMessageListDescending" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
@@ -830,12 +804,12 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         )
         when (
             val listEmailMessages = waitForMessages(
-                messageCount * 2,
+                messageCount,
                 listEmailMessagesInput,
             )
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items.size shouldBe messageCount * 2
+                listEmailMessages.result.items.size shouldBe messageCount
                 listEmailMessages.result.nextToken shouldBe null
                 with(listEmailMessages.result) {
                     items.forEachIndexed { index, element ->
@@ -897,39 +871,37 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
             }
         }
 
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
         val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldReturnPartialResult" +
-                        " ${UUID.randomUUID()}",
-                ),
+            sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldReturnPartialResult" +
+                    " ${UUID.randomUUID()}",
             )
         }
-        sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
-
-        waitForMessages(messageCount * 2)
-
-        // Reset client to cause key not found errors
-        emailClient.reset()
 
         val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
             emailAddressId = emailAddress.id,
         )
+
+        waitForMessages(messageCount, listEmailMessagesInput)
+
+        // Reset client to cause key not found errors
+        emailClient.reset()
+
         when (
             val listEmailMessages =
                 emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
         ) {
             is ListAPIResult.Partial -> {
                 listEmailMessages.result.items.size shouldBe 0
-                listEmailMessages.result.failed.size shouldBe messageCount * 2
+                listEmailMessages.result.failed.size shouldBe messageCount
                 listEmailMessages.result.nextToken shouldBe null
                 listEmailMessages.result.failed[0].cause
                     .shouldBeInstanceOf<DeviceKeyManager.DeviceKeyManagerException.DecryptionException>()
@@ -966,34 +938,31 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         }
 
         var messageId = ""
-        val messageCount = 2
-        val messageDetails = mutableListOf<MessageDetails>()
+        val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        fromEmailAddress shouldNotBe null
+        emailAddressList.add(fromEmailAddress)
+
+        val messageCount = 3
         for (i in 0 until messageCount) {
-            messageDetails.add(
-                MessageDetails(
-                    fromAddress = emailAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
-                    subject = "listEmailMessagesForEmailAddressIdShouldReturnPartialResult" +
-                        " ${UUID.randomUUID()}",
-                ),
+            val sendResult = sendEmailMessage(
+                client = emailClient,
+                fromAddress = fromEmailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                subject = "listEmailMessagesForEmailAddressIdShouldRespectIncludeDeletedMessagesFlag" +
+                    " ${UUID.randomUUID()}",
             )
+            messageId = sendResult.id
         }
-        val sendResults = sendAndReceiveMessagePairs(
-            emailAddress = emailAddress,
-            messageDetailsList = messageDetails,
-            client = emailClient,
-        )
-        messageId = sendResults[0].id
         when (
             val listEmailMessages = waitForMessages(
-                messageCount * 2,
+                messageCount,
                 ListEmailMessagesForEmailAddressIdInput(
-                    emailAddress.id,
+                    fromEmailAddress.id,
                 ),
             )
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items shouldHaveSize messageCount * 2
+                listEmailMessages.result.items shouldHaveSize messageCount
             }
 
             else -> {
@@ -1006,13 +975,13 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         // Without flag
         val inputWithoutFlag = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
+            emailAddressId = fromEmailAddress.id,
         )
         when (
             val listEmailMessages = emailClient.listEmailMessagesForEmailAddressId(inputWithoutFlag)
         ) {
             is ListAPIResult.Success -> {
-                listEmailMessages.result.items shouldHaveSize (messageCount * 2) - 1
+                listEmailMessages.result.items shouldHaveSize messageCount - 1
             }
 
             else -> {
@@ -1022,7 +991,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
 
         // With flag
         val inputWithFlag = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
+            emailAddressId = fromEmailAddress.id,
             includeDeletedMessages = true,
         )
         when (
@@ -1030,7 +999,7 @@ class ListEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTest() 
         ) {
             is ListAPIResult.Success -> {
                 // Allowing for messages that were retried and deleted here
-                listEmailMessages.result.items.size shouldBeGreaterThanOrEqual messageCount * 2
+                listEmailMessages.result.items.size shouldBeGreaterThanOrEqual messageCount
                 listEmailMessages.result.items.first { it.id == messageId }.state shouldBe State.DELETED
             }
 

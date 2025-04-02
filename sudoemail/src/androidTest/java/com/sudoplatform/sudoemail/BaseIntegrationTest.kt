@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +39,6 @@ import com.sudoplatform.sudouser.SudoUserClient
 import com.sudoplatform.sudouser.TESTAuthenticationProvider
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.shouldBe
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.awaitility.Awaitility
@@ -52,7 +51,6 @@ import org.junit.BeforeClass
 import timber.log.Timber
 import java.util.UUID
 import java.util.logging.Logger
-import kotlin.test.fail
 
 data class MessageDetails(
     val fromAddress: EmailAddress,
@@ -308,7 +306,7 @@ abstract class BaseIntegrationTest {
         fromAddress: EmailAddress,
         toAddresses: List<EmailMessage.EmailAddress> = listOf(
             EmailMessage.EmailAddress(
-                toSimulatorAddress,
+                successSimulatorAddress,
             ),
         ),
         ccAddresses: List<EmailMessage.EmailAddress> = emptyList(),
@@ -349,123 +347,6 @@ abstract class BaseIntegrationTest {
 
     private val uuidRegex =
         Regex("[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
-
-    /**
-     * To be called with email message(s) to 'ooto@simulator.amazonses.com'. Will send
-     * the message and wait for the response. If it doesn't arrive after a period of time,
-     * it will delete the sent message, and send it again, up to `maxRetries` times.
-     *
-     * This became necessary when the 'ooto@simulator.amazonses.com' address stopped reliably
-     * sending responses causing tests to fail.
-     *
-     */
-    @Deprecated(
-        message = "Use sendEmailMessage instead",
-        replaceWith = ReplaceWith("this.sendEmailMessage"),
-    )
-    protected suspend fun sendAndReceiveMessagePairs(
-        emailAddress: EmailAddress,
-        messageDetailsList: List<MessageDetails>,
-        client: SudoEmailClient,
-        maxRetries: Int = 3,
-    ): List<SendEmailMessageResult> {
-        logger.info("Init")
-        val sendResults = mutableListOf<SendEmailMessageResult>()
-        val inboxFolder = this.getFolderByName(
-            client,
-            emailAddressId = emailAddress.id,
-            folderName = "INBOX",
-        )
-
-        if (inboxFolder === null) {
-            fail("Could not find inbox folder")
-        }
-
-        for (messageDetails in messageDetailsList) {
-            var retryAttemptsRemaining = maxRetries
-            var responseFound = false
-            await
-                .await("Sending message")
-                .atMost(Duration.FIVE_MINUTES)
-                .until {
-                    runBlocking {
-                        val uniqueSubject =
-                            if (messageDetails.subject?.contains(uuidRegex) == true) {
-                                messageDetails.subject
-                            } else {
-                                UUID.randomUUID().toString() + "|" + messageDetails.subject
-                            }
-                        logger.info("Sending: `$uniqueSubject`")
-                        val emailMessageHeader = InternetMessageFormatHeader(
-                            EmailMessage.EmailAddress(
-                                emailAddress.emailAddress,
-                                emailAddress.alias,
-                            ),
-                            messageDetails.toAddresses,
-                            messageDetails.ccAddresses,
-                            messageDetails.bccAddresses,
-                            messageDetails.replyToAddresses,
-                            uniqueSubject,
-                        )
-                        val body =
-                            if (messageDetails.body?.isNotEmpty() == true) messageDetails.body else "Test body"
-                        val sendEmailMessageInput = SendEmailMessageInput(
-                            emailAddress.id,
-                            emailMessageHeader,
-                            body,
-                            messageDetails.attachments,
-                            messageDetails.inlineAttachments,
-                            messageDetails.replyingMessageId,
-                            messageDetails.forwardingMessageId,
-                        )
-                        val sendResult = client.sendEmailMessage(sendEmailMessageInput)
-
-                        delay(1000)
-
-                        var readRetriesRemaining = 5
-                        await
-                            .await("Checking list")
-                            .atMost(Duration.TWO_MINUTES)
-                            .until {
-                                runBlocking {
-                                    responseFound = checkForMatchingMessage(
-                                        client,
-                                        inboxFolder.id,
-                                        uniqueSubject,
-                                    )
-                                    if (!responseFound) {
-                                        readRetriesRemaining--
-                                        delay(5000)
-                                    } else {
-                                        sendResults.add(sendResult)
-                                    }
-                                    logger.info("responseFound: $responseFound")
-
-                                    logger.info("returning: ${responseFound || readRetriesRemaining == 0}")
-                                    responseFound || readRetriesRemaining == 0
-                                }
-                            }
-
-                        if (!responseFound) {
-                            // If we are here, we didn't get the response so we'll try again
-                            logger.info(
-                                "Retrying message with subject: $uniqueSubject " +
-                                    "emailAddressId: ${emailAddress.id} " +
-                                    "messageId: ${sendResult.id}",
-                            )
-                            client.deleteEmailMessages(
-                                listOf(sendResult.id),
-                            )
-                            delay(2000)
-                            retryAttemptsRemaining--
-                        }
-                    }
-                    responseFound || retryAttemptsRemaining == 0
-                }
-            logger.debug("returning: $sendResults")
-        }
-        return sendResults
-    }
 
     private suspend fun checkForMatchingMessage(client: SudoEmailClient, folderId: String, subjectToFind: String): Boolean {
         var responseFound = false

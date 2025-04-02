@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,11 +109,11 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
         val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
         emailAddressToBlock shouldNotBe null
         emailAddressList.add(emailAddressToBlock)
-
+        val outOfNetworkAddressToBlock = "spammyMcSpamface${UUID.randomUUID()}@spambot.com"
         blockAddresses(
             listOf(
                 emailAddressToBlock.emailAddress,
-                "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
+                outOfNetworkAddressToBlock,
             ),
             action = BlockedEmailAddressAction.SPAM,
         )
@@ -121,16 +121,18 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
         val result = emailClient.getEmailAddressBlocklist()
 
         result.size shouldBe 2
-        result.first().address shouldBe emailAddressToBlock.emailAddress
-        result.first().status shouldBe UnsealedBlockedAddressStatus.Completed
-        result.first().hashedBlockedValue shouldNotBe null
-        result.first().action shouldBe BlockedEmailAddressAction.SPAM
-        result.first().emailAddressId shouldBe null
+        val blockedInNetworkEmailAddress = result.filter { it.address == emailAddressToBlock.emailAddress }
+        blockedInNetworkEmailAddress.size shouldBe 1
+        blockedInNetworkEmailAddress.first().address shouldBe emailAddressToBlock.emailAddress
+        blockedInNetworkEmailAddress.first().status shouldBe UnsealedBlockedAddressStatus.Completed
+        blockedInNetworkEmailAddress.first().hashedBlockedValue shouldNotBe null
+        blockedInNetworkEmailAddress.first().action shouldBe BlockedEmailAddressAction.SPAM
+        blockedInNetworkEmailAddress.first().emailAddressId shouldBe null
 
         emailClient.unblockEmailAddresses(
             listOf(
                 emailAddressToBlock.emailAddress,
-                "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
+                outOfNetworkAddressToBlock,
             ),
         )
     }

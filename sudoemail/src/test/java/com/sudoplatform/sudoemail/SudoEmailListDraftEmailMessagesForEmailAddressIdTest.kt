@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,10 +19,12 @@ import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import com.sudoplatform.sudouser.amplify.GraphQLClient
+import io.kotlintest.matchers.maps.shouldContain
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -183,8 +185,18 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
                 getObjectMetadata(any())
             } doReturn mockS3ObjectMetadata
             onBlocking {
-                list(any(), any())
+                list(any())
             } doReturn mockListObjectsResponse
+        }
+    }
+
+    private val mockS3TransientClient by before {
+        mock<S3Client>().stub {
+            onBlocking {
+                list(
+                    any(),
+                )
+            } doReturn emptyList()
         }
     }
 
@@ -220,7 +232,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             "identityBucket",
             "transientBucket",
             mockNotificationHandler,
-            mockS3Client,
+            mockS3TransientClient,
             mockS3Client,
         )
     }
@@ -278,9 +290,6 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             verify(mockS3Client, times(2)).download(anyString())
             verify(mockS3Client).list(
                 check {
-                    it shouldBe "transientBucket"
-                },
-                check {
                     it shouldContain emailAddressId
                 },
             )
@@ -337,7 +346,13 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
 
             mockS3Client.stub {
                 onBlocking {
-                    list(anyString(), anyString())
+                    list(anyString())
+                } doReturn emptyList()
+            }
+
+            mockS3TransientClient.stub {
+                onBlocking {
+                    list(anyString())
                 } doReturn emptyList()
             }
 
@@ -358,9 +373,6 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
                 any(),
             )
             verify(mockS3Client).list(
-                check {
-                    it shouldBe "transientBucket"
-                },
                 check {
                     it shouldContain emailAddressId
                 },
@@ -400,11 +412,107 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             verify(mockS3Client).download(anyString())
             verify(mockS3Client).list(
                 check {
-                    it shouldBe "transientBucket"
-                },
-                check {
                     it shouldContain emailAddressId
                 },
             )
         }
+
+    @Test
+    fun `listDraftEmailMessagesForEmailAddressId() should migrate any messages found in transient bucket`() = runTest {
+        val emailAddressId = "emailAddressId"
+
+        mockS3Client.stub {
+            onBlocking {
+                list(anyString())
+            } doReturn emptyList()
+            onBlocking {
+                upload(any<ByteArray>(), anyString(), any())
+            } doReturn mockListObjectsResponse[0].key
+        }
+
+        mockS3TransientClient.stub {
+            onBlocking {
+                list(
+                    any(),
+                )
+            } doReturn mockListObjectsResponse
+        }
+
+        val timestamp = Date()
+        val mockObjectMetadata = ObjectMetadata()
+        mockObjectMetadata.userMetadata = mapOf(
+            "keyId" to "mockKeyId",
+            "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+        )
+        mockObjectMetadata.lastModified = timestamp
+        mockS3TransientClient.stub {
+            onBlocking {
+                getObjectMetadata(anyString())
+            } doReturn mockObjectMetadata
+            onBlocking {
+                download(anyString())
+            } doReturn mockDownloadResponse
+            onBlocking {
+                delete(anyString())
+            } doReturn Unit
+        }
+
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+            client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+        }
+
+        deferredResult.start()
+        val result = deferredResult.await()
+
+        result.size shouldBe 2
+        result[0].id shouldBe "id1"
+        result[0].emailAddressId shouldBe emailAddressId
+        result[0].updatedAt.time shouldBe timestamp.time
+        result[0].rfc822Data shouldNotBe null
+        result[1].id shouldBe "id2"
+        result[1].emailAddressId shouldBe emailAddressId
+        result[1].updatedAt.time shouldBe timestamp.time
+        result[1].rfc822Data shouldNotBe null
+
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
+        verify(mockS3Client).list(
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockS3TransientClient, times(mockListObjectsResponse.size)).getObjectMetadata(
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockS3TransientClient, times(mockListObjectsResponse.size)).download(
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockS3Client, times(mockListObjectsResponse.size)).upload(
+            check {
+                it shouldBe mockDownloadResponse
+            },
+            check {
+                it shouldContain emailAddressId
+            },
+            check {
+                it shouldContain Pair("keyId", "mockKeyId")
+                it shouldContain Pair("algorithm", SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString())
+            },
+        )
+        verify(mockS3TransientClient, times(mockListObjectsResponse.size)).delete(
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockSealingService, times(2)).unsealString(anyString(), any())
+    }
 }

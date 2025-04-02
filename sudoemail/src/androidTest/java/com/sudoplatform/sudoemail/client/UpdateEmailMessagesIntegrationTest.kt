@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val sendResult = sendEmailMessage(emailClient, emailAddress)
         sendResult.id.isBlank() shouldBe false
 
-        waitForMessages(2)
+        waitForMessages(1)
 
         val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
             ?: fail("EmailFolder could not be found")
@@ -123,7 +123,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
         }
         sentEmailIds.size shouldBeGreaterThan 0
 
-        waitForMessages(messageCount * 2)
+        waitForMessages(messageCount)
 
         val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
             ?: fail("EmailFolder could not be found")
@@ -176,7 +176,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
             val sendResult = sendEmailMessage(emailClient, emailAddress)
             sendResult.id.isBlank() shouldBe false
 
-            waitForMessages(2)
+            waitForMessages(1)
 
             val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
                 ?: fail("EmailFolder could not be found")
@@ -230,7 +230,7 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
             }
             sentEmailIds.size shouldBeGreaterThan 0
 
-            waitForMessages(messageCount * 2)
+            waitForMessages(messageCount)
 
             val nonExistentIds = listOf("nonExistentId")
             val emailIdList = mutableListOf<String>()

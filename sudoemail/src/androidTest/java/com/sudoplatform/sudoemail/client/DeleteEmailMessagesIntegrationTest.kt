@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,10 +77,10 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         }
         sentEmailIds.size shouldBeGreaterThan 0
 
-        waitForMessages(messageCount * 2)
+        waitForMessages(messageCount)
 
         var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount * 2
+        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
 
         val result = emailClient.deleteEmailMessages(sentEmailIds.toList())
         result.status shouldBe BatchOperationStatus.SUCCESS
@@ -91,7 +91,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             .untilAsserted {
                 runBlocking {
                     updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-                    updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
+                    updatedEmailAddress!!.numberOfEmailMessages shouldBe 0
                 }
             }
     }
@@ -119,7 +119,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             }
             sentEmailIds.size shouldBeGreaterThan 0
 
-            waitForMessages(messageCount * 2, timeout = Duration.TWO_MINUTES)
+            waitForMessages(messageCount, timeout = Duration.TWO_MINUTES)
 
             val nonExistentIds = listOf("nonExistentId")
             val input = mutableListOf<String>()
@@ -138,7 +138,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 runBlocking {
                     emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
                 }
-            } has { this.numberOfEmailMessages == messageCount }
+            } has { this.numberOfEmailMessages == 0 }
         }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,10 +177,10 @@ class DefaultS3Client(
         }
     }
 
-    override suspend fun list(bucketName: String, prefix: String): List<S3ClientListOutput> {
+    override suspend fun list(prefix: String): List<S3ClientListOutput> {
         val request = ListObjectsV2Request()
         val s3Key = this.constructS3KeyWithCredentials(prefix)
-        request.bucketName = bucketName
+        request.bucketName = this.bucket
         request.prefix = s3Key
         val response = this.amazonS3Client.listObjectsV2(request)
 
