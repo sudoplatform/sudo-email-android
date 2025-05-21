@@ -79,3 +79,15 @@ mutation UpdateCustomEmailFolder($input: UpdateCustomEmailFolderInput!) {
 mutation DeleteMessagesByFolderId($input: DeleteMessagesByFolderIdInput!) {
   deleteMessagesByFolderId(input: $input)
 }
+
+mutation ScheduleSendDraftMessage($input: ScheduleSendDraftMessageInput!) {
+  scheduleSendDraftMessage(input: $input) {
+    ...ScheduledDraftMessage
+  }
+}
+
+mutation CancelScheduledDraftMessage(
+  $input: CancelScheduledDraftMessageInput!
+) {
+  cancelScheduledDraftMessage(input: $input)
+}

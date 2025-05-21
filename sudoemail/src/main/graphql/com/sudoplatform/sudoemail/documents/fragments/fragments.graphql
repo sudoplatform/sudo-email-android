@@ -192,3 +192,17 @@ fragment GetEmailAddressBlocklistResponse on GetEmailAddressBlocklistResponse {
     emailAddressId
   }
 }
+
+fragment ScheduledDraftMessage on ScheduledDraftMessage {
+  draftMessageKey
+  emailAddressId
+  sendAtEpochMs
+  state
+  createdAtEpochMs
+  updatedAtEpochMs
+  owner
+  owners {
+    id
+    issuer
+  }
+}

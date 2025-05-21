@@ -11,12 +11,9 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
-import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoprofiles.Sudo
-import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -97,7 +94,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteEmailMessagesShouldReturnPartialResultWhenDeletingExistingAndNonExistingMessages() =
+    fun deleteEmailMessagesShouldReturnSuccessResultWhenDeletingExistingAndNonExistingMessages() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
@@ -126,13 +123,8 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
             input.addAll(sentEmailIds)
             input.addAll(nonExistentIds)
 
-            val successValues = sentEmailIds.map { DeleteEmailMessageSuccessResult(it) }
-            val failureValues = nonExistentIds.map { EmailMessageOperationFailureResult(it, "Failed to delete email message") }
-
             val result = emailClient.deleteEmailMessages(input)
-            result.status shouldBe BatchOperationStatus.PARTIAL
-            result.successValues shouldContainExactlyInAnyOrder successValues
-            result.failureValues shouldContainExactlyInAnyOrder failureValues
+            result.status shouldBe BatchOperationStatus.SUCCESS
 
             await.atMost(Duration.TEN_SECONDS) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS untilCallTo {
                 runBlocking {
@@ -149,9 +141,9 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteEmailMessagesShouldReturnFailureWhenDeletingMultipleNonExistingMessages() = runTest {
+    fun deleteEmailMessagesShouldReturnSuccessWhenDeletingMultipleNonExistingMessages() = runTest {
         val result = emailClient.deleteEmailMessages(listOf("id1", "id2", "id3"))
-        result.status shouldBe BatchOperationStatus.FAILURE
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 
     @Test
@@ -159,7 +151,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
         val input = Array(deleteEmailMessagesLimit) { it.toString() }.toList()
         val result = emailClient.deleteEmailMessages(input)
-        result.status shouldBe BatchOperationStatus.FAILURE
+        result.status shouldBe BatchOperationStatus.SUCCESS
     }
 
     @Test

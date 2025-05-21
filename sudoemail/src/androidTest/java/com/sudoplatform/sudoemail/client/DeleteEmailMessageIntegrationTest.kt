@@ -69,7 +69,8 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun deleteEmailMessageShouldReturnNullForNonExistentMessage() = runTest {
-        val result = emailClient.deleteEmailMessage("nonExistentId")
-        result shouldBe null
+        val id = "nonExistentId"
+        val result = emailClient.deleteEmailMessage(id)
+        result shouldBe DeleteEmailMessageSuccessResult(id)
     }
 }

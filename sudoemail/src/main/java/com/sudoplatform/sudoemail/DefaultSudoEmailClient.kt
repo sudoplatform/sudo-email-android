@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import aws.smithy.kotlin.runtime.text.encoding.encodeBase64String
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.cognitoidentity.model.NotAuthorizedException
 import com.amazonaws.services.s3.model.AmazonS3Exception
@@ -15,6 +16,7 @@ import com.amazonaws.util.Base64
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.apollographql.apollo3.api.Optional
 import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
+import com.sudoplatform.sudoemail.graphql.CancelScheduledDraftMessageMutation
 import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
 import com.sudoplatform.sudoemail.graphql.CreateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.DeleteCustomEmailFolderMutation
@@ -33,8 +35,10 @@ import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
+import com.sudoplatform.sudoemail.graphql.ListScheduledDraftMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
+import com.sudoplatform.sudoemail.graphql.ScheduleSendDraftMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
@@ -56,6 +60,7 @@ import com.sudoplatform.sudoemail.graphql.type.EmailMessageUpdateValuesInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressPublicKeyInput
 import com.sudoplatform.sudoemail.graphql.type.Rfc822HeaderInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
+import com.sudoplatform.sudoemail.graphql.type.ScheduledDraftMessageFilterInput
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
@@ -95,11 +100,13 @@ import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
+import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
+import com.sudoplatform.sudoemail.types.inputs.CancelScheduledDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
@@ -117,8 +124,10 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressId
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
@@ -132,6 +141,8 @@ import com.sudoplatform.sudoemail.types.transformers.EmailConfigurationTransform
 import com.sudoplatform.sudoemail.types.transformers.EmailFolderTransformer
 import com.sudoplatform.sudoemail.types.transformers.EmailMessageDateRangeTransformer.toEmailMessageDateRangeInput
 import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
+import com.sudoplatform.sudoemail.types.transformers.ScheduledDraftMessageFilterTransformer
+import com.sudoplatform.sudoemail.types.transformers.ScheduledDraftMessageTransformer
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
 import com.sudoplatform.sudoemail.types.transformers.UpdateEmailMessagesResultTransformer
 import com.sudoplatform.sudoemail.types.transformers.toDate
@@ -158,6 +169,7 @@ import java.util.UUID
 import java.util.concurrent.CancellationException
 import java.util.zip.GZIPInputStream
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput as BlockEmailAddressesRequest
+import com.sudoplatform.sudoemail.graphql.type.CancelScheduledDraftMessageInput as CancelScheduledDraftMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput as CheckEmailAddressAvailabilityRequest
 import com.sudoplatform.sudoemail.graphql.type.CreateCustomEmailFolderInput as CreateCustomEmailFolderRequest
 import com.sudoplatform.sudoemail.graphql.type.DeleteCustomEmailFolderInput as DeleteCustomEmailFolderRequest
@@ -168,8 +180,10 @@ import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressId
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailAddressIdInput as ListEmailMessagesForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderIdInput as ListEmailMessagesForEmailFolderIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesInput as ListEmailMessagesRequest
+import com.sudoplatform.sudoemail.graphql.type.ListScheduledDraftMessagesForEmailAddressIdInput as ListScheduledDraftMessagesForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput as LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput as ProvisionEmailAddressRequest
+import com.sudoplatform.sudoemail.graphql.type.ScheduleSendDraftMessageInput as ScheduleSendDraftMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput as SendEmailMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.SendEncryptedEmailMessageInput as SendEncryptedEmailMessageRequest
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput as UnblockEmailAddressesRequest
@@ -262,6 +276,7 @@ internal class DefaultSudoEmailClient(
         private const val EMAIL_CRYPTO_ERROR_MSG =
             "Unable to perform cryptographic operation on email data"
         private const val SERVICE_QUOTA_EXCEEDED_ERROR_MSG = "Daily message quota limit exceeded"
+        private const val RECORD_NOT_FOUND_ERROR_MSG = "Record not found"
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         const val KEY_NOT_FOUND_ERROR = "Key not found"
@@ -281,6 +296,7 @@ internal class DefaultSudoEmailClient(
         private const val ERROR_MESSAGE_NOT_FOUND = "EmailMessageNotFound"
         private const val ERROR_INSUFFICIENT_ENTITLEMENTS = "InsufficientEntitlementsError"
         private const val ERROR_SERVICE_QUOTA_EXCEEDED = "ServiceQuotaExceededError"
+        private const val ERROR_RECORD_NOT_FOUND = "RecordNotFound"
     }
 
     /**
@@ -1924,6 +1940,147 @@ internal class DefaultSudoEmailClient(
         }
     }
 
+    override suspend fun scheduleSendDraftMessage(input: ScheduleSendDraftMessageInput): ScheduledDraftMessage {
+        throwIfEmailAddressNotFound(input.emailAddressId)
+
+        if (!input.sendAt.after(Date())) {
+            throw SudoEmailClient.EmailMessageException.InvalidArgumentException("sendAt must be in the future")
+        }
+        val keyId: String?
+        try {
+            val s3Key = constructS3KeyForDraftEmailMessage(input.emailAddressId, input.id)
+
+            val metadata = s3EmailClient.getObjectMetadata(s3Key)
+            keyId = metadata.userMetadata["keyId"]
+                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                    S3_KEY_ID_ERROR_MSG,
+                )
+            metadata.userMetadata["algorithm"]
+                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                    S3_ALGORITHM_ERROR_MSG,
+                )
+
+            val symmetricKeyData = serviceKeyManager.getSymmetricKeyData(keyId)
+
+            if (symmetricKeyData === null) {
+                throw KeyNotFoundException("Could not find symmetric key $keyId")
+            }
+
+            val mutationInput = ScheduleSendDraftMessageRequest(
+                draftMessageKey = "${sudoUserClient.getCredentialsProvider().identityId}/$s3Key",
+                emailAddressId = input.emailAddressId,
+                sendAtEpochMs = input.sendAt.time.toDouble(),
+                symmetricKey = symmetricKeyData.encodeBase64String(),
+            )
+            val mutationResponse = graphQLClient.mutate<ScheduleSendDraftMessageMutation, ScheduleSendDraftMessageMutation.Data>(
+                ScheduleSendDraftMessageMutation.OPERATION_DOCUMENT,
+                mapOf("input" to mutationInput),
+            )
+
+            if (mutationResponse.hasErrors()) {
+                logger.error("errors = ${mutationResponse.errors}")
+                throw interpretEmailMessageError(mutationResponse.errors.first())
+            }
+
+            val result = mutationResponse.data?.scheduleSendDraftMessage?.scheduledDraftMessage
+                ?: throw SudoEmailClient.EmailMessageException.FailedException()
+            return ScheduledDraftMessageTransformer.toEntity(result)
+        } catch (e: Throwable) {
+            when (e) {
+                is SudoEmailClient.EmailMessageException ->
+                    throw e
+                is KeyNotFoundException ->
+                    throw e
+                else -> {
+                    logger.error("unexpected error $e")
+                    throw interpretEmailMessageException(e)
+                }
+            }
+        }
+    }
+
+    override suspend fun cancelScheduledDraftMessage(input: CancelScheduledDraftMessageInput): String {
+        throwIfEmailAddressNotFound(input.emailAddressId)
+        try {
+            val s3Key = constructS3KeyForDraftEmailMessage(input.emailAddressId, input.id)
+            val mutationInput = CancelScheduledDraftMessageRequest(
+                draftMessageKey = "${sudoUserClient.getCredentialsProvider().identityId}/$s3Key",
+                emailAddressId = input.emailAddressId,
+            )
+            val mutationResponse = graphQLClient.mutate<CancelScheduledDraftMessageMutation, CancelScheduledDraftMessageMutation.Data>(
+                CancelScheduledDraftMessageMutation.OPERATION_DOCUMENT,
+                mapOf("input" to mutationInput),
+            )
+
+            if (mutationResponse.hasErrors()) {
+                logger.error("errors = ${mutationResponse.errors}")
+                throw interpretEmailMessageError(mutationResponse.errors.first())
+            }
+
+            val result = mutationResponse.data?.cancelScheduledDraftMessage ?: throw SudoEmailClient.EmailMessageException.FailedException()
+            return result.substringAfterLast('/')
+        } catch (e: Throwable) {
+            when (e) {
+                is SudoEmailClient.EmailMessageException ->
+                    throw e
+                is KeyNotFoundException ->
+                    throw e
+                else -> {
+                    logger.error("unexpected error $e")
+                    throw interpretEmailMessageException(e)
+                }
+            }
+        }
+    }
+
+    override suspend fun listScheduledDraftMessagesForEmailAddressId(
+        input: ListScheduledDraftMessagesForEmailAddressIdInput,
+    ): ListOutput<ScheduledDraftMessage> {
+        try {
+            val filter: Optional<ScheduledDraftMessageFilterInput> = if (input.filter != null) {
+                Optional.presentIfNotNull(ScheduledDraftMessageFilterTransformer.toGraphQl(input.filter))
+            } else {
+                Optional.absent()
+            }
+            val queryInput = ListScheduledDraftMessagesForEmailAddressIdRequest(
+                emailAddressId = input.emailAddressId,
+                limit = Optional.presentIfNotNull(input.limit),
+                nextToken = Optional.presentIfNotNull(input.nextToken),
+                filter = filter,
+            )
+
+            val queryResponse = graphQLClient.query<
+                ListScheduledDraftMessagesForEmailAddressIdQuery,
+                ListScheduledDraftMessagesForEmailAddressIdQuery.Data,
+                >(
+                ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT,
+                mapOf("input" to queryInput),
+            )
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors}")
+                throw interpretEmailMessageError(queryResponse.errors.first())
+            }
+
+            val queryResult = queryResponse.data.listScheduledDraftMessagesForEmailAddressId
+            return ListOutput(
+                items = queryResult.items.map { ScheduledDraftMessageTransformer.toEntity(it.scheduledDraftMessage) },
+                nextToken = queryResult.nextToken,
+            )
+        } catch (e: Throwable) {
+            when (e) {
+                is SudoEmailClient.EmailMessageException ->
+                    throw e
+                is KeyNotFoundException ->
+                    throw e
+                else -> {
+                    logger.error("unexpected error $e")
+                    throw interpretEmailMessageException(e)
+                }
+            }
+        }
+    }
+
     private data class DraftMigrationResult(
         val draftMetadata: DraftEmailMessageMetadata,
         val keyId: String,
@@ -2469,6 +2626,9 @@ internal class DefaultSudoEmailClient(
             return SudoEmailClient.EmailMessageException.LimitExceededException(
                 SERVICE_QUOTA_EXCEEDED_ERROR_MSG,
             )
+        }
+        if (error.contains(ERROR_RECORD_NOT_FOUND)) {
+            return SudoEmailClient.EmailMessageException.RecordNotFoundException(RECORD_NOT_FOUND_ERROR_MSG)
         }
         return SudoEmailClient.EmailMessageException.FailedException(e.toString())
     }

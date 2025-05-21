@@ -29,7 +29,6 @@ import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -67,53 +66,6 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     private val mockDraftId = UUID.randomUUID()
     private val input by before {
         GetDraftEmailMessageInput(mockDraftId.toString(), "emailAddressId")
-    }
-
-    private val emailAddressQueryResponse by before {
-        JSONObject(
-            """
-                {
-                    'getEmailAddress': {
-                        '__typename': 'EmailAddress',
-                        'id': 'emailAddressId',
-                        'owner': 'owner',
-                        'owners': [{
-                            '__typename': 'Owner',
-                            'id': 'ownerId',
-                            'issuer': 'issuer'
-                        }],
-                        'identityId': 'identityId',
-                        'keyRingId': 'keyRingId',
-                        'keyIds': [],
-                        'version': '1',
-                        'createdAtEpochMs': 1.0,
-                        'updatedAtEpochMs': 1.0,
-                        'lastReceivedAtEpochMs': 1.0,
-                        'emailAddress': 'example@sudoplatform.com',
-                        'size': 0.0,
-                        'numberOfEmailMessages': 0,
-                        'folders': [{
-                            '__typename': 'EmailFolder',
-                            'id': 'folderId',
-                            'owner': 'owner',
-                            'owners': [{
-                                '__typename': 'Owner',
-                                'id': 'ownerId',
-                                'issuer': 'issuer'
-                            }],
-                            'version': 1,
-                            'createdAtEpochMs': 1.0,
-                            'updatedAtEpochMs': 1.0,
-                            'emailAddressId': 'emailAddressId',
-                            'folderName': 'folderName',
-                            'size': 0.0,
-                            'unseenCount': 0.0,
-                            'ttl': 1.0
-                        }]
-                    }
-                }
-            """.trimIndent(),
-        )
     }
 
     private val context by before {

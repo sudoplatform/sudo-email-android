@@ -34,9 +34,11 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
+import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
+import com.sudoplatform.sudoemail.types.inputs.CancelScheduledDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
@@ -54,8 +56,10 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressId
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
@@ -415,6 +419,9 @@ interface SudoEmailClient : AutoCloseable {
             EmailMessageException(message = message, cause = cause)
 
         class InvalidArgumentException(message: String? = null, cause: Throwable? = null) :
+            EmailMessageException(message = message, cause = cause)
+
+        class RecordNotFoundException(message: String? = null, cause: Throwable? = null) :
             EmailMessageException(message = message, cause = cause)
 
         class UnknownException(cause: Throwable) :
@@ -933,6 +940,38 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailMessageException::class)
     suspend fun listDraftEmailMessageMetadataForEmailAddressId(emailAddressId: String): List<DraftEmailMessageMetadata>
+
+    /**
+     * Schedule a draft message to be sent at a specified time in the future.
+     *
+     * @param input [ScheduleSendDraftMessageInput] The parameters needed to schedule a draft message to be sent.
+     * @return Record of the ScheduledDraftMessage that has been created.
+     *
+     * @Throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun scheduleSendDraftMessage(input: ScheduleSendDraftMessageInput): ScheduledDraftMessage
+
+    /**
+     * Cancel a scheduled draft message. If the scheduled draft cannot be found, an error will be thrown.
+     *
+     * @param input [CancelScheduledDraftMessageInput] The parameters needed to cancel a scheduled draft message.
+     * @return The id of the scheduled draft message
+     *
+     * @Throws [EmailMessageException]
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun cancelScheduledDraftMessage(input: CancelScheduledDraftMessageInput): String
+
+    /**
+     * List scheduled draft messages associated with an email address.
+     * @param input [ListScheduledDraftMessagesForEmailAddressIdInput]  Parameters used to list scheduled draft messages for an email address
+     * @returns [ListOutput<ScheduledDraftMessage>]
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun listScheduledDraftMessagesForEmailAddressId(
+        input: ListScheduledDraftMessagesForEmailAddressIdInput,
+    ): ListOutput<ScheduledDraftMessage>
 
     /**
      * Blocks the given email address(es) for the user identified

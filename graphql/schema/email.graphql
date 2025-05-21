@@ -206,6 +206,27 @@ input S3EmailObjectInput {
   region: String!
 }
 
+input ScheduledDraftMessageStateFilterInput {
+  ne: ScheduledDraftMessageState
+  eq: ScheduledDraftMessageState
+  in: [ScheduledDraftMessageState]
+  notIn: [ScheduledDraftMessageState]
+}
+
+input ScheduledDraftMessageFilterInput {
+  state: ScheduledDraftMessageStateFilterInput
+  and: [ScheduledDraftMessageFilterInput]
+  or: [ScheduledDraftMessageFilterInput]
+  not: ScheduledDraftMessageFilterInput
+}
+
+input ListScheduledDraftMessagesForEmailAddressIdInput {
+  emailAddressId: ID!
+  limit: Int
+  nextToken: String
+  filter: ScheduledDraftMessageFilterInput
+}
+
 input SealedAttributeInput {
   algorithm: String!
   keyId: String!
@@ -268,6 +289,18 @@ input DeleteMessagesByFolderIdInput {
   folderId: ID!
   emailAddressId: ID!
   hardDelete: Boolean
+}
+
+input ScheduleSendDraftMessageInput {
+   draftMessageKey: String!
+   emailAddressId: ID!
+   sendAtEpochMs: Float!
+   symmetricKey: String!
+ }
+
+input CancelScheduledDraftMessageInput {
+  draftMessageKey: String!
+  emailAddressId: ID!
 }
 
 type EmailConfigurationData {
@@ -365,6 +398,27 @@ type SupportedDomains {
 type AvailableAddresses {
   addresses: [String!]!
 }
+enum ScheduledDraftMessageState {
+  # Scheduled to be sent.
+  SCHEDULED
+  # Has failed to be sent. May be retried if there are retries remaining.
+  FAILED
+  # Has successfully been sent.
+  SENT
+  # Has been cancelled.
+  CANCELLED
+}
+
+type ScheduledDraftMessage {
+  draftMessageKey: String!
+  emailAddressId: ID!
+  sendAtEpochMs: Float!
+  state: ScheduledDraftMessageState!
+  createdAtEpochMs: Float!
+  updatedAtEpochMs: Float!
+  owner: ID!
+  owners: [Owner!]!
+}
 
 type EmailAddressConnection {
   items: [EmailAddress!]!
@@ -378,6 +432,11 @@ type EmailFolderConnection {
 
 type EmailMessageConnection {
   items: [SealedEmailMessage!]!
+  nextToken: String
+}
+
+type ScheduledDraftMessageConnection {
+  items: [ScheduledDraftMessage!]!
   nextToken: String
 }
 
@@ -494,6 +553,10 @@ type Query {
   getEmailAddressBlocklist(
     input: GetEmailAddressBlocklistInput!
   ): GetEmailAddressBlocklistResponse!
+
+  listScheduledDraftMessagesForEmailAddressId(
+    input: ListScheduledDraftMessagesForEmailAddressIdInput!
+  ): ScheduledDraftMessageConnection!
 }
 
 type Mutation {
@@ -528,6 +591,12 @@ type Mutation {
   updateCustomEmailFolder(input: UpdateCustomEmailFolderInput!): EmailFolder!
 
   deleteMessagesByFolderId(input: DeleteMessagesByFolderIdInput!): ID!
+
+  scheduleSendDraftMessage(
+    input: ScheduleSendDraftMessageInput!
+  ): ScheduledDraftMessage!
+
+  cancelScheduledDraftMessage(input: CancelScheduledDraftMessageInput!): String!
 }
 
 type Subscription {

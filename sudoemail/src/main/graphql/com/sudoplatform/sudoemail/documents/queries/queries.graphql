@@ -134,3 +134,14 @@ query GetEmailAddressBlocklist($input: GetEmailAddressBlocklistInput!) {
     ...GetEmailAddressBlocklistResponse
   }
 }
+
+query ListScheduledDraftMessagesForEmailAddressId(
+  $input: ListScheduledDraftMessagesForEmailAddressIdInput!
+) {
+  listScheduledDraftMessagesForEmailAddressId(input: $input) {
+    items {
+      ...ScheduledDraftMessage
+    }
+    nextToken
+  }
+}

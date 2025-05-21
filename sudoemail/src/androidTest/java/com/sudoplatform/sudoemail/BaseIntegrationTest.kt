@@ -20,13 +20,16 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
+import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
 import com.sudoplatform.sudoentitlementsadmin.SudoEntitlementsAdminClient
 import com.sudoplatform.sudoentitlementsadmin.types.Entitlement
@@ -39,6 +42,7 @@ import com.sudoplatform.sudouser.SudoUserClient
 import com.sudoplatform.sudouser.TESTAuthenticationProvider
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.awaitility.Awaitility
@@ -49,6 +53,7 @@ import org.awaitility.kotlin.untilCallTo
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import timber.log.Timber
+import java.util.Date
 import java.util.UUID
 import java.util.logging.Logger
 
@@ -585,5 +590,31 @@ abstract class BaseIntegrationTest {
                 ),
             )
         }
+    }
+
+    protected suspend fun scheduleSendDraftMessage(
+        senderAddress: EmailAddress,
+        to: List<String>? = null,
+        sendAt: Date = Date(Date().time + java.time.Duration.ofDays(1).toMillis()),
+    ): String {
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+            from = senderAddress.emailAddress,
+            to = to ?: listOf(senderAddress.emailAddress),
+        )
+        val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, senderAddress.id)
+        val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
+
+        draftId shouldNotBe null
+
+        val input = ScheduleSendDraftMessageInput(
+            draftId,
+            senderAddress.id,
+            sendAt,
+        )
+
+        val response = emailClient.scheduleSendDraftMessage(input)
+        response shouldNotBe null
+        response.id shouldBe draftId
+        return draftId
     }
 }
