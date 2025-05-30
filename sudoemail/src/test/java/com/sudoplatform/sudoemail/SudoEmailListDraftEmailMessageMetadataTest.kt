@@ -496,7 +496,7 @@ class SudoEmailListDraftEmailMessageMetadataTest : BaseTests() {
                 it shouldContain emailAddressId
             },
             check {
-                it shouldContain Pair("keyId", "mockKeyId")
+                it shouldContain Pair("key-id", "mockKeyId")
                 it shouldContain Pair("algorithm", SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString())
             },
         )

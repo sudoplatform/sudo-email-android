@@ -156,6 +156,10 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         }
     }
 
+    private val timestamp by before {
+        Date()
+    }
+
     private val mockMetadata: ObjectMetadata = ObjectMetadata()
 
     private val mockS3Client by before {
@@ -214,8 +218,9 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     }
 
     private fun setObjectMetadata() {
-        mockMetadata.userMetadata["keyId"] = "dummyKeyId"
+        mockMetadata.userMetadata["key-id"] = "dummyKeyId"
         mockMetadata.userMetadata["algorithm"] = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString()
+        mockMetadata.lastModified = timestamp
     }
 
     @Test
@@ -321,7 +326,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw UnsealingException if no keyId in metadata`() = runTest {
+    fun `scheduleSendDraftMessage() should throw UnsealingException if no key-id in metadata`() = runTest {
         mockMetadata.userMetadata["algorithm"] = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString()
         mockS3Client.stub {
             onBlocking {
@@ -354,7 +359,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
 
     @Test
     fun `scheduleSendDraftMessage() should throw UnsealingException if no algorithm in metadata`() = runTest {
-        mockMetadata.userMetadata["keyId"] = "dummyKeyId"
+        mockMetadata.userMetadata["key-id"] = "dummyKeyId"
         mockS3Client.stub {
             onBlocking {
                 getObjectMetadata(

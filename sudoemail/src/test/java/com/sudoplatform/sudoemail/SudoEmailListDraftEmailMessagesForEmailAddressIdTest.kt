@@ -59,6 +59,11 @@ import java.util.Date
 class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
 
     private val mockUserMetadata = listOf(
+        "key-id" to "keyId",
+        "algorithm" to "algorithm",
+    ).toMap()
+
+    private val mockUserMetadataWithLegacyKeyId = listOf(
         "keyId" to "keyId",
         "algorithm" to "algorithm",
     ).toMap()
@@ -456,13 +461,76 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
                 it shouldContain emailAddressId
             },
             check {
-                it shouldContain Pair("keyId", "mockKeyId")
+                it shouldContain Pair("key-id", "mockKeyId")
                 it shouldContain Pair("algorithm", SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString())
             },
         )
         verify(mockS3TransientClient, times(mockListObjectsResponse.size)).delete(
             check {
                 it shouldContain emailAddressId
+            },
+        )
+        verify(mockSealingService, times(2)).unsealString(anyString(), any())
+    }
+
+    @Test
+    fun `listDraftEmailMessagesForEmailAddressId() should migrate messages with legacy key id metadata key`() = runTest {
+        val emailAddressId = "emailAddressId"
+        mockS3ObjectMetadata.userMetadata = mockUserMetadataWithLegacyKeyId
+        mockS3Client.stub {
+            onBlocking {
+                getObjectMetadata(anyString())
+            } doReturn mockS3ObjectMetadata
+            onBlocking {
+                updateObjectMetadata(anyString(), any())
+            } doReturn Unit
+        }
+
+        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
+            client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+        }
+
+        deferredResult.start()
+        val result = deferredResult.await()
+
+        result.size shouldBe 2
+        result[0].id shouldBe "id1"
+        result[0].emailAddressId shouldBe emailAddressId
+        result[0].updatedAt.time shouldBe timestamp.time
+        result[0].rfc822Data shouldNotBe null
+        result[1].id shouldBe "id2"
+        result[1].emailAddressId shouldBe emailAddressId
+        result[1].updatedAt.time shouldBe timestamp.time
+        result[1].rfc822Data shouldNotBe null
+
+        verify(mockApiCategory).query<String>(
+            check {
+                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
+            },
+            any(),
+            any(),
+        )
+        verify(mockS3Client).list(
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockS3Client, times(mockListObjectsResponse.size)).getObjectMetadata(
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockS3Client, times(mockListObjectsResponse.size)).download(
+            check {
+                it shouldContain emailAddressId
+            },
+        )
+        verify(mockS3Client, times(mockListObjectsResponse.size)).updateObjectMetadata(
+            check {
+                it shouldContain emailAddressId
+            },
+            check {
+                it["key-id"] shouldBe "keyId"
             },
         )
         verify(mockSealingService, times(2)).unsealString(anyString(), any())

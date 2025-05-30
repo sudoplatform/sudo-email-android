@@ -39,6 +39,7 @@ $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/download/#kotlin.S
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/getObjectMetadata/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/get-object-metadata.html
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/list/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/list.html
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/region/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/region.html
+$dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/updateObjectMetadata/#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/update-object-metadata.html
 $dokka.location:com.sudoplatform.sudoemail.s3/DefaultS3Client/upload/#kotlin.ByteArray#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.String]?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-default-s3-client/upload.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/index.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/bucket/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/bucket.html
@@ -47,6 +48,7 @@ $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/download/#kotlin.String/P
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/getObjectMetadata/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/get-object-metadata.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/list/#kotlin.String/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/list.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/region/#/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/region.html
+$dokka.location:com.sudoplatform.sudoemail.s3/S3Client/updateObjectMetadata/#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/update-object-metadata.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Client/upload/#kotlin.ByteArray#kotlin.String#kotlin.collections.Map[kotlin.String,kotlin.String]?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-client/upload.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Exception.DeleteException///PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/index.html
 $dokka.location:com.sudoplatform.sudoemail.s3/S3Exception.DeleteException/DeleteException/#kotlin.String?#kotlin.Throwable?/PointingToDeclaration/sudoemail/com.sudoplatform.sudoemail.s3/-s3-exception/-delete-exception/-delete-exception.html

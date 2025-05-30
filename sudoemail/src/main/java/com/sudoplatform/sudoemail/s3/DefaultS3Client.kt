@@ -194,6 +194,16 @@ class DefaultS3Client(
         return this.amazonS3Client.getObjectMetadata(this.bucket, s3Key)
     }
 
+    override suspend fun updateObjectMetadata(key: String, metadata: Map<String, String>) {
+        try {
+            val objectData = download(key)
+            upload(objectData, key, metadata)
+        } catch (e: Exception) {
+            this@DefaultS3Client.logger.error("Replacing object metadata failed: $key")
+            throw e
+        }
+    }
+
     private fun constructS3KeyWithCredentials(key: String): String {
         val credentialsPrefix = this.credentialsProvider.identityId
         return "$credentialsPrefix/$key"

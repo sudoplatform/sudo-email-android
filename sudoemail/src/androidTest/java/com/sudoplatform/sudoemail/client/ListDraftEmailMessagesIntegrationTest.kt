@@ -217,4 +217,84 @@ class ListDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
         val transientBucketItems = s3TransientClient.list("email/${emailAddress.id}/draft")
         transientBucketItems.size shouldBe 0
     }
+
+    @Test
+    fun listDraftEmailMessagesShouldMigrateMessagesWithLegacyKeyIdMetadataKey() = runTest {
+        val sudo = createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val config = SudoEmailClient.readConfiguration(context, logger)
+
+        val s3EmailClient = DefaultS3Client(
+            context,
+            userClient,
+            region = config.region,
+            bucket = config.emailBucket,
+            logger,
+        )
+
+        val serviceKeyManager = DefaultServiceKeyManager(
+            keyRingServiceName = "sudo-email",
+            userClient = userClient!!,
+            keyManager = KeyManagerFactory(context!!).createAndroidKeyManager(
+                SudoEmailClient.DEFAULT_KEY_NAMESPACE,
+                AndroidSQLiteStore.DEFAULT_DATABASE_NAME,
+            ),
+        )
+        val symmetricKeyId = serviceKeyManager.getCurrentSymmetricKeyId() ?: throw InternalError("Could not find symmetric key id")
+        val draftIds = mutableListOf<String>()
+        for (i in 0 until 2) {
+            val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                from = emailAddress.emailAddress,
+                to = listOf(emailAddress.emailAddress),
+                subject = "Draft $i",
+            )
+            val id = UUID.randomUUID().toString()
+            draftIds.add(id)
+            val s3Key = "email/${emailAddress.id}/draft/$id"
+            val metadataObject = mapOf(
+                // legacy key name
+                "keyId" to symmetricKeyId,
+                "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+            )
+            val sealingService = DefaultSealingService(
+                deviceKeyManager = serviceKeyManager,
+                logger = logger,
+            )
+            val uploadData = DraftEmailMessageTransformer.toEncryptedAndEncodedRfc822Data(
+                sealingService,
+                rfc822Data,
+                symmetricKeyId,
+            )
+            s3EmailClient.upload(uploadData, s3Key, metadataObject)
+        }
+        draftIds.sort()
+        val result = emailClient.listDraftEmailMessages()
+
+        result.size shouldBe 2
+        result.sortedBy { it.id }.forEachIndexed { index, draftEmailMessage ->
+            draftEmailMessage.id shouldBe draftIds[index]
+            draftEmailMessage.emailAddressId shouldBe emailAddress.id
+            val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
+            parsedMessage.to shouldContain emailAddress.emailAddress
+            parsedMessage.from shouldContain emailAddress.emailAddress
+            parsedMessage.subject shouldContain "Draft"
+        }
+
+        draftIds.forEach {
+            val metadata = s3EmailClient.getObjectMetadata("email/${emailAddress.id}/draft/$it")
+            // Legacy key name
+            logger.info(metadata.userMetadata.toString())
+            metadata.userMetadata["keyId"] shouldBe null
+            // Correct key name
+            metadata.userMetadata["key-id"] shouldBe symmetricKeyId
+        }
+    }
 }

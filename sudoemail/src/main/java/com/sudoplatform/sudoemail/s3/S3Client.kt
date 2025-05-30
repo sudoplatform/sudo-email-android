@@ -70,4 +70,13 @@ interface S3Client {
      */
     @Throws(S3Exception::class)
     suspend fun getObjectMetadata(key: String): ObjectMetadata
+
+    /**
+     * Updates the metadata associated with the object with the given key.
+     *
+     * @param key [String] The object's key.
+     * @param metadata [Map<String, String>] A map containing the new metadata.
+     */
+    @Throws(S3Exception::class)
+    suspend fun updateObjectMetadata(key: String, metadata: Map<String, String>)
 }

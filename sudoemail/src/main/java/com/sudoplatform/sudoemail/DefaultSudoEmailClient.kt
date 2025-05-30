@@ -12,6 +12,7 @@ import aws.smithy.kotlin.runtime.text.encoding.encodeBase64String
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.cognitoidentity.model.NotAuthorizedException
 import com.amazonaws.services.s3.model.AmazonS3Exception
+import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.util.Base64
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.apollographql.apollo3.api.Optional
@@ -241,6 +242,11 @@ internal class DefaultSudoEmailClient(
         private const val CRYPTO_CONTENT_ENCODING = "sudoplatform-crypto"
         private const val BINARY_DATA_CONTENT_ENCODING = "sudoplatform-binary-data"
         private const val COMPRESSION_CONTENT_ENCODING = "sudoplatform-compression"
+
+        /** Key names used for storing metadata with draft messages in S3 */
+        private const val DRAFT_METADATA_KEY_ID_NAME = "key-id"
+        private const val DRAFT_METADATA_LEGACY_KEY_ID_NAME = "keyId"
+        private const val DRAFT_METADATA_ALGORITHM_NAME = "algorithm"
 
         /** Exception messages */
         private const val UNSEAL_EMAIL_ADDRESS_ERROR_MSG = "Unable to unseal email address data"
@@ -1707,8 +1713,8 @@ internal class DefaultSudoEmailClient(
         val draftId = if (id !== null) id else UUID.randomUUID().toString()
         val s3Key = this.constructS3KeyForDraftEmailMessage(senderEmailAddressId, draftId)
         val metadataObject = mapOf(
-            "keyId" to symmetricKeyId,
-            "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+            DRAFT_METADATA_KEY_ID_NAME to symmetricKeyId,
+            DRAFT_METADATA_ALGORITHM_NAME to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
         )
 
         val uploadData = DraftEmailMessageTransformer.toEncryptedAndEncodedRfc822Data(
@@ -1840,21 +1846,10 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     private suspend fun retrieveDraftEmailMessage(input: GetDraftEmailMessageInput): DraftEmailMessageWithContent {
-        val keyId: String?
-        val updatedAt: Date
         try {
             val s3Key = constructS3KeyForDraftEmailMessage(input.emailAddressId, input.id)
 
-            val metadata = s3EmailClient.getObjectMetadata(s3Key)
-            keyId = metadata.userMetadata["keyId"]
-                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
-                    S3_KEY_ID_ERROR_MSG,
-                )
-            metadata.userMetadata["algorithm"]
-                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
-                    S3_ALGORITHM_ERROR_MSG,
-                )
-            updatedAt = metadata.lastModified
+            val (keyId, _, updatedAt) = getDraftMessageObjectMetadata(s3Key)
 
             val sealedRfc822Data = s3EmailClient.download(s3Key)
             val unsealedRfc822Data = DraftEmailMessageTransformer.toDecodedAndDecryptedRfc822Data(
@@ -1946,19 +1941,10 @@ internal class DefaultSudoEmailClient(
         if (!input.sendAt.after(Date())) {
             throw SudoEmailClient.EmailMessageException.InvalidArgumentException("sendAt must be in the future")
         }
-        val keyId: String?
         try {
             val s3Key = constructS3KeyForDraftEmailMessage(input.emailAddressId, input.id)
 
-            val metadata = s3EmailClient.getObjectMetadata(s3Key)
-            keyId = metadata.userMetadata["keyId"]
-                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
-                    S3_KEY_ID_ERROR_MSG,
-                )
-            metadata.userMetadata["algorithm"]
-                ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
-                    S3_ALGORITHM_ERROR_MSG,
-                )
+            val (keyId) = getDraftMessageObjectMetadata(s3Key)
 
             val symmetricKeyData = serviceKeyManager.getSymmetricKeyData(keyId)
 
@@ -2112,10 +2098,10 @@ internal class DefaultSudoEmailClient(
                 updatedAt = updatedAt,
             )
 
-            // Save it to the permanent bucket
+            // Save it to the permanent bucket, with the correct key name
             val metadataObject = mapOf(
-                "keyId" to keyId,
-                "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                DRAFT_METADATA_KEY_ID_NAME to keyId,
+                DRAFT_METADATA_ALGORITHM_NAME to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
             )
             s3EmailClient.upload(sealedRfc822Data, s3Key, metadataObject)
 
@@ -2126,6 +2112,44 @@ internal class DefaultSudoEmailClient(
         }
 
         return drafts
+    }
+
+    private data class DraftMessageObjectMetadata(
+        val keyId: String,
+        val algorithm: String,
+        val updatedAt: Date,
+    )
+    private suspend fun getDraftMessageObjectMetadata(s3Key: String): DraftMessageObjectMetadata {
+        val metadata = s3EmailClient.getObjectMetadata(s3Key)
+        var keyId: String? = metadata.userMetadata[DRAFT_METADATA_KEY_ID_NAME]
+        if (keyId === null) {
+            keyId = retrieveAndMigrateLegacyKeyId(s3Key, metadata)
+        }
+        val algorithm = metadata.userMetadata[DRAFT_METADATA_ALGORITHM_NAME]
+            ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                S3_ALGORITHM_ERROR_MSG,
+            )
+        val updatedAt = metadata.lastModified
+        return DraftMessageObjectMetadata(
+            keyId,
+            algorithm,
+            updatedAt,
+        )
+    }
+
+    private suspend fun retrieveAndMigrateLegacyKeyId(s3Key: String, metadata: ObjectMetadata): String {
+        val keyId = metadata.userMetadata[DRAFT_METADATA_LEGACY_KEY_ID_NAME]
+            ?: throw SudoEmailClient.EmailMessageException.UnsealingException(
+                S3_KEY_ID_ERROR_MSG,
+            )
+        s3EmailClient.updateObjectMetadata(
+            s3Key,
+            mapOf(
+                DRAFT_METADATA_KEY_ID_NAME to keyId,
+                DRAFT_METADATA_ALGORITHM_NAME to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+            ),
+        )
+        return keyId
     }
 
     override suspend fun blockEmailAddresses(
