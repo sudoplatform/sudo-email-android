@@ -7,11 +7,9 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -20,7 +18,6 @@ import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInpu
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -29,15 +26,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -67,19 +61,6 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         )
     }
 
-    private val queryResponse by before {
-        JSONObject(
-            """
-                {
-                    'checkEmailAddressAvailability': {
-                        '__typename': 'CheckEmailAddressAvailability',
-                        'addresses': $addresses
-                    }
-                }
-            """.trimIndent(),
-        )
-    }
-
     private val mockContext by before {
         mock<Context>()
     }
@@ -88,20 +69,14 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                checkEmailAddressAvailabilityQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                DataFactory.checkEmailAddressAvailabilityQueryResponse(addresses)
             }
         }
     }
@@ -142,7 +117,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -164,7 +139,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -184,42 +159,20 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         result.size shouldBe 2
         result shouldContainExactlyInAnyOrder addresses
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
             any(),
         )
     }
 
     @Test
     fun `checkEmailAddressAvailability() should return empty list output when query result data is empty`() = runTest {
-        val queryResponseWithEmptyList by before {
-            JSONObject(
-                """
-                {
-                    'checkEmailAddressAvailability': {
-                        '__typename': 'CheckEmailAddressAvailability',
-                        'addresses': []
-                    }
-                }
-                """.trimIndent(),
-            )
-        }
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                checkEmailAddressAvailabilityQuery(
                     any(),
                 )
-            }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponseWithEmptyList.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+            } doAnswer {
+                DataFactory.checkEmailAddressAvailabilityQueryResponse()
             }
         }
 
@@ -233,30 +186,20 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         result.isEmpty() shouldBe true
         result.size shouldBe 0
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
             any(),
         )
     }
 
     @Test
     fun `checkEmailAddressAvailability() should return empty list output when query response is null`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                checkEmailAddressAvailabilityQuery(
                     any(),
                 )
-            }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, null),
-                )
-                mock<GraphQLOperation<String>>()
+            } doAnswer {
+                GraphQLResponse(null, null)
             }
         }
 
@@ -270,11 +213,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         result.isEmpty() shouldBe true
         result.size shouldBe 0
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
             any(),
         )
     }
@@ -287,19 +226,13 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             emptyList(),
             mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
         )
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                checkEmailAddressAvailabilityQuery(
                     any(),
                 )
-            }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+            } doAnswer {
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -311,11 +244,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
             any(),
         )
     }
@@ -328,19 +257,13 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             null,
             mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
         )
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                checkEmailAddressAvailabilityQuery(
                     any(),
                 )
-            }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+            } doAnswer {
+                GraphQLResponse(null, listOf(testError))
             }
         }
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -351,22 +274,16 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
             any(),
         )
     }
 
     @Test
     fun `checkEmailAddressAvailability() should throw when unknown error occurs`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                checkEmailAddressAvailabilityQuery(
                     any(),
                 )
             } doThrow RuntimeException("Mock Runtime Exception")
@@ -380,22 +297,16 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
             any(),
         )
     }
 
     @Test
     fun `checkEmailAddressAvailability() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                checkEmailAddressAvailabilityQuery(
                     any(),
                 )
             } doThrow CancellationException("Mock Cancellation Exception")
@@ -405,11 +316,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             client.checkEmailAddressAvailability(input)
         }
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
             any(),
         )
     }

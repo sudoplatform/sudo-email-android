@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoapiclient.ApiClientManager
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
+import com.sudoplatform.sudoemail.api.ApiClient
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -65,12 +66,12 @@ class BuilderIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun shouldNotThrowIfAllItemsAreProvidedToBuilder() {
-        val graphQLClient = ApiClientManager.getClient(context, userClient)
+        val apiClient = ApiClient(ApiClientManager.getClient(context, userClient), logger)
 
         SudoEmailClient.builder()
             .setContext(context)
             .setSudoUserClient(userClient)
-            .setGraphQLClient(graphQLClient)
+            .setApiClient(apiClient)
             .setKeyManager(keyManager)
             .setLogger(logger)
             .build()

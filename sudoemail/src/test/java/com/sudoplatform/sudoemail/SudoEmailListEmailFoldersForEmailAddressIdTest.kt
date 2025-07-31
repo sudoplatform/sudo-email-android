@@ -7,12 +7,11 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
 import com.apollographql.apollo3.api.Optional
-import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -21,21 +20,18 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressId
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -48,7 +44,6 @@ import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
 import java.util.Date
 import java.util.concurrent.CancellationException
-import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput as ListEmailFoldersForEmailAddressIdRequest
 
 /**
  * Test the correct operation of [SudoEmailClient.listEmailFoldersForEmailAddressId]
@@ -64,75 +59,30 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     private val queryResponse by before {
-        JSONObject(
-            """
-                {
-                    'listEmailFoldersForEmailAddressId': {
-                        'items': [{
-                            '__typename': 'EmailFolder',
-                            'id': 'folderId',
-                            'owner': 'owner',
-                            'owners': [{
-                                '__typename': 'Owner',
-                                'id': 'ownerId',
-                                'issuer': 'issuer'
-                            }],
-                            'version': '1',
-                            'createdAtEpochMs': 1.0,
-                            'updatedAtEpochMs': 1.0,
-                            'emailAddressId': 'emailAddressId',
-                            'folderName': folderName,
-                            'size': 0.0,
-                            'unseenCount': 0.0,
-                            'ttl': 1.0
-                        }],
-                        'nextToken': null
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.listEmailFoldersForEmailAddressIdQueryResponse(
+            listOf(
+                EmailAddress.Folder(
+                    "__typename",
+                    DataFactory.getEmailFolder(),
+                ),
+            ),
         )
     }
 
     private val queryResponseWithNextToken by before {
-        JSONObject(
-            """
-                {
-                    'listEmailFoldersForEmailAddressId': {
-                        'items': [{
-                            '__typename': 'EmailFolder',
-                            'id': 'folderId',
-                            'owner': 'owner',
-                            'owners': [{
-                                '__typename': 'Owner',
-                                'id': 'ownerId',
-                                'issuer': 'issuer'
-                            }],
-                            'version': '1',
-                            'createdAtEpochMs': 1.0,
-                            'updatedAtEpochMs': 1.0,
-                            'emailAddressId': 'emailAddressId',
-                            'folderName': folderName,
-                            'size': 0.0,
-                            'unseenCount': 0.0,
-                            'ttl': 1.0
-                        }],
-                        'nextToken': 'dummyNextToken'
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.listEmailFoldersForEmailAddressIdQueryResponse(
+            listOf(
+                EmailAddress.Folder(
+                    "__typename",
+                    DataFactory.getEmailFolder(),
+                ),
+            ),
+            "dummyNextToken",
         )
     }
 
     private val queryResponseWithEmptyList by before {
-        JSONObject(
-            """
-                {
-                    'listEmailFoldersForEmailAddressId': {
-                        'items': []
-                    }
-                }
-            """.trimIndent(),
-        )
+        DataFactory.listEmailFoldersForEmailAddressIdQueryResponse(emptyList())
     }
 
     private val mockContext by before {
@@ -143,20 +93,14 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                listEmailFoldersForEmailAddressIdQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponse
             }
         }
     }
@@ -198,7 +142,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -220,7 +164,7 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -254,34 +198,24 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             updatedAt shouldBe Date(1L)
         }
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ListEmailFoldersForEmailAddressIdRequest
+        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+            check { input ->
                 input.emailAddressId shouldBe "emailAddressId"
                 input.limit shouldBe Optional.Present(10)
                 input.nextToken shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should return results when populating nextToken`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listEmailFoldersForEmailAddressIdQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponseWithNextToken.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponseWithNextToken
             }
         }
 
@@ -311,34 +245,24 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             updatedAt shouldBe Date(1L)
         }
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val queryInput = it.variables["input"] as ListEmailFoldersForEmailAddressIdRequest
-                queryInput.emailAddressId shouldBe "emailAddressId"
-                queryInput.limit shouldBe Optional.Present(1)
-                queryInput.nextToken shouldBe Optional.Present("dummyNextToken")
+        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+            check { input ->
+                input.emailAddressId shouldBe "emailAddressId"
+                input.limit shouldBe Optional.Present(1)
+                input.nextToken shouldBe Optional.Present("dummyNextToken")
             },
-            any(),
-            any(),
         )
     }
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should return empty list output when query result data is empty`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listEmailFoldersForEmailAddressIdQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponseWithEmptyList.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponseWithEmptyList
             }
         }
 
@@ -353,34 +277,24 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         result.items.size shouldBe 0
         result.nextToken shouldBe null
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val queryInput = it.variables["input"] as ListEmailFoldersForEmailAddressIdRequest
-                queryInput.emailAddressId shouldBe "emailAddressId"
-                queryInput.limit shouldBe Optional.Present(10)
-                queryInput.nextToken shouldBe Optional.absent()
+        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+            check { input ->
+                input.emailAddressId shouldBe "emailAddressId"
+                input.limit shouldBe Optional.Present(10)
+                input.nextToken shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should return empty list output when query response is null`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listEmailFoldersForEmailAddressIdQuery(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, null),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, null)
             }
         }
 
@@ -395,12 +309,12 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         result.items.size shouldBe 0
         result.nextToken shouldBe null
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT
+        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+            check { input ->
+                input.emailAddressId shouldBe "emailAddressId"
+                input.limit shouldBe Optional.Present(10)
+                input.nextToken shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
@@ -412,19 +326,13 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             null,
             mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
         )
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listEmailFoldersForEmailAddressIdQuery(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -436,26 +344,20 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ListEmailFoldersForEmailAddressIdRequest
+        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+            check { input ->
                 input.emailAddressId shouldBe "emailAddressId"
                 input.limit shouldBe Optional.present(10)
                 input.nextToken shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should throw when unknown error occurs`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listEmailFoldersForEmailAddressIdQuery(
                     any(),
                 )
             } doThrow
@@ -470,26 +372,20 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ListEmailFoldersForEmailAddressIdRequest
+        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+            check { input ->
                 input.emailAddressId shouldBe "emailAddressId"
                 input.limit shouldBe Optional.present(10)
                 input.nextToken shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
     @Test
     fun `listEmailFoldersForEmailAddressId() should not block coroutine cancellation exception`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listEmailFoldersForEmailAddressIdQuery(
                     any(),
                 )
             } doThrow
@@ -500,16 +396,12 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
             client.listEmailFoldersForEmailAddressId(input)
         }
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ListEmailFoldersForEmailAddressIdRequest
+        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+            check { input ->
                 input.emailAddressId shouldBe "emailAddressId"
                 input.limit shouldBe Optional.Present(10)
                 input.nextToken shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 }

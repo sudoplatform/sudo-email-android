@@ -7,12 +7,10 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
 import com.apollographql.apollo3.api.Optional
-import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -30,7 +28,6 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerException
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
@@ -39,13 +36,11 @@ import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -58,7 +53,6 @@ import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
 import java.util.Date
 import java.util.concurrent.CancellationException
-import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderIdInput as ListEmailMessagesForEmailFolderIdRequest
 import com.sudoplatform.sudoemail.graphql.type.SortOrder as SortOrderEntity
 
 /**
@@ -81,92 +75,29 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
     }
 
     private val queryResponse by before {
-        JSONObject(
-            """
-                {
-                    'listEmailMessagesForEmailFolderId': {
-                        'items': [{
-                            '__typename': 'SealedEmailMessage',
-                            'id': 'id',
-                            'owner': 'owner',
-                            'owners': [],
-                            'emailAddressId': 'emailAddressId',
-                            'version': 1,
-                            'createdAtEpochMs': 1.0,
-                            'updatedAtEpochMs': 1.0,
-                            'sortDateEpochMs': 1.0,
-                            'folderId': 'folderId',
-                            'previousFolderId': 'previousFolderId',
-                            'direction': 'INBOUND',
-                            'seen': false,
-                            'repliedTo': false,
-                            'forwarded': false,
-                            'state': 'DELIVERED',
-                            'clientRefId': 'clientRefId',
-                            'rfc822Header': {
-                                'algorithm': 'algorithm',
-                                'keyId': 'keyId',
-                                'plainTextType': 'plainText',
-                                'base64EncodedSealedData': '${mockSeal(unsealedHeaderDetailsString)}'
-                             },
-                            'size': 1.0,
-                            'encryptionStatus': 'UNENCRYPTED'
-                        }],
-                        'nextToken': null
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.listEmailMessagesForEmailFolderIdQueryResponse(
+            listOf(
+                DataFactory.getSealedEmailMessage(
+                    sealedData = mockSeal(DataFactory.unsealedHeaderDetailsString),
+                ),
+            ),
         )
     }
 
     private val queryResponseWithNextToken by before {
-        JSONObject(
-            """
-                {
-                    'listEmailMessagesForEmailFolderId': {
-                        'items': [{
-                            '__typename': 'SealedEmailMessage',
-                            'id': 'id',
-                            'owner': 'owner',
-                            'owners': [],
-                            'emailAddressId': 'emailAddressId',
-                            'version': 1,
-                            'createdAtEpochMs': 1.0,
-                            'updatedAtEpochMs': 1.0,
-                            'sortDateEpochMs': 1.0,
-                            'folderId': 'folderId',
-                            'previousFolderId': 'previousFolderId',
-                            'direction': 'INBOUND',
-                            'seen': false,
-                            'repliedTo': false,
-                            'forwarded': false,
-                            'state': 'DELIVERED',
-                            'clientRefId': 'clientRefId',
-                            'rfc822Header': {
-                                'algorithm': 'algorithm',
-                                'keyId': 'keyId',
-                                'plainTextType': 'plainText',
-                                'base64EncodedSealedData': '${mockSeal(unsealedHeaderDetailsString)}'
-                             },
-                            'size': 1.0,
-                            'encryptionStatus': 'UNENCRYPTED'
-                        }],
-                        'nextToken': 'dummyNextToken'
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.listEmailMessagesForEmailFolderIdQueryResponse(
+            listOf(
+                DataFactory.getSealedEmailMessage(
+                    sealedData = mockSeal(DataFactory.unsealedHeaderDetailsString),
+                ),
+            ),
+            "dummyNextToken",
         )
     }
 
     private val queryResponseWithEmptyList by before {
-        JSONObject(
-            """
-                {
-                    'listEmailMessagesForEmailFolderId': {
-                        'items': []
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.listEmailMessagesForEmailFolderIdQueryResponse(
+            emptyList(),
         )
     }
 
@@ -178,20 +109,14 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                listEmailMessagesForEmailFolderIdQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponse
             }
         }
     }
@@ -204,7 +129,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     any<ByteArray>(),
                     any<ByteArray>(),
                 )
-            } doReturn unsealedHeaderDetailsString.toByteArray()
+            } doReturn DataFactory.unsealedHeaderDetailsString.toByteArray()
         }
     }
 
@@ -239,7 +164,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -260,7 +185,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         verifyNoMoreInteractions(
             mockContext,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -293,7 +218,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -317,18 +242,14 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
                     input.folderId shouldBe "folderId"
                     input.limit shouldBe Optional.Present(1)
                     input.nextToken shouldBe Optional.absent()
                     input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
                     input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -339,7 +260,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                    unsealedHeaderDetailsWithDateString.toByteArray()
+                    DataFactory.unsealedHeaderDetailsWithDateString.toByteArray()
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -365,7 +286,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -389,18 +310,14 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
                     input.folderId shouldBe "folderId"
                     input.limit shouldBe Optional.Present(1)
                     input.nextToken shouldBe Optional.absent()
                     input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
                     input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -411,7 +328,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                    unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
+                    DataFactory.unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -437,7 +354,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -461,18 +378,14 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
                     input.folderId shouldBe "folderId"
                     input.limit shouldBe Optional.Present(1)
                     input.nextToken shouldBe Optional.absent()
                     input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
                     input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -483,7 +396,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                    unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
+                    DataFactory.unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -509,7 +422,8 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -533,18 +447,14 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
                     input.folderId shouldBe "folderId"
                     input.limit shouldBe Optional.Present(1)
                     input.nextToken shouldBe Optional.absent()
                     input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
                     input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -555,7 +465,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
         runTest {
             mockKeyManager.stub {
                 on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                    unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
+                    DataFactory.unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
             }
 
             val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -581,7 +491,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -604,18 +514,14 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
                     input.folderId shouldBe "folderId"
                     input.limit shouldBe Optional.Present(1)
                     input.nextToken shouldBe Optional.absent()
                     input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
                     input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -645,7 +551,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -664,23 +570,19 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
 
                 else -> {
-                    fail("Unexpected ListAPIResult")
+                    fail("Unexpected ListAPIResult: $listEmailMessages")
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -689,19 +591,13 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
     @Test
     fun `listEmailMessagesForEmailFolderId() should return success result when populating nextToken`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(
                         any(),
                     )
                 } doAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(queryResponseWithNextToken.toString(), null),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    queryResponseWithNextToken
                 }
             }
 
@@ -726,7 +622,8 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -749,19 +646,15 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.Present("dummyNextToken")
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.Present("dummyNextToken")
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
@@ -770,19 +663,13 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
     @Test
     fun `listEmailMessagesForEmailFolderId() should return success empty list result when query result data is empty`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(
                         any(),
                     )
                 } doAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(queryResponseWithEmptyList.toString(), null),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    queryResponseWithEmptyList
                 }
             }
             val input = ListEmailMessagesForEmailFolderIdInput(
@@ -808,38 +695,28 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
         }
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should return success empty list result when query result data is null`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(
                         any(),
                     )
                 } doAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(null, null),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    GraphQLResponse(null, null)
                 }
             }
 
@@ -866,19 +743,15 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
         }
 
@@ -913,7 +786,7 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.failed[0].partial) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         direction shouldBe Direction.INBOUND
@@ -929,19 +802,15 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         }
@@ -949,11 +818,9 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
     @Test
     fun `listEmailMessagesForEmailFolderId() should throw when unsealing fails`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(
                         any(),
                     )
                 } doThrow Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
@@ -970,19 +837,15 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
         }
 
@@ -995,19 +858,13 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 null,
                 mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
             )
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(
                         any(),
                     )
                 }.thenAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(null, listOf(testError)),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    GraphQLResponse(null, listOf(testError))
                 }
             }
 
@@ -1022,30 +879,24 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
         }
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should throw when unknown error occurs()`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(
                         any(),
                     )
                 } doThrow RuntimeException("Mock Runtime Exception")
@@ -1062,30 +913,24 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
         }
 
     @Test
     fun `listEmailMessagesForEmailFolderId() should not block coroutine cancellation exception`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(
                         any(),
                     )
                 } doThrow CancellationException("Mock Cancellation Exception")
@@ -1102,19 +947,15 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(10)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(false)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
                 },
-                any(),
-                any(),
             )
         }
 
@@ -1149,7 +990,8 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     with(listEmailMessages.result.items[0]) {
                         id shouldBe "id"
                         owner shouldBe "owner"
-                        owners shouldBe emptyList()
+
+                        owners.size shouldBe 1
                         emailAddressId shouldBe "emailAddressId"
                         clientRefId shouldBe "clientRefId"
                         from.shouldContainExactlyInAnyOrder(addresses)
@@ -1173,19 +1015,15 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                 }
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT
-                    val queryInput = it.variables["input"] as ListEmailMessagesForEmailFolderIdRequest
-                    queryInput.folderId shouldBe "folderId"
-                    queryInput.limit shouldBe Optional.Present(1)
-                    queryInput.nextToken shouldBe Optional.absent()
-                    queryInput.specifiedDateRange shouldBe Optional.absent()
-                    queryInput.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                    queryInput.includeDeletedMessages shouldBe Optional.Present(true)
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe "folderId"
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(true)
                 },
-                any(),
-                any(),
             )
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())

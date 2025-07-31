@@ -7,13 +7,12 @@
 package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
 import com.apollographql.apollo3.api.Optional
-import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
-import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.graphql.fragment.UpdateEmailMessagesResult
+import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -26,19 +25,16 @@ import com.sudoplatform.sudoemail.types.transformers.toDate
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doThrow
@@ -51,7 +47,6 @@ import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
 import java.util.UUID
 import java.util.concurrent.CancellationException
-import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as UpdateEmailMessagesRequest
 
 /**
  * Test the correct operation of [SudoEmailClient.updateEmailMessages]
@@ -68,76 +63,37 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     }
 
     private val mutationSuccessResponse by before {
-        JSONObject(
-            """
-                {
-                    'updateEmailMessagesV2': {
-                        '__typename': 'UpdateEmailMessagesResult',
-                        'status': 'SUCCESS',
-                        'failedMessages': null,
-                        'successMessages': null
-                    }
-                }
-            """.trimIndent(),
-        )
+        DataFactory.updateEmailMessagesMutationResponse()
     }
 
     private val mutationFailedResponse by before {
-        JSONObject(
-            """
-                {
-                    'updateEmailMessagesV2': {
-                        '__typename': 'UpdateEmailMessagesResult',
-                        'status': 'FAILED',
-                        'failedMessages': null,
-                        'successMessages': null
-                    }
-                }
-            """.trimIndent(),
-        )
+        DataFactory.updateEmailMessagesMutationResponse(UpdateEmailMessagesStatus.FAILED)
     }
 
     private val mutationPartialResponse by before {
-        JSONObject(
-            """
-                {
-                    'updateEmailMessagesV2': {
-                        '__typename': 'UpdateEmailMessagesResult',
-                        'status': 'PARTIAL',
-                        'failedMessages': [{
-                            '__typename': 'typename',
-                            'id': 'id2',
-                            'errorType': 'error'
-                        }],
-                        'successMessages': [{
-                            '__typename': 'typename',
-                            'id': 'id1',
-                            'createdAtEpochMs': 1.0,
-                            'updatedAtEpochMs': 2.0
-                        }]
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.updateEmailMessagesMutationResponse(
+            UpdateEmailMessagesStatus.PARTIAL,
+            failedMessages = listOf(
+                UpdateEmailMessagesResult.FailedMessage(
+                    "id2",
+                    "error",
+                ),
+            ),
+            successMessages = listOf(
+                UpdateEmailMessagesResult.SuccessMessage(
+                    "id1",
+                    1.0,
+                    2.0,
+                ),
+            ),
         )
     }
 
     private val mockUpdateEmailMessagesLimit = 10
 
     private val getEmailConfigQueryResponse by before {
-        JSONObject(
-            """
-                {
-                    'getEmailConfig': {
-                        '__typename': 'EmailConfigurationData',
-                        'deleteEmailMessagesLimit': 10,
-                        'updateEmailMessagesLimit': $mockUpdateEmailMessagesLimit,
-                        'emailMessageMaxInboundMessageSize': 200,
-                        'emailMessageMaxOutboundMessageSize': 100,
-                        'emailMessageRecipientsLimit': 5,
-                        'encryptedEmailMessageRecipientsLimit': 10
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.getEmailConfigQueryResponse(
+            updateEmailMessagesLimit = mockUpdateEmailMessagesLimit,
         )
     }
 
@@ -149,33 +105,19 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                updateEmailMessagesMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationSuccessResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                mutationSuccessResponse
             }
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+            onBlocking {
+                getEmailConfigQuery()
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(getEmailConfigQueryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                getEmailConfigQueryResponse
             }
         }
     }
@@ -215,7 +157,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -236,7 +178,7 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
         verifyNoMoreInteractions(
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -255,42 +197,26 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.SUCCESS
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                    val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
                 },
-                any(),
-                any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
 
     @Test
     fun `updateEmailMessages() should return failure result when no error present`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    mutate<String>(
-                        argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMessagesMutation(
                         any(),
                     )
                 } doAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(mutationFailedResponse.toString(), null),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    mutationFailedResponse
                 }
             }
 
@@ -303,42 +229,26 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.FAILURE
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                    val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
                 },
-                any(),
-                any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
 
     @Test
     fun `updateEmailMessages() should return partial result when no error present`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    mutate<String>(
-                        argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMessagesMutation(
                         any(),
                     )
                 }.thenAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(mutationPartialResponse.toString(), null),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    mutationPartialResponse
                 }
             }
 
@@ -364,24 +274,14 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 ),
             )
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                    val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
                 },
-                any(),
-                any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
 
     @Test
@@ -403,18 +303,8 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
-            verify(mockApiCategory, times(0)).mutate<String>(
-                check {
-                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                },
-                any(),
+            verify(mockApiClient).getEmailConfigQuery()
+            verify(mockApiClient, times(0)).updateEmailMessagesMutation(
                 any(),
             )
         }
@@ -422,19 +312,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     @Test
     fun `updateEmailMessages() should throw when email mutation response is null`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    mutate<String>(
-                        argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMessagesMutation(
                         any(),
                     )
                 }.thenAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(null, null),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    GraphQLResponse(null, null)
                 }
             }
 
@@ -446,24 +330,14 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                    val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
                 },
-                any(),
-                any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
 
     @Test
@@ -475,19 +349,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 null,
                 mapOf("httpStatus" to "blah"),
             )
-            mockApiCategory.stub {
-                on {
-                    mutate<String>(
-                        argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMessagesMutation(
                         any(),
                     )
                 }.thenAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(null, listOf(testError)),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    GraphQLResponse(null, listOf(testError))
                 }
             }
 
@@ -499,24 +367,14 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                    val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
                 },
-                any(),
-                any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
 
     @Test
@@ -527,19 +385,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             null,
             mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
         )
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                updateEmailMessagesMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -550,33 +402,21 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+        verify(mockApiClient).updateEmailMessagesMutation(
+            check { mutationInput ->
                 mutationInput.messageIds shouldBe listOf("id1", "id2")
                 mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                 mutationInput.values.seen shouldBe Optional.Present(true)
             },
-            any(),
-            any(),
         )
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getEmailConfigQuery()
     }
 
     @Test
     fun `updateEmailMessages() should throw when unknown error occurs()`() = runTest {
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                updateEmailMessagesMutation(
                     any(),
                 )
             } doThrow RuntimeException("Mock Runtime Exception")
@@ -590,34 +430,22 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+        verify(mockApiClient).updateEmailMessagesMutation(
+            check { mutationInput ->
                 mutationInput.messageIds shouldBe listOf("id1", "id2")
                 mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                 mutationInput.values.seen shouldBe Optional.Present(true)
             },
-            any(),
-            any(),
         )
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getEmailConfigQuery()
     }
 
     @Test
     fun `updateEmailMessage() should not block coroutine cancellation exception`() =
         runTest {
-            mockApiCategory.stub {
-                on {
-                    mutate<String>(
-                        argThat { this.query.equals(UpdateEmailMessagesMutation.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMessagesMutation(
                         any(),
                     )
                 } doThrow CancellationException("Mock Cancellation Exception")
@@ -631,23 +459,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe UpdateEmailMessagesMutation.OPERATION_DOCUMENT
-                    val mutationInput = it.variables["input"] as UpdateEmailMessagesRequest
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
                     mutationInput.messageIds shouldBe listOf("id1", "id2")
                     mutationInput.values.folderId shouldBe Optional.Present("folderId2")
                     mutationInput.values.seen shouldBe Optional.Present(true)
                 },
-                any(),
-                any(),
             )
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-                },
-                any(),
-                any(),
-            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
 }

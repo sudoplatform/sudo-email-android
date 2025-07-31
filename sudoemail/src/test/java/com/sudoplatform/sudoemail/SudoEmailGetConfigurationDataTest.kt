@@ -7,11 +7,9 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -19,7 +17,6 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -27,15 +24,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -54,21 +48,7 @@ import java.util.concurrent.CancellationException
 class SudoEmailGetConfigurationDataTest : BaseTests() {
 
     private val queryResponse by before {
-        JSONObject(
-            """
-                {
-                    'getEmailConfig': {
-                        '__typename': 'EmailConfigurationData',
-                        'deleteEmailMessagesLimit': 10,
-                        'updateEmailMessagesLimit': 5,
-                        'emailMessageMaxInboundMessageSize': 200,
-                        'emailMessageMaxOutboundMessageSize': 100,
-                        'emailMessageRecipientsLimit': 5,
-                        'encryptedEmailMessageRecipientsLimit': 10
-                    }
-                }
-            """.trimIndent(),
-        )
+        DataFactory.getEmailConfigQueryResponse()
     }
 
     private val mockContext by before {
@@ -79,20 +59,12 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                getEmailConfigQuery()
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponse
             }
         }
     }
@@ -134,7 +106,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -156,7 +128,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -179,26 +151,17 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             emailMessageMaxOutboundMessageSize shouldBe 100
             emailMessageRecipientsLimit shouldBe 5
             encryptedEmailMessageRecipientsLimit shouldBe 10
+            prohibitedFileExtensions shouldBe listOf(".js", ".exe", ".lib")
         }
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getEmailConfigQuery()
     }
 
     @Test
     fun `getConfigurationData() should throw when unknown error occurs`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getEmailConfigQuery()
             } doThrow RuntimeException("Mock Runtime Exception")
         }
 
@@ -210,30 +173,16 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getEmailConfigQuery()
     }
 
     @Test
     fun `getConfigurationData() should throw when no config data is returned`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getEmailConfigQuery()
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, null),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, null)
             }
         }
 
@@ -245,13 +194,7 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getEmailConfigQuery()
     }
 
     @Test
@@ -262,19 +205,11 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             null,
             null,
         )
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getEmailConfigQuery()
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -286,24 +221,14 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getEmailConfigQuery()
     }
 
     @Test
     fun `getConfigurationData() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailConfigQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getEmailConfigQuery()
             } doThrow CancellationException("Mock Cancellation Exception")
         }
 
@@ -311,12 +236,6 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
             client.getConfigurationData()
         }
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailConfigQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getEmailConfigQuery()
     }
 }

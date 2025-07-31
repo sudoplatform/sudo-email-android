@@ -7,12 +7,10 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
 import com.apollographql.apollo3.api.Optional
-import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.keys.KeyPair
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
@@ -24,21 +22,18 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -49,7 +44,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 import java.util.Date
-import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput as ProvisionEmailAddressRequest
 
 /**
  * Test the correct operation of [SudoEmailClient.provisionEmailAddress]
@@ -66,49 +60,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     }
 
     private val mutationResponse by before {
-        JSONObject(
-            """
-                {
-                    'provisionEmailAddress': {
-                        '__typename': 'EmailAddress',
-                        'id': 'emailAddressId',
-                        'owner': 'owner',
-                        'owners': [{
-                            '__typename': 'Owner',
-                            'id': 'ownerId',
-                            'issuer': 'issuer'
-                        }],
-                        'identityId': 'identityId',
-                        'keyRingId': 'keyRingId',
-                        'keyIds': [],
-                        'version': '1',
-                        'createdAtEpochMs': 1.0,
-                        'updatedAtEpochMs': 1.0,
-                        'emailAddress': 'example@sudoplatform.com',
-                        'size': 0.0,
-                        'numberOfEmailMessages': 0,
-                        'folders': [{
-                            '__typename': 'EmailFolder',
-                            'id': 'folderId',
-                            'owner': 'owner',
-                            'owners': [{
-                                '__typename': 'Owner',
-                                'id': 'ownerId',
-                                'issuer': 'issuer'
-                            }],
-                            'version': 1,
-                            'createdAtEpochMs': 1.0,
-                            'updatedAtEpochMs': 1.0,
-                            'emailAddressId': 'emailAddressId',
-                            'folderName': 'folderName',
-                            'size': 0.0,
-                            'unseenCount': 0.0,
-                            'ttl': 1.0
-                        }]
-                    }
-                }
-            """.trimIndent(),
-        )
+        DataFactory.provisionEmailAddressMutationResponse()
     }
 
     private val mockContext by before {
@@ -122,20 +74,14 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         }
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ProvisionEmailAddressMutation.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                provisionEmailAddressMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                mutationResponse
             }
         }
     }
@@ -184,7 +130,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -207,7 +153,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -234,7 +180,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             version shouldBe 1
             createdAt shouldBe Date(1L)
             updatedAt shouldBe Date(1L)
-            lastReceivedAt shouldBe null
+            lastReceivedAt shouldBe Date(1L)
             alias shouldBe null
             folders.size shouldBe 1
             with(folders[0]) {
@@ -252,16 +198,12 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             }
         }
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe ProvisionEmailAddressMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ProvisionEmailAddressRequest
+        verify(mockApiClient).provisionEmailAddressMutation(
+            check { input ->
                 input.emailAddress shouldBe "example@sudoplatform.com"
                 input.ownershipProofTokens shouldBe listOf("ownershipProofToken")
                 input.alias shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).generateKeyPair()
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
@@ -269,19 +211,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
 
     @Test
     fun `provisionEmailAddress() should throw when email mutation response is null`() = runTest {
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ProvisionEmailAddressMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                provisionEmailAddressMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, null),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, null)
             }
         }
 
@@ -293,16 +229,12 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe ProvisionEmailAddressMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ProvisionEmailAddressRequest
+        verify(mockApiClient).provisionEmailAddressMutation(
+            check { input ->
                 input.emailAddress shouldBe "example@sudoplatform.com"
                 input.ownershipProofTokens shouldBe listOf("ownershipProofToken")
                 input.alias shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).generateKeyPair()
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
@@ -316,19 +248,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             emptyList(),
             mapOf("errorType" to "EmailValidation"),
         )
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ProvisionEmailAddressMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                provisionEmailAddressMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -340,16 +266,12 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe ProvisionEmailAddressMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ProvisionEmailAddressRequest
+        verify(mockApiClient).provisionEmailAddressMutation(
+            check { input ->
                 input.emailAddress shouldBe "example@sudoplatform.com"
                 input.ownershipProofTokens shouldBe listOf("ownershipProofToken")
                 input.alias shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).generateKeyPair()
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
@@ -363,19 +285,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             emptyList(),
             mapOf("errorType" to "InvalidKeyRingId"),
         )
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ProvisionEmailAddressMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                provisionEmailAddressMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -387,16 +303,12 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe ProvisionEmailAddressMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ProvisionEmailAddressRequest
+        verify(mockApiClient).provisionEmailAddressMutation(
+            check { input ->
                 input.emailAddress shouldBe "example@sudoplatform.com"
                 input.ownershipProofTokens shouldBe listOf("ownershipProofToken")
                 input.alias shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).generateKeyPair()
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
@@ -433,19 +345,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             emptyList(),
             mapOf("errorType" to "InsufficientEntitlementsError"),
         )
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ProvisionEmailAddressMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                provisionEmailAddressMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -457,16 +363,12 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe ProvisionEmailAddressMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ProvisionEmailAddressRequest
+        verify(mockApiClient).provisionEmailAddressMutation(
+            check { input ->
                 input.emailAddress shouldBe "example@sudoplatform.com"
                 input.ownershipProofTokens shouldBe listOf("ownershipProofToken")
                 input.alias shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).generateKeyPair()
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
@@ -480,19 +382,13 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             emptyList(),
             mapOf("errorType" to "PolicyFailed"),
         )
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ProvisionEmailAddressMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                provisionEmailAddressMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -504,16 +400,12 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe ProvisionEmailAddressMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ProvisionEmailAddressRequest
+        verify(mockApiClient).provisionEmailAddressMutation(
+            check { input ->
                 input.emailAddress shouldBe "example@sudoplatform.com"
                 input.ownershipProofTokens shouldBe listOf("ownershipProofToken")
                 input.alias shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).generateKeyPair()
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
@@ -562,7 +454,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             version shouldBe 1
             createdAt shouldBe Date(1L)
             updatedAt shouldBe Date(1L)
-            lastReceivedAt shouldBe null
+            lastReceivedAt shouldBe Date(1L)
             alias shouldBe null
             folders.size shouldBe 1
             with(folders[0]) {
@@ -580,16 +472,12 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
             }
         }
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe ProvisionEmailAddressMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as ProvisionEmailAddressRequest
+        verify(mockApiClient).provisionEmailAddressMutation(
+            check { input ->
                 input.emailAddress shouldBe "example@sudoplatform.com"
                 input.ownershipProofTokens shouldBe listOf("ownershipProofToken")
                 input.alias shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).generateKeyPair()
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()

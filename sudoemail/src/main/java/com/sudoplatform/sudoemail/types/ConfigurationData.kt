@@ -19,6 +19,8 @@ import kotlinx.parcelize.Parcelize
  * @property emailMessageRecipientsLimit [Int] The maximum number of recipients for an out-of-network email message.
  * @property encryptedEmailMessageRecipientsLimit [Int] The maximum number of recipients for an in-network encrypted
  *  email message.
+ * @property prohibitedFileExtensions [List<String>] The set of file extensions which are not permitted to be sent
+ *  as attachments.
  */
 @Parcelize
 data class ConfigurationData(
@@ -28,4 +30,5 @@ data class ConfigurationData(
     val emailMessageMaxOutboundMessageSize: Int,
     val emailMessageRecipientsLimit: Int,
     val encryptedEmailMessageRecipientsLimit: Int,
+    val prohibitedFileExtensions: List<String>,
 ) : Parcelable

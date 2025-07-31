@@ -16,36 +16,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.util.Base64
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.apollographql.apollo3.api.Optional
-import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
-import com.sudoplatform.sudoemail.graphql.CancelScheduledDraftMessageMutation
-import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
-import com.sudoplatform.sudoemail.graphql.CreateCustomEmailFolderMutation
-import com.sudoplatform.sudoemail.graphql.DeleteCustomEmailFolderMutation
-import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
-import com.sudoplatform.sudoemail.graphql.DeleteMessagesByFolderIdMutation
-import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
-import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
-import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
-import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
-import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
-import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
-import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
-import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
-import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
-import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
-import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
-import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
-import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
-import com.sudoplatform.sudoemail.graphql.ListScheduledDraftMessagesForEmailAddressIdQuery
-import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
-import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
-import com.sudoplatform.sudoemail.graphql.ScheduleSendDraftMessageMutation
-import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
-import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
-import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
-import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
-import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
-import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
+import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.graphql.type.BlockedAddressAction
@@ -148,6 +119,7 @@ import com.sudoplatform.sudoemail.types.transformers.Unsealer
 import com.sudoplatform.sudoemail.types.transformers.UpdateEmailMessagesResultTransformer
 import com.sudoplatform.sudoemail.types.transformers.toDate
 import com.sudoplatform.sudoemail.util.EmailAddressParser
+import com.sudoplatform.sudoemail.util.EmailClientInvoker
 import com.sudoplatform.sudoemail.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudoemail.util.replaceInlinePathsWithCids
@@ -158,12 +130,12 @@ import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudonotification.types.NotificationMetaData
 import com.sudoplatform.sudonotification.types.NotificationSchemaEntry
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import com.sudoplatform.sudouser.exceptions.HTTP_STATUS_CODE_KEY
 import com.sudoplatform.sudouser.exceptions.SudoUserException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.net.HttpURLConnection
 import java.util.Date
 import java.util.UUID
@@ -196,7 +168,7 @@ import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as Updat
  * Default implementation of the [SudoEmailClient] interface.
  *
  * @property context [Context] Application context.
- * @property graphQLClient [GraphQLClient] GraphQL client used to make requests to AWS and call sudo email service API.
+ * @property apiClient [ApiClient] ApiClient used to make requests to AWS and call sudo email service API.
  * @property sudoUserClient [SudoUserClient] Used to determine if a user is signed in and gain access to the user owner ID.
  * @property logger [Logger] Errors and warnings will be logged here.
  * @property serviceKeyManager [ServiceKeyManager] On device management of key storage.
@@ -207,7 +179,7 @@ import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput as Updat
  */
 internal class DefaultSudoEmailClient(
     private val context: Context,
-    private val graphQLClient: GraphQLClient,
+    private val apiClient: ApiClient,
     private val sudoUserClient: SudoUserClient,
     private val logger: Logger = Logger(
         LogConstants.SUDOLOG_TAG,
@@ -317,15 +289,15 @@ internal class DefaultSudoEmailClient(
 
     /** This manages the subscriptions to email message creates and deletes */
     private val subscriptions =
-        SubscriptionService(graphQLClient, serviceKeyManager, sudoUserClient, logger)
+        SubscriptionService(apiClient, serviceKeyManager, sudoUserClient, logger)
+
+    /** Long-lived invoker for async (set and forget) email client operations. */
+    val invoker = EmailClientInvoker(this, logger)
 
     @Throws(SudoEmailClient.EmailConfigurationException::class)
     override suspend fun getConfigurationData(): ConfigurationData {
         try {
-            val queryResponse = graphQLClient.query<GetEmailConfigQuery, GetEmailConfigQuery.Data>(
-                GetEmailConfigQuery.OPERATION_DOCUMENT,
-                emptyMap(),
-            )
+            val queryResponse = apiClient.getEmailConfigQuery()
 
             if (queryResponse.hasErrors()) {
                 logger.error("errors = ${queryResponse.errors}")
@@ -344,10 +316,7 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun getSupportedEmailDomains(): List<String> {
         try {
-            val queryResponse = graphQLClient.query<GetEmailDomainsQuery, GetEmailDomainsQuery.Data>(
-                GetEmailDomainsQuery.OPERATION_DOCUMENT,
-                emptyMap(),
-            )
+            val queryResponse = apiClient.getSupportedEmailDomainsQuery()
 
             if (queryResponse.hasErrors()) {
                 logger.error("errors = ${queryResponse.errors}")
@@ -368,10 +337,7 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun getConfiguredEmailDomains(): List<String> {
         try {
-            val queryResponse = graphQLClient.query<GetConfiguredEmailDomainsQuery, GetConfiguredEmailDomainsQuery.Data>(
-                GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT,
-                emptyMap(),
-            )
+            val queryResponse = apiClient.getConfiguredEmailDomainsQuery()
 
             if (queryResponse.hasErrors()) {
                 logger.error("error = ${queryResponse.errors}")
@@ -396,9 +362,8 @@ internal class DefaultSudoEmailClient(
                 localParts = input.localParts,
                 domains = Optional.presentIfNotNull(input.domains),
             )
-            val queryResponse = graphQLClient.query<CheckEmailAddressAvailabilityQuery, CheckEmailAddressAvailabilityQuery.Data>(
-                CheckEmailAddressAvailabilityQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.checkEmailAddressAvailabilityQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -447,9 +412,8 @@ internal class DefaultSudoEmailClient(
                 alias = Optional.presentIfNotNull(input.alias.toAliasInput(serviceKeyManager)),
             )
 
-            val mutationResponse = graphQLClient.mutate<ProvisionEmailAddressMutation, ProvisionEmailAddressMutation.Data>(
-                ProvisionEmailAddressMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.provisionEmailAddressMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -480,9 +444,8 @@ internal class DefaultSudoEmailClient(
             val mutationInput = DeprovisionEmailAddressInput(
                 emailAddressId = id,
             )
-            val mutationResponse = graphQLClient.mutate<DeprovisionEmailAddressMutation, DeprovisionEmailAddressMutation.Data>(
-                DeprovisionEmailAddressMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.deprovisionEmailAddressMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -518,9 +481,8 @@ internal class DefaultSudoEmailClient(
                 id = input.id,
                 values = updateValuesInput,
             )
-            val mutationResponse = graphQLClient.mutate<UpdateEmailAddressMetadataMutation, UpdateEmailAddressMetadataMutation.Data>(
-                UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.updateEmailAddressMetadataMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -560,9 +522,8 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     private suspend fun retrieveEmailAddress(input: GetEmailAddressInput): EmailAddress? {
-        val queryResponse = graphQLClient.query<GetEmailAddressQuery, GetEmailAddressQuery.Data>(
-            GetEmailAddressQuery.OPERATION_DOCUMENT,
-            mapOf("id" to input.id),
+        val queryResponse = apiClient.getEmailAddressQuery(
+            input,
         )
 
         if (queryResponse.hasErrors()) {
@@ -581,9 +542,8 @@ internal class DefaultSudoEmailClient(
                 limit = Optional.presentIfNotNull(input.limit),
                 nextToken = Optional.presentIfNotNull(input.nextToken),
             )
-            val queryResponse = graphQLClient.query<ListEmailAddressesQuery, ListEmailAddressesQuery.Data>(
-                ListEmailAddressesQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.listEmailAddressesQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -637,9 +597,8 @@ internal class DefaultSudoEmailClient(
                 limit = Optional.presentIfNotNull(input.limit),
                 nextToken = Optional.presentIfNotNull(input.nextToken),
             )
-            val queryResponse = graphQLClient.query<ListEmailAddressesForSudoIdQuery, ListEmailAddressesForSudoIdQuery.Data>(
-                ListEmailAddressesForSudoIdQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.listEmailAddressesForSudoIdQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -691,9 +650,8 @@ internal class DefaultSudoEmailClient(
             val queryInput = LookupEmailAddressesPublicInfoRequest(
                 emailAddresses = input.emailAddresses,
             )
-            val queryResponse = graphQLClient.query<LookupEmailAddressesPublicInfoQuery, LookupEmailAddressesPublicInfoQuery.Data>(
-                LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.lookupEmailAddressesPublicInfoQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -728,9 +686,8 @@ internal class DefaultSudoEmailClient(
                 limit = Optional.presentIfNotNull(input.limit),
                 nextToken = Optional.presentIfNotNull(input.nextToken),
             )
-            val queryResponse = graphQLClient.query<ListEmailFoldersForEmailAddressIdQuery, ListEmailFoldersForEmailAddressIdQuery.Data>(
-                ListEmailFoldersForEmailAddressIdQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.listEmailFoldersForEmailAddressIdQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -775,9 +732,8 @@ internal class DefaultSudoEmailClient(
                     base64EncodedSealedData = (String(Base64.encode(sealedFolderName))),
                 ),
             )
-            val mutationResponse = graphQLClient.mutate<CreateCustomEmailFolderMutation, CreateCustomEmailFolderMutation.Data>(
-                CreateCustomEmailFolderMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.createCustomEmailFolderMutation(
+                mutationInput,
             )
             if (mutationResponse.hasErrors()) {
                 throw interpretEmailFolderError(mutationResponse.errors.first())
@@ -803,9 +759,8 @@ internal class DefaultSudoEmailClient(
                 emailAddressId = input.emailAddressId,
             )
 
-            val mutationResponse = graphQLClient.mutate<DeleteCustomEmailFolderMutation, DeleteCustomEmailFolderMutation.Data>(
-                DeleteCustomEmailFolderMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.deleteCustomEmailFolderMutation(
+                mutationInput,
             )
             if (mutationResponse.hasErrors()) {
                 throw interpretEmailFolderError(mutationResponse.errors.first())
@@ -854,9 +809,8 @@ internal class DefaultSudoEmailClient(
                 emailAddressId = input.emailAddressId,
                 values = updateValuesInput,
             )
-            val mutationResponse = graphQLClient.mutate<UpdateCustomEmailFolderMutation, UpdateCustomEmailFolderMutation.Data>(
-                UpdateCustomEmailFolderMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.updateCustomEmailFolderMutation(
+                mutationInput,
             )
             if (mutationResponse.hasErrors()) {
                 throw interpretEmailFolderError(mutationResponse.errors.first())
@@ -878,9 +832,16 @@ internal class DefaultSudoEmailClient(
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult {
         val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments, replyingMessageId, forwardingMessageId) = input
-        val (emailMessageRecipientsLimit, encryptedEmailMessageRecipientsLimit, emailMessageMaxOutboundMessageSize) = getConfigurationData()
+        val (
+            _, _, _,
+            emailMessageMaxOutboundMessageSize,
+            emailMessageRecipientsLimit,
+            encryptedEmailMessageRecipientsLimit,
+            prohibitedFileExtensions,
+        ) = getConfigurationData()
 
         try {
+            verifyAttachmentValidity(prohibitedFileExtensions, attachments, inlineAttachments)
             val domains = getConfiguredEmailDomains()
 
             val allRecipients = mutableListOf<EmailMessage.EmailAddress>().apply {
@@ -1019,9 +980,8 @@ internal class DefaultSudoEmailClient(
                 message = s3EmailObjectInput,
                 rfc822Header = rfc822HeaderInput,
             )
-            val mutationResponse = graphQLClient.mutate<SendEncryptedEmailMessageMutation, SendEncryptedEmailMessageMutation.Data>(
-                SendEncryptedEmailMessageMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.sendEncryptedEmailMessageMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -1085,9 +1045,8 @@ internal class DefaultSudoEmailClient(
                 emailAddressId = senderEmailAddressId,
                 message = s3EmailObject,
             )
-            val mutationResponse = graphQLClient.mutate<SendEmailMessageMutation, SendEmailMessageMutation.Data>(
-                SendEmailMessageMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.sendEmailMessageMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -1219,9 +1178,8 @@ internal class DefaultSudoEmailClient(
                 messageIds = idSet.toList(),
                 values = updateValuesInput,
             )
-            val mutationResponse = graphQLClient.mutate<UpdateEmailMessagesMutation, UpdateEmailMessagesMutation.Data>(
-                UpdateEmailMessagesMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.updateEmailMessagesMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -1293,9 +1251,8 @@ internal class DefaultSudoEmailClient(
             val mutationInput = DeleteEmailMessagesInput(
                 messageIds = idSet.toList(),
             )
-            val mutationResponse = graphQLClient.mutate<DeleteEmailMessagesMutation, DeleteEmailMessagesMutation.Data>(
-                DeleteEmailMessagesMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.deleteEmailMessagesMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -1488,9 +1445,8 @@ internal class DefaultSudoEmailClient(
     }
 
     private suspend fun retrieveEmailMessage(input: GetEmailMessageInput): SealedEmailMessage? {
-        val queryResponse = graphQLClient.query<GetEmailMessageQuery, GetEmailMessageQuery.Data>(
-            GetEmailMessageQuery.OPERATION_DOCUMENT,
-            mapOf("id" to input.id),
+        val queryResponse = apiClient.getEmailMessageQuery(
+            input,
         )
 
         if (queryResponse.hasErrors()) {
@@ -1509,9 +1465,8 @@ internal class DefaultSudoEmailClient(
                 sortOrder = Optional.presentIfNotNull(input.sortOrder.toSortOrderInput(input.sortOrder)),
                 includeDeletedMessages = Optional.presentIfNotNull(input.includeDeletedMessages),
             )
-            val queryResponse = graphQLClient.query<ListEmailMessagesQuery, ListEmailMessagesQuery.Data>(
-                ListEmailMessagesQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.listEmailMessagesQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -1567,9 +1522,8 @@ internal class DefaultSudoEmailClient(
                 sortOrder = Optional.presentIfNotNull(input.sortOrder.toSortOrderInput(input.sortOrder)),
                 includeDeletedMessages = Optional.presentIfNotNull(input.includeDeletedMessages),
             )
-            val queryResponse = graphQLClient.query<ListEmailMessagesForEmailAddressIdQuery, ListEmailMessagesForEmailAddressIdQuery.Data>(
-                ListEmailMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.listEmailMessagesForEmailAddressIdQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -1625,9 +1579,8 @@ internal class DefaultSudoEmailClient(
                 sortOrder = Optional.presentIfNotNull(input.sortOrder.toSortOrderInput(input.sortOrder)),
                 includeDeletedMessages = Optional.presentIfNotNull(input.includeDeletedMessages),
             )
-            val queryResponse = graphQLClient.query<ListEmailMessagesForEmailFolderIdQuery, ListEmailMessagesForEmailFolderIdQuery.Data>(
-                ListEmailMessagesForEmailFolderIdQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.listEmailMessagesForEmailFolderIdQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -1743,6 +1696,7 @@ internal class DefaultSudoEmailClient(
             try {
                 val s3Key = this.constructS3KeyForDraftEmailMessage(emailAddressId, id)
                 s3EmailClient.delete(s3Key)
+                invoker.cancelScheduledDraftEmailMessage(id, emailAddressId)
                 successIds.add(id)
             } catch (e: Throwable) {
                 logger.error("unexpected error $e")
@@ -1958,9 +1912,8 @@ internal class DefaultSudoEmailClient(
                 sendAtEpochMs = input.sendAt.time.toDouble(),
                 symmetricKey = symmetricKeyData.encodeBase64String(),
             )
-            val mutationResponse = graphQLClient.mutate<ScheduleSendDraftMessageMutation, ScheduleSendDraftMessageMutation.Data>(
-                ScheduleSendDraftMessageMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.scheduleSendDraftMessageMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -1993,9 +1946,8 @@ internal class DefaultSudoEmailClient(
                 draftMessageKey = "${sudoUserClient.getCredentialsProvider().identityId}/$s3Key",
                 emailAddressId = input.emailAddressId,
             )
-            val mutationResponse = graphQLClient.mutate<CancelScheduledDraftMessageMutation, CancelScheduledDraftMessageMutation.Data>(
-                CancelScheduledDraftMessageMutation.OPERATION_DOCUMENT,
-                mapOf("input" to mutationInput),
+            val mutationResponse = apiClient.cancelScheduledDraftMessageMutation(
+                mutationInput,
             )
 
             if (mutationResponse.hasErrors()) {
@@ -2035,12 +1987,8 @@ internal class DefaultSudoEmailClient(
                 filter = filter,
             )
 
-            val queryResponse = graphQLClient.query<
-                ListScheduledDraftMessagesForEmailAddressIdQuery,
-                ListScheduledDraftMessagesForEmailAddressIdQuery.Data,
-                >(
-                ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT,
-                mapOf("input" to queryInput),
+            val queryResponse = apiClient.listScheduledDraftMessagesForEmailAddressIdQuery(
+                queryInput,
             )
 
             if (queryResponse.hasErrors()) {
@@ -2208,9 +2156,8 @@ internal class DefaultSudoEmailClient(
             blockedAddresses = blockedAddresses,
             emailAddressId = Optional.presentIfNotNull(emailAddressId),
         )
-        val mutationResponse = graphQLClient.mutate<BlockEmailAddressesMutation, BlockEmailAddressesMutation.Data>(
-            BlockEmailAddressesMutation.OPERATION_DOCUMENT,
-            mapOf("input" to mutationInput),
+        val mutationResponse = apiClient.blockEmailAddressesMutation(
+            mutationInput,
         )
 
         if (mutationResponse.hasErrors()) {
@@ -2262,9 +2209,8 @@ internal class DefaultSudoEmailClient(
             owner = owner,
             unblockedAddresses = hashedBlockedValues,
         )
-        val mutationResponse = graphQLClient.mutate<UnblockEmailAddressesMutation, UnblockEmailAddressesMutation.Data>(
-            UnblockEmailAddressesMutation.OPERATION_DOCUMENT,
-            mapOf("input" to mutationInput),
+        val mutationResponse = apiClient.unblockEmailAddressesMutation(
+            mutationInput,
         )
 
         if (mutationResponse.hasErrors()) {
@@ -2304,9 +2250,8 @@ internal class DefaultSudoEmailClient(
             owner = owner,
             unblockedAddresses = hashedValues,
         )
-        val mutationResponse = graphQLClient.mutate<UnblockEmailAddressesMutation, UnblockEmailAddressesMutation.Data>(
-            UnblockEmailAddressesMutation.OPERATION_DOCUMENT,
-            mapOf("input" to mutationInput),
+        val mutationResponse = apiClient.unblockEmailAddressesMutation(
+            mutationInput,
         )
 
         if (mutationResponse.hasErrors()) {
@@ -2333,9 +2278,8 @@ internal class DefaultSudoEmailClient(
         val queryInput = GetEmailAddressBlocklistRequest(
             owner = owner,
         )
-        val queryResponse = graphQLClient.query<GetEmailAddressBlocklistQuery, GetEmailAddressBlocklistQuery.Data>(
-            GetEmailAddressBlocklistQuery.OPERATION_DOCUMENT,
-            mapOf("input" to queryInput),
+        val queryResponse = apiClient.getEmailAddressBlocklistQuery(
+            queryInput,
         )
 
         if (queryResponse.hasErrors()) {
@@ -2418,12 +2362,8 @@ internal class DefaultSudoEmailClient(
             hardDelete = Optional.presentIfNotNull(input.hardDelete),
         )
 
-        val mutationResponse = graphQLClient.mutate<
-            DeleteMessagesByFolderIdMutation,
-            DeleteMessagesByFolderIdMutation.Data,
-            >(
-            DeleteMessagesByFolderIdMutation.OPERATION_DOCUMENT,
-            mapOf("input" to mutationInput),
+        val mutationResponse = apiClient.deleteEmailMessagesByFolderIdMutation(
+            mutationInput,
         )
 
         if (mutationResponse.hasErrors()) {
@@ -2501,6 +2441,20 @@ internal class DefaultSudoEmailClient(
         val keyPrefix = constructS3PrefixForEmailAddress(emailAddressId)
         val keySuffix = if (draftEmailMessageId.isNotEmpty()) "/$draftEmailMessageId" else ""
         return "$keyPrefix/draft$keySuffix"
+    }
+
+    private fun verifyAttachmentValidity(
+        prohibitedExtensions: List<String>,
+        attachments: List<EmailAttachment>,
+        inlineAttachments: List<EmailAttachment>,
+    ) {
+        attachments.plus(inlineAttachments).map {
+            File(it.fileName).extension
+        }.forEach {
+            if (prohibitedExtensions.contains(".$it")) {
+                throw SudoEmailClient.EmailMessageException.InvalidMessageContentException("Extension not supported")
+            }
+        }
     }
 
     private suspend fun throwIfEmailAddressNotFound(emailAddressId: String) {

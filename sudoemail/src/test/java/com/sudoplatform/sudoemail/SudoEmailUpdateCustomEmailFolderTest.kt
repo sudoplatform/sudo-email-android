@@ -7,11 +7,10 @@
 package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
+import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -21,20 +20,17 @@ import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -61,36 +57,18 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
     }
 
     private val mutationResponse by before {
-        JSONObject(
-            """
-                {
-                    'updateCustomEmailFolder': {
-                        '__typename': 'EmailFolder',
-                        'id': 'folderId',
-                        'owner': 'owner',
-                        'owners': [{
-                            '__typename': 'Owner',
-                            'id': 'ownerId',
-                            'issuer': 'issuer'
-                        }],
-                        'version': '1',
-                        'createdAtEpochMs': 1.0,
-                        'updatedAtEpochMs': 1.0,
-                        'emailAddressId': 'emailAddressId',
-                        'folderName': 'folderName',
-                        'size': 0.0,
-                        'unseenCount': 0.0,
-                        'ttl': 1.0,
-                        'customFolderName': {
-                            '__typename': 'SealedAttribute',
-                            'algorithm': '${SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING}',
-                            'keyId': 'keyId',
-                            'plainTextType': 'plainText',
-                            'base64EncodedSealedData': '${mockSeal(mockUpdatedCustomFolderName)}'
-                        }
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.updateCustomEmailFolderMutationResponse(
+            DataFactory.getEmailFolder(
+                customFolderName = EmailFolder.CustomFolderName(
+                    "customFolderName",
+                    sealedAttribute = SealedAttribute(
+                        algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                        keyId = "keyId",
+                        plainTextType = "plainText",
+                        base64EncodedSealedData = mockSeal(mockUpdatedCustomFolderName),
+                    ),
+                ),
+            ),
         )
     }
 
@@ -116,20 +94,14 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
         }
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateCustomEmailFolderMutation.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                updateCustomEmailFolderMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                mutationResponse
             }
         }
     }
@@ -167,7 +139,7 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -189,7 +161,7 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -216,11 +188,9 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
 
     @Test
     fun `updateCustomEmailFolder() should throw an error if graphQl mutation fails`() = runTest {
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateCustomEmailFolderMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                updateCustomEmailFolderMutation(
                     any(),
                 )
             }.thenThrow(UnknownError("ERROR"))
@@ -236,9 +206,7 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
 
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService).sealString(any(), any())
-        verify(mockApiCategory).mutate<String>(
-            argThat { this.query.equals(UpdateCustomEmailFolderMutation.OPERATION_DOCUMENT) },
-            any(),
+        verify(mockApiClient).updateCustomEmailFolderMutation(
             any(),
         )
     }
@@ -256,9 +224,7 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
 
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService).sealString(any(), any())
-        verify(mockApiCategory).mutate<String>(
-            argThat { this.query.equals(UpdateCustomEmailFolderMutation.OPERATION_DOCUMENT) },
-            any(),
+        verify(mockApiClient).updateCustomEmailFolderMutation(
             any(),
         )
         verify(mockServiceKeyManager).decryptWithSymmetricKeyId(anyString(), any<ByteArray>())

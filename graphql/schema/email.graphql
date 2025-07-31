@@ -310,6 +310,7 @@ type EmailConfigurationData {
   emailMessageMaxOutboundMessageSize: Int!
   emailMessageRecipientsLimit: Int!
   encryptedEmailMessageRecipientsLimit: Int!
+  prohibitedFileExtensions: [String!]!
 }
 
 type Owner {

@@ -9,13 +9,10 @@ package com.sudoplatform.sudoemail
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.auth.CognitoCredentialsProvider
 import com.amazonaws.services.s3.model.ObjectMetadata
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
 import com.benasher44.uuid.bytes
-import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
-import com.sudoplatform.sudoemail.graphql.ScheduleSendDraftMessageMutation
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.graphql.type.ScheduledDraftMessageState
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -28,19 +25,18 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
+import io.kotlintest.matchers.string.shouldEndWith
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -63,6 +59,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     private val dummyDraftId = "dummyId"
     private val dummyEmailAddressId = "dummyEmailAddressId"
     private val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
+    private val symmetricKeyData = UUID.randomUUID().bytes
     private val input by before {
         ScheduleSendDraftMessageInput(
             dummyDraftId,
@@ -72,26 +69,13 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     }
 
     private val mutationResponse by before {
-        JSONObject(
-            """
-                {
-                    'scheduleSendDraftMessage': {
-                        '__typename': 'ScheduledDraftMessage',
-                        'draftMessageKey': 'dummyPrefix/$dummyDraftId',
-                        'emailAddressId': '$dummyEmailAddressId',
-                        'owner': 'owner',
-                        'owners': [{
-                            '__typename': 'Owner',
-                            'id': 'ownerId',
-                            'issuer': 'issuer'
-                        }],
-                        'sendAtEpochMs': ${sendAt.time},
-                        'state': '${ScheduledDraftMessageState.SCHEDULED}',
-                        'createdAtEpochMs': 1.0,
-                        'updatedAtEpochMs': 1.0
-                    }
-                }
-            """.trimIndent(),
+        DataFactory.scheduleSendDraftMessageMutationResponse(
+            DataFactory.getScheduledDraftMessage(
+                draftMessageKey = "dummyPrefix/$dummyDraftId",
+                emailAddressId = dummyEmailAddressId,
+                sendAtEpochMs = sendAt.time.toDouble(),
+                state = ScheduledDraftMessageState.SCHEDULED,
+            ),
         )
     }
 
@@ -121,37 +105,25 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
 
     private val mockServiceKeyManager by before {
         mock<ServiceKeyManager>().stub {
-            on { getSymmetricKeyData(anyString()) } doReturn UUID.randomUUID().bytes
+            on { getSymmetricKeyData(anyString()) } doReturn symmetricKeyData
         }
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                getEmailAddressQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(emailAddressQueryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                DataFactory.getEmailAddressQueryResponse()
             }
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ScheduleSendDraftMessageMutation.OPERATION_DOCUMENT) },
-                    any(),
+            onBlocking {
+                scheduleSendDraftMessageMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                mutationResponse
             }
         }
     }
@@ -187,7 +159,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -209,7 +181,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -232,19 +204,13 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
             mapOf("errorType" to "AddressNotFound"),
         )
 
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                getEmailAddressQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(error)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(error))
             }
         }
 
@@ -256,11 +222,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
     }
@@ -283,11 +245,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
     }
@@ -313,11 +271,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).getObjectMetadata(
@@ -345,11 +299,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).getObjectMetadata(
@@ -377,11 +327,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).getObjectMetadata(
@@ -407,11 +353,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).getObjectMetadata(
@@ -423,11 +365,9 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     @Test
     fun `scheduleSendDraftMessage() should throw an error if graphQl mutation fails`() = runTest {
         setObjectMetadata()
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(ScheduleSendDraftMessageMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                scheduleSendDraftMessageMutation(
                     any(),
                 )
             }.thenThrow(UnknownError("ERROR"))
@@ -441,11 +381,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).getObjectMetadata(
@@ -453,10 +389,12 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         )
         verify(mockUserClient, times(1)).getCredentialsProvider()
         verify(mockServiceKeyManager).getSymmetricKeyData(any())
-        verify(mockApiCategory).mutate<String>(
-            argThat { this.query.equals(ScheduleSendDraftMessageMutation.OPERATION_DOCUMENT) },
-            any(),
-            any(),
+        verify(mockApiClient).scheduleSendDraftMessageMutation(
+            check { input ->
+                input.draftMessageKey shouldEndWith dummyDraftId
+                input.emailAddressId shouldBe dummyEmailAddressId
+                input.sendAtEpochMs shouldBe sendAt.time.toDouble()
+            },
         )
     }
 
@@ -475,11 +413,7 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
         result.sendAt shouldBe sendAt
         result.state shouldBe com.sudoplatform.sudoemail.types.ScheduledDraftMessageState.SCHEDULED
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockUserClient, times(1)).getCredentialsProvider()
@@ -487,10 +421,12 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
             anyString(),
         )
         verify(mockServiceKeyManager).getSymmetricKeyData(any())
-        verify(mockApiCategory).mutate<String>(
-            argThat { this.query.equals(ScheduleSendDraftMessageMutation.OPERATION_DOCUMENT) },
-            any(),
-            any(),
+        verify(mockApiClient).scheduleSendDraftMessageMutation(
+            check { input ->
+                input.draftMessageKey shouldEndWith dummyDraftId
+                input.emailAddressId shouldBe dummyEmailAddressId
+                input.sendAtEpochMs shouldBe sendAt.time.toDouble()
+            },
         )
     }
 }

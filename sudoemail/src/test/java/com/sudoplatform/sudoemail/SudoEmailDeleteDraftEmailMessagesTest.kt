@@ -7,11 +7,10 @@
 package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
+import com.amazonaws.auth.CognitoCredentialsProvider
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.S3Exception
@@ -24,7 +23,6 @@ import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.inspectors.forAtLeastOne
 import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldContain
@@ -33,20 +31,23 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -70,8 +71,19 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         InstrumentationRegistry.getInstrumentation().targetContext
     }
 
+    private val mockCognitoCredentialsProvider by before {
+        mock<CognitoCredentialsProvider>().stub {
+            on {
+                identityId
+            } doReturn "dummyIdentityId"
+        }
+    }
     private val mockUserClient by before {
-        mock<SudoUserClient>()
+        mock<SudoUserClient>().stub {
+            on {
+                getCredentialsProvider()
+            } doReturn mockCognitoCredentialsProvider
+        }
     }
 
     private val mockKeyManager by before {
@@ -84,20 +96,21 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         DefaultServiceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                getEmailAddressQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(emailAddressQueryResponse.toString(), null),
+                DataFactory.getEmailAddressQueryResponse()
+            }
+            onBlocking {
+                cancelScheduledDraftMessageMutation(
+                    any(),
                 )
-                mock<GraphQLOperation<String>>()
+            } doAnswer {
+                DataFactory.cancelScheduledDraftMessageResponse()
             }
         }
     }
@@ -125,7 +138,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -146,7 +159,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         verifyNoMoreInteractions(
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -162,19 +175,20 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 null,
                 mapOf("errorType" to "AddressNotFound"),
             )
-            mockApiCategory.stub {
-                on {
-                    query<String>(
-                        argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailAddressQuery(
                         any(),
                     )
                 } doAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(null, listOf(error)),
+                    GraphQLResponse(null, listOf(error))
+                }
+                onBlocking {
+                    cancelScheduledDraftMessageMutation(
+                        any(),
                     )
-                    mock<GraphQLOperation<String>>()
+                } doAnswer {
+                    DataFactory.cancelScheduledDraftMessageResponse()
                 }
             }
 
@@ -186,15 +200,12 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-                },
-                any(),
+            verify(mockApiClient).getEmailAddressQuery(
                 any(),
             )
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `deleteDraftEmailMessages() should return success result if all operations succeeded`() =
         runTest {
@@ -204,14 +215,14 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             deferredResult.start()
             val result = deferredResult.await()
 
+            advanceUntilIdle()
+            delay(3000)
+            advanceUntilIdle()
+
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.SUCCESS
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-                },
-                any(),
+            verify(mockApiClient, times(1 + draftIds.size)).getEmailAddressQuery(
                 any(),
             )
             // S3 client delete method is called once per draft id
@@ -225,8 +236,13 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                     it shouldContain "$emailAddressId/draft/${draftIds[1]}"
                 },
             )
+            verify(mockApiClient, times(draftIds.size)).cancelScheduledDraftMessageMutation(
+                any(),
+            )
+            verify(mockUserClient, times(draftIds.size)).getCredentialsProvider()
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `deleteDraftEmailMessages() should return partial result if some operations failed`() =
         runTest {
@@ -244,6 +260,10 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             }
             deferredResult.start()
             val result = deferredResult.await()
+            // Wait a little longer to allow the async operations to complete
+            advanceUntilIdle()
+            delay(3000)
+            advanceUntilIdle()
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.PARTIAL
@@ -256,11 +276,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 "S3 delete failed",
             )
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-                },
-                any(),
+            verify(mockApiClient, times(2)).getEmailAddressQuery(
                 any(),
             )
             // S3 client delete method is called once per draft id
@@ -274,6 +290,10 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                     it shouldContain "$emailAddressId/draft/${draftIds[1]}"
                 },
             )
+            verify(mockApiClient).cancelScheduledDraftMessageMutation(
+                any(),
+            )
+            verify(mockUserClient).getCredentialsProvider()
         }
 
     @Test
@@ -303,11 +323,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 it.errorType shouldBe "S3 delete failed"
             }
 
-            verify(mockApiCategory).query<String>(
-                check {
-                    it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-                },
-                any(),
+            verify(mockApiClient).getEmailAddressQuery(
                 any(),
             )
             // S3 client delete method is called once per draft id

@@ -7,11 +7,9 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -19,7 +17,6 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -27,15 +24,12 @@ import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -57,16 +51,7 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
     private val domains = listOf("foo.com", "bar.com")
 
     private val queryResponse by before {
-        JSONObject(
-            """
-                {
-                    'getConfiguredEmailDomains': {
-                        '__typename': 'GetConfiguredEmailDomains',
-                        'domains': $domains
-                    }
-                }
-            """.trimIndent(),
-        )
+        DataFactory.getConfiguredEmailDomainsQueryResponse(domains)
     }
 
     private val mockContext by before {
@@ -77,20 +62,12 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                getConfiguredEmailDomainsQuery()
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponse
             }
         }
     }
@@ -134,7 +111,7 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -156,7 +133,7 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -176,42 +153,16 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         result.size shouldBe 2
         result shouldContainExactlyInAnyOrder listOf("bar.com", "foo.com")
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getConfiguredEmailDomainsQuery()
     }
 
     @Test
     fun `getConfiguredEmailDomains() should return empty list output when query result data is empty`() = runTest {
-        val queryResponseWithEmptyList by before {
-            JSONObject(
-                """
-                {
-                    'getConfiguredEmailDomains': {
-                        '__typename': 'GetConfiguredEmailDomains',
-                        'domains': []
-                    }
-                }
-                """.trimIndent(),
-            )
-        }
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getConfiguredEmailDomainsQuery()
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponseWithEmptyList.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                DataFactory.getConfiguredEmailDomainsQueryResponse()
             }
         }
 
@@ -225,30 +176,16 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         result.isEmpty() shouldBe true
         result.size shouldBe 0
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getConfiguredEmailDomainsQuery()
     }
 
     @Test
     fun `getConfiguredEmailDomains() should return empty list output when query response is null`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getConfiguredEmailDomainsQuery()
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, null),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, null)
             }
         }
 
@@ -262,13 +199,7 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         result.isEmpty() shouldBe true
         result.size shouldBe 0
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getConfiguredEmailDomainsQuery()
     }
 
     @Test
@@ -279,19 +210,11 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
             emptyList(),
             mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
         )
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getConfiguredEmailDomainsQuery()
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -303,13 +226,7 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getConfiguredEmailDomainsQuery()
     }
 
     @Test
@@ -320,19 +237,11 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
             null,
             mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
         )
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getConfiguredEmailDomainsQuery()
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
         val deferredResult = async(StandardTestDispatcher(testScheduler)) {
@@ -343,24 +252,14 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getConfiguredEmailDomainsQuery()
     }
 
     @Test
     fun `getConfiguredEmailDomains() should throw when unknown error occurs`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getConfiguredEmailDomainsQuery()
             } doThrow RuntimeException("Mock Runtime Exception")
         }
 
@@ -372,24 +271,14 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getConfiguredEmailDomainsQuery()
     }
 
     @Test
     fun `getConfiguredEmailDomains() should not block coroutine cancellation exception`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT) },
-                    any(),
-                    any(),
-                )
+        mockApiClient.stub {
+            onBlocking {
+                getConfiguredEmailDomainsQuery()
             } doThrow CancellationException("Mock Cancellation Exception")
         }
 
@@ -397,12 +286,6 @@ class SudoEmailGetConfiguredEmailDomainsTest : BaseTests() {
             client.getConfiguredEmailDomains()
         }
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT
-            },
-            any(),
-            any(),
-        )
+        verify(mockApiClient).getConfiguredEmailDomainsQuery()
     }
 }

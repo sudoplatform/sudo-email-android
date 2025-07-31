@@ -9,6 +9,7 @@ package com.sudoplatform.sudoemail.subscription
 import com.amplifyframework.api.ApiException
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.sudoplatform.sudoemail.SudoEmailClient
+import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageCreatedSubscription
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageDeletedSubscription
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageUpdatedSubscription
@@ -19,7 +20,6 @@ import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
  * Manage the subscriptions of email message modifications.
  */
 internal class SubscriptionService(
-    private val graphQLClient: GraphQLClient,
+    private val apiClient: ApiClient,
     private val deviceKeyManager: DeviceKeyManager,
     private val userClient: SudoUserClient,
     private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
@@ -56,9 +56,8 @@ internal class SubscriptionService(
         scope.launch {
             if (createSubscriptionManager.watcher == null) {
                 val watcher =
-                    graphQLClient.subscribe<OnEmailMessageCreatedSubscription, OnEmailMessageCreatedSubscription.Data>(
-                        OnEmailMessageCreatedSubscription.OPERATION_DOCUMENT,
-                        mapOf("owner" to userSubject),
+                    apiClient.onEmailMessageCreatedSubscription(
+                        userSubject,
                         createCallback.onSubscriptionEstablished,
                         createCallback.onSubscription,
                         createCallback.onSubscriptionCompleted,
@@ -69,9 +68,8 @@ internal class SubscriptionService(
 
             if (deleteSubscriptionManager.watcher == null) {
                 val watcher =
-                    graphQLClient.subscribe<OnEmailMessageDeletedSubscription, OnEmailMessageDeletedSubscription.Data>(
-                        OnEmailMessageDeletedSubscription.OPERATION_DOCUMENT,
-                        mapOf("owner" to userSubject),
+                    apiClient.onEmailMessageDeletedSubscription(
+                        userSubject,
                         deleteCallback.onSubscriptionEstablished,
                         deleteCallback.onSubscription,
                         deleteCallback.onSubscriptionCompleted,
@@ -82,9 +80,8 @@ internal class SubscriptionService(
 
             if (updateSubscriptionManager.watcher == null) {
                 val watcher =
-                    graphQLClient.subscribe<OnEmailMessageUpdatedSubscription, OnEmailMessageUpdatedSubscription.Data>(
-                        OnEmailMessageUpdatedSubscription.OPERATION_DOCUMENT,
-                        mapOf("owner" to userSubject),
+                    apiClient.onEmailMessageUpdatedSubscription(
+                        userSubject,
                         updateCallback.onSubscriptionEstablished,
                         updateCallback.onSubscription,
                         updateCallback.onSubscriptionCompleted,

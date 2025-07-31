@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>ApiClient</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+<nav class="navigation" id="navigation-wrapper">
+    <div class="navigation--inner">
+        <div class="navigation-title">
+            <button class="menu-toggle" id="menu-toggle" type="button">toggle menu</button>
+            <div class="library-name">
+                    <a class="library-name--link" href="../../../index.html">
+                            sudoemail
+                    </a>
+            </div>
+            <div class="library-version">
+            </div>
+        </div>
+        <div class="filter-section" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active="" data-filter=":sudoemail:dokkaHtml/release">androidJvm</button>
+        </div>
+    </div>
+    <div class="navigation-controls">
+        <button class="navigation-controls--btn navigation-controls--theme" id="theme-toggle-button" type="button">switch theme</button>
+        <div class="navigation-controls--btn navigation-controls--search" id="searchBar" role="button">search in API</div>
+    </div>
+</nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="sidebar--inner" id="sideMenu"></div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="sudoemail::com.sudoplatform.sudoemail.api/ApiClient///PointingToDeclaration//2021949935">
+  <div class="breadcrumbs"><a href="../../../index.html">sudoemail</a><span class="delimiter">/</span><a href="../index.html">com.sudoplatform.sudoemail.api</a><span class="delimiter">/</span><span class="current">ApiClient</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Api</span><wbr></wbr><span><span>Client</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">class </span><a href="index.html">ApiClient</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">graphQLClient<span class="token operator">: </span><a href="https://sudoplatform.github.io/sudo-user-android/sudouser/sudouser/com.sudoplatform.sudouser.amplify/-graph-q-l-client/index.html">GraphQLClient</a><span class="token punctuation">, </span></span><span class="parameter ">logger<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudologging/Logger///PointingToDeclaration/">Logger</span></span></span><span class="token punctuation">)</span></div><p class="paragraph">Wrapper around the GraphQLClient and it's generated queries and mutations. Provides a testable class to handle API requests.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="">Constructors</h2>
+        <div class="table"><a data-name="312192124%2FConstructors%2F2021949935" anchor-label="ApiClient" id="312192124%2FConstructors%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-api-client.html"><span>Api</span><wbr></wbr><span><span>Client</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="312192124%2FConstructors%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">graphQLClient<span class="token operator">: </span><a href="https://sudoplatform.github.io/sudo-user-android/sudouser/sudouser/com.sudoplatform.sudouser.amplify/-graph-q-l-client/index.html">GraphQLClient</a><span class="token punctuation">, </span></span><span class="parameter ">logger<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudologging/Logger///PointingToDeclaration/">Logger</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="131186778%2FFunctions%2F2021949935" anchor-label="blockEmailAddressesMutation" id="131186778%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="block-email-addresses-mutation.html"><span>block</span><wbr></wbr><span>Email</span><wbr></wbr><span>Addresses</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="131186778%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="block-email-addresses-mutation.html"><span class="token function">blockEmailAddressesMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/BlockEmailAddressesInput///PointingToDeclaration/">BlockEmailAddressesInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/BlockEmailAddressesMutation.Data///PointingToDeclaration/">BlockEmailAddressesMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="397169434%2FFunctions%2F2021949935" anchor-label="cancelScheduledDraftMessageMutation" id="397169434%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="cancel-scheduled-draft-message-mutation.html"><span>cancel</span><wbr></wbr><span>Scheduled</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="397169434%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="cancel-scheduled-draft-message-mutation.html"><span class="token function">cancelScheduledDraftMessageMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/CancelScheduledDraftMessageInput///PointingToDeclaration/">CancelScheduledDraftMessageInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/CancelScheduledDraftMessageMutation.Data///PointingToDeclaration/">CancelScheduledDraftMessageMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-88522733%2FFunctions%2F2021949935" anchor-label="checkEmailAddressAvailabilityQuery" id="-88522733%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="check-email-address-availability-query.html"><span>check</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Availability</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-88522733%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="check-email-address-availability-query.html"><span class="token function">checkEmailAddressAvailabilityQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/CheckEmailAddressAvailabilityInput///PointingToDeclaration/">CheckEmailAddressAvailabilityInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/CheckEmailAddressAvailabilityQuery.Data///PointingToDeclaration/">CheckEmailAddressAvailabilityQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="316736538%2FFunctions%2F2021949935" anchor-label="createCustomEmailFolderMutation" id="316736538%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="create-custom-email-folder-mutation.html"><span>create</span><wbr></wbr><span>Custom</span><wbr></wbr><span>Email</span><wbr></wbr><span>Folder</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="316736538%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="create-custom-email-folder-mutation.html"><span class="token function">createCustomEmailFolderMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/CreateCustomEmailFolderInput///PointingToDeclaration/">CreateCustomEmailFolderInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/CreateCustomEmailFolderMutation.Data///PointingToDeclaration/">CreateCustomEmailFolderMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-780295366%2FFunctions%2F2021949935" anchor-label="deleteCustomEmailFolderMutation" id="-780295366%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="delete-custom-email-folder-mutation.html"><span>delete</span><wbr></wbr><span>Custom</span><wbr></wbr><span>Email</span><wbr></wbr><span>Folder</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-780295366%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="delete-custom-email-folder-mutation.html"><span class="token function">deleteCustomEmailFolderMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/DeleteCustomEmailFolderInput///PointingToDeclaration/">DeleteCustomEmailFolderInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/DeleteCustomEmailFolderMutation.Data///PointingToDeclaration/">DeleteCustomEmailFolderMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1000554008%2FFunctions%2F2021949935" anchor-label="deleteEmailMessagesByFolderIdMutation" id="-1000554008%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="delete-email-messages-by-folder-id-mutation.html"><span>delete</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span>By</span><wbr></wbr><span>Folder</span><wbr></wbr><span>Id</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1000554008%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="delete-email-messages-by-folder-id-mutation.html"><span class="token function">deleteEmailMessagesByFolderIdMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/DeleteMessagesByFolderIdInput///PointingToDeclaration/">DeleteMessagesByFolderIdInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/DeleteMessagesByFolderIdMutation.Data///PointingToDeclaration/">DeleteMessagesByFolderIdMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1764983142%2FFunctions%2F2021949935" anchor-label="deleteEmailMessagesMutation" id="-1764983142%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="delete-email-messages-mutation.html"><span>delete</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1764983142%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="delete-email-messages-mutation.html"><span class="token function">deleteEmailMessagesMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/DeleteEmailMessagesInput///PointingToDeclaration/">DeleteEmailMessagesInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/DeleteEmailMessagesMutation.Data///PointingToDeclaration/">DeleteEmailMessagesMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1667221754%2FFunctions%2F2021949935" anchor-label="deprovisionEmailAddressMutation" id="1667221754%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="deprovision-email-address-mutation.html"><span>deprovision</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1667221754%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="deprovision-email-address-mutation.html"><span class="token function">deprovisionEmailAddressMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/DeprovisionEmailAddressInput///PointingToDeclaration/">DeprovisionEmailAddressInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/DeprovisionEmailAddressMutation.Data///PointingToDeclaration/">DeprovisionEmailAddressMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1055010461%2FFunctions%2F2021949935" anchor-label="getConfiguredEmailDomainsQuery" id="1055010461%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-configured-email-domains-query.html"><span>get</span><wbr></wbr><span>Configured</span><wbr></wbr><span>Email</span><wbr></wbr><span>Domains</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1055010461%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-configured-email-domains-query.html"><span class="token function">getConfiguredEmailDomainsQuery</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/GetConfiguredEmailDomainsQuery.Data///PointingToDeclaration/">GetConfiguredEmailDomainsQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1211878515%2FFunctions%2F2021949935" anchor-label="getEmailAddressBlocklistQuery" id="1211878515%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-email-address-blocklist-query.html"><span>get</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Blocklist</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1211878515%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-email-address-blocklist-query.html"><span class="token function">getEmailAddressBlocklistQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/GetEmailAddressBlocklistInput///PointingToDeclaration/">GetEmailAddressBlocklistInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/GetEmailAddressBlocklistQuery.Data///PointingToDeclaration/">GetEmailAddressBlocklistQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-126886056%2FFunctions%2F2021949935" anchor-label="getEmailAddressQuery" id="-126886056%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-email-address-query.html"><span>get</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-126886056%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-email-address-query.html"><span class="token function">getEmailAddressQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-get-email-address-input/index.html">GetEmailAddressInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/GetEmailAddressQuery.Data///PointingToDeclaration/">GetEmailAddressQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1764065788%2FFunctions%2F2021949935" anchor-label="getEmailConfigQuery" id="1764065788%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-email-config-query.html"><span>get</span><wbr></wbr><span>Email</span><wbr></wbr><span>Config</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1764065788%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-email-config-query.html"><span class="token function">getEmailConfigQuery</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/GetEmailConfigQuery.Data///PointingToDeclaration/">GetEmailConfigQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="932823870%2FFunctions%2F2021949935" anchor-label="getEmailMessageQuery" id="932823870%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-email-message-query.html"><span>get</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="932823870%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-email-message-query.html"><span class="token function">getEmailMessageQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-get-email-message-input/index.html">GetEmailMessageInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/GetEmailMessageQuery.Data///PointingToDeclaration/">GetEmailMessageQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-689118657%2FFunctions%2F2021949935" anchor-label="getSupportedEmailDomainsQuery" id="-689118657%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-supported-email-domains-query.html"><span>get</span><wbr></wbr><span>Supported</span><wbr></wbr><span>Email</span><wbr></wbr><span>Domains</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-689118657%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-supported-email-domains-query.html"><span class="token function">getSupportedEmailDomainsQuery</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/GetEmailDomainsQuery.Data///PointingToDeclaration/">GetEmailDomainsQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-395599881%2FFunctions%2F2021949935" anchor-label="listEmailAddressesForSudoIdQuery" id="-395599881%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-email-addresses-for-sudo-id-query.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Addresses</span><wbr></wbr><span>For</span><wbr></wbr><span>Sudo</span><wbr></wbr><span>Id</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-395599881%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-addresses-for-sudo-id-query.html"><span class="token function">listEmailAddressesForSudoIdQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ListEmailAddressesForSudoIdInput///PointingToDeclaration/">ListEmailAddressesForSudoIdInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ListEmailAddressesForSudoIdQuery.Data///PointingToDeclaration/">ListEmailAddressesForSudoIdQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="245586259%2FFunctions%2F2021949935" anchor-label="listEmailAddressesQuery" id="245586259%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-email-addresses-query.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Addresses</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="245586259%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-addresses-query.html"><span class="token function">listEmailAddressesQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ListEmailAddressesInput///PointingToDeclaration/">ListEmailAddressesInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ListEmailAddressesQuery.Data///PointingToDeclaration/">ListEmailAddressesQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="658387335%2FFunctions%2F2021949935" anchor-label="listEmailFoldersForEmailAddressIdQuery" id="658387335%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-email-folders-for-email-address-id-query.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Folders</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Id</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="658387335%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-folders-for-email-address-id-query.html"><span class="token function">listEmailFoldersForEmailAddressIdQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ListEmailFoldersForEmailAddressIdInput///PointingToDeclaration/">ListEmailFoldersForEmailAddressIdInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ListEmailFoldersForEmailAddressIdQuery.Data///PointingToDeclaration/">ListEmailFoldersForEmailAddressIdQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1266744045%2FFunctions%2F2021949935" anchor-label="listEmailMessagesForEmailAddressIdQuery" id="-1266744045%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-email-messages-for-email-address-id-query.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Id</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1266744045%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-messages-for-email-address-id-query.html"><span class="token function">listEmailMessagesForEmailAddressIdQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ListEmailMessagesForEmailAddressIdInput///PointingToDeclaration/">ListEmailMessagesForEmailAddressIdInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ListEmailMessagesForEmailAddressIdQuery.Data///PointingToDeclaration/">ListEmailMessagesForEmailAddressIdQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="294250217%2FFunctions%2F2021949935" anchor-label="listEmailMessagesForEmailFolderIdQuery" id="294250217%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-email-messages-for-email-folder-id-query.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span>Folder</span><wbr></wbr><span>Id</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="294250217%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-messages-for-email-folder-id-query.html"><span class="token function">listEmailMessagesForEmailFolderIdQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ListEmailMessagesForEmailFolderIdInput///PointingToDeclaration/">ListEmailMessagesForEmailFolderIdInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ListEmailMessagesForEmailFolderIdQuery.Data///PointingToDeclaration/">ListEmailMessagesForEmailFolderIdQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-592095887%2FFunctions%2F2021949935" anchor-label="listEmailMessagesQuery" id="-592095887%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-email-messages-query.html"><span>list</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-592095887%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-email-messages-query.html"><span class="token function">listEmailMessagesQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ListEmailMessagesInput///PointingToDeclaration/">ListEmailMessagesInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ListEmailMessagesQuery.Data///PointingToDeclaration/">ListEmailMessagesQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1386246311%2FFunctions%2F2021949935" anchor-label="listScheduledDraftMessagesForEmailAddressIdQuery" id="-1386246311%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="list-scheduled-draft-messages-for-email-address-id-query.html"><span>list</span><wbr></wbr><span>Scheduled</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Messages</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Id</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1386246311%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="list-scheduled-draft-messages-for-email-address-id-query.html"><span class="token function">listScheduledDraftMessagesForEmailAddressIdQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ListScheduledDraftMessagesForEmailAddressIdInput///PointingToDeclaration/">ListScheduledDraftMessagesForEmailAddressIdInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ListScheduledDraftMessagesForEmailAddressIdQuery.Data///PointingToDeclaration/">ListScheduledDraftMessagesForEmailAddressIdQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2024368461%2FFunctions%2F2021949935" anchor-label="lookupEmailAddressesPublicInfoQuery" id="-2024368461%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="lookup-email-addresses-public-info-query.html"><span>lookup</span><wbr></wbr><span>Email</span><wbr></wbr><span>Addresses</span><wbr></wbr><span>Public</span><wbr></wbr><span>Info</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2024368461%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="lookup-email-addresses-public-info-query.html"><span class="token function">lookupEmailAddressesPublicInfoQuery</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/LookupEmailAddressesPublicInfoInput///PointingToDeclaration/">LookupEmailAddressesPublicInfoInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/LookupEmailAddressesPublicInfoQuery.Data///PointingToDeclaration/">LookupEmailAddressesPublicInfoQuery.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="695549981%2FFunctions%2F2021949935" anchor-label="onEmailMessageCreatedSubscription" id="695549981%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-email-message-created-subscription.html"><span>on</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span>Created</span><wbr></wbr><span><span>Subscription</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="695549981%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="on-email-message-created-subscription.html"><span class="token function">onEmailMessageCreatedSubscription</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">owner<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">onSubscriptionEstablished<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageCreatedSubscription.Data///PointingToDeclaration/">OnEmailMessageCreatedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">onSubscription<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageCreatedSubscription.Data///PointingToDeclaration/">OnEmailMessageCreatedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">onSubscriptionCompleted<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Action///PointingToDeclaration/">Action</span><span class="token punctuation">, </span></span><span class="parameter ">onFailure<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api/ApiException///PointingToDeclaration/">ApiException</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLOperation///PointingToDeclaration/">GraphQLOperation</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageCreatedSubscription.Data///PointingToDeclaration/">OnEmailMessageCreatedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2107327338%2FFunctions%2F2021949935" anchor-label="onEmailMessageDeletedSubscription" id="2107327338%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-email-message-deleted-subscription.html"><span>on</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span>Deleted</span><wbr></wbr><span><span>Subscription</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2107327338%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="on-email-message-deleted-subscription.html"><span class="token function">onEmailMessageDeletedSubscription</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">owner<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">onSubscriptionEstablished<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageDeletedSubscription.Data///PointingToDeclaration/">OnEmailMessageDeletedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">onSubscription<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageDeletedSubscription.Data///PointingToDeclaration/">OnEmailMessageDeletedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">onSubscriptionCompleted<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Action///PointingToDeclaration/">Action</span><span class="token punctuation">, </span></span><span class="parameter ">onFailure<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api/ApiException///PointingToDeclaration/">ApiException</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLOperation///PointingToDeclaration/">GraphQLOperation</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageDeletedSubscription.Data///PointingToDeclaration/">OnEmailMessageDeletedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1266079556%2FFunctions%2F2021949935" anchor-label="onEmailMessageUpdatedSubscription" id="1266079556%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-email-message-updated-subscription.html"><span>on</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span>Updated</span><wbr></wbr><span><span>Subscription</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1266079556%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="on-email-message-updated-subscription.html"><span class="token function">onEmailMessageUpdatedSubscription</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">owner<span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">onSubscriptionEstablished<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageUpdatedSubscription.Data///PointingToDeclaration/">OnEmailMessageUpdatedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">onSubscription<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageUpdatedSubscription.Data///PointingToDeclaration/">OnEmailMessageUpdatedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">onSubscriptionCompleted<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Action///PointingToDeclaration/">Action</span><span class="token punctuation">, </span></span><span class="parameter ">onFailure<span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.core/Consumer///PointingToDeclaration/">Consumer</span><span class="token operator">&lt;</span><span data-unresolved-link="com.amplifyframework.api/ApiException///PointingToDeclaration/">ApiException</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLOperation///PointingToDeclaration/">GraphQLOperation</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/OnEmailMessageUpdatedSubscription.Data///PointingToDeclaration/">OnEmailMessageUpdatedSubscription.Data</span><span class="token operator">&gt;</span><span class="token operator">?</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1650062170%2FFunctions%2F2021949935" anchor-label="provisionEmailAddressMutation" id="1650062170%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="provision-email-address-mutation.html"><span>provision</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1650062170%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="provision-email-address-mutation.html"><span class="token function">provisionEmailAddressMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ProvisionEmailAddressInput///PointingToDeclaration/">ProvisionEmailAddressInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ProvisionEmailAddressMutation.Data///PointingToDeclaration/">ProvisionEmailAddressMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-739080804%2FFunctions%2F2021949935" anchor-label="scheduleSendDraftMessageMutation" id="-739080804%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="schedule-send-draft-message-mutation.html"><span>schedule</span><wbr></wbr><span>Send</span><wbr></wbr><span>Draft</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-739080804%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="schedule-send-draft-message-mutation.html"><span class="token function">scheduleSendDraftMessageMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/ScheduleSendDraftMessageInput///PointingToDeclaration/">ScheduleSendDraftMessageInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/ScheduleSendDraftMessageMutation.Data///PointingToDeclaration/">ScheduleSendDraftMessageMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="781023480%2FFunctions%2F2021949935" anchor-label="sendEmailMessageMutation" id="781023480%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="send-email-message-mutation.html"><span>send</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="781023480%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="send-email-message-mutation.html"><span class="token function">sendEmailMessageMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/SendEmailMessageInput///PointingToDeclaration/">SendEmailMessageInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/SendEmailMessageMutation.Data///PointingToDeclaration/">SendEmailMessageMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="336772250%2FFunctions%2F2021949935" anchor-label="sendEncryptedEmailMessageMutation" id="336772250%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="send-encrypted-email-message-mutation.html"><span>send</span><wbr></wbr><span>Encrypted</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="336772250%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="send-encrypted-email-message-mutation.html"><span class="token function">sendEncryptedEmailMessageMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/SendEncryptedEmailMessageInput///PointingToDeclaration/">SendEncryptedEmailMessageInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/SendEncryptedEmailMessageMutation.Data///PointingToDeclaration/">SendEncryptedEmailMessageMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="724547258%2FFunctions%2F2021949935" anchor-label="unblockEmailAddressesMutation" id="724547258%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="unblock-email-addresses-mutation.html"><span>unblock</span><wbr></wbr><span>Email</span><wbr></wbr><span>Addresses</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="724547258%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="unblock-email-addresses-mutation.html"><span class="token function">unblockEmailAddressesMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/UnblockEmailAddressesInput///PointingToDeclaration/">UnblockEmailAddressesInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/UnblockEmailAddressesMutation.Data///PointingToDeclaration/">UnblockEmailAddressesMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1972431226%2FFunctions%2F2021949935" anchor-label="updateCustomEmailFolderMutation" id="1972431226%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="update-custom-email-folder-mutation.html"><span>update</span><wbr></wbr><span>Custom</span><wbr></wbr><span>Email</span><wbr></wbr><span>Folder</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1972431226%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="update-custom-email-folder-mutation.html"><span class="token function">updateCustomEmailFolderMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/UpdateCustomEmailFolderInput///PointingToDeclaration/">UpdateCustomEmailFolderInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/UpdateCustomEmailFolderMutation.Data///PointingToDeclaration/">UpdateCustomEmailFolderMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1642897870%2FFunctions%2F2021949935" anchor-label="updateEmailAddressMetadataMutation" id="-1642897870%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="update-email-address-metadata-mutation.html"><span>update</span><wbr></wbr><span>Email</span><wbr></wbr><span>Address</span><wbr></wbr><span>Metadata</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1642897870%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="update-email-address-metadata-mutation.html"><span class="token function">updateEmailAddressMetadataMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/UpdateEmailAddressMetadataInput///PointingToDeclaration/">UpdateEmailAddressMetadataInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/UpdateEmailAddressMetadataMutation.Data///PointingToDeclaration/">UpdateEmailAddressMetadataMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1611045926%2FFunctions%2F2021949935" anchor-label="updateEmailMessagesMutation" id="-1611045926%2FFunctions%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="update-email-messages-mutation.html"><span>update</span><wbr></wbr><span>Email</span><wbr></wbr><span>Messages</span><wbr></wbr><span><span>Mutation</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1611045926%2FFunctions%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="update-email-messages-mutation.html"><span class="token function">updateEmailMessagesMutation</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql.type/UpdateEmailMessagesInput///PointingToDeclaration/">UpdateEmailMessagesInput</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="com.amplifyframework.api.graphql/GraphQLResponse///PointingToDeclaration/">GraphQLResponse</span><span class="token operator">&lt;</span><span data-unresolved-link="com.sudoplatform.sudoemail.graphql/UpdateEmailMessagesMutation.Data///PointingToDeclaration/">UpdateEmailMessagesMutation.Data</span><span class="token operator">&gt;</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="footer">
+        <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2025 Copyright</span><span
+                class="pull-right"><span>Generated by </span><a
+                href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span>
+      </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

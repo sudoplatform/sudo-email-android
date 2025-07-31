@@ -493,15 +493,53 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             }
         }
 
-        val attachment = EmailAttachment(
+        val jsAttachment = EmailAttachment(
             fileName = "badExtension.js",
             contentId = UUID.randomUUID().toString(),
             mimeType = "text/javascript",
             inlineAttachment = false,
             data = "This file has an invalid file extension".toByteArray(),
         )
+        val pdfAttachment = EmailAttachment(
+            fileName = "goodExtension.pdf",
+            contentId = UUID.randomUUID().toString(),
+            mimeType = "text/pdf",
+            inlineAttachment = false,
+            data = "This file has a valid file extension".toByteArray(),
+        )
+        val libAttachment = EmailAttachment(
+            fileName = "badExtension.file.lib",
+            contentId = UUID.randomUUID().toString(),
+            mimeType = "application/octet-stream",
+            inlineAttachment = false,
+            data = "This file has an invalid file extension".toByteArray(),
+        )
+        val inNetworkDestinationAddress = EmailMessage.EmailAddress(emailAddress.emailAddress)
         shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
-            sendEmailMessage(emailClient, emailAddress, attachments = listOf(attachment))
+            sendEmailMessage(emailClient, emailAddress, attachments = listOf(jsAttachment))
+        }
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                attachments = listOf(jsAttachment),
+                inlineAttachments = listOf(pdfAttachment),
+            )
+        }
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                attachments = listOf(pdfAttachment),
+                inlineAttachments = listOf(libAttachment),
+            )
+        }
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                inlineAttachments = listOf(pdfAttachment, libAttachment),
+            )
         }
     }
 
@@ -993,6 +1031,120 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             hasAttachments shouldBe false
             size shouldBeGreaterThan 0.0
             encryptionStatus shouldBe EncryptionStatus.ENCRYPTED
+        }
+    }
+
+    @Test
+    fun sendEncryptedEmailShouldThrowWhenInvalidAttachmentUsed() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val input = ListEmailAddressesInput()
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        val attachment = EmailAttachment(
+            fileName = "badExtension.js",
+            contentId = UUID.randomUUID().toString(),
+            mimeType = "text/javascript",
+            inlineAttachment = false,
+            data = "This file has an invalid file extension".toByteArray(),
+        )
+        val inNetworkDestinationAddress = EmailMessage.EmailAddress(emailAddress.emailAddress)
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(emailClient, emailAddress, listOf(inNetworkDestinationAddress), attachments = listOf(attachment))
+        }
+    }
+
+    @Test
+    fun sendEncryptedEmailShouldThrowWhenVariousInvalidAttachmentsUsed() = runTest {
+        val sudo = sudoClient.createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val input = ListEmailAddressesInput()
+        when (val listEmailAddresses = emailClient.listEmailAddresses(input)) {
+            is ListAPIResult.Success -> {
+                listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+            }
+
+            else -> {
+                fail("Unexpected ListAPIResult")
+            }
+        }
+
+        val jsAttachment = EmailAttachment(
+            fileName = "badExtension.js",
+            contentId = UUID.randomUUID().toString(),
+            mimeType = "text/javascript",
+            inlineAttachment = false,
+            data = "This file has an invalid file extension".toByteArray(),
+        )
+        val pdfAttachment = EmailAttachment(
+            fileName = "goodExtension.pdf",
+            contentId = UUID.randomUUID().toString(),
+            mimeType = "text/pdf",
+            inlineAttachment = false,
+            data = "This file has a valid file extension".toByteArray(),
+        )
+        val libAttachment = EmailAttachment(
+            fileName = "badExtension.file.lib",
+            contentId = UUID.randomUUID().toString(),
+            mimeType = "application/octet-stream",
+            inlineAttachment = false,
+            data = "This file has an invalid file extension".toByteArray(),
+        )
+        val inNetworkDestinationAddress = EmailMessage.EmailAddress(emailAddress.emailAddress)
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(emailClient, emailAddress, listOf(inNetworkDestinationAddress), attachments = listOf(jsAttachment))
+        }
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(inNetworkDestinationAddress),
+                attachments = listOf(jsAttachment),
+                inlineAttachments = listOf(pdfAttachment),
+            )
+        }
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(inNetworkDestinationAddress),
+                attachments = listOf(pdfAttachment),
+                inlineAttachments = listOf(libAttachment),
+            )
+        }
+        shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
+            sendEmailMessage(
+                emailClient,
+                emailAddress,
+                listOf(inNetworkDestinationAddress),
+                inlineAttachments = listOf(pdfAttachment, libAttachment),
+            )
         }
     }
 

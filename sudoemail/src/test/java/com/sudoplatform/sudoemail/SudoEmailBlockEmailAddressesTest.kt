@@ -7,11 +7,10 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -23,7 +22,6 @@ import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -31,13 +29,11 @@ import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -48,7 +44,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 import java.util.UUID
-import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput as BlockEmailAddressesRequest
 
 /**
  * Test the correct operation of [SudoEmailClient.blockEmailAddresses]
@@ -58,36 +53,6 @@ import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput as Block
 class SudoEmailBlockEmailAddressesTest : BaseTests() {
     private val owner = "mockOwner"
     private var addresses: List<String> = emptyList()
-
-    private val mutationSuccessResponse by before {
-        JSONObject(
-            """
-                {
-                    'blockEmailAddresses': {
-                        '__typename': 'BlockEmailAddressesResult',
-                        'status': 'SUCCESS',
-                        'failedAddresses': [],
-                        'successAddresses': []
-                    }
-                }
-            """.trimIndent(),
-        )
-    }
-
-    private val mutationFailureResponse by before {
-        JSONObject(
-            """
-                {
-                    'blockEmailAddresses': {
-                        '__typename': 'BlockEmailAddressesResult',
-                        'status': 'FAILED',
-                        'failedAddresses': [],
-                        'successAddresses': []
-                    }
-                }
-            """.trimIndent(),
-        )
-    }
 
     private val mockContext by before {
         mock<Context>()
@@ -99,20 +64,14 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
         }
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(BlockEmailAddressesMutation.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                blockEmailAddressesMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationSuccessResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                DataFactory.blockEmailAddressMutationResponse()
             }
         }
     }
@@ -148,7 +107,7 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -179,7 +138,7 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -219,18 +178,15 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.SUCCESS
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe BlockEmailAddressesMutation.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as BlockEmailAddressesRequest
+            verify(mockApiClient).blockEmailAddressesMutation(
+                check { input ->
                     input.owner shouldBe "mockOwner"
                     input.blockedAddresses.size shouldBe addresses.size - 1
                     val inputAction = input.blockedAddresses.first().action.getOrNull()
                     inputAction.toString() shouldBe BlockedEmailAddressAction.DROP.toString()
                 },
-                any(),
-                any(),
             )
+
             verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
             verify(mockSealingService, times(addresses.size - 1)).sealString(any(), any())
             verify(mockUserClient).getSubject()
@@ -249,10 +205,8 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
         result shouldNotBe null
         result.status shouldBe BatchOperationStatus.SUCCESS
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe BlockEmailAddressesMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as BlockEmailAddressesRequest
+        verify(mockApiClient).blockEmailAddressesMutation(
+            check { input ->
                 input.owner shouldBe "mockOwner"
                 input.blockedAddresses.size shouldBe addresses.size
                 val inputAction = input.blockedAddresses.first().action.getOrNull()
@@ -262,8 +216,6 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
                 } shouldNotBe null
                 inputAction.toString() shouldBe BlockedEmailAddressAction.DROP.toString()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService, times(2)).sealString(any(), any())
@@ -283,17 +235,13 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
         result shouldNotBe null
         result.status shouldBe BatchOperationStatus.SUCCESS
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe BlockEmailAddressesMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as BlockEmailAddressesRequest
+        verify(mockApiClient).blockEmailAddressesMutation(
+            check { input ->
                 input.owner shouldBe "mockOwner"
                 input.blockedAddresses.size shouldBe addresses.size
                 val inputAction = input.blockedAddresses.first().action.getOrNull()
                 inputAction.toString() shouldBe BlockedEmailAddressAction.SPAM.toString()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService, times(2)).sealString(any(), any())
@@ -313,10 +261,8 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
         result shouldNotBe null
         result.status shouldBe BatchOperationStatus.SUCCESS
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe BlockEmailAddressesMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as BlockEmailAddressesRequest
+        verify(mockApiClient).blockEmailAddressesMutation(
+            check { input ->
                 input.owner shouldBe "mockOwner"
                 input.blockedAddresses.size shouldBe addresses.size
                 val inputAction = input.blockedAddresses.first().action.getOrNull()
@@ -327,8 +273,6 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
                 } shouldNotBe null
                 input.emailAddressId.getOrNull() shouldBe mockEmailAddressId
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService, times(addresses.size)).sealString(any(), any())
@@ -340,19 +284,15 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
         runTest {
             addresses.size shouldNotBe 0
 
-            mockApiCategory.stub {
-                on {
-                    mutate<String>(
-                        argThat { this.query.equals(BlockEmailAddressesMutation.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    blockEmailAddressesMutation(
                         any(),
                     )
                 } doAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(mutationFailureResponse.toString(), null),
+                    DataFactory.blockEmailAddressMutationResponse(
+                        status = BlockEmailAddressesBulkUpdateStatus.FAILED,
                     )
-                    mock<GraphQLOperation<String>>()
                 }
             }
 
@@ -365,17 +305,13 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.FAILURE
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe BlockEmailAddressesMutation.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as BlockEmailAddressesRequest
+            verify(mockApiClient).blockEmailAddressesMutation(
+                check { input ->
                     input.owner shouldBe "mockOwner"
                     input.blockedAddresses.size shouldBe addresses.size
                     val inputAction = input.blockedAddresses.first().action.getOrNull()
                     inputAction.toString() shouldBe BlockedEmailAddressAction.DROP.toString()
                 },
-                any(),
-                any(),
             )
             verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
             verify(mockSealingService, times(2)).sealString(any(), any())
@@ -390,33 +326,17 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
             StringHasher.hashString("$owner|${EmailAddressParser.normalize(it)}")
         }
 
-        val mutationPartialResponse by before {
-            JSONObject(
-                """
-                {
-                    'blockEmailAddresses': {
-                        '__typename': 'BlockEmailAddressesResult',
-                        'status': 'PARTIAL',
-                        'failedAddresses': ['${expectedHashedValues[0]}'],
-                        'successAddresses': ['${expectedHashedValues[1]}']
-                    }
-                }
-                """.trimIndent(),
-            )
-        }
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(BlockEmailAddressesMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                blockEmailAddressesMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationPartialResponse.toString(), null),
+                DataFactory.blockEmailAddressMutationResponse(
+                    status = BlockEmailAddressesBulkUpdateStatus.PARTIAL,
+                    failedAddresses = listOf(expectedHashedValues[0]),
+                    successAddresses = listOf(expectedHashedValues[1]),
                 )
-                mock<GraphQLOperation<String>>()
             }
         }
 
@@ -431,17 +351,13 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
         result.failureValues?.shouldContain(addresses[0])
         result.successValues?.shouldContain(addresses[1])
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe BlockEmailAddressesMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as BlockEmailAddressesRequest
+        verify(mockApiClient).blockEmailAddressesMutation(
+            check { input ->
                 input.owner shouldBe "mockOwner"
                 input.blockedAddresses.size shouldBe addresses.size
                 val inputAction = input.blockedAddresses.first().action.getOrNull()
                 inputAction.toString() shouldBe BlockedEmailAddressAction.DROP.toString()
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         verify(mockSealingService, times(2)).sealString(any(), any())
@@ -459,19 +375,13 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
                 null,
                 mapOf("errorType" to "SystemError"),
             )
-            mockApiCategory.stub {
-                on {
-                    mutate<String>(
-                        argThat { this.query.equals(BlockEmailAddressesMutation.OPERATION_DOCUMENT) },
-                        any(),
+            mockApiClient.stub {
+                onBlocking {
+                    blockEmailAddressesMutation(
                         any(),
                     )
                 } doAnswer {
-                    @Suppress("UNCHECKED_CAST")
-                    (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                        GraphQLResponse(null, listOf(error)),
-                    )
-                    mock<GraphQLOperation<String>>()
+                    GraphQLResponse(null, listOf(error))
                 }
             }
 
@@ -484,17 +394,13 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
             val result = deferredResult.await()
             result shouldNotBe null
 
-            verify(mockApiCategory).mutate<String>(
-                check {
-                    it.query shouldBe BlockEmailAddressesMutation.OPERATION_DOCUMENT
-                    val input = it.variables["input"] as BlockEmailAddressesRequest
+            verify(mockApiClient).blockEmailAddressesMutation(
+                check { input ->
                     input.owner shouldBe owner
                     input.blockedAddresses.size shouldBe addresses.size
                     val inputAction = input.blockedAddresses.first().action.getOrNull()
                     inputAction.toString() shouldBe BlockedEmailAddressAction.DROP.toString()
                 },
-                any(),
-                any(),
             )
             verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
             verify(mockSealingService, times(2)).sealString(any(), any())

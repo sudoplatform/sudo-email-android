@@ -7,11 +7,9 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -21,13 +19,11 @@ import com.sudoplatform.sudoemail.types.transformers.Unsealer
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +31,6 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -47,7 +42,6 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
 import java.net.HttpURLConnection
 import java.util.concurrent.CancellationException
-import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput as UpdateEmailAddressMetadataRequest
 
 /**
  * Test the correct operation of [SudoEmailClient.updateEmailAddressMetadata]
@@ -64,13 +58,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     private val mutationResponse by before {
-        JSONObject(
-            """
-                {
-                    'updateEmailAddressMetadata': 'emailAddressId'
-                }
-            """.trimIndent(),
-        )
+        DataFactory.updateEmailAddressMetadataMutationResponse("emailAddressId")
     }
 
     private val mockContext by before {
@@ -81,20 +69,14 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                updateEmailAddressMetadataMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                mutationResponse
             }
         }
     }
@@ -134,7 +116,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -152,7 +134,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockApiCategory, mockS3Client)
+        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockApiClient, mockS3Client)
     }
 
     @Test
@@ -164,33 +146,23 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         val result = deferredResult.await()
 
         result shouldBe "emailAddressId"
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+        verify(mockApiClient).updateEmailAddressMetadataMutation(
+            check { input ->
                 input.id shouldBe "emailAddressId"
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should throw when response is null`() = runTest {
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                updateEmailAddressMetadataMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, null),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, null)
             }
         }
 
@@ -202,25 +174,19 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+        verify(mockApiClient).updateEmailAddressMetadataMutation(
+            check { input ->
                 input.id shouldBe "emailAddressId"
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should throw when unsealing fails`() = runTest {
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                updateEmailAddressMetadataMutation(
                     any(),
                 )
             } doThrow Unsealer.UnsealerException.UnsupportedAlgorithmException(
@@ -236,14 +202,10 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+        verify(mockApiClient).updateEmailAddressMetadataMutation(
+            check { input ->
                 input.id shouldBe "emailAddressId"
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
@@ -256,19 +218,13 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             null,
             mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
         )
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                updateEmailAddressMetadataMutation(
                     any(),
                 )
             }.thenAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(testError)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(testError))
             }
         }
 
@@ -280,25 +236,19 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+        verify(mockApiClient).updateEmailAddressMetadataMutation(
+            check { input ->
                 input.id shouldBe "emailAddressId"
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }
 
     @Test
     fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() = runTest {
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                updateEmailAddressMetadataMutation(
                     any(),
                 )
             } doThrow RuntimeException("Mock Runtime Exception")
@@ -312,14 +262,10 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).mutate<String>(
-            check {
-                it.query shouldBe UpdateEmailAddressMetadataMutation.OPERATION_DOCUMENT
-                val input = it.variables["input"] as UpdateEmailAddressMetadataRequest
+        verify(mockApiClient).updateEmailAddressMetadataMutation(
+            check { input ->
                 input.id shouldBe "emailAddressId"
             },
-            any(),
-            any(),
         )
         verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
     }

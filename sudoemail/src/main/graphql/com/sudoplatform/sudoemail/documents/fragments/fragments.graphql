@@ -150,6 +150,7 @@ fragment EmailConfigurationData on EmailConfigurationData {
     emailMessageMaxOutboundMessageSize
     emailMessageRecipientsLimit
     encryptedEmailMessageRecipientsLimit
+    prohibitedFileExtensions
 }
 
 fragment BlockedAddress on BlockedEmailAddress {

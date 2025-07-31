@@ -13,12 +13,15 @@ import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessageState
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -146,5 +149,45 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
         response.emailAddressId shouldBe emailAddress.id
         response.sendAt shouldBe sendAt
         response.state shouldBe ScheduledDraftMessageState.SCHEDULED
+    }
+
+    @Test
+    fun scheduleAndDeleteDraftMessageShouldSucceed() = runTest {
+        val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
+        val sudo = createSudo(TestData.sudo)
+        sudo shouldNotBe null
+        sudoList.add(sudo)
+        val ownershipProof = getOwnershipProof(sudo)
+        ownershipProof shouldNotBe null
+
+        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+        emailAddress shouldNotBe null
+        emailAddressList.add(emailAddress)
+
+        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+            from = emailAddress.emailAddress,
+            to = listOf(emailAddress.emailAddress),
+        )
+        val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
+        val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
+        draftId shouldNotBe null
+
+        val input = ScheduleSendDraftMessageInput(
+            draftId,
+            emailAddress.id,
+            sendAt,
+        )
+        val scheduledDraft = emailClient.scheduleSendDraftMessage(input)
+        scheduledDraft shouldNotBe null
+        scheduledDraft.id shouldBe draftId
+
+        // Ensure that the draft message has been created/scheduled
+        delay(3000)
+        emailClient.deleteDraftEmailMessages(DeleteDraftEmailMessagesInput(listOf(draftId), emailAddress.id))
+        // give some time for the deletion to complete
+        delay(3000)
+        shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
+            emailClient.getDraftEmailMessage(GetDraftEmailMessageInput(scheduledDraft.id, emailAddress.id))
+        }
     }
 }

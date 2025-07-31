@@ -32,6 +32,7 @@ internal object EmailConfigurationTransformer {
             emailMessageMaxOutboundMessageSize = emailConfigurationData.emailMessageMaxOutboundMessageSize,
             emailMessageRecipientsLimit = emailConfigurationData.emailMessageRecipientsLimit,
             encryptedEmailMessageRecipientsLimit = emailConfigurationData.encryptedEmailMessageRecipientsLimit,
+            prohibitedFileExtensions = emailConfigurationData.prohibitedFileExtensions,
         )
     }
 }

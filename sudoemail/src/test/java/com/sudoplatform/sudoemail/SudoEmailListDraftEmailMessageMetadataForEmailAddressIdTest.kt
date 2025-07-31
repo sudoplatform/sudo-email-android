@@ -8,11 +8,9 @@ package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.services.s3.model.ObjectMetadata
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
@@ -22,7 +20,6 @@ import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.matchers.maps.shouldContain
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
@@ -35,7 +32,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -72,20 +68,14 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
         DefaultServiceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                getEmailAddressQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(emailAddressQueryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                DataFactory.getEmailAddressQueryResponse()
             }
         }
     }
@@ -133,7 +123,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -154,7 +144,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
         verifyNoMoreInteractions(
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -170,19 +160,13 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
             null,
             mapOf("errorType" to "AddressNotFound"),
         )
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                getEmailAddressQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(error)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(error))
             }
         }
 
@@ -196,11 +180,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
     }
@@ -230,11 +210,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
 
         result.size shouldBe 0
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).list(
@@ -266,11 +242,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
         result[1].id shouldBe mockListObjectsResponse[1].key
         result[1].emailAddressId shouldBe emailAddressId
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).list(
@@ -334,11 +306,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
         result[1].id shouldBe mockListObjectsResponse[1].key
         result[1].emailAddressId shouldBe emailAddressId
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockS3Client).list(

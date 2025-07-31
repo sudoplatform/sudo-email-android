@@ -8,12 +8,9 @@ package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.auth.CognitoCredentialsProvider
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
-import com.sudoplatform.sudoemail.graphql.CancelScheduledDraftMessageMutation
-import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -22,18 +19,15 @@ import com.sudoplatform.sudoemail.types.inputs.CancelScheduledDraftMessageInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -55,16 +49,6 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
         CancelScheduledDraftMessageInput(
             dummyDraftId,
             dummyEmailAddressId,
-        )
-    }
-
-    private val mutationResponse by before {
-        JSONObject(
-            """
-                {
-                    'cancelScheduledDraftMessage': $dummyDraftId
-                }
-            """.trimIndent(),
         )
     }
 
@@ -96,33 +80,21 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
         mock<ServiceKeyManager>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                getEmailAddressQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(emailAddressQueryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                DataFactory.getEmailAddressQueryResponse()
             }
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(CancelScheduledDraftMessageMutation.OPERATION_DOCUMENT) },
-                    any(),
+            onBlocking {
+                cancelScheduledDraftMessageMutation(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(mutationResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                DataFactory.cancelScheduledDraftMessageResponse(dummyDraftId)
             }
         }
     }
@@ -146,7 +118,7 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             context,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -168,7 +140,7 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
             mockUserClient,
             mockKeyManager,
             mockServiceKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockSealingService,
@@ -185,19 +157,13 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
             mapOf("errorType" to "AddressNotFound"),
         )
 
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(GetEmailAddressQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                getEmailAddressQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(null, listOf(error)),
-                )
-                mock<GraphQLOperation<String>>()
+                GraphQLResponse(null, listOf(error))
             }
         }
 
@@ -209,22 +175,16 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
     }
 
     @Test
     fun `cancelScheduledDraftMessage() should throw an error if graphQl mutation fails`() = runTest {
-        mockApiCategory.stub {
-            on {
-                mutate<String>(
-                    argThat { this.query.equals(CancelScheduledDraftMessageMutation.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                cancelScheduledDraftMessageMutation(
                     any(),
                 )
             }.thenThrow(UnknownError("ERROR"))
@@ -238,17 +198,11 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockUserClient, times(1)).getCredentialsProvider()
-        verify(mockApiCategory).mutate<String>(
-            argThat { this.query.equals(CancelScheduledDraftMessageMutation.OPERATION_DOCUMENT) },
-            any(),
+        verify(mockApiClient).cancelScheduledDraftMessageMutation(
             any(),
         )
     }
@@ -263,17 +217,11 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
 
         result shouldBe dummyDraftId
 
-        verify(mockApiCategory).query<String>(
-            org.mockito.kotlin.check {
-                it.query shouldBe GetEmailAddressQuery.OPERATION_DOCUMENT
-            },
-            any(),
+        verify(mockApiClient).getEmailAddressQuery(
             any(),
         )
         verify(mockUserClient, times(1)).getCredentialsProvider()
-        verify(mockApiCategory).mutate<String>(
-            argThat { this.query.equals(CancelScheduledDraftMessageMutation.OPERATION_DOCUMENT) },
-            any(),
+        verify(mockApiClient).cancelScheduledDraftMessageMutation(
             any(),
         )
     }

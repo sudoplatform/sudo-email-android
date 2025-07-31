@@ -56,7 +56,7 @@ class CancelScheduledDraftMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun cancelScheduledDraftMessageShouldFailWithInvalidDraftId() = runTest {
+    fun cancelScheduledDraftMessageShouldSucceedWithInvalidDraftId() = runTest {
         val sudo = createSudo(TestData.sudo)
         sudo shouldNotBe null
         sudoList.add(sudo)
@@ -67,15 +67,17 @@ class CancelScheduledDraftMessageIntegrationTest : BaseIntegrationTest() {
 
         emailAddress shouldNotBe null
         emailAddressList.add(emailAddress)
+        val draftId = "dummyDraftId"
 
         val input = CancelScheduledDraftMessageInput(
-            id = "dummyId",
+            id = draftId,
             emailAddressId = emailAddress.id,
         )
 
-        shouldThrow<SudoEmailClient.EmailMessageException.RecordNotFoundException> {
-            emailClient.cancelScheduledDraftMessage(input)
-        }
+        val response = emailClient.cancelScheduledDraftMessage(input)
+
+        response shouldNotBe null
+        response shouldBe draftId
     }
 
     @Test

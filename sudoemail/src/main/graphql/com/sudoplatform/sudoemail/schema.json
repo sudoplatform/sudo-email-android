@@ -1,19 +1,23 @@
 {
   "__schema": {
     "queryType": {
-      "name": "Query"
+      "name": "Query",
+      "kind": "OBJECT"
     },
     "mutationType": {
-      "name": "Mutation"
+      "name": "Mutation",
+      "kind": "OBJECT"
     },
     "subscriptionType": {
-      "name": "Subscription"
+      "name": "Subscription",
+      "kind": "OBJECT"
     },
     "types": [
       {
         "kind": "OBJECT",
         "name": "AvailableAddresses",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "addresses",
@@ -49,6 +53,7 @@
         "kind": "OBJECT",
         "name": "BlockEmailAddressesBulkUpdateResult",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "failedAddresses",
@@ -116,6 +121,7 @@
         "kind": "ENUM",
         "name": "BlockEmailAddressesBulkUpdateStatus",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -145,6 +151,7 @@
         "kind": "INPUT_OBJECT",
         "name": "BlockEmailAddressesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -208,6 +215,7 @@
         "kind": "ENUM",
         "name": "BlockedAddressAction",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -231,6 +239,7 @@
         "kind": "ENUM",
         "name": "BlockedAddressHashAlgorithm",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -248,6 +257,7 @@
         "kind": "OBJECT",
         "name": "BlockedEmailAddress",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "action",
@@ -419,6 +429,7 @@
         "kind": "INPUT_OBJECT",
         "name": "BlockedEmailAddressInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -490,6 +501,7 @@
         "kind": "SCALAR",
         "name": "Boolean",
         "description": "The `Boolean` scalar type represents `true` or `false`.",
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -500,6 +512,7 @@
         "kind": "INPUT_OBJECT",
         "name": "CancelScheduledDraftMessageInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -543,6 +556,7 @@
         "kind": "INPUT_OBJECT",
         "name": "CheckEmailAddressAvailabilityInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -598,6 +612,7 @@
         "kind": "OBJECT",
         "name": "ConfiguredDomains",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "domains",
@@ -633,6 +648,7 @@
         "kind": "INPUT_OBJECT",
         "name": "CreateCustomEmailFolderInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -676,6 +692,7 @@
         "kind": "INPUT_OBJECT",
         "name": "CreatePublicKeyInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -763,6 +780,7 @@
         "kind": "INPUT_OBJECT",
         "name": "CustomEmailFolderUpdateValuesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -786,6 +804,7 @@
         "kind": "INPUT_OBJECT",
         "name": "DateRangeInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -829,6 +848,7 @@
         "kind": "INPUT_OBJECT",
         "name": "DeleteCustomEmailFolderInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -872,6 +892,7 @@
         "kind": "INPUT_OBJECT",
         "name": "DeleteEmailMessageInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -899,6 +920,7 @@
         "kind": "INPUT_OBJECT",
         "name": "DeleteEmailMessagesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -934,6 +956,7 @@
         "kind": "INPUT_OBJECT",
         "name": "DeleteMessagesByFolderIdInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -989,6 +1012,7 @@
         "kind": "INPUT_OBJECT",
         "name": "DeprovisionEmailAddressInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -1016,6 +1040,7 @@
         "kind": "OBJECT",
         "name": "EmailAddress",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "alias",
@@ -1283,6 +1308,7 @@
         "kind": "OBJECT",
         "name": "EmailAddressConnection",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "items",
@@ -1330,6 +1356,7 @@
         "kind": "INPUT_OBJECT",
         "name": "EmailAddressMetadataUpdateValuesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -1353,6 +1380,7 @@
         "kind": "OBJECT",
         "name": "EmailAddressPublicInfo",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "emailAddress",
@@ -1428,6 +1456,7 @@
         "kind": "OBJECT",
         "name": "EmailAddressPublicKey",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "algorithm",
@@ -1487,6 +1516,7 @@
         "kind": "OBJECT",
         "name": "EmailConfigurationData",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "deleteEmailMessagesLimit",
@@ -1569,6 +1599,30 @@
             "deprecationReason": null
           },
           {
+            "name": "prohibitedFileExtensions",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "updateEmailMessagesLimit",
             "description": null,
             "args": [],
@@ -1594,6 +1648,7 @@
         "kind": "OBJECT",
         "name": "EmailFolder",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "createdAtEpochMs",
@@ -1797,6 +1852,7 @@
         "kind": "OBJECT",
         "name": "EmailFolderConnection",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "items",
@@ -1844,6 +1900,7 @@
         "kind": "OBJECT",
         "name": "EmailMessageConnection",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "items",
@@ -1891,6 +1948,7 @@
         "kind": "INPUT_OBJECT",
         "name": "EmailMessageDateRangeInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -1926,6 +1984,7 @@
         "kind": "ENUM",
         "name": "EmailMessageDirection",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1949,6 +2008,7 @@
         "kind": "ENUM",
         "name": "EmailMessageEncryptionStatus",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -1972,6 +2032,7 @@
         "kind": "ENUM",
         "name": "EmailMessageState",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2025,6 +2086,7 @@
         "kind": "INPUT_OBJECT",
         "name": "EmailMessageUpdateValuesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2060,6 +2122,7 @@
         "kind": "SCALAR",
         "name": "Float",
         "description": "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).",
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2070,6 +2133,7 @@
         "kind": "INPUT_OBJECT",
         "name": "GetEmailAddressBlocklistInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2097,6 +2161,7 @@
         "kind": "OBJECT",
         "name": "GetEmailAddressBlocklistResponse",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "blockedAddresses",
@@ -2132,6 +2197,7 @@
         "kind": "SCALAR",
         "name": "ID",
         "description": "The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `\"4\"`) or integer (such as `4`) input value will be accepted as an ID.",
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2142,6 +2208,7 @@
         "kind": "SCALAR",
         "name": "Int",
         "description": "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.",
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2152,6 +2219,7 @@
         "kind": "ENUM",
         "name": "KeyFormat",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -2175,6 +2243,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ListEmailAddressesForSudoIdInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2226,6 +2295,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ListEmailAddressesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2261,6 +2331,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ListEmailFoldersForEmailAddressIdInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2312,6 +2383,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ListEmailMessagesForEmailAddressIdInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2399,6 +2471,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ListEmailMessagesForEmailFolderIdInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2486,6 +2559,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ListEmailMessagesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2557,6 +2631,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ListScheduledDraftMessagesForEmailAddressIdInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2620,6 +2695,7 @@
         "kind": "INPUT_OBJECT",
         "name": "LookupEmailAddressesPublicInfoInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -2655,6 +2731,7 @@
         "kind": "OBJECT",
         "name": "LookupEmailAddressesPublicInfoResponse",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "items",
@@ -2690,6 +2767,7 @@
         "kind": "OBJECT",
         "name": "Mutation",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "blockEmailAddresses",
@@ -3266,6 +3344,7 @@
         "kind": "OBJECT",
         "name": "Owner",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "id",
@@ -3309,6 +3388,7 @@
         "kind": "INPUT_OBJECT",
         "name": "OwnerInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -3352,6 +3432,7 @@
         "kind": "OBJECT",
         "name": "PaginatedPublicKey",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "items",
@@ -3399,6 +3480,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ProvisionEmailAddressInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -3478,6 +3560,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ProvisionEmailAddressPublicKeyInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -3549,6 +3632,7 @@
         "kind": "OBJECT",
         "name": "PublicKey",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "algorithm",
@@ -3720,6 +3804,7 @@
         "kind": "OBJECT",
         "name": "Query",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "checkEmailAddressAvailability",
@@ -4294,6 +4379,7 @@
         "kind": "INPUT_OBJECT",
         "name": "Rfc822HeaderInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -4485,6 +4571,7 @@
         "kind": "INPUT_OBJECT",
         "name": "S3EmailObjectInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -4544,6 +4631,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ScheduleSendDraftMessageInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -4619,6 +4707,7 @@
         "kind": "OBJECT",
         "name": "ScheduledDraftMessage",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "createdAtEpochMs",
@@ -4766,6 +4855,7 @@
         "kind": "OBJECT",
         "name": "ScheduledDraftMessageConnection",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "items",
@@ -4813,6 +4903,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ScheduledDraftMessageFilterInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -4880,6 +4971,7 @@
         "kind": "ENUM",
         "name": "ScheduledDraftMessageState",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -4915,6 +5007,7 @@
         "kind": "INPUT_OBJECT",
         "name": "ScheduledDraftMessageStateFilterInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -4982,6 +5075,7 @@
         "kind": "OBJECT",
         "name": "SealedAttribute",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "algorithm",
@@ -5057,6 +5151,7 @@
         "kind": "INPUT_OBJECT",
         "name": "SealedAttributeInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -5132,6 +5227,7 @@
         "kind": "OBJECT",
         "name": "SealedEmailMessage",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "clientRefId",
@@ -5455,6 +5551,7 @@
         "kind": "INPUT_OBJECT",
         "name": "SendEmailMessageInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -5510,6 +5607,7 @@
         "kind": "OBJECT",
         "name": "SendEmailMessageResult",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "createdAtEpochMs",
@@ -5553,6 +5651,7 @@
         "kind": "INPUT_OBJECT",
         "name": "SendEncryptedEmailMessageInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -5624,6 +5723,7 @@
         "kind": "ENUM",
         "name": "SortOrder",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -5647,6 +5747,7 @@
         "kind": "SCALAR",
         "name": "String",
         "description": "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.",
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -5657,6 +5758,7 @@
         "kind": "OBJECT",
         "name": "Subscription",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "onEmailAddressCreated",
@@ -5820,6 +5922,7 @@
         "kind": "OBJECT",
         "name": "SupportedDomains",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "domains",
@@ -5855,6 +5958,7 @@
         "kind": "INPUT_OBJECT",
         "name": "UnblockEmailAddressesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -5906,6 +6010,7 @@
         "kind": "INPUT_OBJECT",
         "name": "UpdateCustomEmailFolderInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -5965,6 +6070,7 @@
         "kind": "INPUT_OBJECT",
         "name": "UpdateEmailAddressMetadataInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -6008,6 +6114,7 @@
         "kind": "INPUT_OBJECT",
         "name": "UpdateEmailMessagesInput",
         "description": null,
+        "isOneOf": false,
         "fields": null,
         "inputFields": [
           {
@@ -6059,6 +6166,7 @@
         "kind": "ENUM",
         "name": "UpdateEmailMessagesStatus",
         "description": null,
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -6088,6 +6196,7 @@
         "kind": "OBJECT",
         "name": "UpdateEmailMessagesV2Result",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "failedMessages",
@@ -6155,6 +6264,7 @@
         "kind": "OBJECT",
         "name": "UpdatedEmailMessageFailure",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "errorType",
@@ -6198,6 +6308,7 @@
         "kind": "OBJECT",
         "name": "UpdatedEmailMessageSuccess",
         "description": null,
+        "isOneOf": null,
         "fields": [
           {
             "name": "createdAtEpochMs",
@@ -6257,6 +6368,7 @@
         "kind": "OBJECT",
         "name": "__Directive",
         "description": "A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL's execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.",
+        "isOneOf": null,
         "fields": [
           {
             "name": "name",
@@ -6373,6 +6485,7 @@
         "kind": "ENUM",
         "name": "__DirectiveLocation",
         "description": "A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.",
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -6498,6 +6611,7 @@
         "kind": "OBJECT",
         "name": "__EnumValue",
         "description": "One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.",
+        "isOneOf": null,
         "fields": [
           {
             "name": "name",
@@ -6565,6 +6679,7 @@
         "kind": "OBJECT",
         "name": "__Field",
         "description": "Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.",
+        "isOneOf": null,
         "fields": [
           {
             "name": "name",
@@ -6685,6 +6800,7 @@
         "kind": "OBJECT",
         "name": "__InputValue",
         "description": "Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.",
+        "isOneOf": null,
         "fields": [
           {
             "name": "name",
@@ -6780,6 +6896,7 @@
         "kind": "OBJECT",
         "name": "__Schema",
         "description": "A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.",
+        "isOneOf": null,
         "fields": [
           {
             "name": "description",
@@ -6891,6 +7008,7 @@
         "kind": "OBJECT",
         "name": "__Type",
         "description": "The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.",
+        "isOneOf": null,
         "fields": [
           {
             "name": "kind",
@@ -7094,6 +7212,18 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "isOneOf",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           }
         ],
         "inputFields": null,
@@ -7105,6 +7235,7 @@
         "kind": "ENUM",
         "name": "__TypeKind",
         "description": "An enum describing what kind of type a given `__Type` is.",
+        "isOneOf": null,
         "fields": null,
         "inputFields": null,
         "interfaces": null,
@@ -7214,6 +7345,15 @@
             "deprecationReason": null
           }
         ]
+      },
+      {
+        "name": "oneOf",
+        "description": "Indicates exactly one field must be supplied and this field must not be `null`.",
+        "isRepeatable": false,
+        "locations": [
+          "INPUT_OBJECT"
+        ],
+        "args": []
       },
       {
         "name": "skip",

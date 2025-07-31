@@ -7,12 +7,9 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.amplifyframework.api.ApiCategory
-import com.amplifyframework.api.graphql.GraphQLOperation
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.amplifyframework.core.Consumer
 import com.apollographql.apollo3.api.Optional
-import com.sudoplatform.sudoemail.graphql.ListScheduledDraftMessagesForEmailAddressIdQuery
+import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -26,18 +23,15 @@ import com.sudoplatform.sudoemail.types.inputs.ScheduledDraftMessageFilterInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
@@ -46,7 +40,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import java.time.Duration
 import java.util.Date
-import com.sudoplatform.sudoemail.graphql.type.ListScheduledDraftMessagesForEmailAddressIdInput as ListScheduledDraftMessagesForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.graphql.type.ScheduledDraftMessageFilterInput as ScheduledDraftMessageFilterGql
 import com.sudoplatform.sudoemail.graphql.type.ScheduledDraftMessageState as ScheduledDraftMessageStateGql
 import com.sudoplatform.sudoemail.graphql.type.ScheduledDraftMessageStateFilterInput as ScheduledDraftMessageStateFilterGql
@@ -67,7 +60,7 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         emailAddressId = dummyEmailAddressId,
         state = ScheduledDraftMessageState.SCHEDULED,
         sendAt = sendAt,
-        owner = "owner",
+        owner = "ownerId",
         owners = listOf(Owner("ownerId", "issuer")),
         updatedAt = Date(1),
         createdAt = Date(1),
@@ -80,69 +73,33 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
     }
 
     private val queryResponse by before {
-        JSONObject(
-            """
-            {
-                'listScheduledDraftMessagesForEmailAddressId': {
-                    'items': [{
-                        '__typename': 'ScheduledDraftMessage',
-                    'draftMessageKey': '$prefix/$dummyDraftId',
-                    'emailAddressId': '$dummyEmailAddressId',
-                    'owner': 'owner',
-                    'owners': [{
-                        '__typename': 'Owner',
-                        'id': 'ownerId',
-                        'issuer': 'issuer'
-                    }],
-                    'sendAtEpochMs': ${sendAt.time},
-                    'state': '${ScheduledDraftMessageState.SCHEDULED}',
-                    'createdAtEpochMs': 1.0,
-                    'updatedAtEpochMs': 1.0
-                    }],
-                    'nextToken': null
-                }
-            }
-            """.trimIndent(),
+        DataFactory.listScheduledDraftMessagesForEmailAddressIdQueryResponse(
+            listOf(
+                DataFactory.getScheduledDraftMessage(
+                    draftMessageKey = "$prefix/$dummyDraftId",
+                    sendAtEpochMs = sendAt.time.toDouble(),
+                    emailAddressId = dummyEmailAddressId,
+                ),
+            ),
         )
     }
 
     private val queryResponseWithNextToken by before {
-        JSONObject(
-            """
-            {
-                'listScheduledDraftMessagesForEmailAddressId': {
-                    'items': [{
-                        '__typename': 'ScheduledDraftMessage',
-                    'draftMessageKey': 'dummyPrefix/$dummyDraftId',
-                    'emailAddressId': '$dummyEmailAddressId',
-                    'owner': 'owner',
-                    'owners': [{
-                        '__typename': 'Owner',
-                        'id': 'ownerId',
-                        'issuer': 'issuer'
-                    }],
-                    'sendAtEpochMs': ${sendAt.time},
-                    'state': '${ScheduledDraftMessageState.SCHEDULED}',
-                    'createdAtEpochMs': 1.0,
-                    'updatedAtEpochMs': 1.0
-                    }],
-                    'nextToken': 'dummyNextToken'
-                }
-            }
-            """.trimIndent(),
+        DataFactory.listScheduledDraftMessagesForEmailAddressIdQueryResponse(
+            listOf(
+                DataFactory.getScheduledDraftMessage(
+                    draftMessageKey = "$prefix/$dummyDraftId",
+                    sendAtEpochMs = sendAt.time.toDouble(),
+                    emailAddressId = dummyEmailAddressId,
+                ),
+            ),
+            "dummyNextToken",
         )
     }
 
     private val queryResponseWithEmptyList by before {
-        JSONObject(
-            """
-            {
-                'listScheduledDraftMessagesForEmailAddressId': {
-                    'items': [],
-                    'nextToken': null
-                }
-            }
-            """.trimIndent(),
+        DataFactory.listScheduledDraftMessagesForEmailAddressIdQueryResponse(
+            emptyList(),
         )
     }
 
@@ -154,20 +111,14 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         mock<SudoUserClient>()
     }
 
-    private val mockApiCategory by before {
-        mock<ApiCategory>().stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+    private val mockApiClient by before {
+        mock<ApiClient>().stub {
+            onBlocking {
+                listScheduledDraftMessagesForEmailAddressIdQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponse.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponse
             }
         }
     }
@@ -207,7 +158,7 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
-            GraphQLClient(mockApiCategory),
+            mockApiClient,
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
@@ -229,7 +180,7 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockApiCategory,
+            mockApiClient,
             mockS3Client,
             mockEmailMessageProcessor,
             mockEmailCryptoService,
@@ -238,11 +189,9 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
 
     @Test
     fun `listScheduledDraftMessagesForEmailAddressId() should throw an error if graphQL mutation fails`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listScheduledDraftMessagesForEmailAddressIdQuery(
                     any(),
                 )
             }.thenThrow(UnknownError("ERROR"))
@@ -256,17 +205,13 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         deferredResult.start()
         deferredResult.await()
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val queryInput = it.variables["input"] as ListScheduledDraftMessagesForEmailAddressIdRequest
+        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+            check { queryInput ->
                 queryInput.emailAddressId shouldBe dummyEmailAddressId
                 queryInput.nextToken shouldBe Optional.absent()
                 queryInput.limit shouldBe Optional.absent()
                 queryInput.filter shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
@@ -285,35 +230,25 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         result.items.size shouldBe 1
         result.items[0] shouldBe expectedScheduledDraftMessageResult
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val queryInput = it.variables["input"] as ListScheduledDraftMessagesForEmailAddressIdRequest
+        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+            check { queryInput ->
                 queryInput.emailAddressId shouldBe dummyEmailAddressId
                 queryInput.nextToken shouldBe Optional.absent()
                 queryInput.limit shouldBe Optional.absent()
                 queryInput.filter shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
     @Test
     fun `listScheduledDraftMessagesForEmailAddressId should handle empty response properly`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listScheduledDraftMessagesForEmailAddressIdQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponseWithEmptyList.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponseWithEmptyList
             }
         }
 
@@ -329,35 +264,25 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         result.nextToken shouldBe null
         result.items.size shouldBe 0
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val queryInput = it.variables["input"] as ListScheduledDraftMessagesForEmailAddressIdRequest
+        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+            check { queryInput ->
                 queryInput.emailAddressId shouldBe dummyEmailAddressId
                 queryInput.nextToken shouldBe Optional.absent()
                 queryInput.limit shouldBe Optional.absent()
                 queryInput.filter shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
     @Test
     fun `listScheduledDraftMessagesForEmailAddressId should handle pagination properly`() = runTest {
-        mockApiCategory.stub {
-            on {
-                query<String>(
-                    argThat { this.query.equals(ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT) },
-                    any(),
+        mockApiClient.stub {
+            onBlocking {
+                listScheduledDraftMessagesForEmailAddressIdQuery(
                     any(),
                 )
             } doAnswer {
-                @Suppress("UNCHECKED_CAST")
-                (it.arguments[1] as Consumer<GraphQLResponse<String>>).accept(
-                    GraphQLResponse(queryResponseWithNextToken.toString(), null),
-                )
-                mock<GraphQLOperation<String>>()
+                queryResponseWithNextToken
             }
         }
 
@@ -378,17 +303,13 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         result.items.size shouldBe 1
         result.items[0] shouldBe expectedScheduledDraftMessageResult
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val queryInput = it.variables["input"] as ListScheduledDraftMessagesForEmailAddressIdRequest
+        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+            check { queryInput ->
                 queryInput.emailAddressId shouldBe dummyEmailAddressId
                 queryInput.nextToken shouldBe Optional.present("dummy")
                 queryInput.limit shouldBe Optional.present(1)
                 queryInput.filter shouldBe Optional.absent()
             },
-            any(),
-            any(),
         )
     }
 
@@ -414,10 +335,8 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         result.items.size shouldBe 1
         result.items[0] shouldBe expectedScheduledDraftMessageResult
 
-        verify(mockApiCategory).query<String>(
-            check {
-                it.query shouldBe ListScheduledDraftMessagesForEmailAddressIdQuery.OPERATION_DOCUMENT
-                val queryInput = it.variables["input"] as ListScheduledDraftMessagesForEmailAddressIdRequest
+        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+            check { queryInput ->
                 queryInput.emailAddressId shouldBe dummyEmailAddressId
                 queryInput.nextToken shouldBe Optional.absent()
                 queryInput.limit shouldBe Optional.absent()
@@ -431,8 +350,6 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
                     ),
                 )
             },
-            any(),
-            any(),
         )
     }
 }

@@ -11,6 +11,7 @@ import androidx.annotation.VisibleForTesting
 import com.sudoplatform.sudoapiclient.ApiClientManager
 import com.sudoplatform.sudoconfigmanager.DefaultSudoConfigManager
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
+import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.secure.DefaultEmailCryptoService
@@ -73,7 +74,6 @@ import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
-import com.sudoplatform.sudouser.amplify.GraphQLClient
 import org.json.JSONException
 import java.util.Objects
 
@@ -158,7 +158,7 @@ interface SudoEmailClient : AutoCloseable {
     class Builder internal constructor() {
         private var context: Context? = null
         private var sudoUserClient: SudoUserClient? = null
-        private var graphQLClient: GraphQLClient? = null
+        private var apiClient: ApiClient? = null
         private var keyManager: KeyManagerInterface? = null
         private var logger: Logger =
             Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
@@ -182,12 +182,12 @@ interface SudoEmailClient : AutoCloseable {
         }
 
         /**
-         * Provide a [GraphQLClient] for the [SudoEmailClient] to use
-         * (optional input). If this is not supplied, an [GraphQLClient] will
+         * Provide a [ApiClient] for the [SudoEmailClient] to use
+         * (optional input). If this is not supplied, an [ApiClient] will
          * be constructed and used.
          */
-        fun setGraphQLClient(graphQLClient: GraphQLClient) = also {
-            this.graphQLClient = graphQLClient
+        fun setApiClient(apiClient: ApiClient) = also {
+            this.apiClient = apiClient
         }
 
         /**
@@ -240,10 +240,13 @@ interface SudoEmailClient : AutoCloseable {
             Objects.requireNonNull(context, "Context must be provided.")
             Objects.requireNonNull(sudoUserClient, "SudoUserClient must be provided.")
 
-            val client = graphQLClient ?: ApiClientManager.getClient(
-                this@Builder.context!!,
-                this@Builder.sudoUserClient!!,
-                CONFIG_EMAIL_SERVICE,
+            val client = apiClient ?: ApiClient(
+                ApiClientManager.getClient(
+                    this@Builder.context!!,
+                    this@Builder.sudoUserClient!!,
+                    CONFIG_EMAIL_SERVICE,
+                ),
+                logger,
             )
 
             val serviceKeyManager = DefaultServiceKeyManager(
@@ -271,7 +274,7 @@ interface SudoEmailClient : AutoCloseable {
 
             return DefaultSudoEmailClient(
                 context = context!!,
-                graphQLClient = client,
+                apiClient = client,
                 sudoUserClient = sudoUserClient!!,
                 logger = logger,
                 serviceKeyManager = serviceKeyManager,
