@@ -13,35 +13,50 @@ import com.sudoplatform.sudouser.PublicKey
  * Responsible for managing the local storage and lifecycle of key pairs associated with the email service.
  */
 internal interface DeviceKeyManager {
-
     /**
      * Defines the exceptions for the [DeviceKeyManager] methods.
      *
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class DeviceKeyManagerException(message: String? = null, cause: Throwable? = null) :
-        RuntimeException(message, cause) {
-        class UserIdNotFoundException(message: String? = null, cause: Throwable? = null) :
-            DeviceKeyManagerException(message = message, cause = cause)
+    sealed class DeviceKeyManagerException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class UserIdNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : DeviceKeyManagerException(message = message, cause = cause)
 
-        class KeyGenerationException(message: String? = null, cause: Throwable? = null) :
-            DeviceKeyManagerException(message = message, cause = cause)
+        class KeyGenerationException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : DeviceKeyManagerException(message = message, cause = cause)
 
-        class KeyOperationFailedException(message: String? = null, cause: Throwable? = null) :
-            DeviceKeyManagerException(message = message, cause = cause)
+        class KeyOperationFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : DeviceKeyManagerException(message = message, cause = cause)
 
-        class DecryptionException(message: String? = null, cause: Throwable? = null) :
-            DeviceKeyManagerException(message = message, cause = cause)
+        class DecryptionException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : DeviceKeyManagerException(message = message, cause = cause)
 
-        class EncryptionException(message: String? = null, cause: Throwable? = null) :
-            DeviceKeyManagerException(message = message, cause = cause)
+        class EncryptionException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : DeviceKeyManagerException(message = message, cause = cause)
 
-        class SecureKeyArchiveException(message: String? = null, cause: Throwable? = null) :
-            DeviceKeyManagerException(message = message, cause = cause)
+        class SecureKeyArchiveException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : DeviceKeyManagerException(message = message, cause = cause)
 
-        class UnknownException(message: String? = null, cause: Throwable? = null) :
-            DeviceKeyManagerException(message = message, cause = cause)
+        class UnknownException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : DeviceKeyManagerException(message = message, cause = cause)
     }
 
     /**
@@ -161,7 +176,11 @@ internal interface DeviceKeyManager {
      * @throws [DeviceKeyManagerException.EncryptionException] if the data cannot be encrypted.
      */
     @Throws(DeviceKeyManagerException::class)
-    fun encryptWithKeyPairId(keyId: String, data: ByteArray, algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm): ByteArray
+    fun encryptWithKeyPairId(
+        keyId: String,
+        data: ByteArray,
+        algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm,
+    ): ByteArray
 
     /**
      * Encrypt the [data] with the input public key.
@@ -190,7 +209,10 @@ internal interface DeviceKeyManager {
      * @throws [DeviceKeyManagerException.DecryptionException] if the data cannot be decrypted.
      */
     @Throws(DeviceKeyManagerException::class)
-    fun decryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray
+    fun decryptWithSymmetricKeyId(
+        keyId: String,
+        data: ByteArray,
+    ): ByteArray
 
     /**
      * Encrypt the [data] with the symmetric key [keyId].

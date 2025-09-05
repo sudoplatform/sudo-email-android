@@ -8,7 +8,7 @@ package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.graphql.type.Rfc822HeaderInput
@@ -57,34 +57,36 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailSendEmailMessageTest : BaseTests() {
-
     private val emailAddressId = "emailAddressId"
-    private val emailAttachment = EmailAttachment(
-        "fileName.jpg",
-        "contentId",
-        "mimeType",
-        false,
-        ByteArray(1),
-    )
-    private val headers = InternetMessageFormatHeader(
-        EmailMessage.EmailAddress("from@bar.com"),
-        listOf(EmailMessage.EmailAddress("to@bar.com")),
-        listOf(EmailMessage.EmailAddress("cc@bar.com")),
-        listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-        "email message subject",
-    )
+    private val emailAttachment =
+        EmailAttachment(
+            "fileName.jpg",
+            "contentId",
+            "mimeType",
+            false,
+            ByteArray(1),
+        )
+    private val headers =
+        InternetMessageFormatHeader(
+            EmailMessage.EmailAddress("from@bar.com"),
+            listOf(EmailMessage.EmailAddress("to@bar.com")),
+            listOf(EmailMessage.EmailAddress("cc@bar.com")),
+            listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+            listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+            "email message subject",
+        )
     private val domains = listOf("foo.com", "bear.com")
-    private val rfc822HeaderInput = Rfc822HeaderInput(
-        from = "from@bear.com",
-        to = listOf("to@bear.com"),
-        cc = listOf("cc@bear.com"),
-        bcc = listOf("bcc@bear.com"),
-        replyTo = listOf("replyTo@bear.com"),
-        subject = Optional.Present("email message subject"),
-        dateEpochMs = Optional.absent(),
-        hasAttachments = Optional.Present(false),
-    )
+    private val rfc822HeaderInput =
+        Rfc822HeaderInput(
+            from = "from@bear.com",
+            to = listOf("to@bear.com"),
+            cc = listOf("cc@bear.com"),
+            bcc = listOf("bcc@bear.com"),
+            replyTo = listOf("replyTo@bear.com"),
+            subject = Optional.Present("email message subject"),
+            dateEpochMs = Optional.absent(),
+            hasAttachments = Optional.Present(false),
+        )
 
     private val input by before {
         SendEmailMessageInput(
@@ -228,12 +230,13 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private val mockEmailCryptoService by before {
         mock<EmailCryptoService>().stub {
-            onBlocking { encrypt(any<ByteArray>(), any()) } doReturn SecurePackage(
-                setOf(
+            onBlocking { encrypt(any<ByteArray>(), any()) } doReturn
+                SecurePackage(
+                    setOf(
+                        emailAttachment,
+                    ),
                     emailAttachment,
-                ),
-                emailAttachment,
-            )
+                )
         }
     }
 
@@ -271,23 +274,25 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send when no error present`() =
         runTest {
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bar.com"),
+                        listOf(EmailMessage.EmailAddress("to@bar.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -323,9 +328,10 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send with attachments when no error present`() =
         runTest {
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -361,23 +367,25 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for non-E2E encrypted send with no recipients`() =
         runTest {
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bar.com"),
+                        emptyList(),
+                        emptyList(),
+                        emptyList(),
+                        emptyList(),
+                        "email message subject",
+                    ),
+                    "email message body",
                     emptyList(),
                     emptyList(),
-                    emptyList(),
-                    emptyList(),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -414,24 +422,26 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     fun `sendEmailMessage() should return results for non-E2E encrypted send with replyingMessageId`() =
         runTest {
             val replyingMessageId = "replying message id"
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-                replyingMessageId = replyingMessageId,
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bar.com"),
+                        listOf(EmailMessage.EmailAddress("to@bar.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                    replyingMessageId = replyingMessageId,
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -468,24 +478,26 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     fun `sendEmailMessage() should return results for non-E2E encrypted send with forwardingMessageId`() =
         runTest {
             val forwardingMessageId = "forwarding message id"
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-                forwardingMessageId = forwardingMessageId,
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bar.com"),
+                        listOf(EmailMessage.EmailAddress("to@bar.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                    forwardingMessageId = forwardingMessageId,
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -521,23 +533,25 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage() should return results for E2E encrypted send when no error present`() =
         runTest {
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -584,25 +598,27 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     fun `sendEmailMessage() should return results for E2E encrypted send with replyingMessageId`() =
         runTest {
             val replyingMessageId = "replying message id"
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-                replyingMessageId = replyingMessageId,
-            )
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                    replyingMessageId = replyingMessageId,
+                )
             val rfc822Header = rfc822HeaderInput.copy(inReplyTo = Optional.presentIfNotNull(replyingMessageId))
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -649,25 +665,27 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     fun `sendEmailMessage() should return results for E2E encrypted send with forwardingMessageId`() =
         runTest {
             val forwardingMessageId = "forwarding message id"
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-                forwardingMessageId = forwardingMessageId,
-            )
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                    forwardingMessageId = forwardingMessageId,
+                )
             val rfc822Header = rfc822HeaderInput.copy(references = Optional.presentIfNotNull(listOf(forwardingMessageId)))
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -713,23 +731,25 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage should return results for in-network and out-of-network recipient send when no error present`() =
         runTest {
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.sendEmailMessage(input)
-            }
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.sendEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -775,11 +795,12 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                    client.sendEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -822,26 +843,28 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 }
             }
 
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                    client.sendEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -894,26 +917,28 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 } doThrow CancellationException("mock")
             }
 
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bar.com"),
+                        listOf(EmailMessage.EmailAddress("to@bar.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<CancellationException> {
-                    client.sendEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -939,26 +964,28 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     @Test
     fun `sendEmailMessage should throw when any in-network recipient email address does not exist`() =
         runTest {
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@foo.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@foo.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException> {
-                    client.sendEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -1054,9 +1081,10 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     fun `sendEmailMessage() should throw emailMessageSizeLimitExceededError when E2E message is too big`() =
         runTest {
             val limit = 10485769
-            val getEmailConfigQueryResponse = DataFactory.getEmailConfigQueryResponse(
-                emailMessageMaxOutboundMessageSize = limit,
-            )
+            val getEmailConfigQueryResponse =
+                DataFactory.getEmailConfigQueryResponse(
+                    emailMessageMaxOutboundMessageSize = limit,
+                )
             mockApiClient.stub {
                 onBlocking {
                     getEmailConfigQuery()
@@ -1083,26 +1111,28 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 } doReturn ByteArray(limit + 1)
             }
 
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
-                    client.sendEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -1135,9 +1165,10 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
     fun `sendEmailMessage() should throw emailMessageSizeLimitExceededError when non-E2E message is too big`() =
         runTest {
             val limit = 10485769
-            val getEmailConfigQueryResponse = DataFactory.getEmailConfigQueryResponse(
-                emailMessageMaxOutboundMessageSize = limit,
-            )
+            val getEmailConfigQueryResponse =
+                DataFactory.getEmailConfigQueryResponse(
+                    emailMessageMaxOutboundMessageSize = limit,
+                )
             mockApiClient.stub {
                 onBlocking {
                     getEmailConfigQuery()
@@ -1164,26 +1195,28 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 } doReturn ByteArray(limit + 1)
             }
 
-            val input = SendEmailMessageInput(
-                "emailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bar.com"),
-                    listOf(EmailMessage.EmailAddress("to@bar.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bar.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
+            val input =
+                SendEmailMessageInput(
+                    "emailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bar.com"),
+                        listOf(EmailMessage.EmailAddress("to@bar.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bar.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bar.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
-                    client.sendEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageSizeLimitExceededException> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -1207,12 +1240,13 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
 
     private inline fun <reified T : Exception> testSendException(apolloError: String) =
         runTest {
-            val errorSendResponse = GraphQLResponse.Error(
-                "Test generated error",
-                emptyList(),
-                emptyList(),
-                mapOf("errorType" to apolloError),
-            )
+            val errorSendResponse =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to apolloError),
+                )
             mockApiClient.stub {
                 onBlocking {
                     sendEmailMessageMutation(
@@ -1223,23 +1257,25 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<T> {
-                    client.sendEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<T> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
         }
 
     private inline fun <reified T : Exception> testEncryptedSendException(apolloError: String) =
         runTest {
-            val errorSendResponse = GraphQLResponse.Error(
-                "Test generated error",
-                emptyList(),
-                emptyList(),
-                mapOf("errorType" to apolloError),
-            )
+            val errorSendResponse =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to apolloError),
+                )
             mockApiClient.stub {
                 onBlocking {
                     sendEncryptedEmailMessageMutation(
@@ -1250,25 +1286,27 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 }
             }
 
-            val input = SendEmailMessageInput(
-                "senderEmailAddressId",
-                InternetMessageFormatHeader(
-                    EmailMessage.EmailAddress("from@bear.com"),
-                    listOf(EmailMessage.EmailAddress("to@bear.com")),
-                    listOf(EmailMessage.EmailAddress("cc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("bcc@bear.com")),
-                    listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
-                    "email message subject",
-                ),
-                "email message body",
-                emptyList(),
-                emptyList(),
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<T> {
-                    client.sendEmailMessage(input)
+            val input =
+                SendEmailMessageInput(
+                    "senderEmailAddressId",
+                    InternetMessageFormatHeader(
+                        EmailMessage.EmailAddress("from@bear.com"),
+                        listOf(EmailMessage.EmailAddress("to@bear.com")),
+                        listOf(EmailMessage.EmailAddress("cc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("bcc@bear.com")),
+                        listOf(EmailMessage.EmailAddress("replyTo@bear.com")),
+                        "email message subject",
+                    ),
+                    "email message body",
+                    emptyList(),
+                    emptyList(),
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<T> {
+                        client.sendEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
         }

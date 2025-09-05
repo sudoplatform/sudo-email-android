@@ -40,11 +40,12 @@ class NotificationConfigurationExtensionsTest {
 
     @Test
     fun `initEmailNotifications() should preserve existing rules`() {
-        val existingItem = NotificationFilterItem(
-            name = "emService",
-            status = NotificationConfiguration.DISABLE_STR,
-            rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"}, \"ignored-email-address-id\"]}",
-        )
+        val existingItem =
+            NotificationFilterItem(
+                name = "emService",
+                status = NotificationConfiguration.DISABLE_STR,
+                rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"}, \"ignored-email-address-id\"]}",
+            )
 
         val initialConfig = NotificationConfiguration(configs = listOf(existingItem))
 
@@ -68,14 +69,16 @@ class NotificationConfigurationExtensionsTest {
 
     @Test
     fun `initEmailNotifications() should preserve existing rules on reinitialisation`() {
-        val existingItem = NotificationFilterItem(
-            name = "emService",
-            status = NotificationConfiguration.DISABLE_STR,
-            rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"}, \"ignored-email-address-id\"]}",
-        )
+        val existingItem =
+            NotificationFilterItem(
+                name = "emService",
+                status = NotificationConfiguration.DISABLE_STR,
+                rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"}, \"ignored-email-address-id\"]}",
+            )
 
-        val initialConfig = NotificationConfiguration(configs = listOf(existingItem))
-            .initEmailNotifications()
+        val initialConfig =
+            NotificationConfiguration(configs = listOf(existingItem))
+                .initEmailNotifications()
 
         val config = initialConfig.initEmailNotifications()
 
@@ -97,32 +100,37 @@ class NotificationConfigurationExtensionsTest {
 
     @Test
     fun `enabling address when not disabled has no effect`() {
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
 
-        val config = initialConfig.setEmailNotificationsForAddressId(
-            emailAddressId = "email-address-id",
-            enabled = true,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForAddressId(
+                emailAddressId = "email-address-id",
+                enabled = true,
+            )
 
         config shouldBe initialConfig
     }
 
     fun `disabling address when not disabled adds rule`() {
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
 
         val emailAddressId = "email-address-id"
-        val config = initialConfig.setEmailNotificationsForAddressId(
-            emailAddressId = emailAddressId,
-            enabled = false,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForAddressId(
+                emailAddressId = emailAddressId,
+                enabled = false,
+            )
 
-        val expectedItem = NotificationFilterItem(
-            name = "emService",
-            status = NotificationConfiguration.DISABLE_STR,
-            rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"},\"$emailAddressId\"]}",
-        )
+        val expectedItem =
+            NotificationFilterItem(
+                name = "emService",
+                status = NotificationConfiguration.DISABLE_STR,
+                rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"},\"$emailAddressId\"]}",
+            )
 
         config.configs shouldHaveSize 3
 
@@ -135,14 +143,16 @@ class NotificationConfigurationExtensionsTest {
     fun `disabling address when already disabled has no effect`() {
         val emailAddressId = "email-address-id"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForAddressId(
-            emailAddressId = emailAddressId,
-            enabled = false,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForAddressId(
+                emailAddressId = emailAddressId,
+                enabled = false,
+            )
 
         config shouldBe initialConfig
     }
@@ -151,14 +161,16 @@ class NotificationConfigurationExtensionsTest {
     fun `enabling address when disabled removes disable rule`() {
         val emailAddressId = "email-address-id"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForAddressId(
-            emailAddressId = emailAddressId,
-            enabled = true,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForAddressId(
+                emailAddressId = emailAddressId,
+                enabled = true,
+            )
 
         config.configs shouldHaveSize 2
 
@@ -172,21 +184,24 @@ class NotificationConfigurationExtensionsTest {
         val emailAddressId2 = "email-address-id-2"
         val sudoId1 = "sudo-id-1"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
-            .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
+                .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForAddressId(
-            emailAddressId = emailAddressId2,
-            enabled = false,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForAddressId(
+                emailAddressId = emailAddressId2,
+                enabled = false,
+            )
 
-        val expectedItem = NotificationFilterItem(
-            name = "emService",
-            status = NotificationConfiguration.DISABLE_STR,
-            rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"},\"$emailAddressId2\"]}",
-        )
+        val expectedItem =
+            NotificationFilterItem(
+                name = "emService",
+                status = NotificationConfiguration.DISABLE_STR,
+                rules = "{\"==\":[{\"var\":\"meta.emailAddressId\"},\"$emailAddressId2\"]}",
+            )
 
         config.configs shouldHaveSize 5
 
@@ -205,16 +220,18 @@ class NotificationConfigurationExtensionsTest {
         val emailAddressId2 = "email-address-id-2"
         val sudoId1 = "sudo-id-1"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId2, enabled = false)
-            .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId2, enabled = false)
+                .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForAddressId(
-            emailAddressId = emailAddressId2,
-            enabled = true,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForAddressId(
+                emailAddressId = emailAddressId2,
+                enabled = true,
+            )
 
         config.configs shouldHaveSize 4
 
@@ -228,33 +245,38 @@ class NotificationConfigurationExtensionsTest {
 
     @Test
     fun `enabling sudo when not disabled has no effect`() {
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
 
-        val config = initialConfig.setEmailNotificationsForSudoId(
-            sudoId = "sudo-id",
-            enabled = true,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForSudoId(
+                sudoId = "sudo-id",
+                enabled = true,
+            )
 
         config shouldBe initialConfig
     }
 
     @Test
     fun `disabling sudo when not disabled adds rule`() {
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
 
         val sudoId = "sudo-id"
-        val config = initialConfig.setEmailNotificationsForSudoId(
-            sudoId = sudoId,
-            enabled = false,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForSudoId(
+                sudoId = sudoId,
+                enabled = false,
+            )
 
-        val expectedItem = NotificationFilterItem(
-            name = "emService",
-            status = NotificationConfiguration.DISABLE_STR,
-            rules = "{\"==\":[{\"var\":\"meta.sudoId\"},\"$sudoId\"]}",
-        )
+        val expectedItem =
+            NotificationFilterItem(
+                name = "emService",
+                status = NotificationConfiguration.DISABLE_STR,
+                rules = "{\"==\":[{\"var\":\"meta.sudoId\"},\"$sudoId\"]}",
+            )
 
         config.configs shouldHaveSize 3
 
@@ -267,14 +289,16 @@ class NotificationConfigurationExtensionsTest {
     fun `disabling sudo when already disabled has no effect`() {
         val sudoId = "sudo-id"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForSudoId(sudoId = sudoId, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForSudoId(sudoId = sudoId, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForSudoId(
-            sudoId = sudoId,
-            enabled = false,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForSudoId(
+                sudoId = sudoId,
+                enabled = false,
+            )
 
         config shouldBe initialConfig
     }
@@ -283,14 +307,16 @@ class NotificationConfigurationExtensionsTest {
     fun `enabling sudo when disabledR removes disable rule`() {
         val sudoId = "sudo-id"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForSudoId(sudoId = sudoId, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForSudoId(sudoId = sudoId, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForSudoId(
-            sudoId = sudoId,
-            enabled = true,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForSudoId(
+                sudoId = sudoId,
+                enabled = true,
+            )
 
         config.configs shouldHaveSize 2
 
@@ -304,21 +330,24 @@ class NotificationConfigurationExtensionsTest {
         val sudoId1 = "sudo-id-1"
         val sudoId2 = "sudo-id-2"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForSudoId(
-            sudoId = sudoId2,
-            enabled = false,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForSudoId(
+                sudoId = sudoId2,
+                enabled = false,
+            )
 
-        val expectedItem = NotificationFilterItem(
-            name = "emService",
-            status = NotificationConfiguration.DISABLE_STR,
-            rules = "{\"==\":[{\"var\":\"meta.sudoId\"},\"$sudoId2\"]}",
-        )
+        val expectedItem =
+            NotificationFilterItem(
+                name = "emService",
+                status = NotificationConfiguration.DISABLE_STR,
+                rules = "{\"==\":[{\"var\":\"meta.sudoId\"},\"$sudoId2\"]}",
+            )
 
         config.configs shouldHaveSize 5
 
@@ -337,16 +366,18 @@ class NotificationConfigurationExtensionsTest {
         val sudoId1 = "sudo-id-1"
         val sudoId2 = "sudo-id-2"
 
-        val initialConfig = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
-            .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
-            .setEmailNotificationsForSudoId(sudoId = sudoId2, enabled = false)
+        val initialConfig =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
+                .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
+                .setEmailNotificationsForSudoId(sudoId = sudoId2, enabled = false)
 
-        val config = initialConfig.setEmailNotificationsForSudoId(
-            sudoId = sudoId1,
-            enabled = true,
-        )
+        val config =
+            initialConfig.setEmailNotificationsForSudoId(
+                sudoId = sudoId1,
+                enabled = true,
+            )
 
         config.configs shouldHaveSize 4
 
@@ -360,8 +391,9 @@ class NotificationConfigurationExtensionsTest {
 
     @Test
     fun `isEmailNotificationForAddressIdEnabled() should return true for initial configuration`() {
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
 
         config.isEmailNotificationForAddressIdEnabled(emailAddressId = "email-address-id") shouldBe true
     }
@@ -370,9 +402,10 @@ class NotificationConfigurationExtensionsTest {
     fun `isEmailNotificationForAddressIdEnabled() should return false if disabled`() {
         val emailAddressId = "email-address-id"
 
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId, enabled = false)
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId, enabled = false)
 
         config.isEmailNotificationForAddressIdEnabled(emailAddressId = "email-address-id") shouldBe false
     }
@@ -382,9 +415,10 @@ class NotificationConfigurationExtensionsTest {
         val emailAddressId1 = "email-address-id-1"
         val emailAddressId2 = "email-address-id-2"
 
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
 
         config.isEmailNotificationForAddressIdEnabled(emailAddressId = emailAddressId2) shouldBe true
     }
@@ -394,10 +428,11 @@ class NotificationConfigurationExtensionsTest {
         val emailAddressId1 = "email-address-id-1"
         val emailAddressId2 = "email-address-id-2"
 
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
-            .setEmailNotificationsForAddressId(emailAddressId = emailAddressId2, enabled = false)
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId1, enabled = false)
+                .setEmailNotificationsForAddressId(emailAddressId = emailAddressId2, enabled = false)
 
         config.isEmailNotificationForAddressIdEnabled(emailAddressId = emailAddressId1) shouldBe false
         config.isEmailNotificationForAddressIdEnabled(emailAddressId = emailAddressId2) shouldBe false
@@ -405,8 +440,9 @@ class NotificationConfigurationExtensionsTest {
 
     @Test
     fun `isEmailNotificationForSudoIdEnabled() should return true for initial configuration`() {
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
 
         config.isEmailNotificationForSudoIdEnabled(sudoId = "sudo-id") shouldBe true
     }
@@ -415,12 +451,13 @@ class NotificationConfigurationExtensionsTest {
     fun `isEmailNotificationForSudoIdEnabled() should return false if disabled`() {
         val sudoId = "sudo-id"
 
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForSudoId(
-                sudoId = sudoId,
-                enabled = false,
-            )
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForSudoId(
+                    sudoId = sudoId,
+                    enabled = false,
+                )
 
         config.isEmailNotificationForSudoIdEnabled(sudoId = sudoId) shouldBe false
     }
@@ -430,9 +467,10 @@ class NotificationConfigurationExtensionsTest {
         val sudoId1 = "sudo-id-1"
         val sudoId2 = "sudo-id-2"
 
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
 
         config.isEmailNotificationForSudoIdEnabled(sudoId = sudoId2) shouldBe true
     }
@@ -442,10 +480,11 @@ class NotificationConfigurationExtensionsTest {
         val sudoId1 = "sudo-id-1"
         val sudoId2 = "sudo-id-2"
 
-        val config = NotificationConfiguration(configs = listOf())
-            .initEmailNotifications()
-            .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
-            .setEmailNotificationsForSudoId(sudoId = sudoId2, enabled = false)
+        val config =
+            NotificationConfiguration(configs = listOf())
+                .initEmailNotifications()
+                .setEmailNotificationsForSudoId(sudoId = sudoId1, enabled = false)
+                .setEmailNotificationsForSudoId(sudoId = sudoId2, enabled = false)
 
         config.isEmailNotificationForSudoIdEnabled(sudoId = sudoId1) shouldBe false
         config.isEmailNotificationForSudoIdEnabled(sudoId = sudoId2) shouldBe false

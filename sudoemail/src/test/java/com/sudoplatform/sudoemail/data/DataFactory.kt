@@ -62,16 +62,16 @@ import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 
 object DataFactory {
-
     fun getEmailAddressWithoutFolder(
         id: String = "emailAddressId",
         owner: String = "owner",
-        owners: List<EmailAddressWithoutFolders.Owner> = listOf(
-            EmailAddressWithoutFolders.Owner(
-                id = "ownerId",
-                issuer = "issuer",
+        owners: List<EmailAddressWithoutFolders.Owner> =
+            listOf(
+                EmailAddressWithoutFolders.Owner(
+                    id = "ownerId",
+                    issuer = "issuer",
+                ),
             ),
-        ),
         identityId: String = "identityId",
         keyRingId: String = "keyRingId",
         keyIds: List<String> = emptyList(),
@@ -103,12 +103,13 @@ object DataFactory {
     fun getEmailFolder(
         id: String = "folderId",
         owner: String = "owner",
-        owners: List<EmailFolder.Owner> = listOf(
-            EmailFolder.Owner(
-                id = "ownerId",
-                issuer = "issuer",
+        owners: List<EmailFolder.Owner> =
+            listOf(
+                EmailFolder.Owner(
+                    id = "ownerId",
+                    issuer = "issuer",
+                ),
             ),
-        ),
         version: Int = 1,
         createdAtEpochMs: Double = 1.0,
         updatedAtEpochMs: Double = 1.0,
@@ -131,18 +132,18 @@ object DataFactory {
         unseenCount,
         ttl,
         customFolderName,
-
     )
 
     fun getSealedEmailMessage(
         id: String = "id",
         owner: String = "owner",
-        owners: List<SealedEmailMessage.Owner> = listOf(
-            SealedEmailMessage.Owner(
-                "owner",
-                "issuer",
+        owners: List<SealedEmailMessage.Owner> =
+            listOf(
+                SealedEmailMessage.Owner(
+                    "owner",
+                    "issuer",
+                ),
             ),
-        ),
         emailAddressId: String = "emailAddressId",
         version: Int = 1,
         createdAtEpochMs: Double = 1.0,
@@ -176,12 +177,13 @@ object DataFactory {
         forwarded = forwarded,
         state = state,
         clientRefId = clientRefId,
-        rfc822Header = SealedEmailMessage.Rfc822Header(
-            algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-            keyId = "keyId",
-            plainTextType = "plainText",
-            base64EncodedSealedData = sealedData,
-        ),
+        rfc822Header =
+            SealedEmailMessage.Rfc822Header(
+                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                keyId = "keyId",
+                plainTextType = "plainText",
+                base64EncodedSealedData = sealedData,
+            ),
         encryptionStatus = encryptionStatus,
         size = size,
     )
@@ -190,12 +192,13 @@ object DataFactory {
         draftMessageKey: String,
         emailAddressId: String = "emailAddressId",
         owner: String = "ownerId",
-        owners: List<ScheduledDraftMessage.Owner> = listOf(
-            ScheduledDraftMessage.Owner(
-                "ownerId",
-                "issuer",
+        owners: List<ScheduledDraftMessage.Owner> =
+            listOf(
+                ScheduledDraftMessage.Owner(
+                    "ownerId",
+                    "issuer",
+                ),
             ),
-        ),
         sendAtEpochMs: Double,
         state: ScheduledDraftMessageState = ScheduledDraftMessageState.SCHEDULED,
         createdAtEpochMs: Double = 1.0,
@@ -215,14 +218,15 @@ object DataFactory {
         emailAddress: String = "emailAddress",
         keyId: String = "keyId",
         publicKey: String = "publicKey",
-        publicKeyDetails: EmailAddressPublicInfo.PublicKeyDetails = EmailAddressPublicInfo.PublicKeyDetails(
-            __typename = "EmailAddressPublicKey",
-            EmailAddressPublicKey(
-                publicKey = "publicKey",
-                keyFormat = KeyFormat.RSA_PUBLIC_KEY,
-                algorithm = "algorithm",
+        publicKeyDetails: EmailAddressPublicInfo.PublicKeyDetails =
+            EmailAddressPublicInfo.PublicKeyDetails(
+                __typename = "EmailAddressPublicKey",
+                EmailAddressPublicKey(
+                    publicKey = "publicKey",
+                    keyFormat = KeyFormat.RSA_PUBLIC_KEY,
+                    algorithm = "algorithm",
+                ),
             ),
-        ),
     ) = EmailAddressPublicInfo(
         emailAddress,
         keyId,
@@ -249,8 +253,8 @@ object DataFactory {
         status: BlockEmailAddressesBulkUpdateStatus = BlockEmailAddressesBulkUpdateStatus.SUCCESS,
         failedAddresses: List<String> = emptyList(),
         successAddresses: List<String> = emptyList(),
-    ): GraphQLResponse<BlockEmailAddressesMutation.Data> {
-        return GraphQLResponse<BlockEmailAddressesMutation.Data>(
+    ): GraphQLResponse<BlockEmailAddressesMutation.Data> =
+        GraphQLResponse<BlockEmailAddressesMutation.Data>(
             BlockEmailAddressesMutation.Data(
                 BlockEmailAddressesMutation.BlockEmailAddresses(
                     "BlockAddressesResult",
@@ -263,32 +267,30 @@ object DataFactory {
             ),
             null,
         )
-    }
 
-    fun cancelScheduledDraftMessageResponse(
-        id: String = "scheduledDraftId",
-    ): GraphQLResponse<CancelScheduledDraftMessageMutation.Data> {
-        return GraphQLResponse<CancelScheduledDraftMessageMutation.Data>(
+    fun cancelScheduledDraftMessageResponse(id: String = "scheduledDraftId"): GraphQLResponse<CancelScheduledDraftMessageMutation.Data> =
+        GraphQLResponse<CancelScheduledDraftMessageMutation.Data>(
             CancelScheduledDraftMessageMutation.Data(
                 id,
             ),
             null,
         )
-    }
 
     fun getEmailAddressQueryResponse(
-        emailAddress: EmailAddress = EmailAddress(
-            "EmailAddress",
-            folders = listOf(
-                EmailAddress.Folder(
-                    "__typename",
-                    getEmailFolder(),
-                ),
+        emailAddress: EmailAddress =
+            EmailAddress(
+                "EmailAddress",
+                folders =
+                    listOf(
+                        EmailAddress.Folder(
+                            "__typename",
+                            getEmailFolder(),
+                        ),
+                    ),
+                getEmailAddressWithoutFolder(),
             ),
-            getEmailAddressWithoutFolder(),
-        ),
-    ): GraphQLResponse<GetEmailAddressQuery.Data> {
-        return GraphQLResponse<GetEmailAddressQuery.Data>(
+    ): GraphQLResponse<GetEmailAddressQuery.Data> =
+        GraphQLResponse<GetEmailAddressQuery.Data>(
             GetEmailAddressQuery.Data(
                 GetEmailAddressQuery.GetEmailAddress(
                     "GetEmailAddress",
@@ -297,36 +299,32 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun checkEmailAddressAvailabilityQueryResponse(
         addresses: List<String> = emptyList(),
-    ): GraphQLResponse<CheckEmailAddressAvailabilityQuery.Data> {
-        return GraphQLResponse<CheckEmailAddressAvailabilityQuery.Data>(
+    ): GraphQLResponse<CheckEmailAddressAvailabilityQuery.Data> =
+        GraphQLResponse<CheckEmailAddressAvailabilityQuery.Data>(
             CheckEmailAddressAvailabilityQuery.Data(
                 CheckEmailAddressAvailabilityQuery.CheckEmailAddressAvailability(addresses),
-
             ),
             null,
         )
-    }
 
-    fun createCustomEmailFolderMutationResponse(
-        sealedFolderName: String,
-    ): GraphQLResponse<CreateCustomEmailFolderMutation.Data> {
-        return GraphQLResponse<CreateCustomEmailFolderMutation.Data>(
+    fun createCustomEmailFolderMutationResponse(sealedFolderName: String): GraphQLResponse<CreateCustomEmailFolderMutation.Data> =
+        GraphQLResponse<CreateCustomEmailFolderMutation.Data>(
             CreateCustomEmailFolderMutation.Data(
                 CreateCustomEmailFolderMutation.CreateCustomEmailFolder(
                     "CreateCustomEmailFolder",
                     EmailFolder(
                         id = "folderId",
                         owner = "owner",
-                        owners = listOf(
-                            EmailFolder.Owner(
-                                id = "ownerId",
-                                issuer = "issue",
+                        owners =
+                            listOf(
+                                EmailFolder.Owner(
+                                    id = "ownerId",
+                                    issuer = "issue",
+                                ),
                             ),
-                        ),
                         version = 1,
                         createdAtEpochMs = 1.0,
                         updatedAtEpochMs = 1.0,
@@ -335,38 +333,37 @@ object DataFactory {
                         size = 0.0,
                         unseenCount = 0.0,
                         ttl = 1.0,
-                        customFolderName = EmailFolder.CustomFolderName(
-                            "SealedAttribute",
-                            SealedAttribute(
-                                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                keyId = "keyId",
-                                plainTextType = "plainText",
-                                base64EncodedSealedData = sealedFolderName,
+                        customFolderName =
+                            EmailFolder.CustomFolderName(
+                                "SealedAttribute",
+                                SealedAttribute(
+                                    algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                                    keyId = "keyId",
+                                    plainTextType = "plainText",
+                                    base64EncodedSealedData = sealedFolderName,
+                                ),
                             ),
-                        ),
                     ),
                 ),
             ),
             null,
         )
-    }
 
-    fun deleteCustomEmailFolderMutationResponse(
-        sealedFolderName: String,
-    ): GraphQLResponse<DeleteCustomEmailFolderMutation.Data> {
-        return GraphQLResponse<DeleteCustomEmailFolderMutation.Data>(
+    fun deleteCustomEmailFolderMutationResponse(sealedFolderName: String): GraphQLResponse<DeleteCustomEmailFolderMutation.Data> =
+        GraphQLResponse<DeleteCustomEmailFolderMutation.Data>(
             DeleteCustomEmailFolderMutation.Data(
                 DeleteCustomEmailFolderMutation.DeleteCustomEmailFolder(
                     "DeleteCustomEmailFolder",
                     EmailFolder(
                         id = "folderId",
                         owner = "owner",
-                        owners = listOf(
-                            EmailFolder.Owner(
-                                id = "ownerId",
-                                issuer = "issue",
+                        owners =
+                            listOf(
+                                EmailFolder.Owner(
+                                    id = "ownerId",
+                                    issuer = "issue",
+                                ),
                             ),
-                        ),
                         version = 1,
                         createdAtEpochMs = 1.0,
                         updatedAtEpochMs = 1.0,
@@ -375,32 +372,29 @@ object DataFactory {
                         size = 0.0,
                         unseenCount = 0.0,
                         ttl = 1.0,
-                        customFolderName = EmailFolder.CustomFolderName(
-                            "SealedAttribute",
-                            SealedAttribute(
-                                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                keyId = "keyId",
-                                plainTextType = "plainText",
-                                base64EncodedSealedData = sealedFolderName,
+                        customFolderName =
+                            EmailFolder.CustomFolderName(
+                                "SealedAttribute",
+                                SealedAttribute(
+                                    algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                                    keyId = "keyId",
+                                    plainTextType = "plainText",
+                                    base64EncodedSealedData = sealedFolderName,
+                                ),
                             ),
-                        ),
                     ),
                 ),
             ),
             null,
         )
-    }
 
-    fun deleteEmailMessagesMutationResponse(
-        ids: List<String> = emptyList(),
-    ): GraphQLResponse<DeleteEmailMessagesMutation.Data> {
-        return GraphQLResponse<DeleteEmailMessagesMutation.Data>(
+    fun deleteEmailMessagesMutationResponse(ids: List<String> = emptyList()): GraphQLResponse<DeleteEmailMessagesMutation.Data> =
+        GraphQLResponse<DeleteEmailMessagesMutation.Data>(
             DeleteEmailMessagesMutation.Data(
                 ids,
             ),
             null,
         )
-    }
 
     fun getEmailConfigQueryResponse(
         deleteEmailMessagesLimit: Int = 10,
@@ -410,8 +404,8 @@ object DataFactory {
         emailMessageRecipientsLimit: Int = 5,
         encryptedEmailMessageRecipientsLimit: Int = 10,
         prohibitedFileExtensions: List<String> = listOf(".js", ".exe", ".lib"),
-    ): GraphQLResponse<GetEmailConfigQuery.Data> {
-        return GraphQLResponse<GetEmailConfigQuery.Data>(
+    ): GraphQLResponse<GetEmailConfigQuery.Data> =
+        GraphQLResponse<GetEmailConfigQuery.Data>(
             GetEmailConfigQuery.Data(
                 GetEmailConfigQuery.GetEmailConfig(
                     "EmailConfigurationData",
@@ -428,21 +422,17 @@ object DataFactory {
             ),
             null,
         )
-    }
 
-    fun deleteEmailMessagesForFolderIdMutationResponse(
-        folderId: String,
-    ): GraphQLResponse<DeleteMessagesByFolderIdMutation.Data> {
-        return GraphQLResponse<DeleteMessagesByFolderIdMutation.Data>(
+    fun deleteEmailMessagesForFolderIdMutationResponse(folderId: String): GraphQLResponse<DeleteMessagesByFolderIdMutation.Data> =
+        GraphQLResponse<DeleteMessagesByFolderIdMutation.Data>(
             DeleteMessagesByFolderIdMutation.Data(
                 folderId,
             ),
             null,
         )
-    }
 
-    fun deprovisionEmailAddressMutationResponse(): GraphQLResponse<DeprovisionEmailAddressMutation.Data> {
-        return GraphQLResponse<DeprovisionEmailAddressMutation.Data>(
+    fun deprovisionEmailAddressMutationResponse(): GraphQLResponse<DeprovisionEmailAddressMutation.Data> =
+        GraphQLResponse<DeprovisionEmailAddressMutation.Data>(
             DeprovisionEmailAddressMutation.Data(
                 DeprovisionEmailAddressMutation.DeprovisionEmailAddress(
                     "DeprovisionEmailAddress",
@@ -451,10 +441,9 @@ object DataFactory {
             ),
             null,
         )
-    }
 
-    fun getConfiguredEmailDomainsQueryResponse(domains: List<String> = emptyList()): GraphQLResponse<GetConfiguredEmailDomainsQuery.Data> {
-        return GraphQLResponse<GetConfiguredEmailDomainsQuery.Data>(
+    fun getConfiguredEmailDomainsQueryResponse(domains: List<String> = emptyList()): GraphQLResponse<GetConfiguredEmailDomainsQuery.Data> =
+        GraphQLResponse<GetConfiguredEmailDomainsQuery.Data>(
             GetConfiguredEmailDomainsQuery.Data(
                 GetConfiguredEmailDomainsQuery.GetConfiguredEmailDomains(
                     domains,
@@ -462,7 +451,6 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     data class GetEmailAddressBlocklistQueryDataValues(
         val sealedData: String,
@@ -472,25 +460,28 @@ object DataFactory {
         val keyId: String = "keyId",
         val emailAddressId: String? = null,
     )
+
     fun getEmailAddressBlocklistQueryResponse(
         blockedAddressesData: List<GetEmailAddressBlocklistQueryDataValues>,
-    ): GraphQLResponse<GetEmailAddressBlocklistQuery.Data> {
-        return GraphQLResponse<GetEmailAddressBlocklistQuery.Data>(
+    ): GraphQLResponse<GetEmailAddressBlocklistQuery.Data> =
+        GraphQLResponse<GetEmailAddressBlocklistQuery.Data>(
             GetEmailAddressBlocklistQuery.Data(
                 GetEmailAddressBlocklistQuery.GetEmailAddressBlocklist(
                     "GetEmailAddressBlocklist",
                     GetEmailAddressBlocklistResponse(
                         blockedAddressesData.map {
                             GetEmailAddressBlocklistResponse.BlockedAddress(
-                                sealedValue = GetEmailAddressBlocklistResponse.SealedValue(
-                                    "SealedAttribute",
-                                    sealedAttribute = SealedAttribute(
-                                        algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                        keyId = "keyId",
-                                        plainTextType = "plainText",
-                                        base64EncodedSealedData = it.sealedData,
+                                sealedValue =
+                                    GetEmailAddressBlocklistResponse.SealedValue(
+                                        "SealedAttribute",
+                                        sealedAttribute =
+                                            SealedAttribute(
+                                                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                                                keyId = "keyId",
+                                                plainTextType = "plainText",
+                                                base64EncodedSealedData = it.sealedData,
+                                            ),
                                     ),
-                                ),
                                 hashedBlockedValue = it.hashedValue,
                                 action = it.action,
                                 emailAddressId = it.emailAddressId,
@@ -501,22 +492,22 @@ object DataFactory {
             ),
             null,
         )
-    }
 
-    fun getEmailMessageQueryResponse(sealedData: String): GraphQLResponse<GetEmailMessageQuery.Data> {
-        return GraphQLResponse<GetEmailMessageQuery.Data>(
+    fun getEmailMessageQueryResponse(sealedData: String): GraphQLResponse<GetEmailMessageQuery.Data> =
+        GraphQLResponse<GetEmailMessageQuery.Data>(
             GetEmailMessageQuery.Data(
                 GetEmailMessageQuery.GetEmailMessage(
                     "GetEmailMessage",
                     SealedEmailMessage(
                         id = "id",
                         owner = "owner",
-                        owners = listOf(
-                            SealedEmailMessage.Owner(
-                                "owner",
-                                "issuer",
+                        owners =
+                            listOf(
+                                SealedEmailMessage.Owner(
+                                    "owner",
+                                    "issuer",
+                                ),
                             ),
-                        ),
                         emailAddressId = "emailAddressId",
                         version = 1,
                         createdAtEpochMs = 1.0,
@@ -532,21 +523,21 @@ object DataFactory {
                         clientRefId = "clientRefId",
                         encryptionStatus = EmailMessageEncryptionStatus.UNENCRYPTED,
                         size = 1.0,
-                        rfc822Header = SealedEmailMessage.Rfc822Header(
-                            algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                            keyId = "keyId",
-                            plainTextType = "plainText",
-                            base64EncodedSealedData = sealedData,
-                        ),
+                        rfc822Header =
+                            SealedEmailMessage.Rfc822Header(
+                                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                                keyId = "keyId",
+                                plainTextType = "plainText",
+                                base64EncodedSealedData = sealedData,
+                            ),
                     ),
                 ),
             ),
             null,
         )
-    }
 
-    fun getEmailDomainsQueryResponse(domains: List<String>): GraphQLResponse<GetEmailDomainsQuery.Data> {
-        return GraphQLResponse<GetEmailDomainsQuery.Data>(
+    fun getEmailDomainsQueryResponse(domains: List<String>): GraphQLResponse<GetEmailDomainsQuery.Data> =
+        GraphQLResponse<GetEmailDomainsQuery.Data>(
             GetEmailDomainsQuery.Data(
                 GetEmailDomainsQuery.GetEmailDomains(
                     domains,
@@ -554,19 +545,20 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     data class EmailAddressQueryResponseData(
         val emailAddressWithoutFolders: EmailAddressWithoutFolders = getEmailAddressWithoutFolder(),
-        val folders: List<EmailAddress.Folder> = listOf(
-            EmailAddress.Folder("__typename", getEmailFolder()),
-        ),
+        val folders: List<EmailAddress.Folder> =
+            listOf(
+                EmailAddress.Folder("__typename", getEmailFolder()),
+            ),
     )
+
     fun listEmailAddressesQueryResponse(
         items: List<EmailAddressQueryResponseData>,
         nextToken: String? = null,
-    ): GraphQLResponse<ListEmailAddressesQuery.Data> {
-        return GraphQLResponse<ListEmailAddressesQuery.Data>(
+    ): GraphQLResponse<ListEmailAddressesQuery.Data> =
+        GraphQLResponse<ListEmailAddressesQuery.Data>(
             ListEmailAddressesQuery.Data(
                 ListEmailAddressesQuery.ListEmailAddresses(
                     items.map {
@@ -584,13 +576,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun listEmailAddressesForSudoIdQueryResponse(
         items: List<EmailAddressQueryResponseData>,
         nextToken: String? = null,
-    ): GraphQLResponse<ListEmailAddressesForSudoIdQuery.Data> {
-        return GraphQLResponse<ListEmailAddressesForSudoIdQuery.Data>(
+    ): GraphQLResponse<ListEmailAddressesForSudoIdQuery.Data> =
+        GraphQLResponse<ListEmailAddressesForSudoIdQuery.Data>(
             ListEmailAddressesForSudoIdQuery.Data(
                 ListEmailAddressesForSudoIdQuery.ListEmailAddressesForSudoId(
                     items.map {
@@ -608,13 +599,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun listEmailFoldersForEmailAddressIdQueryResponse(
         items: List<EmailAddress.Folder>,
         nextToken: String? = null,
-    ): GraphQLResponse<ListEmailFoldersForEmailAddressIdQuery.Data> {
-        return GraphQLResponse<ListEmailFoldersForEmailAddressIdQuery.Data>(
+    ): GraphQLResponse<ListEmailFoldersForEmailAddressIdQuery.Data> =
+        GraphQLResponse<ListEmailFoldersForEmailAddressIdQuery.Data>(
             ListEmailFoldersForEmailAddressIdQuery.Data(
                 ListEmailFoldersForEmailAddressIdQuery.ListEmailFoldersForEmailAddressId(
                     items.map {
@@ -628,13 +618,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun listEmailMessagesForEmailAddressIdQueryResponse(
         items: List<SealedEmailMessage>,
         nextToken: String? = null,
-    ): GraphQLResponse<ListEmailMessagesForEmailAddressIdQuery.Data> {
-        return GraphQLResponse<ListEmailMessagesForEmailAddressIdQuery.Data>(
+    ): GraphQLResponse<ListEmailMessagesForEmailAddressIdQuery.Data> =
+        GraphQLResponse<ListEmailMessagesForEmailAddressIdQuery.Data>(
             ListEmailMessagesForEmailAddressIdQuery.Data(
                 ListEmailMessagesForEmailAddressIdQuery.ListEmailMessagesForEmailAddressId(
                     items.map {
@@ -648,13 +637,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun listEmailMessagesForEmailFolderIdQueryResponse(
         items: List<SealedEmailMessage>,
         nextToken: String? = null,
-    ): GraphQLResponse<ListEmailMessagesForEmailFolderIdQuery.Data> {
-        return GraphQLResponse<ListEmailMessagesForEmailFolderIdQuery.Data>(
+    ): GraphQLResponse<ListEmailMessagesForEmailFolderIdQuery.Data> =
+        GraphQLResponse<ListEmailMessagesForEmailFolderIdQuery.Data>(
             ListEmailMessagesForEmailFolderIdQuery.Data(
                 ListEmailMessagesForEmailFolderIdQuery.ListEmailMessagesForEmailFolderId(
                     items.map {
@@ -668,13 +656,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun listEmailMessagesQueryResponse(
         items: List<SealedEmailMessage>,
         nextToken: String? = null,
-    ): GraphQLResponse<ListEmailMessagesQuery.Data> {
-        return GraphQLResponse<ListEmailMessagesQuery.Data>(
+    ): GraphQLResponse<ListEmailMessagesQuery.Data> =
+        GraphQLResponse<ListEmailMessagesQuery.Data>(
             ListEmailMessagesQuery.Data(
                 ListEmailMessagesQuery.ListEmailMessages(
                     items.map {
@@ -688,13 +675,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun listScheduledDraftMessagesForEmailAddressIdQueryResponse(
         items: List<ScheduledDraftMessage>,
         nextToken: String? = null,
-    ): GraphQLResponse<ListScheduledDraftMessagesForEmailAddressIdQuery.Data> {
-        return GraphQLResponse<ListScheduledDraftMessagesForEmailAddressIdQuery.Data>(
+    ): GraphQLResponse<ListScheduledDraftMessagesForEmailAddressIdQuery.Data> =
+        GraphQLResponse<ListScheduledDraftMessagesForEmailAddressIdQuery.Data>(
             ListScheduledDraftMessagesForEmailAddressIdQuery.Data(
                 ListScheduledDraftMessagesForEmailAddressIdQuery.ListScheduledDraftMessagesForEmailAddressId(
                     items.map {
@@ -708,14 +694,14 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun lookupEmailAddressPublicInfoQueryResponse(
-        items: List<EmailAddressPublicInfo> = listOf(
-            getEmailAddressPublicInfo(),
-        ),
-    ): GraphQLResponse<LookupEmailAddressesPublicInfoQuery.Data> {
-        return GraphQLResponse<LookupEmailAddressesPublicInfoQuery.Data>(
+        items: List<EmailAddressPublicInfo> =
+            listOf(
+                getEmailAddressPublicInfo(),
+            ),
+    ): GraphQLResponse<LookupEmailAddressesPublicInfoQuery.Data> =
+        GraphQLResponse<LookupEmailAddressesPublicInfoQuery.Data>(
             LookupEmailAddressesPublicInfoQuery.Data(
                 LookupEmailAddressesPublicInfoQuery.LookupEmailAddressesPublicInfo(
                     items.map {
@@ -728,21 +714,22 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun provisionEmailAddressMutationResponse(
-        emailAddress: EmailAddress = EmailAddress(
-            "EmailAddress",
-            folders = listOf(
-                EmailAddress.Folder(
-                    "__typename",
-                    getEmailFolder(),
-                ),
+        emailAddress: EmailAddress =
+            EmailAddress(
+                "EmailAddress",
+                folders =
+                    listOf(
+                        EmailAddress.Folder(
+                            "__typename",
+                            getEmailFolder(),
+                        ),
+                    ),
+                getEmailAddressWithoutFolder(),
             ),
-            getEmailAddressWithoutFolder(),
-        ),
-    ): GraphQLResponse<ProvisionEmailAddressMutation.Data> {
-        return GraphQLResponse<ProvisionEmailAddressMutation.Data>(
+    ): GraphQLResponse<ProvisionEmailAddressMutation.Data> =
+        GraphQLResponse<ProvisionEmailAddressMutation.Data>(
             ProvisionEmailAddressMutation.Data(
                 ProvisionEmailAddressMutation.ProvisionEmailAddress(
                     "ProvisionEmailAddress",
@@ -751,12 +738,11 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun scheduleSendDraftMessageMutationResponse(
         scheduledDraftMessage: ScheduledDraftMessage,
-    ): GraphQLResponse<ScheduleSendDraftMessageMutation.Data> {
-        return GraphQLResponse<ScheduleSendDraftMessageMutation.Data>(
+    ): GraphQLResponse<ScheduleSendDraftMessageMutation.Data> =
+        GraphQLResponse<ScheduleSendDraftMessageMutation.Data>(
             ScheduleSendDraftMessageMutation.Data(
                 ScheduleSendDraftMessageMutation.ScheduleSendDraftMessage(
                     "ScheduledDraftMessage",
@@ -765,13 +751,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun sendEmailMessageMutationResponse(
         id: String,
         createdAtEpochMs: Double,
-    ): GraphQLResponse<SendEmailMessageMutation.Data> {
-        return GraphQLResponse<SendEmailMessageMutation.Data>(
+    ): GraphQLResponse<SendEmailMessageMutation.Data> =
+        GraphQLResponse<SendEmailMessageMutation.Data>(
             SendEmailMessageMutation.Data(
                 SendEmailMessageMutation.SendEmailMessageV2(
                     "SendEmailMessageV2",
@@ -783,13 +768,12 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun sendEncryptedEmailMessageMutationResponse(
         id: String,
         createdAtEpochMs: Double,
-    ): GraphQLResponse<SendEncryptedEmailMessageMutation.Data> {
-        return GraphQLResponse<SendEncryptedEmailMessageMutation.Data>(
+    ): GraphQLResponse<SendEncryptedEmailMessageMutation.Data> =
+        GraphQLResponse<SendEncryptedEmailMessageMutation.Data>(
             SendEncryptedEmailMessageMutation.Data(
                 SendEncryptedEmailMessageMutation.SendEncryptedEmailMessage(
                     "sendEncryptedEmailMessage",
@@ -801,14 +785,13 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun unblockEmailAddressesMutationResponse(
         status: BlockEmailAddressesBulkUpdateStatus = BlockEmailAddressesBulkUpdateStatus.SUCCESS,
         failedAddresses: List<String> = emptyList(),
         successAddresses: List<String> = emptyList(),
-    ): GraphQLResponse<UnblockEmailAddressesMutation.Data> {
-        return GraphQLResponse<UnblockEmailAddressesMutation.Data>(
+    ): GraphQLResponse<UnblockEmailAddressesMutation.Data> =
+        GraphQLResponse<UnblockEmailAddressesMutation.Data>(
             UnblockEmailAddressesMutation.Data(
                 UnblockEmailAddressesMutation.UnblockEmailAddresses(
                     "UnblockAddressesResult",
@@ -821,12 +804,11 @@ object DataFactory {
             ),
             null,
         )
-    }
 
     fun updateCustomEmailFolderMutationResponse(
         emailFolder: EmailFolder = getEmailFolder(),
-    ): GraphQLResponse<UpdateCustomEmailFolderMutation.Data> {
-        return GraphQLResponse<UpdateCustomEmailFolderMutation.Data>(
+    ): GraphQLResponse<UpdateCustomEmailFolderMutation.Data> =
+        GraphQLResponse<UpdateCustomEmailFolderMutation.Data>(
             UpdateCustomEmailFolderMutation.Data(
                 UpdateCustomEmailFolderMutation.UpdateCustomEmailFolder(
                     "UpdateCustomEmailFolder",
@@ -835,25 +817,21 @@ object DataFactory {
             ),
             null,
         )
-    }
 
-    fun updateEmailAddressMetadataMutationResponse(
-        emailAddressId: String,
-    ): GraphQLResponse<UpdateEmailAddressMetadataMutation.Data> {
-        return GraphQLResponse<UpdateEmailAddressMetadataMutation.Data>(
+    fun updateEmailAddressMetadataMutationResponse(emailAddressId: String): GraphQLResponse<UpdateEmailAddressMetadataMutation.Data> =
+        GraphQLResponse<UpdateEmailAddressMetadataMutation.Data>(
             UpdateEmailAddressMetadataMutation.Data(
                 emailAddressId,
             ),
             null,
         )
-    }
 
     fun updateEmailMessagesMutationResponse(
         status: UpdateEmailMessagesStatus = UpdateEmailMessagesStatus.SUCCESS,
         failedMessages: List<UpdateEmailMessagesResult.FailedMessage> = emptyList(),
         successMessages: List<UpdateEmailMessagesResult.SuccessMessage> = emptyList(),
-    ): GraphQLResponse<UpdateEmailMessagesMutation.Data> {
-        return GraphQLResponse<UpdateEmailMessagesMutation.Data>(
+    ): GraphQLResponse<UpdateEmailMessagesMutation.Data> =
+        GraphQLResponse<UpdateEmailMessagesMutation.Data>(
             UpdateEmailMessagesMutation.Data(
                 UpdateEmailMessagesMutation.UpdateEmailMessagesV2(
                     "UpdateEmailMessagesV2",
@@ -866,5 +844,4 @@ object DataFactory {
             ),
             null,
         )
-    }
 }

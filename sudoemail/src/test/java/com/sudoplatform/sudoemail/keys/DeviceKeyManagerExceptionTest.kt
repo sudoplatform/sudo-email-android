@@ -29,7 +29,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class DeviceKeyManagerExceptionTest : BaseTests() {
-
     private val keyRingServiceName = "sudo-email"
 
     private val mockUserClient by before {

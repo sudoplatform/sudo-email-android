@@ -20,23 +20,22 @@ import kotlinx.serialization.json.Json
  */
 @Serializable
 sealed class EmailServiceNotification {
-
     companion object {
         /**
          * JSON object to use for deserialisation of the notification.
          */
-        private val JSON = Json {
-            ignoreUnknownKeys = true
-            classDiscriminator = "type"
-        }
+        private val JSON =
+            Json {
+                ignoreUnknownKeys = true
+                classDiscriminator = "type"
+            }
 
         /**
          * Decode an unsealed stringified notification to the appropriate
          * concrete EmailServiceNotification sub-class.
          */
-        fun decodeFromString(unsealedNotificationString: String): EmailServiceNotification {
-            return JSON.decodeFromString(unsealedNotificationString)
-        }
+        fun decodeFromString(unsealedNotificationString: String): EmailServiceNotification =
+            JSON.decodeFromString(unsealedNotificationString)
     }
 
     abstract val type: String

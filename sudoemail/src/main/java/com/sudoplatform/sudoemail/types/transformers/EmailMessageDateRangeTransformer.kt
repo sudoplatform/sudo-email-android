@@ -6,7 +6,7 @@
 
 package com.sudoplatform.sudoemail.types.transformers
 
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDateRangeInput
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.transformers.DateRangeTransformer.toDateRangeInput
@@ -16,7 +16,6 @@ import com.sudoplatform.sudoemail.types.transformers.DateRangeTransformer.toDate
  * the entity type that is exposed to users.
  */
 internal object EmailMessageDateRangeTransformer {
-
     /**
      * Transform the input type [EmailMessageDateRange] into the corresponding GraphQL type [EmailMessageDateRangeInput].
      */

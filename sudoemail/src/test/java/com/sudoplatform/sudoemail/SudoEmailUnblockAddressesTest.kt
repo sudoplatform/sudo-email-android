@@ -129,10 +129,11 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
 
     @Before
     fun init() {
-        addresses = listOf(
-            "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
-            "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
-        )
+        addresses =
+            listOf(
+                "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
+                "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
+            )
     }
 
     @After
@@ -155,11 +156,12 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         runTest {
             val addresses = emptyList<String>()
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
-                    client.unblockEmailAddresses(addresses)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
+                        client.unblockEmailAddresses(addresses)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
         }
@@ -169,16 +171,18 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         runTest {
             addresses.size shouldNotBe 0
             val uuid = UUID.randomUUID()
-            val addresses = listOf(
-                "spammyMcSpamface$uuid@spambot.com",
-                "spammymcspamface$uuid@spambot.com",
-            )
+            val addresses =
+                listOf(
+                    "spammyMcSpamface$uuid@spambot.com",
+                    "spammymcspamface$uuid@spambot.com",
+                )
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
-                    client.unblockEmailAddresses(addresses)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
+                        client.unblockEmailAddresses(addresses)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -190,9 +194,10 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         runTest {
             addresses.size shouldNotBe 0
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.unblockEmailAddresses(addresses)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.unblockEmailAddresses(addresses)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -223,9 +228,10 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.unblockEmailAddresses(addresses)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.unblockEmailAddresses(addresses)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -242,61 +248,65 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
         }
 
     @Test
-    fun `unblockEmailAddresses() should return proper lists on partial`() = runTest {
-        addresses.size shouldNotBe 0
+    fun `unblockEmailAddresses() should return proper lists on partial`() =
+        runTest {
+            addresses.size shouldNotBe 0
 
-        val expectedHashedValues = addresses.map {
-            StringHasher.hashString("$owner|${EmailAddressParser.normalize(it)}")
-        }
+            val expectedHashedValues =
+                addresses.map {
+                    StringHasher.hashString("$owner|${EmailAddressParser.normalize(it)}")
+                }
 
-        val mutationPartialResponse by before {
-            DataFactory.unblockEmailAddressesMutationResponse(
-                BlockEmailAddressesBulkUpdateStatus.PARTIAL,
-                listOf(expectedHashedValues[0]),
-                listOf(expectedHashedValues[1]),
-            )
-        }
-        mockApiClient.stub {
-            onBlocking {
-                unblockEmailAddressesMutation(
-                    any(),
+            val mutationPartialResponse by before {
+                DataFactory.unblockEmailAddressesMutationResponse(
+                    BlockEmailAddressesBulkUpdateStatus.PARTIAL,
+                    listOf(expectedHashedValues[0]),
+                    listOf(expectedHashedValues[1]),
                 )
-            } doAnswer {
-                mutationPartialResponse
             }
+            mockApiClient.stub {
+                onBlocking {
+                    unblockEmailAddressesMutation(
+                        any(),
+                    )
+                } doAnswer {
+                    mutationPartialResponse
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.unblockEmailAddresses(addresses)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+            result shouldNotBe null
+
+            result.status shouldBe BatchOperationStatus.PARTIAL
+            result.failureValues?.shouldContain(addresses[0])
+            result.successValues?.shouldContain(addresses[1])
+
+            verify(mockApiClient).unblockEmailAddressesMutation(
+                check { input ->
+                    input.owner shouldBe "mockOwner"
+                    input.unblockedAddresses.size shouldBe addresses.size
+                },
+            )
+            verify(mockUserClient).getSubject()
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.unblockEmailAddresses(addresses)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-        result shouldNotBe null
-
-        result.status shouldBe BatchOperationStatus.PARTIAL
-        result.failureValues?.shouldContain(addresses[0])
-        result.successValues?.shouldContain(addresses[1])
-
-        verify(mockApiClient).unblockEmailAddressesMutation(
-            check { input ->
-                input.owner shouldBe "mockOwner"
-                input.unblockedAddresses.size shouldBe addresses.size
-            },
-        )
-        verify(mockUserClient).getSubject()
-    }
 
     @Test
     fun `unblockEmailAddresses() should throw an error if response contains errors`() =
         runTest {
             addresses.size shouldNotBe 0
 
-            val error = GraphQLResponse.Error(
-                "mock",
-                null,
-                null,
-                mapOf("errorType" to "SystemError"),
-            )
+            val error =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("errorType" to "SystemError"),
+                )
             mockApiClient.stub {
                 onBlocking {
                     unblockEmailAddressesMutation(
@@ -307,11 +317,12 @@ class SudoEmailUnblockAddressesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
-                    client.unblockEmailAddresses(addresses)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
+                        client.unblockEmailAddresses(addresses)
+                    }
                 }
-            }
             deferredResult.start()
             val result = deferredResult.await()
             result shouldNotBe null

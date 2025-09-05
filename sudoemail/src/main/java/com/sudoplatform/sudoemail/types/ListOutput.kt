@@ -14,7 +14,7 @@ package com.sudoplatform.sudoemail.types
  * @property items [List<T>] Items returned from a list query output.
  * @property nextToken [String] Generated next token to call for the next page of paginated results.
  */
-data class ListOutput<T> (
+data class ListOutput<T>(
     val items: List<T>,
     val nextToken: String?,
 )

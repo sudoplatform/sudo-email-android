@@ -14,7 +14,6 @@ import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
  * AWS S3 SDK.
  */
 interface S3Client {
-
     /**
      * AWS region hosting the S3 bucket.
      */
@@ -34,7 +33,11 @@ interface S3Client {
      * @return AWS S3 key representing the location of the RFC822 data.
      */
     @Throws(S3Exception::class)
-    suspend fun upload(data: ByteArray, objectId: String, metadata: Map<String, String>? = null): String
+    suspend fun upload(
+        data: ByteArray,
+        objectId: String,
+        metadata: Map<String, String>? = null,
+    ): String
 
     /**
      * Downloads a RFC822 data from AWS S3.
@@ -78,5 +81,8 @@ interface S3Client {
      * @param metadata [Map<String, String>] A map containing the new metadata.
      */
     @Throws(S3Exception::class)
-    suspend fun updateObjectMetadata(key: String, metadata: Map<String, String>)
+    suspend fun updateObjectMetadata(
+        key: String,
+        metadata: Map<String, String>,
+    )
 }

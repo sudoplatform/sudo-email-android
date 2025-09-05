@@ -79,7 +79,6 @@ data class EmailMessage(
     val encryptionStatus: EncryptionStatus,
     val date: Date? = null,
 ) : Parcelable {
-
     /**
      * A representation of an email address as used in an [EmailMessage].
      *
@@ -93,12 +92,12 @@ data class EmailMessage(
         val emailAddress: String,
         val displayName: String? = null,
     ) : Parcelable {
-
         override fun toString(): String {
             if (displayName?.isNotBlank() == true) {
-                val escapedDisplayName = displayName
-                    .replace(Regex("\\\\g"), "\\\\\\\\") // Escape backslashes
-                    .replace(Regex("\"g"), "\\\"") // Escape double quotes
+                val escapedDisplayName =
+                    displayName
+                        .replace(Regex("\\\\g"), "\\\\\\\\") // Escape backslashes
+                        .replace(Regex("\"g"), "\\\"") // Escape double quotes
                 return "\"$escapedDisplayName\" <$emailAddress>" // Wrap display name in double quotes and build email address
             } else {
                 return emailAddress
@@ -155,7 +154,6 @@ data class PartialEmailMessage(
     val encryptionStatus: EncryptionStatus,
     val date: Date? = null,
 ) : Parcelable {
-
     /**
      * A representation of an email address as used in a [PartialEmailMessage].
      *
@@ -167,14 +165,12 @@ data class PartialEmailMessage(
         val emailAddress: String,
         val displayName: String? = "",
     ) : Parcelable {
-
-        override fun toString(): String {
-            return if (displayName?.isNotBlank() == true) {
+        override fun toString(): String =
+            if (displayName?.isNotBlank() == true) {
                 "$displayName <$emailAddress>"
             } else {
                 emailAddress
             }
-        }
     }
 }
 

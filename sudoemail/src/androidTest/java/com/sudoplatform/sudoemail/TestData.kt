@@ -12,6 +12,5 @@ import com.sudoplatform.sudoprofiles.Sudo
  * Data used in tests.
  */
 object TestData {
-
     val sudo = Sudo("Mr", "Theodore", "Bear", "Shopping", null, null)
 }

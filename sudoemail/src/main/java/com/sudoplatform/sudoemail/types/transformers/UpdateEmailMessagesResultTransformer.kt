@@ -18,21 +18,19 @@ import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMe
  * to the entity type that is exposed to users.
  */
 internal object UpdateEmailMessagesResultTransformer {
-
     /**
      * Transform the [UpdateEmailMessagesResult] result type to its entity type.
      *
      * @param result [UpdateEmailMessagesResult] The update email messages result type.
      * @return The [BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult>] entity type.
      */
-    fun toEntity(
-        result: UpdateEmailMessagesResult,
-    ): BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult> {
-        val status: BatchOperationStatus = when (result.status) {
-            UpdateEmailMessagesStatus.SUCCESS -> BatchOperationStatus.SUCCESS
-            UpdateEmailMessagesStatus.FAILED -> BatchOperationStatus.FAILURE
-            else -> BatchOperationStatus.PARTIAL
-        }
+    fun toEntity(result: UpdateEmailMessagesResult): BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult> {
+        val status: BatchOperationStatus =
+            when (result.status) {
+                UpdateEmailMessagesStatus.SUCCESS -> BatchOperationStatus.SUCCESS
+                UpdateEmailMessagesStatus.FAILED -> BatchOperationStatus.FAILURE
+                else -> BatchOperationStatus.PARTIAL
+            }
 
         val successMessages: List<UpdatedEmailMessageSuccess> =
             result.successMessages

@@ -38,64 +38,68 @@ class ImportExportKeysIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runBlocking {
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runBlocking {
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun exportImportKeysShouldSucceed() = runBlocking {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun exportImportKeysShouldSucceed() =
+        runBlocking {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
 
-        val result = sendEmailMessage(emailClient, emailAddress)
-        result.id.isBlank() shouldBe false
+            val result = sendEmailMessage(emailClient, emailAddress)
+            result.id.isBlank() shouldBe false
 
-        delay(3000)
+            delay(3000)
 
-        val getMessageInput = GetEmailMessageInput(result.id)
-        val storedEmailMessage = emailClient.getEmailMessage(getMessageInput)
-            ?: throw AssertionError("should not be null")
+            val getMessageInput = GetEmailMessageInput(result.id)
+            val storedEmailMessage =
+                emailClient.getEmailMessage(getMessageInput)
+                    ?: throw AssertionError("should not be null")
 
-        with(storedEmailMessage) {
-            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-            to.firstOrNull()?.emailAddress shouldBe successSimulatorAddress
-            hasAttachments shouldBe false
-            size shouldBeGreaterThan 0.0
+            with(storedEmailMessage) {
+                from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                to.firstOrNull()?.emailAddress shouldBe successSimulatorAddress
+                hasAttachments shouldBe false
+                size shouldBeGreaterThan 0.0
+            }
+
+            val getAddressInput = GetEmailAddressInput(emailAddress.id)
+            val storedEmailAddress =
+                emailClient.getEmailAddress(getAddressInput)
+                    ?: throw AssertionError("should not be null")
+            storedEmailAddress.emailAddress shouldBe emailAddress.emailAddress
+
+            val exportedKeys = emailClient.exportKeys()
+            exportedKeys shouldNotBe null
+
+            // remove all crypto keys from KeyManager
+            emailClient.reset()
+
+            try {
+                emailClient.getEmailMessage(getMessageInput)
+                throw AssertionError("expected getEmailMessage to throw with no keys, but it succeeded")
+            } catch (e: Throwable) {
+                e.shouldBeInstanceOf<SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException>()
+            }
+
+            // restore keys
+            emailClient.importKeys(exportedKeys)
+
+            val restoredKeysMessage = emailClient.getEmailMessage(getMessageInput)
+            restoredKeysMessage shouldBe storedEmailMessage
+
+            val restoredKeysAddress = emailClient.getEmailAddress(getAddressInput)
+            restoredKeysAddress shouldBe storedEmailAddress
         }
-
-        val getAddressInput = GetEmailAddressInput(emailAddress.id)
-        val storedEmailAddress = emailClient.getEmailAddress(getAddressInput)
-            ?: throw AssertionError("should not be null")
-        storedEmailAddress.emailAddress shouldBe emailAddress.emailAddress
-
-        val exportedKeys = emailClient.exportKeys()
-        exportedKeys shouldNotBe null
-
-        // remove all crypto keys from KeyManager
-        emailClient.reset()
-
-        try {
-            emailClient.getEmailMessage(getMessageInput)
-            throw AssertionError("expected getEmailMessage to throw with no keys, but it succeeded")
-        } catch (e: Throwable) {
-            e.shouldBeInstanceOf<SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException>()
-        }
-
-        // restore keys
-        emailClient.importKeys(exportedKeys)
-
-        val restoredKeysMessage = emailClient.getEmailMessage(getMessageInput)
-        restoredKeysMessage shouldBe storedEmailMessage
-
-        val restoredKeysAddress = emailClient.getEmailAddress(getAddressInput)
-        restoredKeysAddress shouldBe storedEmailAddress
-    }
 }

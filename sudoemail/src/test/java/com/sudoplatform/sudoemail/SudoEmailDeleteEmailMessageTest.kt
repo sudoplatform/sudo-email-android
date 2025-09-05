@@ -45,7 +45,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailDeleteEmailMessageTest : BaseTests() {
-
     private val mutationResponse by before {
         DataFactory.deleteEmailMessagesMutationResponse(listOf("id"))
     }
@@ -143,201 +142,218 @@ class SudoEmailDeleteEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `deleteEmailMessage() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.deleteEmailMessage("id")
+    fun `deleteEmailMessage() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteEmailMessage("id")
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result?.id?.isBlank() shouldBe false
+
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result?.id?.isBlank() shouldBe false
-
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
 
     @Test
-    fun `deleteEmailMessage() should return null result when delete operation fails`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
-                )
-            } doAnswer {
-                mutationResponse
+    fun `deleteEmailMessage() should return null result when delete operation fails`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                } doAnswer {
+                    mutationResponse
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteEmailMessage("id")
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldBe null
+
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.deleteEmailMessage("id")
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldBe null
-
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
 
     @Test
-    fun `deleteEmailMessage() should throw when email mutation response is null`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
-                )
-            }.thenAnswer {
-                GraphQLResponse(null, null)
+    fun `deleteEmailMessage() should throw when email mutation response is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, null)
+                }
             }
-        }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.deleteEmailMessage("id")
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.deleteEmailMessage("id")
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
-    fun `deleteEmailMessage() should throw when response has various errors`() = runTest {
-        testException<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException>("EmailMessageNotFound")
-        testException<SudoEmailClient.EmailMessageException.FailedException>("blah")
+    fun `deleteEmailMessage() should throw when response has various errors`() =
+        runTest {
+            testException<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException>("EmailMessageNotFound")
+            testException<SudoEmailClient.EmailMessageException.FailedException>("blah")
 
-        verify(mockApiClient, times(2)).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id")
-            },
-        )
-        verify(mockApiClient, times(2)).getEmailConfigQuery()
-    }
+            verify(mockApiClient, times(2)).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id")
+                },
+            )
+            verify(mockApiClient, times(2)).getEmailConfigQuery()
+        }
 
     @Test
-    fun `deleteEmailMessage() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
+    fun `deleteEmailMessage() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.deleteEmailMessage("id")
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.deleteEmailMessage("id")
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
-    fun `deleteEmailMessage() should throw when unknown error occurs()`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.deleteEmailMessage("id")
+    fun `deleteEmailMessage() should throw when unknown error occurs()`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.deleteEmailMessage("id")
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
-    fun `deleteEmailMessage() should not block coroutine cancellation exception`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
+    fun `deleteEmailMessage() should not block coroutine cancellation exception`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                } doThrow CancellationException("Mock Cancellation Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.deleteEmailMessage("id")
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
+
+    private inline fun <reified T : Exception> testException(apolloError: String) =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to apolloError),
                 )
-            } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<CancellationException> {
-                client.deleteEmailMessage("id")
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
-
-    private inline fun <reified T : Exception> testException(apolloError: String) = runTest {
-        val testError = GraphQLResponse.Error(
-            "Test generated error",
-            emptyList(),
-            emptyList(),
-            mapOf("errorType" to apolloError),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
-                )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<T> {
+                        client.deleteEmailMessage("id")
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<T> {
-                client.deleteEmailMessage("id")
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-    }
 }

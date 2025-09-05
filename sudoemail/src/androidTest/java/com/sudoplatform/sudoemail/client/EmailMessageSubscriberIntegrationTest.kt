@@ -49,10 +49,15 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()
 
-    private val emailMessageSubscriber = object : EmailMessageSubscriber {
-        override fun connectionStatusChanged(state: Subscriber.ConnectionState) { }
-        override fun emailMessageChanged(emailMessage: EmailMessage, type: EmailMessageSubscriber.ChangeType) { }
-    }
+    private val emailMessageSubscriber =
+        object : EmailMessageSubscriber {
+            override fun connectionStatusChanged(state: Subscriber.ConnectionState) { }
+
+            override fun emailMessageChanged(
+                emailMessage: EmailMessage,
+                type: EmailMessageSubscriber.ChangeType,
+            ) { }
+        }
 
     @Before
     fun setup() {
@@ -61,134 +66,144 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        emailClient.unsubscribeAllFromEmailMessages()
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            emailClient.unsubscribeAllFromEmailMessages()
+            sudoClient.reset()
+        }
 
     @Test
-    fun subscribeUnsubscribeShouldNotFail() = runTest {
-        if (!userClient.isRegistered()) {
-            registerSignInAndEntitle()
+    fun subscribeUnsubscribeShouldNotFail() =
+        runTest {
+            if (!userClient.isRegistered()) {
+                registerSignInAndEntitle()
+            }
+
+            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+            emailClient.unsubscribeAllFromEmailMessages()
+
+            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+            emailClient.unsubscribeFromEmailMessages("id")
+
+            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+
+            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+            emailClient.unsubscribeAllFromEmailMessages()
+
+            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+            emailClient.unsubscribeFromEmailMessages("id")
+
+            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+
+            emailClient.close()
         }
-
-        emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        emailClient.unsubscribeAllFromEmailMessages()
-
-        emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        emailClient.unsubscribeFromEmailMessages("id")
-
-        emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-
-        emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        emailClient.unsubscribeAllFromEmailMessages()
-
-        emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        emailClient.unsubscribeFromEmailMessages("id")
-
-        emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-
-        emailClient.close()
-    }
 
     @Test
-    fun subscribeShouldThrowWhenNotAuthenticated() = runTest {
-        if (userClient.isRegistered()) {
-            deregister()
-        }
+    fun subscribeShouldThrowWhenNotAuthenticated() =
+        runTest {
+            if (userClient.isRegistered()) {
+                deregister()
+            }
 
-        emailClient.unsubscribeFromEmailMessages("id")
-        emailClient.unsubscribeAllFromEmailMessages()
+            emailClient.unsubscribeFromEmailMessages("id")
+            emailClient.unsubscribeAllFromEmailMessages()
 
-        shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        }
+            shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
+                emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+            }
 
-        shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        }
+            shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
+                emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+            }
 
-        emailClient.unsubscribeFromEmailMessages("id")
-        emailClient.unsubscribeAllFromEmailMessages()
-        shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        }
+            emailClient.unsubscribeFromEmailMessages("id")
+            emailClient.unsubscribeAllFromEmailMessages()
+            shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
+                emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
+            }
 
-        shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
-        }
-    }
-
-    @Test
-    fun subscribeShouldGetUpdatesFromEmailMessageCreateUpdateAndDelete() = runTest {
-        if (!userClient.isRegistered()) {
-            registerSignInAndEntitle()
-        }
-        var sentMessageId = ""
-        val id = UUID.randomUUID().toString()
-        var isCreated = false
-        var isUpdated = false
-        var isDeleted = false
-        val emailMessageSubscriber = object : EmailMessageSubscriber {
-            override fun connectionStatusChanged(state: Subscriber.ConnectionState) { }
-            override fun emailMessageChanged(emailMessage: EmailMessage, type: EmailMessageSubscriber.ChangeType) {
-                when (type) {
-                    EmailMessageSubscriber.ChangeType.CREATED -> {
-                        isCreated = true
-                        if (emailMessage.direction == Direction.OUTBOUND) {
-                            emailMessage.id shouldMatch sentMessageId
-                        } else {
-                            emailMessage.id shouldStartWith "em-msg-"
-                        }
-                    }
-                    EmailMessageSubscriber.ChangeType.UPDATED -> {
-                        isUpdated = true
-                        emailMessage.id shouldMatch sentMessageId
-                    }
-                    EmailMessageSubscriber.ChangeType.DELETED -> {
-                        isDeleted = true
-                        emailMessage.id shouldMatch sentMessageId
-                    }
-                }
+            shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
+                emailClient.subscribeToEmailMessages("id", emailMessageSubscriber)
             }
         }
-        emailClient.subscribeToEmailMessages(id, emailMessageSubscriber)
 
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    @Test
+    fun subscribeShouldGetUpdatesFromEmailMessageCreateUpdateAndDelete() =
+        runTest {
+            if (!userClient.isRegistered()) {
+                registerSignInAndEntitle()
+            }
+            var sentMessageId = ""
+            val id = UUID.randomUUID().toString()
+            var isCreated = false
+            var isUpdated = false
+            var isDeleted = false
+            val emailMessageSubscriber =
+                object : EmailMessageSubscriber {
+                    override fun connectionStatusChanged(state: Subscriber.ConnectionState) { }
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+                    override fun emailMessageChanged(
+                        emailMessage: EmailMessage,
+                        type: EmailMessageSubscriber.ChangeType,
+                    ) {
+                        when (type) {
+                            EmailMessageSubscriber.ChangeType.CREATED -> {
+                                isCreated = true
+                                if (emailMessage.direction == Direction.OUTBOUND) {
+                                    emailMessage.id shouldMatch sentMessageId
+                                } else {
+                                    emailMessage.id shouldStartWith "em-msg-"
+                                }
+                            }
+                            EmailMessageSubscriber.ChangeType.UPDATED -> {
+                                isUpdated = true
+                                emailMessage.id shouldMatch sentMessageId
+                            }
+                            EmailMessageSubscriber.ChangeType.DELETED -> {
+                                isDeleted = true
+                                emailMessage.id shouldMatch sentMessageId
+                            }
+                        }
+                    }
+                }
+            emailClient.subscribeToEmailMessages(id, emailMessageSubscriber)
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val sendResult = sendEmailMessage(emailClient, emailAddress)
-        sentMessageId = sendResult.id
-        sentMessageId.isBlank() shouldBe false
-        sendResult.createdAt shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val updateResult = emailClient.updateEmailMessages(
-            UpdateEmailMessagesInput(
-                listOf(sentMessageId),
-                UpdateEmailMessagesInput.UpdatableValues(folderId = null, seen = false),
-            ),
-        )
-        updateResult.status shouldBe BatchOperationStatus.SUCCESS
-        updateResult.successValues?.first()?.id shouldBe sendResult.id
-        updateResult.failureValues?.isEmpty() shouldBe true
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val deleteResult = emailClient.deleteEmailMessage(sentMessageId)
-        deleteResult shouldBe DeleteEmailMessageSuccessResult(sentMessageId)
+            val sendResult = sendEmailMessage(emailClient, emailAddress)
+            sentMessageId = sendResult.id
+            sentMessageId.isBlank() shouldBe false
+            sendResult.createdAt shouldNotBe null
 
-        delay(3000L)
-        // Ensure that the callback has been called for each change type
-        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isCreated }
-        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isUpdated }
-        await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isDeleted }
-    }
+            val updateResult =
+                emailClient.updateEmailMessages(
+                    UpdateEmailMessagesInput(
+                        listOf(sentMessageId),
+                        UpdateEmailMessagesInput.UpdatableValues(folderId = null, seen = false),
+                    ),
+                )
+            updateResult.status shouldBe BatchOperationStatus.SUCCESS
+            updateResult.successValues?.first()?.id shouldBe sendResult.id
+            updateResult.failureValues?.isEmpty() shouldBe true
+
+            val deleteResult = emailClient.deleteEmailMessage(sentMessageId)
+            deleteResult shouldBe DeleteEmailMessageSuccessResult(sentMessageId)
+
+            delay(3000L)
+            // Ensure that the callback has been called for each change type
+            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isCreated }
+            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isUpdated }
+            await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isDeleted }
+        }
 }

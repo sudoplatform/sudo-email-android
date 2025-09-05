@@ -49,7 +49,6 @@ import java.util.zip.GZIPOutputStream
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
-
     private val input by before {
         GetEmailMessageWithBodyInput(
             id = "emailMessageId",
@@ -59,15 +58,16 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
 
     private val mockRfc822Metadata: ObjectMetadata = ObjectMetadata()
 
-    private val emailMessage = SimplifiedEmailMessage(
-        listOf("from@bar.com"),
-        listOf("to@bar.com"),
-        listOf("cc@bar.com"),
-        listOf("bcc@bar.com"),
-        "email message subject",
-        "email message body",
-        false,
-    )
+    private val emailMessage =
+        SimplifiedEmailMessage(
+            listOf("from@bar.com"),
+            listOf("to@bar.com"),
+            listOf("cc@bar.com"),
+            listOf("bcc@bar.com"),
+            "email message subject",
+            "email message body",
+            false,
+        )
 
     private val queryResponse by before {
         DataFactory.getEmailMessageQueryResponse(
@@ -177,9 +177,10 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
     @Test
     fun `getEmailMessageWithBody() should return results when no error present`() =
         runTest {
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailMessageWithBody(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessageWithBody(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -202,10 +203,13 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
             mockRfc822Metadata.contentEncoding =
                 "sudoplatform-compression, sudoplatform-crypto, sudoplatform-binary-data"
             val bos = ByteArrayOutputStream()
-            GZIPOutputStream(bos).bufferedWriter(Charsets.UTF_8)
+            GZIPOutputStream(bos)
+                .bufferedWriter(Charsets.UTF_8)
                 .use { it.write(DataFactory.unsealedHeaderDetailsString) }
             val compressedBytes = bos.toByteArray()
-            val encodedBytes = com.amazonaws.util.Base64.encode(compressedBytes)
+            val encodedBytes =
+                com.amazonaws.util.Base64
+                    .encode(compressedBytes)
 
             mockS3Client.stub {
                 onBlocking { getObjectMetadata(anyString()) } doReturn mockRfc822Metadata
@@ -220,9 +224,10 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
                 } doReturn encodedBytes
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailMessageWithBody(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessageWithBody(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -252,9 +257,10 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailMessageWithBody(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessageWithBody(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -266,58 +272,63 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
         }
 
     @Test
-    fun `getEmailMessageWithBody() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                getEmailMessageQuery(
-                    any(),
+    fun `getEmailMessageWithBody() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMessageQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.getEmailMessageWithBody(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.getEmailMessageWithBody(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).getEmailMessageQuery(
-            any(),
-        )
-    }
+            verify(mockApiClient).getEmailMessageQuery(
+                any(),
+            )
+        }
 
     @Test
-    fun `getEmailMessageWithBody() should throw when unknown error occurs`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailMessageQuery(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.getEmailMessageWithBody(input)
+    fun `getEmailMessageWithBody() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMessageQuery(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).getEmailMessageQuery(
-            any(),
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.getEmailMessageWithBody(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailMessageQuery(
+                any(),
+            )
+        }
 
     @Test
     fun `getEmailMessageWithBody() should not suppress CancellationException`() =
@@ -330,11 +341,12 @@ class SudoEmailGetEmailMessageWithBodyTest : BaseTests() {
                 } doThrow CancellationException("Mock Cancellation Exception")
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<CancellationException> {
-                    client.getEmailMessageWithBody(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.getEmailMessageWithBody(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 

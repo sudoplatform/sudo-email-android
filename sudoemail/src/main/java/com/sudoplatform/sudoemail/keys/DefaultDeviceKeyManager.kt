@@ -23,12 +23,12 @@ import java.util.UUID
  */
 internal open class DefaultDeviceKeyManager(
     private val keyManager: KeyManagerInterface,
-    private val logger: Logger = Logger(
-        LogConstants.SUDOLOG_TAG,
-        AndroidUtilsLogDriver(LogLevel.INFO),
-    ),
+    private val logger: Logger =
+        Logger(
+            LogConstants.SUDOLOG_TAG,
+            AndroidUtilsLogDriver(LogLevel.INFO),
+        ),
 ) : DeviceKeyManager {
-
     companion object {
         @VisibleForTesting
         private const val SECRET_KEY_ID_NAME = "eml-secret-key"
@@ -51,10 +51,11 @@ internal open class DefaultDeviceKeyManager(
         val keyId = UUID.randomUUID().toString()
         try {
             keyManager.generateSymmetricKey(keyId)
-            val symmetricKey = keyManager.getSymmetricKeyData(keyId)
-                ?: throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
-                    "Failed to generate symmetric key",
-                )
+            val symmetricKey =
+                keyManager.getSymmetricKeyData(keyId)
+                    ?: throw DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
+                        "Failed to generate symmetric key",
+                    )
             keyManager.deleteSymmetricKey(keyId)
             return symmetricKey
         } catch (e: Exception) {
@@ -140,9 +141,7 @@ internal open class DefaultDeviceKeyManager(
         }
     }
 
-    override fun createRandomData(size: Int): ByteArray {
-        return keyManager.createRandomData(size)
-    }
+    override fun createRandomData(size: Int): ByteArray = keyManager.createRandomData(size)
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
     override fun decryptWithKeyPairId(
@@ -191,8 +190,12 @@ internal open class DefaultDeviceKeyManager(
     }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    override fun decryptWithSymmetricKey(key: ByteArray, data: ByteArray, initVector: ByteArray?): ByteArray {
-        return try {
+    override fun decryptWithSymmetricKey(
+        key: ByteArray,
+        data: ByteArray,
+        initVector: ByteArray?,
+    ): ByteArray =
+        try {
             if (initVector != null) {
                 keyManager.decryptWithSymmetricKey(key, data, initVector)
             } else {
@@ -205,10 +208,12 @@ internal open class DefaultDeviceKeyManager(
                 e,
             )
         }
-    }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    override fun decryptWithSymmetricKeyId(keyId: String, data: ByteArray): ByteArray {
+    override fun decryptWithSymmetricKeyId(
+        keyId: String,
+        data: ByteArray,
+    ): ByteArray {
         try {
             return keyManager.decryptWithSymmetricKey(keyId, data)
         } catch (e: KeyManagerException) {
@@ -225,8 +230,8 @@ internal open class DefaultDeviceKeyManager(
         keyId: String,
         data: ByteArray,
         initVector: ByteArray?,
-    ): ByteArray {
-        return try {
+    ): ByteArray =
+        try {
             if (initVector != null) {
                 keyManager.encryptWithSymmetricKey(keyId, data, initVector)
             } else {
@@ -236,15 +241,14 @@ internal open class DefaultDeviceKeyManager(
             logger.error("error $e")
             throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)
         }
-    }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
     override fun encryptWithSymmetricKey(
         key: ByteArray,
         data: ByteArray,
         initVector: ByteArray?,
-    ): ByteArray {
-        return try {
+    ): ByteArray =
+        try {
             if (initVector != null) {
                 keyManager.encryptWithSymmetricKey(key, data, initVector)
             } else {
@@ -254,7 +258,6 @@ internal open class DefaultDeviceKeyManager(
             logger.error("error $e")
             throw DeviceKeyManager.DeviceKeyManagerException.EncryptionException("Failed to encrypt", e)
         }
-    }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
     override fun importKeys(archiveData: ByteArray) {

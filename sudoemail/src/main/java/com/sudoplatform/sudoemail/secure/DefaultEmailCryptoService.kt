@@ -27,14 +27,13 @@ import okio.ByteString.Companion.toByteString
 
 internal class DefaultEmailCryptoService(
     private val deviceKeyManager: DeviceKeyManager,
-    private val logger: Logger = Logger(
-        LogConstants.SUDOLOG_TAG,
-        AndroidUtilsLogDriver(LogLevel.INFO),
-    ),
+    private val logger: Logger =
+        Logger(
+            LogConstants.SUDOLOG_TAG,
+            AndroidUtilsLogDriver(LogLevel.INFO),
+        ),
 ) : EmailCryptoService {
-
     companion object {
-
         /** Exception messages */
         private const val ENCRYPTION_ERROR_MSG =
             "Exception while encrypting the email body and keys"
@@ -44,7 +43,10 @@ internal class DefaultEmailCryptoService(
     }
 
     @Throws(EmailCryptoServiceException::class)
-    override suspend fun encrypt(data: ByteArray, emailAddressPublicInfo: List<EmailAddressPublicInfo>): SecurePackage {
+    override suspend fun encrypt(
+        data: ByteArray,
+        emailAddressPublicInfo: List<EmailAddressPublicInfo>,
+    ): SecurePackage {
         if (data.isEmpty() || emailAddressPublicInfo.isEmpty()) {
             throw EmailCryptoServiceException.InvalidArgumentException()
         }
@@ -55,11 +57,12 @@ internal class DefaultEmailCryptoService(
 
             // Encrypt the input data using the symmetric key with an AES/CBC/PKCS7Padding cipher
             val initVector = deviceKeyManager.createRandomData(IV_SIZE)
-            val encryptedBodyData = deviceKeyManager.encryptWithSymmetricKey(
-                symmetricKey,
-                data,
-                initVector,
-            )
+            val encryptedBodyData =
+                deviceKeyManager.encryptWithSymmetricKey(
+                    symmetricKey,
+                    data,
+                    initVector,
+                )
             val secureBodyData =
                 SecureData(encryptedBodyData.toByteString(), initVector.toByteString())
             val serializedBodyData = secureBodyData.toJson().toByteArray()
@@ -70,29 +73,32 @@ internal class DefaultEmailCryptoService(
 
             // Iterate through each public key for each recipient and encrypt the symmetric key with the public key
             val distinctPublicInfo = emailAddressPublicInfo.distinctBy { it.keyId }
-            val secureKeyAttachments = distinctPublicInfo.mapIndexed { index, publicInfo ->
-                // Seal the symmetric key using the publicKey and RSA_ECB_OAEPSHA1 algorithm
-                val sealedKey =
-                    SealedKey(publicInfo.keyId, symmetricKey, PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1)
-                val publicKeyFormat = PublicKeyFormatTransformer.toKeyManagerEntity(
-                    publicInfo.publicKeyDetails.keyFormat,
-                )
-                val encryptedSymmetricKey = deviceKeyManager.encryptWithPublicKey(
-                    Base64.decode(publicInfo.publicKeyDetails.publicKey),
-                    sealedKey.symmetricKey,
-                    publicKeyFormat,
-                    sealedKey.algorithm,
-                )
-                sealedKey.encryptedKey = encryptedSymmetricKey.toByteString()
-                val sealedKeyData = sealedKey.toJson().toByteArray()
+            val secureKeyAttachments =
+                distinctPublicInfo.mapIndexed { index, publicInfo ->
+                    // Seal the symmetric key using the publicKey and RSA_ECB_OAEPSHA1 algorithm
+                    val sealedKey =
+                        SealedKey(publicInfo.keyId, symmetricKey, PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1)
+                    val publicKeyFormat =
+                        PublicKeyFormatTransformer.toKeyManagerEntity(
+                            publicInfo.publicKeyDetails.keyFormat,
+                        )
+                    val encryptedSymmetricKey =
+                        deviceKeyManager.encryptWithPublicKey(
+                            Base64.decode(publicInfo.publicKeyDetails.publicKey),
+                            sealedKey.symmetricKey,
+                            publicKeyFormat,
+                            sealedKey.algorithm,
+                        )
+                    sealedKey.encryptedKey = encryptedSymmetricKey.toByteString()
+                    val sealedKeyData = sealedKey.toJson().toByteArray()
 
-                // Build an email attachment of the sealed keys
-                buildEmailAttachment(
-                    sealedKeyData,
-                    SecureEmailAttachmentType.KEY_EXCHANGE,
-                    index + 1,
-                )
-            }
+                    // Build an email attachment of the sealed keys
+                    buildEmailAttachment(
+                        sealedKeyData,
+                        SecureEmailAttachmentType.KEY_EXCHANGE,
+                        index + 1,
+                    )
+                }
 
             // Return a secure package with the secure key attachments and the secure body attachment
             return SecurePackage(secureKeyAttachments.toMutableSet(), secureBodyAttachment)
@@ -114,30 +120,31 @@ internal class DefaultEmailCryptoService(
 
             // Iterate through the set of keyAttachments and search for the key
             // belonging to the current recipient
-            val keyComponents = securePackage.keyAttachments
-                .mapNotNull { key ->
-                    if (key.data.isNotEmpty()) {
-                        // Parse the key and pluck the publicKeyId
-                        val sealedKeyComponents = SealedKeyComponents.fromJson(key.data)
-                        // Check if the private key pair exists based on the publicKeyId
-                        if (deviceKeyManager.privateKeyExists(sealedKeyComponents.publicKeyId)) {
-                            // Found the right key
-                            return@mapNotNull sealedKeyComponents
+            val keyComponents =
+                securePackage.keyAttachments
+                    .mapNotNull { key ->
+                        if (key.data.isNotEmpty()) {
+                            // Parse the key and pluck the publicKeyId
+                            val sealedKeyComponents = SealedKeyComponents.fromJson(key.data)
+                            // Check if the private key pair exists based on the publicKeyId
+                            if (deviceKeyManager.privateKeyExists(sealedKeyComponents.publicKeyId)) {
+                                // Found the right key
+                                return@mapNotNull sealedKeyComponents
+                            }
                         }
-                    }
-                    null
-                }
-                .firstOrNull()
-                ?: throw EmailCryptoServiceException.KeyNotFoundException(
-                    DECRYPTION_KEY_NOT_FOUND_ERROR_MSG,
-                )
+                        null
+                    }.firstOrNull()
+                    ?: throw EmailCryptoServiceException.KeyNotFoundException(
+                        DECRYPTION_KEY_NOT_FOUND_ERROR_MSG,
+                    )
 
             // Decrypt the symmetric key with the private key using the RSA/ECB/OAEPSHA1 cipher
-            val symmetricKey = deviceKeyManager.decryptWithKeyPairId(
-                keyComponents.encryptedKey.toByteArray(),
-                keyComponents.publicKeyId,
-                keyComponents.algorithm,
-            )
+            val symmetricKey =
+                deviceKeyManager.decryptWithKeyPairId(
+                    keyComponents.encryptedKey.toByteArray(),
+                    keyComponents.publicKeyId,
+                    keyComponents.algorithm,
+                )
 
             // Decrypt and return the email body data using the symmetric key with the
             // AES/CBC/PKCS7Padding cipher

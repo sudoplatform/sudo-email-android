@@ -10,15 +10,18 @@ package com.sudoplatform.sudoemail.types
  * Result type of an API that returns a list. Supports partial results.
  */
 sealed class ListAPIResult<out T, out P> {
-
     /** Result is a success and returns a list of all results. **/
-    data class Success<T>(val result: ListSuccessResult<T>) : ListAPIResult<T, Nothing>()
+    data class Success<T>(
+        val result: ListSuccessResult<T>,
+    ) : ListAPIResult<T, Nothing>()
 
     /**
      * Result is partial and returns a list of mixed success and partial results and an exception
      * for each partial result indicating the failure.
      */
-    data class Partial<T, P>(val result: ListPartialResult<T, P>) : ListAPIResult<T, P>()
+    data class Partial<T, P>(
+        val result: ListPartialResult<T, P>,
+    ) : ListAPIResult<T, P>()
 
     /**
      * Represents a successful list result.

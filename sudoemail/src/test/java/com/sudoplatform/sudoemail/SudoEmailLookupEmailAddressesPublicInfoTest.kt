@@ -49,7 +49,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
-
     private val input by before {
         LookupEmailAddressesPublicInfoInput(
             listOf("emailAddress"),
@@ -151,140 +150,150 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     }
 
     @Test
-    fun `lookupEmailAddressesPublicInfo() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.lookupEmailAddressesPublicInfo(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
+    fun `lookupEmailAddressesPublicInfo() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.lookupEmailAddressesPublicInfo(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        result shouldNotBe null
-        result.count() shouldBe 1
-        with(result[0]) {
-            emailAddress shouldBe "emailAddress"
-            keyId shouldBe "keyId"
-            publicKey shouldBe "publicKey"
-            publicKeyDetails.publicKey shouldBe "publicKey"
-            publicKeyDetails.keyFormat shouldBe PublicKeyFormat.RSA_PUBLIC_KEY
-            publicKeyDetails.algorithm shouldBe "algorithm"
-        }
+            result shouldNotBe null
+            result.count() shouldBe 1
+            with(result[0]) {
+                emailAddress shouldBe "emailAddress"
+                keyId shouldBe "keyId"
+                publicKey shouldBe "publicKey"
+                publicKeyDetails.publicKey shouldBe "publicKey"
+                publicKeyDetails.keyFormat shouldBe PublicKeyFormat.RSA_PUBLIC_KEY
+                publicKeyDetails.algorithm shouldBe "algorithm"
+            }
 
-        verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
-            check { input ->
-                input.emailAddresses shouldBe listOf("emailAddress")
-            },
-        )
-    }
+            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+                check { input ->
+                    input.emailAddresses shouldBe listOf("emailAddress")
+                },
+            )
+        }
 
     @Test
-    fun `lookupEmailAddressesPublicInfo() should return empty result when query result data is empty`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                lookupEmailAddressesPublicInfoQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponseWithEmptyList
+    fun `lookupEmailAddressesPublicInfo() should return empty result when query result data is empty`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    lookupEmailAddressesPublicInfoQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    queryResponseWithEmptyList
+                }
             }
+
+            val input = LookupEmailAddressesPublicInfoInput(emptyList())
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.lookupEmailAddressesPublicInfo(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldBe emptyList()
+
+            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+                check { input ->
+                    input.emailAddresses shouldBe emptyList()
+                },
+            )
         }
-
-        val input = LookupEmailAddressesPublicInfoInput(emptyList())
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.lookupEmailAddressesPublicInfo(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldBe emptyList()
-
-        verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
-            check { input ->
-                input.emailAddresses shouldBe emptyList()
-            },
-        )
-    }
 
     @Test
-    fun `lookupEmailAddressesPublicInfo() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                lookupEmailAddressesPublicInfoQuery(
-                    any(),
+    fun `lookupEmailAddressesPublicInfo() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    lookupEmailAddressesPublicInfoQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        client.lookupEmailAddressesPublicInfo(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+                check { input ->
+                    input.emailAddresses shouldBe listOf("emailAddress")
+                    input.emailAddresses shouldBe listOf("emailAddress")
+                },
+            )
         }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+    @Test
+    fun `lookupEmailAddressesPublicInfo() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    lookupEmailAddressesPublicInfoQuery(
+                        any(),
+                    )
+                } doThrow
+                    RuntimeException("Mock Runtime Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
+                        client.lookupEmailAddressesPublicInfo(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+                check { input ->
+                    input.emailAddresses shouldBe listOf("emailAddress")
+                    input.emailAddresses shouldBe listOf("emailAddress")
+                },
+            )
+        }
+
+    @Test
+    fun `lookupEmailAddressesPublicInfo() should not block coroutine cancellation exception`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    lookupEmailAddressesPublicInfoQuery(
+                        any(),
+                    )
+                } doThrow
+                    CancellationException("Mock Cancellation Exception")
+            }
+
+            shouldThrow<CancellationException> {
                 client.lookupEmailAddressesPublicInfo(input)
             }
+
+            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+                check { input ->
+                    input.emailAddresses shouldBe listOf("emailAddress")
+                    input.emailAddresses shouldBe listOf("emailAddress")
+                },
+            )
         }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
-            check { input ->
-                input.emailAddresses shouldBe listOf("emailAddress")
-                input.emailAddresses shouldBe listOf("emailAddress")
-            },
-        )
-    }
-
-    @Test
-    fun `lookupEmailAddressesPublicInfo() should throw when unknown error occurs`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                lookupEmailAddressesPublicInfoQuery(
-                    any(),
-                )
-            } doThrow
-                RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                client.lookupEmailAddressesPublicInfo(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
-            check { input ->
-                input.emailAddresses shouldBe listOf("emailAddress")
-                input.emailAddresses shouldBe listOf("emailAddress")
-            },
-        )
-    }
-
-    @Test
-    fun `lookupEmailAddressesPublicInfo() should not block coroutine cancellation exception`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                lookupEmailAddressesPublicInfoQuery(
-                    any(),
-                )
-            } doThrow
-                CancellationException("Mock Cancellation Exception")
-        }
-
-        shouldThrow<CancellationException> {
-            client.lookupEmailAddressesPublicInfo(input)
-        }
-
-        verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
-            check { input ->
-                input.emailAddresses shouldBe listOf("emailAddress")
-                input.emailAddresses shouldBe listOf("emailAddress")
-            },
-        )
-    }
 }

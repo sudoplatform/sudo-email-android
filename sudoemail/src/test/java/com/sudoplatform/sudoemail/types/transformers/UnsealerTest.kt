@@ -41,7 +41,6 @@ import java.util.UUID
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class UnsealerTest : BaseTests() {
-
     private val keyRingServiceName = "sudo-email"
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -84,18 +83,20 @@ class UnsealerTest : BaseTests() {
     }
 
     private fun seal(value: String): String {
-        val encryptedSymmetricKeyBytes = keyManager.encryptWithPublicKey(
-            publicKeyId,
-            keyManager.getSymmetricKeyData(symmetricKeyId)!!,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-        )
+        val encryptedSymmetricKeyBytes =
+            keyManager.encryptWithPublicKey(
+                publicKeyId,
+                keyManager.getSymmetricKeyData(symmetricKeyId)!!,
+                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+            )
         encryptedSymmetricKeyBytes.size shouldBe Unsealer.KEY_SIZE_AES
 
-        val encryptedData = keyManager.encryptWithSymmetricKey(
-            symmetricKeyId,
-            value.toByteArray(),
-            KeyManagerInterface.SymmetricEncryptionAlgorithm.AES_CBC_PKCS7_256,
-        )
+        val encryptedData =
+            keyManager.encryptWithSymmetricKey(
+                symmetricKeyId,
+                value.toByteArray(),
+                KeyManagerInterface.SymmetricEncryptionAlgorithm.AES_CBC_PKCS7_256,
+            )
 
         val data = ByteArray(encryptedSymmetricKeyBytes.size + encryptedData.size)
         encryptedSymmetricKeyBytes.copyInto(data)
@@ -105,10 +106,11 @@ class UnsealerTest : BaseTests() {
     }
 
     private fun sealString(value: String): String {
-        val encryptedMetadata = serviceKeyManager.encryptWithSymmetricKeyId(
-            symmetricKeyId,
-            value.toByteArray(Charsets.UTF_8),
-        )
+        val encryptedMetadata =
+            serviceKeyManager.encryptWithSymmetricKeyId(
+                symmetricKeyId,
+                value.toByteArray(Charsets.UTF_8),
+            )
         return String(Base64.encode(encryptedMetadata), Charsets.UTF_8)
     }
 
@@ -121,9 +123,10 @@ class UnsealerTest : BaseTests() {
     }
 
     @After
-    fun fini() = runTest {
-        Timber.uprootAll()
-    }
+    fun fini() =
+        runTest {
+            Timber.uprootAll()
+        }
 
     @Test
     fun `unseal string`() {
@@ -142,15 +145,16 @@ class UnsealerTest : BaseTests() {
 
     @Test
     fun `unseal EmailAddressWithoutFolders Alias should throw for unsupported algorithm`() {
-        val sealedAlias = EmailAddressWithoutFolders.Alias(
-            "Alias",
-            SealedAttribute(
-                "unsupported-algorithm",
-                symmetricKeyId,
-                "json-string",
-                sealString("alias"),
-            ),
-        )
+        val sealedAlias =
+            EmailAddressWithoutFolders.Alias(
+                "Alias",
+                SealedAttribute(
+                    "unsupported-algorithm",
+                    symmetricKeyId,
+                    "json-string",
+                    sealString("alias"),
+                ),
+            )
 
         shouldThrow<Unsealer.UnsealerException.UnsupportedAlgorithmException> {
             stringUnsealer.unseal(sealedAlias)
@@ -159,15 +163,16 @@ class UnsealerTest : BaseTests() {
 
     @Test
     fun `unseal EmailAddressWithoutFolders Alias`() {
-        val sealedAlias = EmailAddressWithoutFolders.Alias(
-            "Alias",
-            SealedAttribute(
-                SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                symmetricKeyId,
-                "json-string",
-                sealString("alias"),
-            ),
-        )
+        val sealedAlias =
+            EmailAddressWithoutFolders.Alias(
+                "Alias",
+                SealedAttribute(
+                    SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                    symmetricKeyId,
+                    "json-string",
+                    sealString("alias"),
+                ),
+            )
 
         val alias = stringUnsealer.unseal(sealedAlias)
         alias shouldBe "alias"
@@ -175,15 +180,16 @@ class UnsealerTest : BaseTests() {
 
     @Test
     fun `unseal BlockedAddress SealedValue`() {
-        val sealedBlockedValue = BlockedAddress.SealedValue(
-            "SealedValue",
-            SealedAttribute(
-                SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                symmetricKeyId,
-                "string",
-                sealString("dummyValue"),
-            ),
-        )
+        val sealedBlockedValue =
+            BlockedAddress.SealedValue(
+                "SealedValue",
+                SealedAttribute(
+                    SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                    symmetricKeyId,
+                    "string",
+                    sealString("dummyValue"),
+                ),
+            )
 
         val unsealed = stringUnsealer.unseal(sealedBlockedValue)
         unsealed shouldBe "dummyValue"

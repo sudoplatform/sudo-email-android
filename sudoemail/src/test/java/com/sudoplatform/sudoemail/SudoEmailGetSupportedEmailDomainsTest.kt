@@ -47,7 +47,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetSupportedEmailDomainsTest : BaseTests() {
-
     private val domains = listOf("foo.com", "bar.com")
 
     private val queryResponse by before {
@@ -141,151 +140,166 @@ class SudoEmailGetSupportedEmailDomainsTest : BaseTests() {
     }
 
     @Test
-    fun `getSupportedEmailDomains() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getSupportedEmailDomains()
+    fun `getSupportedEmailDomains() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getSupportedEmailDomains()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe false
+            result.size shouldBe 2
+            result shouldContainExactlyInAnyOrder listOf("bar.com", "foo.com")
+
+            verify(mockApiClient).getSupportedEmailDomainsQuery()
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.isEmpty() shouldBe false
-        result.size shouldBe 2
-        result shouldContainExactlyInAnyOrder listOf("bar.com", "foo.com")
-
-        verify(mockApiClient).getSupportedEmailDomainsQuery()
-    }
 
     @Test
-    fun `getSupportedEmailDomains() should return empty list output when query result data is empty`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getSupportedEmailDomainsQuery()
-            } doAnswer {
-                DataFactory.getEmailDomainsQueryResponse(emptyList())
+    fun `getSupportedEmailDomains() should return empty list output when query result data is empty`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getSupportedEmailDomainsQuery()
+                } doAnswer {
+                    DataFactory.getEmailDomainsQueryResponse(emptyList())
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getSupportedEmailDomains()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe true
+            result.size shouldBe 0
+
+            verify(mockApiClient).getSupportedEmailDomainsQuery()
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getSupportedEmailDomains()
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.isEmpty() shouldBe true
-        result.size shouldBe 0
-
-        verify(mockApiClient).getSupportedEmailDomainsQuery()
-    }
 
     @Test
-    fun `getSupportedEmailDomains() should return empty list output when query response is null`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getSupportedEmailDomainsQuery()
-            }.thenAnswer {
-                GraphQLResponse(null, null)
+    fun `getSupportedEmailDomains() should return empty list output when query response is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getSupportedEmailDomainsQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, null)
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getSupportedEmailDomains()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe true
+            result.size shouldBe 0
+
+            verify(mockApiClient).getSupportedEmailDomainsQuery()
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getSupportedEmailDomains()
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.isEmpty() shouldBe true
-        result.size shouldBe 0
-
-        verify(mockApiClient).getSupportedEmailDomainsQuery()
-    }
 
     @Test
-    fun `getSupportedEmailDomains() should throw when response has error`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "Test generated error",
-            emptyList(),
-            emptyList(),
-            mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                getSupportedEmailDomainsQuery()
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+    fun `getSupportedEmailDomains() should throw when response has error`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    getSupportedEmailDomainsQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        client.getSupportedEmailDomains()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getSupportedEmailDomainsQuery()
         }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+    @Test
+    fun `getSupportedEmailDomains() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    getSupportedEmailDomainsQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
+            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        client.getSupportedEmailDomains()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getSupportedEmailDomainsQuery()
+        }
+
+    @Test
+    fun `getSupportedEmailDomains() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getSupportedEmailDomainsQuery()
+                } doThrow RuntimeException("Mock Runtime Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
+                        client.getSupportedEmailDomains()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getSupportedEmailDomainsQuery()
+        }
+
+    @Test
+    fun `getSupportedEmailDomains() should not block coroutine cancellation exception`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getSupportedEmailDomainsQuery()
+                } doThrow CancellationException("Mock Cancellation Exception")
+            }
+
+            shouldThrow<CancellationException> {
                 client.getSupportedEmailDomains()
             }
+
+            verify(mockApiClient).getSupportedEmailDomainsQuery()
         }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getSupportedEmailDomainsQuery()
-    }
-
-    @Test
-    fun `getSupportedEmailDomains() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                getSupportedEmailDomainsQuery()
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
-            }
-        }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
-                client.getSupportedEmailDomains()
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getSupportedEmailDomainsQuery()
-    }
-
-    @Test
-    fun `getSupportedEmailDomains() should throw when unknown error occurs`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getSupportedEmailDomainsQuery()
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                client.getSupportedEmailDomains()
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getSupportedEmailDomainsQuery()
-    }
-
-    @Test
-    fun `getSupportedEmailDomains() should not block coroutine cancellation exception`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getSupportedEmailDomainsQuery()
-            } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        shouldThrow<CancellationException> {
-            client.getSupportedEmailDomains()
-        }
-
-        verify(mockApiClient).getSupportedEmailDomainsQuery()
-    }
 }

@@ -8,7 +8,7 @@ package com.sudoplatform.sudoemail
 
 import android.content.Context
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
@@ -60,14 +60,14 @@ import com.sudoplatform.sudoemail.graphql.type.SortOrder as SortOrderEntity
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailListEmailMessagesTest : BaseTests() {
-
     private val input by before {
         ListEmailMessagesInput(
             limit = 1,
             nextToken = null,
-            dateRange = EmailMessageDateRange(
-                sortDate = DateRange(Date(), Date()),
-            ),
+            dateRange =
+                EmailMessageDateRange(
+                    sortDate = DateRange(Date(), Date()),
+                ),
             sortOrder = SortOrder.DESC,
         )
     }
@@ -192,127 +192,131 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailMessages() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
+    fun `listEmailMessages() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        result shouldNotBe null
+            result shouldNotBe null
 
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
 
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
 
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners.size shouldBe 1
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.shouldContainExactlyInAnyOrder(addresses)
-                    replyTo.shouldContainExactlyInAnyOrder(addresses)
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe false
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
-                    date shouldBe null
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners.size shouldBe 1
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.shouldContainExactlyInAnyOrder(addresses)
+                        replyTo.shouldContainExactlyInAnyOrder(addresses)
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe false
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                        date shouldBe null
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
 
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
+            verify(mockApiClient).listEmailMessagesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
-
-        verify(mockApiClient).listEmailMessagesQuery(
-            check { input ->
-                input.limit shouldBe Optional.Present(1)
-                input.nextToken shouldBe Optional.absent()
-                input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                input.includeDeletedMessages shouldBe Optional.Present(false)
-            },
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
 
     @Test
-    fun `listEmailMessages() should return results when date is set`() = runTest {
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                DataFactory.unsealedHeaderDetailsWithDateString.toByteArray()
-        }
+    fun `listEmailMessages() should return results when date is set`() =
+        runTest {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    DataFactory.unsealedHeaderDetailsWithDateString.toByteArray()
+            }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        result shouldNotBe null
+            result shouldNotBe null
 
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
 
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
 
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners.size shouldBe 1
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.shouldContainExactlyInAnyOrder(addresses)
-                    replyTo.shouldContainExactlyInAnyOrder(addresses)
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe false
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
-                    date shouldBe Date(2L)
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners.size shouldBe 1
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.shouldContainExactlyInAnyOrder(addresses)
+                        replyTo.shouldContainExactlyInAnyOrder(addresses)
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe false
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                        date shouldBe Date(2L)
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
 
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
+            verify(mockApiClient).listEmailMessagesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
-
-        verify(mockApiClient).listEmailMessagesQuery(
-            check { input ->
-                input.limit shouldBe Optional.Present(1)
-                input.nextToken shouldBe Optional.absent()
-                input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                input.includeDeletedMessages shouldBe Optional.Present(false)
-            },
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
 
     @Test
     fun `listEmailMessages() should return results when hasAttachments is true`() =
@@ -322,9 +326,10 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     DataFactory.unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -387,9 +392,10 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     DataFactory.unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -452,9 +458,10 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                     DataFactory.unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -513,9 +520,10 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
     fun `listEmailMessages() should return success result using default inputs when no error present`() =
         runTest {
             val input = ListEmailMessagesInput()
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val listEmailMessages = deferredResult.await()
 
@@ -580,12 +588,14 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val input = ListEmailMessagesInput(
-                nextToken = "dummyNextToken",
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val input =
+                ListEmailMessagesInput(
+                    nextToken = "dummyNextToken",
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val listEmailMessages = deferredResult.await()
             listEmailMessages shouldNotBe null
@@ -650,9 +660,10 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
             }
 
             val input = ListEmailMessagesInput()
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val listEmailMessages = deferredResult.await()
 
@@ -695,9 +706,10 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
             }
 
             val input = ListEmailMessagesInput()
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val listEmailMessages = deferredResult.await()
 
@@ -730,15 +742,17 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
     fun `listEmailMessages() should return partial results when unsealing fails`() =
         runTest {
             mockKeyManager.stub {
-                on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException(
-                    "KeyManagerException",
-                )
+                on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow
+                    KeyManagerException(
+                        "KeyManagerException",
+                    )
             }
 
             val input = ListEmailMessagesInput()
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.listEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
             deferredResult.start()
             val listEmailMessages = deferredResult.await()
 
@@ -784,120 +798,23 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `listEmailMessages() should throw when unsealing fails`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listEmailMessagesQuery(
-                    any(),
-                )
-            } doThrow Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
-        }
-
-        val input = ListEmailMessagesInput()
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
-                client.listEmailMessages(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).listEmailMessagesQuery(
-            check { input ->
-                input.limit shouldBe Optional.Present(10)
-                input.nextToken shouldBe Optional.absent()
-                input.specifiedDateRange shouldBe Optional.absent()
-                input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                input.includeDeletedMessages shouldBe Optional.Present(false)
-            },
-        )
-    }
-
-    @Test
-    fun `listEmailMessages() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                listEmailMessagesQuery(
-                    any(),
-                )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
-            }
-        }
-
-        val input = ListEmailMessagesInput()
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.listEmailMessages(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).listEmailMessagesQuery(
-            check { input ->
-                input.limit shouldBe Optional.Present(10)
-                input.nextToken shouldBe Optional.absent()
-                input.specifiedDateRange shouldBe Optional.absent()
-                input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                input.includeDeletedMessages shouldBe Optional.Present(false)
-            },
-        )
-    }
-
-    @Test
-    fun `listEmailMessages() should throw when unknown error occurs()`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listEmailMessagesQuery(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val input = ListEmailMessagesInput()
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.listEmailMessages(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).listEmailMessagesQuery(
-            check { input ->
-                input.limit shouldBe Optional.Present(10)
-                input.nextToken shouldBe Optional.absent()
-                input.specifiedDateRange shouldBe Optional.absent()
-                input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                input.includeDeletedMessages shouldBe Optional.Present(false)
-            },
-        )
-    }
-
-    @Test
-    fun `listEmailMessages() should not block coroutine cancellation exception`() =
+    fun `listEmailMessages() should throw when unsealing fails`() =
         runTest {
             mockApiClient.stub {
                 onBlocking {
                     listEmailMessagesQuery(
                         any(),
                     )
-                } doThrow CancellationException("Mock Runtime Exception")
+                } doThrow Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
             }
 
             val input = ListEmailMessagesInput()
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<CancellationException> {
-                    client.listEmailMessages(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
+                        client.listEmailMessages(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -913,66 +830,174 @@ class SudoEmailListEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `listEmailMessages() should pass includeDeletedMessages flag properly`() = runTest {
-        val input = ListEmailMessagesInput(
-            limit = 1,
-            nextToken = null,
-            includeDeletedMessages = true,
-        )
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listEmailMessages(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-
-        val listEmailMessages = deferredResult.await()
-        listEmailMessages shouldNotBe null
-
-        when (listEmailMessages) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items.isEmpty() shouldBe false
-                listEmailMessages.result.items.size shouldBe 1
-                listEmailMessages.result.nextToken shouldBe null
-
-                val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-                with(listEmailMessages.result.items[0]) {
-                    id shouldBe "id"
-                    owner shouldBe "owner"
-                    owners.size shouldBe 1
-                    emailAddressId shouldBe "emailAddressId"
-                    clientRefId shouldBe "clientRefId"
-                    from.shouldContainExactlyInAnyOrder(addresses)
-                    to.shouldContainExactlyInAnyOrder(addresses)
-                    cc.shouldContainExactlyInAnyOrder(addresses)
-                    replyTo.shouldContainExactlyInAnyOrder(addresses)
-                    bcc.isEmpty() shouldBe true
-                    direction shouldBe Direction.INBOUND
-                    subject shouldBe "testSubject"
-                    hasAttachments shouldBe false
-                    seen shouldBe false
-                    state shouldBe State.DELIVERED
-                    createdAt shouldBe Date(1L)
-                    updatedAt shouldBe Date(1L)
-                    date shouldBe null
+    fun `listEmailMessages() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
                 }
             }
 
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
+            val input = ListEmailMessagesInput()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.listEmailMessages(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailMessagesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+            )
         }
 
-        verify(mockApiClient).listEmailMessagesQuery(
-            check { input ->
-                input.limit shouldBe Optional.Present(1)
-                input.nextToken shouldBe Optional.absent()
-                input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
-                input.includeDeletedMessages shouldBe Optional.Present(true)
-            },
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
+    @Test
+    fun `listEmailMessages() should throw when unknown error occurs()`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesQuery(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
+            }
+
+            val input = ListEmailMessagesInput()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.listEmailMessages(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailMessagesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+            )
+        }
+
+    @Test
+    fun `listEmailMessages() should not block coroutine cancellation exception`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesQuery(
+                        any(),
+                    )
+                } doThrow CancellationException("Mock Runtime Exception")
+            }
+
+            val input = ListEmailMessagesInput()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.listEmailMessages(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailMessagesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                    input.specifiedDateRange shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(false)
+                },
+            )
+        }
+
+    @Test
+    fun `listEmailMessages() should pass includeDeletedMessages flag properly`() =
+        runTest {
+            val input =
+                ListEmailMessagesInput(
+                    limit = 1,
+                    nextToken = null,
+                    includeDeletedMessages = true,
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessages(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+
+            val listEmailMessages = deferredResult.await()
+            listEmailMessages shouldNotBe null
+
+            when (listEmailMessages) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items.isEmpty() shouldBe false
+                    listEmailMessages.result.items.size shouldBe 1
+                    listEmailMessages.result.nextToken shouldBe null
+
+                    val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+                    with(listEmailMessages.result.items[0]) {
+                        id shouldBe "id"
+                        owner shouldBe "owner"
+                        owners.size shouldBe 1
+                        emailAddressId shouldBe "emailAddressId"
+                        clientRefId shouldBe "clientRefId"
+                        from.shouldContainExactlyInAnyOrder(addresses)
+                        to.shouldContainExactlyInAnyOrder(addresses)
+                        cc.shouldContainExactlyInAnyOrder(addresses)
+                        replyTo.shouldContainExactlyInAnyOrder(addresses)
+                        bcc.isEmpty() shouldBe true
+                        direction shouldBe Direction.INBOUND
+                        subject shouldBe "testSubject"
+                        hasAttachments shouldBe false
+                        seen shouldBe false
+                        state shouldBe State.DELIVERED
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                        date shouldBe null
+                    }
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            verify(mockApiClient).listEmailMessagesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.absent()
+                    input.sortOrder shouldBe Optional.Present(SortOrderEntity.DESC)
+                    input.includeDeletedMessages shouldBe Optional.Present(true)
+                },
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
 }

@@ -13,7 +13,6 @@ import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
  * Encrypts and decrypts email messages within the email service.
  */
 internal interface EmailCryptoService {
-
     companion object {
         const val IV_SIZE = 16
     }
@@ -24,21 +23,34 @@ internal interface EmailCryptoService {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailCryptoServiceException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
-        class InvalidArgumentException(message: String? = null, cause: Throwable? = null) :
-            EmailCryptoServiceException(message = message, cause = cause)
+    sealed class EmailCryptoServiceException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class InvalidArgumentException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailCryptoServiceException(message = message, cause = cause)
 
-        class KeyNotFoundException(message: String? = null, cause: Throwable? = null) :
-            EmailCryptoServiceException(message = message, cause = cause)
+        class KeyNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailCryptoServiceException(message = message, cause = cause)
 
-        class SecureDataParsingException(message: String? = null, cause: Throwable? = null) :
-            EmailCryptoServiceException(message = message, cause = cause)
+        class SecureDataParsingException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailCryptoServiceException(message = message, cause = cause)
 
-        class SecureDataEncryptionException(message: String? = null, cause: Throwable? = null) :
-            EmailCryptoServiceException(message = message, cause = cause)
+        class SecureDataEncryptionException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailCryptoServiceException(message = message, cause = cause)
 
-        class SecureDataDecryptionException(message: String? = null, cause: Throwable? = null) :
-            EmailCryptoServiceException(message = message, cause = cause)
+        class SecureDataDecryptionException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailCryptoServiceException(message = message, cause = cause)
     }
 
     /**
@@ -51,7 +63,10 @@ internal interface EmailCryptoService {
      * @throws [EmailCryptoServiceException] when the encryption operation fails.
      */
     @Throws(EmailCryptoServiceException::class)
-    suspend fun encrypt(data: ByteArray, emailAddressPublicInfo: List<EmailAddressPublicInfo>): SecurePackage
+    suspend fun encrypt(
+        data: ByteArray,
+        emailAddressPublicInfo: List<EmailAddressPublicInfo>,
+    ): SecurePackage
 
     /**
      * Decrypt email data using the key belonging to the current recipient.

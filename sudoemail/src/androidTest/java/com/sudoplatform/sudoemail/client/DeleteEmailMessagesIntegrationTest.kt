@@ -45,53 +45,55 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun deleteEmailMessagesShouldReturnSuccessWhenDeletingMultipleMessages() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun deleteEmailMessagesShouldReturnSuccessWhenDeletingMultipleMessages() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddress.numberOfEmailMessages shouldBe 0
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddress.numberOfEmailMessages shouldBe 0
+            emailAddressList.add(emailAddress)
 
-        val messageCount = 2
-        val sentEmailIds = mutableSetOf<String>()
-        for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
-            sentEmailIds.add(result.id)
-        }
-        sentEmailIds.size shouldBeGreaterThan 0
-
-        waitForMessages(messageCount)
-
-        var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
-
-        val result = emailClient.deleteEmailMessages(sentEmailIds.toList())
-        result.status shouldBe BatchOperationStatus.SUCCESS
-
-        await
-            .atMost(Duration.TEN_SECONDS)
-            .pollInterval(Duration.FIVE_HUNDRED_MILLISECONDS)
-            .untilAsserted {
-                runBlocking {
-                    updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
-                    updatedEmailAddress!!.numberOfEmailMessages shouldBe 0
-                }
+            val messageCount = 2
+            val sentEmailIds = mutableSetOf<String>()
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
+                sentEmailIds.add(result.id)
             }
-    }
+            sentEmailIds.size shouldBeGreaterThan 0
+
+            waitForMessages(messageCount)
+
+            var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+            updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
+
+            val result = emailClient.deleteEmailMessages(sentEmailIds.toList())
+            result.status shouldBe BatchOperationStatus.SUCCESS
+
+            await
+                .atMost(Duration.TEN_SECONDS)
+                .pollInterval(Duration.FIVE_HUNDRED_MILLISECONDS)
+                .untilAsserted {
+                    runBlocking {
+                        updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+                        updatedEmailAddress!!.numberOfEmailMessages shouldBe 0
+                    }
+                }
+        }
 
     @Test
     fun deleteEmailMessagesShouldReturnSuccessResultWhenDeletingExistingAndNonExistingMessages() =
@@ -134,32 +136,36 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun deleteEmailMessagesShouldThrowWithInvalidArgumentWithEmptyInput() = runTest {
-        shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
-            emailClient.deleteEmailMessages(emptyList())
+    fun deleteEmailMessagesShouldThrowWithInvalidArgumentWithEmptyInput() =
+        runTest {
+            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                emailClient.deleteEmailMessages(emptyList())
+            }
         }
-    }
 
     @Test
-    fun deleteEmailMessagesShouldReturnSuccessWhenDeletingMultipleNonExistingMessages() = runTest {
-        val result = emailClient.deleteEmailMessages(listOf("id1", "id2", "id3"))
-        result.status shouldBe BatchOperationStatus.SUCCESS
-    }
-
-    @Test
-    fun deleteEmailMessagesShouldAllowInputLimitEdgeCase() = runTest {
-        val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
-        val input = Array(deleteEmailMessagesLimit) { it.toString() }.toList()
-        val result = emailClient.deleteEmailMessages(input)
-        result.status shouldBe BatchOperationStatus.SUCCESS
-    }
-
-    @Test
-    fun deleteEmailMessagesShouldThrowWhenInputLimitExceeded() = runTest {
-        val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
-        val input = Array(deleteEmailMessagesLimit + 1) { it.toString() }.toList()
-        shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-            emailClient.deleteEmailMessages(input)
+    fun deleteEmailMessagesShouldReturnSuccessWhenDeletingMultipleNonExistingMessages() =
+        runTest {
+            val result = emailClient.deleteEmailMessages(listOf("id1", "id2", "id3"))
+            result.status shouldBe BatchOperationStatus.SUCCESS
         }
-    }
+
+    @Test
+    fun deleteEmailMessagesShouldAllowInputLimitEdgeCase() =
+        runTest {
+            val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
+            val input = Array(deleteEmailMessagesLimit) { it.toString() }.toList()
+            val result = emailClient.deleteEmailMessages(input)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+        }
+
+    @Test
+    fun deleteEmailMessagesShouldThrowWhenInputLimitExceeded() =
+        runTest {
+            val (deleteEmailMessagesLimit) = emailClient.getConfigurationData()
+            val input = Array(deleteEmailMessagesLimit + 1) { it.toString() }.toList()
+            shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
+                emailClient.deleteEmailMessages(input)
+            }
+        }
 }

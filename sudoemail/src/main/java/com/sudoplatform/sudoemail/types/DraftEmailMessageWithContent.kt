@@ -26,7 +26,8 @@ data class DraftEmailMessageWithContent(
     override val emailAddressId: String,
     override val updatedAt: Date,
     val rfc822Data: ByteArray,
-) : Parcelable, DraftEmailMessage {
+) : Parcelable,
+    DraftEmailMessage {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

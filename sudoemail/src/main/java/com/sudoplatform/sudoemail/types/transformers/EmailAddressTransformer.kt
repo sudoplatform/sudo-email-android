@@ -24,7 +24,6 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder as EmailFolderFra
  * types to the entity type that is exposed to users.
  */
 internal object EmailAddressTransformer {
-
     /**
      * Transform the input [String] type into the corresponding sealed GraphQL type [SealedAttributeInput].
      */
@@ -55,10 +54,11 @@ internal object EmailAddressTransformer {
         emailAddress: EmailAddressFragment,
     ): EmailAddress {
         val emailAddressWithoutFolders = emailAddress.emailAddressWithoutFolders
-        val emailAddressWithoutFoldersEntity = this.toEntity(
-            deviceKeyManager,
-            emailAddressWithoutFolders = emailAddressWithoutFolders,
-        )
+        val emailAddressWithoutFoldersEntity =
+            this.toEntity(
+                deviceKeyManager,
+                emailAddressWithoutFolders = emailAddressWithoutFolders,
+            )
         return EmailAddress(
             id = emailAddressWithoutFoldersEntity.id,
             owner = emailAddressWithoutFoldersEntity.owner,
@@ -85,8 +85,8 @@ internal object EmailAddressTransformer {
     fun toEntity(
         deviceKeyManager: DeviceKeyManager,
         emailAddressWithoutFolders: EmailAddressWithoutFolders,
-    ): EmailAddress {
-        return EmailAddress(
+    ): EmailAddress =
+        EmailAddress(
             id = emailAddressWithoutFolders.id,
             owner = emailAddressWithoutFolders.owner,
             owners = emailAddressWithoutFolders.owners.toEmailAddressOwners(),
@@ -97,15 +97,15 @@ internal object EmailAddressTransformer {
             createdAt = emailAddressWithoutFolders.createdAtEpochMs.toDate(),
             updatedAt = emailAddressWithoutFolders.updatedAtEpochMs.toDate(),
             lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs.toDate(),
-            alias = emailAddressWithoutFolders.alias?.let {
-                val sealedAttribute = it.sealedAttribute
-                val symmetricKeyInfo = KeyInfo(sealedAttribute.keyId, KeyType.SYMMETRIC_KEY, sealedAttribute.algorithm)
-                val aliasUnsealer = Unsealer(deviceKeyManager, symmetricKeyInfo)
-                aliasUnsealer.unseal(it)
-            },
+            alias =
+                emailAddressWithoutFolders.alias?.let {
+                    val sealedAttribute = it.sealedAttribute
+                    val symmetricKeyInfo = KeyInfo(sealedAttribute.keyId, KeyType.SYMMETRIC_KEY, sealedAttribute.algorithm)
+                    val aliasUnsealer = Unsealer(deviceKeyManager, symmetricKeyInfo)
+                    aliasUnsealer.unseal(it)
+                },
             folders = emptyList(),
         )
-    }
 
     /**
      * Transform the [EmailAddressFragment] into a [PartialEmailAddress].
@@ -117,9 +117,10 @@ internal object EmailAddressTransformer {
         deviceKeyManager: DeviceKeyManager,
         emailAddress: EmailAddressFragment,
     ): PartialEmailAddress {
-        val partialEmailAddressWithoutFolders = this.toPartialEntity(
-            emailAddressWithoutFolders = emailAddress.emailAddressWithoutFolders,
-        )
+        val partialEmailAddressWithoutFolders =
+            this.toPartialEntity(
+                emailAddressWithoutFolders = emailAddress.emailAddressWithoutFolders,
+            )
         return PartialEmailAddress(
             id = partialEmailAddressWithoutFolders.id,
             owner = partialEmailAddressWithoutFolders.owner,
@@ -135,10 +136,8 @@ internal object EmailAddressTransformer {
         )
     }
 
-    private fun toPartialEntity(
-        emailAddressWithoutFolders: EmailAddressWithoutFolders,
-    ): EmailAddress {
-        return EmailAddress(
+    private fun toPartialEntity(emailAddressWithoutFolders: EmailAddressWithoutFolders): EmailAddress =
+        EmailAddress(
             id = emailAddressWithoutFolders.id,
             owner = emailAddressWithoutFolders.owner,
             owners = emailAddressWithoutFolders.owners.toEmailAddressOwners(),
@@ -151,10 +150,9 @@ internal object EmailAddressTransformer {
             lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs.toDate(),
             folders = emptyList(),
         )
-    }
 
-    private fun EmailAddressFragment.Folder.toEmailFolder(deviceKeyManager: DeviceKeyManager): EmailFolder {
-        return EmailFolder(
+    private fun EmailAddressFragment.Folder.toEmailFolder(deviceKeyManager: DeviceKeyManager): EmailFolder =
+        EmailFolder(
             id = emailFolder.id,
             owner = emailFolder.owner,
             owners = emailFolder.owners.toEmailFolderOwners(),
@@ -165,38 +163,31 @@ internal object EmailAddressTransformer {
             version = emailFolder.version,
             createdAt = emailFolder.createdAtEpochMs.toDate(),
             updatedAt = emailFolder.updatedAtEpochMs.toDate(),
-            customFolderName = emailFolder.customFolderName?.let {
-                val sealedAttribute = it.sealedAttribute
-                val symmetricKeyInfo = KeyInfo(sealedAttribute.keyId, KeyType.SYMMETRIC_KEY, sealedAttribute.algorithm)
-                val folderNameUnsealer = Unsealer(deviceKeyManager, symmetricKeyInfo)
-                folderNameUnsealer.unseal(it)
-            },
+            customFolderName =
+                emailFolder.customFolderName?.let {
+                    val sealedAttribute = it.sealedAttribute
+                    val symmetricKeyInfo = KeyInfo(sealedAttribute.keyId, KeyType.SYMMETRIC_KEY, sealedAttribute.algorithm)
+                    val folderNameUnsealer = Unsealer(deviceKeyManager, symmetricKeyInfo)
+                    folderNameUnsealer.unseal(it)
+                },
         )
-    }
 
-    private fun List<EmailAddressFragment.Folder>.toFolders(deviceKeyManager: DeviceKeyManager): List<EmailFolder> {
-        return this.map {
+    private fun List<EmailAddressFragment.Folder>.toFolders(deviceKeyManager: DeviceKeyManager): List<EmailFolder> =
+        this.map {
             it.toEmailFolder(deviceKeyManager)
         }
-    }
 
-    private fun EmailAddressWithoutFolders.Owner.toOwner(): Owner {
-        return Owner(id = id, issuer = issuer)
-    }
+    private fun EmailAddressWithoutFolders.Owner.toOwner(): Owner = Owner(id = id, issuer = issuer)
 
-    private fun List<EmailAddressWithoutFolders.Owner>.toEmailAddressOwners(): List<Owner> {
-        return this.map {
+    private fun List<EmailAddressWithoutFolders.Owner>.toEmailAddressOwners(): List<Owner> =
+        this.map {
             it.toOwner()
         }
-    }
 
-    private fun EmailFolderFragment.Owner.toOwner(): Owner {
-        return Owner(id = id, issuer = issuer)
-    }
+    private fun EmailFolderFragment.Owner.toOwner(): Owner = Owner(id = id, issuer = issuer)
 
-    private fun List<EmailFolderFragment.Owner>.toEmailFolderOwners(): List<Owner> {
-        return this.map {
+    private fun List<EmailFolderFragment.Owner>.toEmailFolderOwners(): List<Owner> =
+        this.map {
             it.toOwner()
         }
-    }
 }

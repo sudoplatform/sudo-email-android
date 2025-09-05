@@ -30,9 +30,10 @@ class BuilderIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            sudoClient.reset()
+        }
 
     @Test
     fun shouldThrowIfRequiredItemsNotProvidedToBuilder() {
@@ -43,14 +44,16 @@ class BuilderIntegrationTest : BaseIntegrationTest() {
 
         // Context not provided
         shouldThrow<NullPointerException> {
-            SudoEmailClient.builder()
+            SudoEmailClient
+                .builder()
                 .setSudoUserClient(userClient)
                 .build()
         }
 
         // SudoUserClient not provided
         shouldThrow<NullPointerException> {
-            SudoEmailClient.builder()
+            SudoEmailClient
+                .builder()
                 .setContext(context)
                 .build()
         }
@@ -58,7 +61,8 @@ class BuilderIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun shouldNotThrowIfTheRequiredItemsAreProvidedToBuilder() {
-        SudoEmailClient.builder()
+        SudoEmailClient
+            .builder()
             .setContext(context)
             .setSudoUserClient(userClient)
             .build()
@@ -68,7 +72,8 @@ class BuilderIntegrationTest : BaseIntegrationTest() {
     fun shouldNotThrowIfAllItemsAreProvidedToBuilder() {
         val apiClient = ApiClient(ApiClientManager.getClient(context, userClient), logger)
 
-        SudoEmailClient.builder()
+        SudoEmailClient
+            .builder()
             .setContext(context)
             .setSudoUserClient(userClient)
             .setApiClient(apiClient)

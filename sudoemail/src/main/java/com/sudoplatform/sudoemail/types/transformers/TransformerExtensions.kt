@@ -11,9 +11,7 @@ import java.util.Date
 /**
  * Extensions used by several data transformers.
  */
-internal fun Double.toDate(): Date {
-    return Date(this.toLong())
-}
+internal fun Double.toDate(): Date = Date(this.toLong())
 
 internal fun Double?.toDate(): Date? {
     if (this == null) {

@@ -12,7 +12,6 @@ import com.sudoplatform.sudokeymanager.StoreInterface
  * Basic KeyManager store implementation mainly used for testing.
  */
 class InMemoryStore : StoreInterface {
-
     private val keys: MutableMap<Pair<String, KeyType>, ByteArray> = mutableMapOf()
 
     @Synchronized
@@ -26,16 +25,24 @@ class InMemoryStore : StoreInterface {
     }
 
     @Synchronized
-    override fun updateKey(data: ByteArray, name: String, type: KeyType) {
+    override fun updateKey(
+        data: ByteArray,
+        name: String,
+        type: KeyType,
+    ) {
         this.keys[Pair(name, type)] = data
     }
 
-    override fun getKey(name: String, type: KeyType): ByteArray? {
-        return this.keys[Pair(name, type)]
-    }
+    override fun getKey(
+        name: String,
+        type: KeyType,
+    ): ByteArray? = this.keys[Pair(name, type)]
 
     @Synchronized
-    override fun deleteKey(name: String, type: KeyType) {
+    override fun deleteKey(
+        name: String,
+        type: KeyType,
+    ) {
         this.keys.remove(Pair(name, type))
     }
 
@@ -44,9 +51,7 @@ class InMemoryStore : StoreInterface {
         this.keys.clear()
     }
 
-    override fun isExportable(): Boolean {
-        return true
-    }
+    override fun isExportable(): Boolean = true
 
     override fun close() {}
 

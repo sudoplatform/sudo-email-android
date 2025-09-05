@@ -83,7 +83,6 @@ import java.util.Objects
  * @sample com.sudoplatform.sudoemail.samples.Samples.sudoEmailClient
  */
 interface SudoEmailClient : AutoCloseable {
-
     companion object {
         /** Create a [Builder] for [SudoEmailClient]. */
         @JvmStatic
@@ -116,37 +115,41 @@ interface SudoEmailClient : AutoCloseable {
             val preamble = "sudoplatformconfig.json does not contain"
             val postamble = "the $CONFIG_EMAIL_SERVICE stanza"
 
-            val emailConfig = try {
-                configManager.getConfigSet(CONFIG_EMAIL_SERVICE)
-            } catch (e: JSONException) {
-                throw Builder.ConfigurationException("$preamble $postamble", e)
-            }
+            val emailConfig =
+                try {
+                    configManager.getConfigSet(CONFIG_EMAIL_SERVICE)
+                } catch (e: JSONException) {
+                    throw Builder.ConfigurationException("$preamble $postamble", e)
+                }
             emailConfig
                 ?: throw Builder.ConfigurationException("$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble")
 
-            val region = try {
-                emailConfig.getString(CONFIG_REGION)
-            } catch (e: JSONException) {
-                throw Builder.ConfigurationException("$preamble $CONFIG_REGION in $postamble", e)
-            }
+            val region =
+                try {
+                    emailConfig.getString(CONFIG_REGION)
+                } catch (e: JSONException) {
+                    throw Builder.ConfigurationException("$preamble $CONFIG_REGION in $postamble", e)
+                }
 
-            val emailBucket = try {
-                emailConfig.getString(CONFIG_EMAIL_BUCKET)
-            } catch (e: JSONException) {
-                throw Builder.ConfigurationException(
-                    "$preamble $CONFIG_EMAIL_BUCKET in $postamble",
-                    e,
-                )
-            }
+            val emailBucket =
+                try {
+                    emailConfig.getString(CONFIG_EMAIL_BUCKET)
+                } catch (e: JSONException) {
+                    throw Builder.ConfigurationException(
+                        "$preamble $CONFIG_EMAIL_BUCKET in $postamble",
+                        e,
+                    )
+                }
 
-            val emailTransientBucket = try {
-                emailConfig.getString(CONFIG_EMAIL_TRANSIENT_BUCKET)
-            } catch (e: JSONException) {
-                throw Builder.ConfigurationException(
-                    "$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble",
-                    e,
-                )
-            }
+            val emailTransientBucket =
+                try {
+                    emailConfig.getString(CONFIG_EMAIL_TRANSIENT_BUCKET)
+                } catch (e: JSONException) {
+                    throw Builder.ConfigurationException(
+                        "$preamble $CONFIG_EMAIL_TRANSIENT_BUCKET in $postamble",
+                        e,
+                    )
+                }
 
             return S3Configuration(region, emailBucket, emailTransientBucket)
         }
@@ -169,67 +172,77 @@ interface SudoEmailClient : AutoCloseable {
         /**
          * Provide the application context (required input).
          */
-        fun setContext(context: Context) = also {
-            this.context = context
-        }
+        fun setContext(context: Context) =
+            also {
+                this.context = context
+            }
 
         /**
          * Provide the implementation of the [SudoUserClient] used to perform
          * sign in and ownership operations (required input).
          */
-        fun setSudoUserClient(sudoUserClient: SudoUserClient) = also {
-            this.sudoUserClient = sudoUserClient
-        }
+        fun setSudoUserClient(sudoUserClient: SudoUserClient) =
+            also {
+                this.sudoUserClient = sudoUserClient
+            }
 
         /**
          * Provide a [ApiClient] for the [SudoEmailClient] to use
          * (optional input). If this is not supplied, an [ApiClient] will
          * be constructed and used.
          */
-        fun setApiClient(apiClient: ApiClient) = also {
-            this.apiClient = apiClient
-        }
+        fun setApiClient(apiClient: ApiClient) =
+            also {
+                this.apiClient = apiClient
+            }
 
         /**
          * Provide the implementation of the [KeyManagerInterface] used for key management and
          * cryptographic operations (optional input). If a value is not supplied a default
          * implementation will be used.
          */
-        fun setKeyManager(keyManager: KeyManagerInterface) = also {
-            this.keyManager = keyManager
-        }
+        fun setKeyManager(keyManager: KeyManagerInterface) =
+            also {
+                this.keyManager = keyManager
+            }
 
         /**
          * Provide the implementation of the [Logger] used for logging errors (optional input).
          * If a value is not supplied a default implementation will be used.
          */
-        fun setLogger(logger: Logger) = also {
-            this.logger = logger
-        }
+        fun setLogger(logger: Logger) =
+            also {
+                this.logger = logger
+            }
 
         /**
          * Provide the namespace to use for internal data and cryptographic keys. This should be unique
          * per client per app to avoid name conflicts between multiple clients. If a value is not supplied
          * a default value will be used.
          */
-        fun setNamespace(namespace: String) = also {
-            this.namespace = namespace
-        }
+        fun setNamespace(namespace: String) =
+            also {
+                this.namespace = namespace
+            }
 
-        fun setNotificationHandler(notificationHandler: SudoEmailNotificationHandler) = also {
-            this.notificationHandler = notificationHandler
-        }
+        fun setNotificationHandler(notificationHandler: SudoEmailNotificationHandler) =
+            also {
+                this.notificationHandler = notificationHandler
+            }
 
         /**
          * Provide the database name to use for exportable key store database.
          */
-        fun setDatabaseName(databaseName: String) = also {
-            this.databaseName = databaseName
-        }
+        fun setDatabaseName(databaseName: String) =
+            also {
+                this.databaseName = databaseName
+            }
 
         /** A configuration item that is needed is missing */
-        class ConfigurationException(message: String, cause: Throwable? = null) :
-            RuntimeException(message, cause)
+        class ConfigurationException(
+            message: String,
+            cause: Throwable? = null,
+        ) : RuntimeException(message, cause)
 
         /**
          * Construct the [SudoEmailClient]. Will throw a [NullPointerException] if
@@ -240,35 +253,40 @@ interface SudoEmailClient : AutoCloseable {
             Objects.requireNonNull(context, "Context must be provided.")
             Objects.requireNonNull(sudoUserClient, "SudoUserClient must be provided.")
 
-            val client = apiClient ?: ApiClient(
-                ApiClientManager.getClient(
-                    this@Builder.context!!,
-                    this@Builder.sudoUserClient!!,
-                    CONFIG_EMAIL_SERVICE,
-                ),
-                logger,
-            )
+            val client =
+                apiClient ?: ApiClient(
+                    ApiClientManager.getClient(
+                        this@Builder.context!!,
+                        this@Builder.sudoUserClient!!,
+                        CONFIG_EMAIL_SERVICE,
+                    ),
+                    logger,
+                )
 
-            val serviceKeyManager = DefaultServiceKeyManager(
-                keyRingServiceName = "sudo-email",
-                userClient = sudoUserClient!!,
-                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(
-                    this.namespace,
-                    this.databaseName,
-                ),
-            )
+            val serviceKeyManager =
+                DefaultServiceKeyManager(
+                    keyRingServiceName = "sudo-email",
+                    userClient = sudoUserClient!!,
+                    keyManager =
+                        keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(
+                            this.namespace,
+                            this.databaseName,
+                        ),
+                )
 
             val emailMessageDataProcessor = Rfc822MessageDataProcessor(context!!)
 
-            val sealingService = DefaultSealingService(
-                deviceKeyManager = serviceKeyManager,
-                logger = logger,
-            )
+            val sealingService =
+                DefaultSealingService(
+                    deviceKeyManager = serviceKeyManager,
+                    logger = logger,
+                )
 
-            val emailCryptoService = DefaultEmailCryptoService(
-                deviceKeyManager = serviceKeyManager,
-                logger = logger,
-            )
+            val emailCryptoService =
+                DefaultEmailCryptoService(
+                    deviceKeyManager = serviceKeyManager,
+                    logger = logger,
+                )
 
             val (region, emailBucket, transientBucket) = readConfiguration(context!!, logger)
 
@@ -295,53 +313,84 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailAddressException(message: String? = null, cause: Throwable? = null) :
-        RuntimeException(message, cause) {
-        class FailedException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+    sealed class EmailAddressException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class FailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
         @Deprecated("InsufficientEntitlementsException is now thrown instead")
-        class EntitlementsExceededException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class EntitlementsExceededException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class InsufficientEntitlementsException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class InsufficientEntitlementsException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class ProvisionFailedException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class ProvisionFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class InvalidEmailAddressException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class InvalidEmailAddressException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class EmailAddressNotFoundException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class EmailAddressNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class UnavailableEmailAddressException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class UnavailableEmailAddressException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class UnauthorizedEmailAddressException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class UnauthorizedEmailAddressException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class PublicKeyException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class PublicKeyException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class UnsealingException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class UnsealingException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class DeprovisionFailedException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class DeprovisionFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class UpdateFailedException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class UpdateFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class AuthenticationException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class AuthenticationException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class LimitExceededException(message: String? = null, cause: Throwable? = null) :
-            EmailAddressException(message = message, cause = cause)
+        class LimitExceededException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
 
-        class UnknownException(cause: Throwable) :
-            EmailAddressException(cause = cause)
+        class UnknownException(
+            cause: Throwable,
+        ) : EmailAddressException(cause = cause)
     }
 
     /**
@@ -350,16 +399,23 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailFolderException(message: String? = null, cause: Throwable? = null) :
-        RuntimeException(message, cause) {
-        class FailedException(message: String? = null, cause: Throwable? = null) :
-            EmailFolderException(message = message, cause = cause)
+    sealed class EmailFolderException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class FailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailFolderException(message = message, cause = cause)
 
-        class AuthenticationException(message: String? = null, cause: Throwable? = null) :
-            EmailFolderException(message = message, cause = cause)
+        class AuthenticationException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailFolderException(message = message, cause = cause)
 
-        class UnknownException(cause: Throwable) :
-            EmailFolderException(cause = cause)
+        class UnknownException(
+            cause: Throwable,
+        ) : EmailFolderException(cause = cause)
     }
 
     /**
@@ -368,16 +424,23 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailBlocklistException(message: String? = null, cause: Throwable? = null) :
-        RuntimeException(message, cause) {
-        class InvalidInputException(message: String? = null, cause: Throwable? = null) :
-            EmailBlocklistException(message = message, cause = cause)
+    sealed class EmailBlocklistException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class InvalidInputException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailBlocklistException(message = message, cause = cause)
 
-        class FailedException(message: String? = null, cause: Throwable? = null) :
-            EmailBlocklistException(message = message, cause = cause)
+        class FailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailBlocklistException(message = message, cause = cause)
 
-        class UnknownException(cause: Throwable? = null) :
-            EmailBlocklistException(cause = cause)
+        class UnknownException(
+            cause: Throwable? = null,
+        ) : EmailBlocklistException(cause = cause)
     }
 
     /**
@@ -386,49 +449,73 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailMessageException(message: String? = null, cause: Throwable? = null) :
-        RuntimeException(message, cause) {
-        class FailedException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+    sealed class EmailMessageException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class FailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class SendFailedException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class SendFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class InvalidMessageContentException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class InvalidMessageContentException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class UnauthorizedAddressException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class UnauthorizedAddressException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class InNetworkAddressNotFoundException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class InNetworkAddressNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class UnsealingException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class UnsealingException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class AuthenticationException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class AuthenticationException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class EmailMessageNotFoundException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class EmailMessageNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class LimitExceededException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class LimitExceededException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
         class EmailMessageSizeLimitExceededException(
             message: String? = null,
             cause: Throwable? = null,
-        ) :
-            EmailMessageException(message = message, cause = cause)
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class InvalidArgumentException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class InvalidArgumentException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class RecordNotFoundException(message: String? = null, cause: Throwable? = null) :
-            EmailMessageException(message = message, cause = cause)
+        class RecordNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMessageException(message = message, cause = cause)
 
-        class UnknownException(cause: Throwable) :
-            EmailMessageException(cause = cause)
+        class UnknownException(
+            cause: Throwable,
+        ) : EmailMessageException(cause = cause)
     }
 
     /**
@@ -437,13 +524,18 @@ interface SudoEmailClient : AutoCloseable {
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailConfigurationException(message: String? = null, cause: Throwable? = null) :
-        RuntimeException(message, cause) {
-        class FailedException(message: String? = null, cause: Throwable? = null) :
-            EmailConfigurationException(message = message, cause = cause)
+    sealed class EmailConfigurationException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class FailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailConfigurationException(message = message, cause = cause)
 
-        class UnknownException(cause: Throwable) :
-            EmailConfigurationException(cause = cause)
+        class UnknownException(
+            cause: Throwable,
+        ) : EmailConfigurationException(cause = cause)
     }
 
     /**
@@ -456,8 +548,10 @@ interface SudoEmailClient : AutoCloseable {
         message: String? = null,
         cause: Throwable? = null,
     ) : RuntimeException(message, cause) {
-        class SecureKeyArchiveException(message: String? = null, cause: Throwable? = null) :
-            EmailCryptographicKeysException(message = message, cause = cause)
+        class SecureKeyArchiveException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailCryptographicKeysException(message = message, cause = cause)
     }
 
     /**
@@ -695,10 +789,12 @@ interface SudoEmailClient : AutoCloseable {
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun updateEmailMessages(input: UpdateEmailMessagesInput): BatchOperationResult<
+    suspend fun updateEmailMessages(
+        input: UpdateEmailMessagesInput,
+    ): BatchOperationResult<
         UpdatedEmailMessageSuccess,
         EmailMessageOperationFailureResult,
-        >
+    >
 
     /**
      * Delete multiple [EmailMessage]s using a list of identifiers.
@@ -791,9 +887,7 @@ interface SudoEmailClient : AutoCloseable {
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun listEmailMessages(
-        input: ListEmailMessagesInput,
-    ): ListAPIResult<EmailMessage, PartialEmailMessage>
+    suspend fun listEmailMessages(input: ListEmailMessagesInput): ListAPIResult<EmailMessage, PartialEmailMessage>
 
     /**
      * Get a list of [EmailMessage]s for the specified email address identifier.
@@ -1054,7 +1148,10 @@ interface SudoEmailClient : AutoCloseable {
      * @param subscriber [EmailMessageSubscriber] Subscriber to notify.
      */
     @Throws(EmailMessageException.AuthenticationException::class)
-    suspend fun subscribeToEmailMessages(id: String, subscriber: EmailMessageSubscriber)
+    suspend fun subscribeToEmailMessages(
+        id: String,
+        subscriber: EmailMessageSubscriber,
+    )
 
     /**
      * Unsubscribe the specified subscriber so that it no longer receives notifications about
@@ -1087,16 +1184,18 @@ suspend fun SudoEmailClient.subscribeToEmailMessages(
     id: String,
     onConnectionChange: (status: Subscriber.ConnectionState) -> Unit = {},
     onEmailMessageChanged: (emailMessage: EmailMessage, type: EmailMessageSubscriber.ChangeType) -> Unit,
-) =
-    subscribeToEmailMessages(
-        id,
-        object : EmailMessageSubscriber {
-            override fun connectionStatusChanged(state: Subscriber.ConnectionState) {
-                onConnectionChange.invoke(state)
-            }
+) = subscribeToEmailMessages(
+    id,
+    object : EmailMessageSubscriber {
+        override fun connectionStatusChanged(state: Subscriber.ConnectionState) {
+            onConnectionChange.invoke(state)
+        }
 
-            override fun emailMessageChanged(emailMessage: EmailMessage, type: EmailMessageSubscriber.ChangeType) {
-                onEmailMessageChanged.invoke(emailMessage, type)
-            }
-        },
-    )
+        override fun emailMessageChanged(
+            emailMessage: EmailMessage,
+            type: EmailMessageSubscriber.ChangeType,
+        ) {
+            onEmailMessageChanged.invoke(emailMessage, type)
+        }
+    },
+)

@@ -196,237 +196,254 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw EmailAddressNotFoundException if no address found`() = runTest {
-        val error = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("errorType" to "AddressNotFound"),
-        )
-
-        mockApiClient.stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
+    fun `scheduleSendDraftMessage() should throw EmailAddressNotFoundException if no address found`() =
+        runTest {
+            val error =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("errorType" to "AddressNotFound"),
                 )
-            } doAnswer {
-                GraphQLResponse(null, listOf(error))
-            }
-        }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                client.scheduleSendDraftMessage(input)
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailAddressQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    GraphQLResponse(null, listOf(error))
+                }
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                        client.scheduleSendDraftMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+        }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw InvalidArgumentException if sendAt is not in future`() = runTest {
-        val sendAt = Date()
+    fun `scheduleSendDraftMessage() should throw InvalidArgumentException if sendAt is not in future`() =
+        runTest {
+            val sendAt = Date()
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
-                client.scheduleSendDraftMessage(
-                    ScheduleSendDraftMessageInput(
-                        input.id,
-                        input.emailAddressId,
-                        sendAt,
-                    ),
-                )
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                        client.scheduleSendDraftMessage(
+                            ScheduleSendDraftMessageInput(
+                                input.id,
+                                input.emailAddressId,
+                                sendAt,
+                            ),
+                        )
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
         }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw error if metadata download errors`() = runTest {
-        val error = S3Exception.DownloadException("Unknown exception")
+    fun `scheduleSendDraftMessage() should throw error if metadata download errors`() =
+        runTest {
+            val error = S3Exception.DownloadException("Unknown exception")
 
-        mockS3Client.stub {
-            onBlocking {
-                getObjectMetadata(
-                    any(),
-                )
-            } doThrow error
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.scheduleSendDraftMessage(input)
+            mockS3Client.stub {
+                onBlocking {
+                    getObjectMetadata(
+                        any(),
+                    )
+                } doThrow error
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.scheduleSendDraftMessage(input)
+                    }
+                }
+
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                anyString(),
+            )
         }
-
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            anyString(),
-        )
-    }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw UnsealingException if no key-id in metadata`() = runTest {
-        mockMetadata.userMetadata["algorithm"] = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString()
-        mockS3Client.stub {
-            onBlocking {
-                getObjectMetadata(
-                    any(),
-                )
-            } doReturn mockMetadata
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
-                client.scheduleSendDraftMessage(input)
+    fun `scheduleSendDraftMessage() should throw UnsealingException if no key-id in metadata`() =
+        runTest {
+            mockMetadata.userMetadata["algorithm"] = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString()
+            mockS3Client.stub {
+                onBlocking {
+                    getObjectMetadata(
+                        any(),
+                    )
+                } doReturn mockMetadata
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
+                        client.scheduleSendDraftMessage(input)
+                    }
+                }
+
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                anyString(),
+            )
         }
-
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            anyString(),
-        )
-    }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw UnsealingException if no algorithm in metadata`() = runTest {
-        mockMetadata.userMetadata["key-id"] = "dummyKeyId"
-        mockS3Client.stub {
-            onBlocking {
-                getObjectMetadata(
-                    any(),
-                )
-            } doReturn mockMetadata
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
-                client.scheduleSendDraftMessage(input)
+    fun `scheduleSendDraftMessage() should throw UnsealingException if no algorithm in metadata`() =
+        runTest {
+            mockMetadata.userMetadata["key-id"] = "dummyKeyId"
+            mockS3Client.stub {
+                onBlocking {
+                    getObjectMetadata(
+                        any(),
+                    )
+                } doReturn mockMetadata
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
+                        client.scheduleSendDraftMessage(input)
+                    }
+                }
+
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                anyString(),
+            )
         }
-
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            anyString(),
-        )
-    }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw KeyNotFoundException if no symmetric key found`() = runTest {
-        setObjectMetadata()
-        mockServiceKeyManager.stub {
-            onBlocking {
-                getSymmetricKeyData(any())
-            } doReturn null
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<KeyNotFoundException> {
-                client.scheduleSendDraftMessage(input)
+    fun `scheduleSendDraftMessage() should throw KeyNotFoundException if no symmetric key found`() =
+        runTest {
+            setObjectMetadata()
+            mockServiceKeyManager.stub {
+                onBlocking {
+                    getSymmetricKeyData(any())
+                } doReturn null
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<KeyNotFoundException> {
+                        client.scheduleSendDraftMessage(input)
+                    }
+                }
+
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                anyString(),
+            )
+            verify(mockServiceKeyManager).getSymmetricKeyData(any())
         }
-
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            anyString(),
-        )
-        verify(mockServiceKeyManager).getSymmetricKeyData(any())
-    }
 
     @Test
-    fun `scheduleSendDraftMessage() should throw an error if graphQl mutation fails`() = runTest {
-        setObjectMetadata()
-        mockApiClient.stub {
-            onBlocking {
-                scheduleSendDraftMessageMutation(
-                    any(),
-                )
-            }.thenThrow(UnknownError("ERROR"))
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.scheduleSendDraftMessage(input)
+    fun `scheduleSendDraftMessage() should throw an error if graphQl mutation fails`() =
+        runTest {
+            setObjectMetadata()
+            mockApiClient.stub {
+                onBlocking {
+                    scheduleSendDraftMessageMutation(
+                        any(),
+                    )
+                }.thenThrow(UnknownError("ERROR"))
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            anyString(),
-        )
-        verify(mockUserClient, times(1)).getCredentialsProvider()
-        verify(mockServiceKeyManager).getSymmetricKeyData(any())
-        verify(mockApiClient).scheduleSendDraftMessageMutation(
-            check { input ->
-                input.draftMessageKey shouldEndWith dummyDraftId
-                input.emailAddressId shouldBe dummyEmailAddressId
-                input.sendAtEpochMs shouldBe sendAt.time.toDouble()
-            },
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.scheduleSendDraftMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                anyString(),
+            )
+            verify(mockUserClient, times(1)).getCredentialsProvider()
+            verify(mockServiceKeyManager).getSymmetricKeyData(any())
+            verify(mockApiClient).scheduleSendDraftMessageMutation(
+                check { input ->
+                    input.draftMessageKey shouldEndWith dummyDraftId
+                    input.emailAddressId shouldBe dummyEmailAddressId
+                    input.sendAtEpochMs shouldBe sendAt.time.toDouble()
+                },
+            )
+        }
 
     @Test
-    fun `scheduleSendDraftMessage should return new ScheduledDraftMessage entity on success`() = runTest {
-        setObjectMetadata()
+    fun `scheduleSendDraftMessage should return new ScheduledDraftMessage entity on success`() =
+        runTest {
+            setObjectMetadata()
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.scheduleSendDraftMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.scheduleSendDraftMessage(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result.id shouldBe dummyDraftId
+            result.emailAddressId shouldBe dummyEmailAddressId
+            result.sendAt shouldBe sendAt
+            result.state shouldBe com.sudoplatform.sudoemail.types.ScheduledDraftMessageState.SCHEDULED
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockUserClient, times(1)).getCredentialsProvider()
+            verify(mockS3Client).getObjectMetadata(
+                anyString(),
+            )
+            verify(mockServiceKeyManager).getSymmetricKeyData(any())
+            verify(mockApiClient).scheduleSendDraftMessageMutation(
+                check { input ->
+                    input.draftMessageKey shouldEndWith dummyDraftId
+                    input.emailAddressId shouldBe dummyEmailAddressId
+                    input.sendAtEpochMs shouldBe sendAt.time.toDouble()
+                },
+            )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result.id shouldBe dummyDraftId
-        result.emailAddressId shouldBe dummyEmailAddressId
-        result.sendAt shouldBe sendAt
-        result.state shouldBe com.sudoplatform.sudoemail.types.ScheduledDraftMessageState.SCHEDULED
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockUserClient, times(1)).getCredentialsProvider()
-        verify(mockS3Client).getObjectMetadata(
-            anyString(),
-        )
-        verify(mockServiceKeyManager).getSymmetricKeyData(any())
-        verify(mockApiClient).scheduleSendDraftMessageMutation(
-            check { input ->
-                input.draftMessageKey shouldEndWith dummyDraftId
-                input.emailAddressId shouldBe dummyEmailAddressId
-                input.sendAtEpochMs shouldBe sendAt.time.toDouble()
-            },
-        )
-    }
 }

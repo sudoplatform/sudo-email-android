@@ -15,7 +15,6 @@ import java.util.Date
  * to the [EmailMessageReceivedNotification] entity type that is exposed to users.
  */
 internal object EmailMessageReceivedNotificationTransformer {
-
     /**
      * Transform the [MessageReceivedNotification] type to its [EmailMessageReceivedNotification]
      *  entity type.
@@ -23,8 +22,8 @@ internal object EmailMessageReceivedNotificationTransformer {
      * @param notification [MessageReceivedNotification] The message received notification type.
      * @return The [EmailMessageReceivedNotification] entity type.
      */
-    fun toEntity(notification: MessageReceivedNotification): EmailMessageReceivedNotification {
-        return EmailMessageReceivedNotification(
+    fun toEntity(notification: MessageReceivedNotification): EmailMessageReceivedNotification =
+        EmailMessageReceivedNotification(
             id = notification.messageId,
             owner = notification.owner,
             emailAddressId = notification.emailAddressId,
@@ -38,5 +37,4 @@ internal object EmailMessageReceivedNotificationTransformer {
             encryptionStatus = notification.encryptionStatus,
             hasAttachments = notification.hasAttachments,
         )
-    }
 }

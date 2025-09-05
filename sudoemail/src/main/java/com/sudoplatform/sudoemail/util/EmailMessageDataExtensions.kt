@@ -59,18 +59,16 @@ internal interface ViewablePart {
 internal data class ViewableBodyPart(
     override val part: Part,
 ) : ViewablePart {
-
-    override fun asPlainText(context: Context): String? {
-        return when {
+    override fun asPlainText(context: Context): String? =
+        when {
             part.isMimeType(MimeTypes.TEXT_ANY) && part.content is String -> part.content as String
             else -> {
                 null
             }
         }
-    }
 
-    override fun asHtmlText(context: Context): String? {
-        return when {
+    override fun asHtmlText(context: Context): String? =
+        when {
             part.isMimeType(MimeTypes.TEXT_HTML) -> {
                 try {
                     part.content as String
@@ -92,7 +90,6 @@ internal data class ViewableBodyPart(
             }
             else -> null
         }
-    }
 }
 
 /**
@@ -113,25 +110,23 @@ internal data class ViewableMessageHeader(
     val sent = message.sentDate.toString()
     val subject = message.subject.orEmpty()
 
-    override fun asPlainText(context: Context): String {
-        return context.getString(
+    override fun asPlainText(context: Context): String =
+        context.getString(
             R.string.plain_text_email_message_header,
             from,
             sent,
             to,
             subject,
         )
-    }
 
-    override fun asHtmlText(context: Context): String {
-        return context.getString(
+    override fun asHtmlText(context: Context): String =
+        context.getString(
             R.string.html_text_email_message_header,
             from,
             sent,
             to,
             subject,
         )
-    }
 }
 
 /**

@@ -16,49 +16,58 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 // By default, disable all notifications we do not know how to handle
-internal val DEFAULT_FIRST_RULE_STRING = JsonObject(
-    mapOf(
-        Pair(
-            "!=",
-            JsonArray(
-                listOf(
-                    JsonObject(
-                        mapOf(
-                            Pair("var", JsonPrimitive("meta.type")),
+internal val DEFAULT_FIRST_RULE_STRING =
+    JsonObject(
+        mapOf(
+            Pair(
+                "!=",
+                JsonArray(
+                    listOf(
+                        JsonObject(
+                            mapOf(
+                                Pair("var", JsonPrimitive("meta.type")),
+                            ),
                         ),
+                        JsonPrimitive(MessageReceivedNotification.TYPE),
                     ),
-                    JsonPrimitive(MessageReceivedNotification.TYPE),
                 ),
             ),
         ),
-    ),
-).toString()
+    ).toString()
 
 // Disable notification types other than those we know how to handle
-internal val DEFAULT_FIRST_RULE = NotificationFilterItem(
-    name = Constants.SERVICE_NAME,
-    status = NotificationConfiguration.DISABLE_STR,
-    rules = DEFAULT_FIRST_RULE_STRING,
-)
+internal val DEFAULT_FIRST_RULE =
+    NotificationFilterItem(
+        name = Constants.SERVICE_NAME,
+        status = NotificationConfiguration.DISABLE_STR,
+        rules = DEFAULT_FIRST_RULE_STRING,
+    )
 
 internal const val DEFAULT_LAST_RULE_STRING = NotificationConfiguration.DEFAULT_RULE_STRING
 
 // Enable all otherwise unfiltered out notifications
-internal val DEFAULT_LAST_RULE = NotificationFilterItem(
-    name = Constants.SERVICE_NAME,
-    status = NotificationConfiguration.ENABLE_STR,
-    rules = DEFAULT_LAST_RULE_STRING,
-)
+internal val DEFAULT_LAST_RULE =
+    NotificationFilterItem(
+        name = Constants.SERVICE_NAME,
+        status = NotificationConfiguration.ENABLE_STR,
+        rules = DEFAULT_LAST_RULE_STRING,
+    )
 
-internal fun isRuleMatchingEmailAddressId(rule: String?, emailAddressId: String): Boolean {
-    return isRuleMatchingSingleMeta(rule, "emailAddressId", emailAddressId)
-}
+internal fun isRuleMatchingEmailAddressId(
+    rule: String?,
+    emailAddressId: String,
+): Boolean = isRuleMatchingSingleMeta(rule, "emailAddressId", emailAddressId)
 
-internal fun isRuleMatchingSudoId(rule: String?, sudoId: String): Boolean {
-    return isRuleMatchingSingleMeta(rule, "sudoId", sudoId)
-}
+internal fun isRuleMatchingSudoId(
+    rule: String?,
+    sudoId: String,
+): Boolean = isRuleMatchingSingleMeta(rule, "sudoId", sudoId)
 
-internal fun isRuleMatchingSingleMeta(rule: String?, metaName: String, metaValue: String): Boolean {
+internal fun isRuleMatchingSingleMeta(
+    rule: String?,
+    metaName: String,
+    metaValue: String,
+): Boolean {
     if (rule == null) {
         return false
     }
@@ -75,10 +84,7 @@ internal fun isRuleMatchingSingleMeta(rule: String?, metaName: String, metaValue
             if (v is JsonPrimitive && v.isString && v.content == "meta.$metaName" && rhs.content == metaValue) {
                 return true
             }
-        }
-
-        // "emailAddressId == var meta.emailAddressId
-        else if (rhs is JsonObject && lhs is JsonPrimitive && lhs.isString) {
+        } else if (rhs is JsonObject && lhs is JsonPrimitive && lhs.isString) { // "emailAddressId == var meta.emailAddressId
             val v = rhs["var"]
             if (v is JsonPrimitive && v.isString && v.content == "meta.$metaName" && lhs.content == metaValue) {
                 return true
@@ -96,16 +102,18 @@ internal fun isRuleMatchingSingleMeta(rule: String?, metaName: String, metaValue
  * @return New NotificationConfiguration with updated rules
  */
 fun NotificationConfiguration.initEmailNotifications(): NotificationConfiguration {
-    val newConfigs = this.configs
-        .filter { it.name != Constants.SERVICE_NAME }
-        .toMutableList()
+    val newConfigs =
+        this.configs
+            .filter { it.name != Constants.SERVICE_NAME }
+            .toMutableList()
 
-    val emServiceConfigs = this.configs
-        .filter { it.name == Constants.SERVICE_NAME }
-        // Filter out any current or historic default rules.
-        // We'll add current default rules back in
-        .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
-        .toMutableList()
+    val emServiceConfigs =
+        this.configs
+            .filter { it.name == Constants.SERVICE_NAME }
+            // Filter out any current or historic default rules.
+            // We'll add current default rules back in
+            .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
+            .toMutableList()
 
     newConfigs.add(DEFAULT_FIRST_RULE)
     newConfigs.addAll(emServiceConfigs)
@@ -122,18 +130,21 @@ internal fun NotificationConfiguration.setEmailNotificationsForSingleMeta(
     enabled: Boolean,
 ): NotificationConfiguration {
     // Start with any rules for other services
-    val newRules = this.configs
-        .filter { it.name != Constants.SERVICE_NAME }.toMutableList()
+    val newRules =
+        this.configs
+            .filter { it.name != Constants.SERVICE_NAME }
+            .toMutableList()
 
     // Then find all the email service rules except our defaults and
     // any existing rule matching this meta.
-    val newEmServiceRules = this.configs
-        .filter { it.name == Constants.SERVICE_NAME }
-        // Filter out any current or historic default rules.
-        // We'll add current default rules back in
-        .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
-        // Filter out any rule specific to our meta name and value
-        .filter { !isRuleMatchingSingleMeta(it.rules, metaName, metaValue) }
+    val newEmServiceRules =
+        this.configs
+            .filter { it.name == Constants.SERVICE_NAME }
+            // Filter out any current or historic default rules.
+            // We'll add current default rules back in
+            .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
+            // Filter out any rule specific to our meta name and value
+            .filter { !isRuleMatchingSingleMeta(it.rules, metaName, metaValue) }
 
     // Re-add DEFAULT_FIRST_RULE
     newRules.add(DEFAULT_FIRST_RULE)
@@ -144,23 +155,24 @@ internal fun NotificationConfiguration.setEmailNotificationsForSingleMeta(
     // If we're disabling notifications for this meta value then
     // add an explicit rule for that
     if (!enabled) {
-        val newJsonRule = JsonObject(
-            mapOf(
-                Pair(
-                    "==",
-                    JsonArray(
-                        listOf(
-                            JsonObject(
-                                mapOf(
-                                    Pair("var", JsonPrimitive("meta.$metaName")),
+        val newJsonRule =
+            JsonObject(
+                mapOf(
+                    Pair(
+                        "==",
+                        JsonArray(
+                            listOf(
+                                JsonObject(
+                                    mapOf(
+                                        Pair("var", JsonPrimitive("meta.$metaName")),
+                                    ),
                                 ),
+                                JsonPrimitive(metaValue),
                             ),
-                            JsonPrimitive(metaValue),
                         ),
                     ),
                 ),
-            ),
-        )
+            )
 
         newRules.add(
             NotificationFilterItem(
@@ -197,9 +209,10 @@ internal fun NotificationConfiguration.setEmailNotificationsForSingleMeta(
  *
  * @return New NotificationConfiguration with updated rules
  */
-fun NotificationConfiguration.setEmailNotificationsForAddressId(emailAddressId: String, enabled: Boolean): NotificationConfiguration {
-    return setEmailNotificationsForSingleMeta("emailAddressId", emailAddressId, enabled)
-}
+fun NotificationConfiguration.setEmailNotificationsForAddressId(
+    emailAddressId: String,
+    enabled: Boolean,
+): NotificationConfiguration = setEmailNotificationsForSingleMeta("emailAddressId", emailAddressId, enabled)
 
 /**
  * Extension function to add rules to a [NotificationConfiguration] for enabling
@@ -219,9 +232,10 @@ fun NotificationConfiguration.setEmailNotificationsForAddressId(emailAddressId: 
  *
  * @return New NotificationConfiguration with updated rules
  */
-fun NotificationConfiguration.setEmailNotificationsForSudoId(sudoId: String, enabled: Boolean): NotificationConfiguration {
-    return setEmailNotificationsForSingleMeta("sudoId", sudoId, enabled)
-}
+fun NotificationConfiguration.setEmailNotificationsForSudoId(
+    sudoId: String,
+    enabled: Boolean,
+): NotificationConfiguration = setEmailNotificationsForSingleMeta("sudoId", sudoId, enabled)
 
 /**
  * Test whether or not email service notifications are enabled for a particular email address
@@ -231,13 +245,14 @@ fun NotificationConfiguration.setEmailNotificationsForSudoId(sudoId: String, ena
  * @return Whether or not email service notifications are enabled for the email address with the specified ID
  */
 fun NotificationConfiguration.isEmailNotificationForAddressIdEnabled(emailAddressId: String): Boolean {
-    val emailAddressRule = this.configs
-        .filter { it.name == Constants.SERVICE_NAME }
-        // Filter out any current or historic default rules.
-        // We'll add current default rules back in
-        .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
-        // Filter out any rule specific to our emailAddressId
-        .find { isRuleMatchingEmailAddressId(it.rules, emailAddressId) }
+    val emailAddressRule =
+        this.configs
+            .filter { it.name == Constants.SERVICE_NAME }
+            // Filter out any current or historic default rules.
+            // We'll add current default rules back in
+            .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
+            // Filter out any rule specific to our emailAddressId
+            .find { isRuleMatchingEmailAddressId(it.rules, emailAddressId) }
 
     // Notifications are enabled for this email address if either there
     // is no matching rule (because the default enables it) or if the
@@ -254,13 +269,14 @@ fun NotificationConfiguration.isEmailNotificationForAddressIdEnabled(emailAddres
  * @return Whether or not email service notifications are enabled for the Sudo with the specified ID
  */
 fun NotificationConfiguration.isEmailNotificationForSudoIdEnabled(sudoId: String): Boolean {
-    val sudoRule = this.configs
-        .filter { it.name == Constants.SERVICE_NAME }
-        // Filter out any current or historic default rules.
-        // We'll add current default rules back in
-        .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
-        // Filter out any rule specific to our sudoId
-        .find { isRuleMatchingSudoId(it.rules, sudoId) }
+    val sudoRule =
+        this.configs
+            .filter { it.name == Constants.SERVICE_NAME }
+            // Filter out any current or historic default rules.
+            // We'll add current default rules back in
+            .filter { it.rules != DEFAULT_FIRST_RULE_STRING && it.rules != DEFAULT_LAST_RULE_STRING }
+            // Filter out any rule specific to our sudoId
+            .find { isRuleMatchingSudoId(it.rules, sudoId) }
 
     // Notifications are enabled for this Sudo if either there
     // is no matching rule (because the default enables it) or if the

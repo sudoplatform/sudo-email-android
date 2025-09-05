@@ -7,7 +7,7 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
@@ -49,22 +49,22 @@ import com.sudoplatform.sudoemail.graphql.type.ScheduledDraftMessageStateFilterI
  * and spies.
  */
 class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
-
     private val dummyDraftId = "dummyId"
     private val dummyEmailAddressId = "dummyEmailAddressId"
     private val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
     private val prefix = "dummyPrefix"
 
-    private val expectedScheduledDraftMessageResult = ScheduledDraftMessage(
-        id = dummyDraftId,
-        emailAddressId = dummyEmailAddressId,
-        state = ScheduledDraftMessageState.SCHEDULED,
-        sendAt = sendAt,
-        owner = "ownerId",
-        owners = listOf(Owner("ownerId", "issuer")),
-        updatedAt = Date(1),
-        createdAt = Date(1),
-    )
+    private val expectedScheduledDraftMessageResult =
+        ScheduledDraftMessage(
+            id = dummyDraftId,
+            emailAddressId = dummyEmailAddressId,
+            state = ScheduledDraftMessageState.SCHEDULED,
+            sendAt = sendAt,
+            owner = "ownerId",
+            owners = listOf(Owner("ownerId", "issuer")),
+            updatedAt = Date(1),
+            createdAt = Date(1),
+        )
 
     private val input by before {
         ListScheduledDraftMessagesForEmailAddressIdInput(
@@ -188,168 +188,182 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listScheduledDraftMessagesForEmailAddressId() should throw an error if graphQL mutation fails`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listScheduledDraftMessagesForEmailAddressIdQuery(
-                    any(),
-                )
-            }.thenThrow(UnknownError("ERROR"))
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.listScheduledDraftMessagesForEmailAddressId(input)
+    fun `listScheduledDraftMessagesForEmailAddressId() should throw an error if graphQL mutation fails`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listScheduledDraftMessagesForEmailAddressIdQuery(
+                        any(),
+                    )
+                }.thenThrow(UnknownError("ERROR"))
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
-            check { queryInput ->
-                queryInput.emailAddressId shouldBe dummyEmailAddressId
-                queryInput.nextToken shouldBe Optional.absent()
-                queryInput.limit shouldBe Optional.absent()
-                queryInput.filter shouldBe Optional.absent()
-            },
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.listScheduledDraftMessagesForEmailAddressId(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-    @Test
-    fun `listScheduledDraftMessagesForEmailAddressId() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listScheduledDraftMessagesForEmailAddressId(
-                input,
+            verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+                check { queryInput ->
+                    queryInput.emailAddressId shouldBe dummyEmailAddressId
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.limit shouldBe Optional.absent()
+                    queryInput.filter shouldBe Optional.absent()
+                },
             )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.nextToken shouldBe null
-        result.items.size shouldBe 1
-        result.items[0] shouldBe expectedScheduledDraftMessageResult
-
-        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
-            check { queryInput ->
-                queryInput.emailAddressId shouldBe dummyEmailAddressId
-                queryInput.nextToken shouldBe Optional.absent()
-                queryInput.limit shouldBe Optional.absent()
-                queryInput.filter shouldBe Optional.absent()
-            },
-        )
-    }
 
     @Test
-    fun `listScheduledDraftMessagesForEmailAddressId should handle empty response properly`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listScheduledDraftMessagesForEmailAddressIdQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponseWithEmptyList
-            }
-        }
+    fun `listScheduledDraftMessagesForEmailAddressId() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listScheduledDraftMessagesForEmailAddressId(
+                        input,
+                    )
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listScheduledDraftMessagesForEmailAddressId(
-                input,
+            result shouldNotBe null
+            result.nextToken shouldBe null
+            result.items.size shouldBe 1
+            result.items[0] shouldBe expectedScheduledDraftMessageResult
+
+            verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+                check { queryInput ->
+                    queryInput.emailAddressId shouldBe dummyEmailAddressId
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.limit shouldBe Optional.absent()
+                    queryInput.filter shouldBe Optional.absent()
+                },
             )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.nextToken shouldBe null
-        result.items.size shouldBe 0
-
-        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
-            check { queryInput ->
-                queryInput.emailAddressId shouldBe dummyEmailAddressId
-                queryInput.nextToken shouldBe Optional.absent()
-                queryInput.limit shouldBe Optional.absent()
-                queryInput.filter shouldBe Optional.absent()
-            },
-        )
-    }
 
     @Test
-    fun `listScheduledDraftMessagesForEmailAddressId should handle pagination properly`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listScheduledDraftMessagesForEmailAddressIdQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponseWithNextToken
+    fun `listScheduledDraftMessagesForEmailAddressId should handle empty response properly`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listScheduledDraftMessagesForEmailAddressIdQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    queryResponseWithEmptyList
+                }
             }
-        }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listScheduledDraftMessagesForEmailAddressId(
-                ListScheduledDraftMessagesForEmailAddressIdInput(
-                    emailAddressId = dummyEmailAddressId,
-                    limit = 1,
-                    nextToken = "dummy",
-                ),
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listScheduledDraftMessagesForEmailAddressId(
+                        input,
+                    )
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.nextToken shouldBe null
+            result.items.size shouldBe 0
+
+            verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+                check { queryInput ->
+                    queryInput.emailAddressId shouldBe dummyEmailAddressId
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.limit shouldBe Optional.absent()
+                    queryInput.filter shouldBe Optional.absent()
+                },
             )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.nextToken shouldBe "dummyNextToken"
-        result.items.size shouldBe 1
-        result.items[0] shouldBe expectedScheduledDraftMessageResult
-
-        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
-            check { queryInput ->
-                queryInput.emailAddressId shouldBe dummyEmailAddressId
-                queryInput.nextToken shouldBe Optional.present("dummy")
-                queryInput.limit shouldBe Optional.present(1)
-                queryInput.filter shouldBe Optional.absent()
-            },
-        )
-    }
 
     @Test
-    fun `listScheduledDraftMessagesForEmailAddressId() should handle filter arguments properly`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listScheduledDraftMessagesForEmailAddressId(
-                ListScheduledDraftMessagesForEmailAddressIdInput(
-                    emailAddressId = dummyEmailAddressId,
-                    filter = ScheduledDraftMessageFilterInput(
-                        state = NotEqualStateFilter(
-                            notEqual = ScheduledDraftMessageState.CANCELLED,
+    fun `listScheduledDraftMessagesForEmailAddressId should handle pagination properly`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listScheduledDraftMessagesForEmailAddressIdQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    queryResponseWithNextToken
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listScheduledDraftMessagesForEmailAddressId(
+                        ListScheduledDraftMessagesForEmailAddressIdInput(
+                            emailAddressId = dummyEmailAddressId,
+                            limit = 1,
+                            nextToken = "dummy",
                         ),
-                    ),
-                ),
+                    )
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.nextToken shouldBe "dummyNextToken"
+            result.items.size shouldBe 1
+            result.items[0] shouldBe expectedScheduledDraftMessageResult
+
+            verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+                check { queryInput ->
+                    queryInput.emailAddressId shouldBe dummyEmailAddressId
+                    queryInput.nextToken shouldBe Optional.present("dummy")
+                    queryInput.limit shouldBe Optional.present(1)
+                    queryInput.filter shouldBe Optional.absent()
+                },
             )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
 
-        result shouldNotBe null
-        result.nextToken shouldBe null
-        result.items.size shouldBe 1
-        result.items[0] shouldBe expectedScheduledDraftMessageResult
+    @Test
+    fun `listScheduledDraftMessagesForEmailAddressId() should handle filter arguments properly`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listScheduledDraftMessagesForEmailAddressId(
+                        ListScheduledDraftMessagesForEmailAddressIdInput(
+                            emailAddressId = dummyEmailAddressId,
+                            filter =
+                                ScheduledDraftMessageFilterInput(
+                                    state =
+                                        NotEqualStateFilter(
+                                            notEqual = ScheduledDraftMessageState.CANCELLED,
+                                        ),
+                                ),
+                        ),
+                    )
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
-            check { queryInput ->
-                queryInput.emailAddressId shouldBe dummyEmailAddressId
-                queryInput.nextToken shouldBe Optional.absent()
-                queryInput.limit shouldBe Optional.absent()
-                queryInput.filter shouldBe Optional.present(
-                    ScheduledDraftMessageFilterGql(
-                        state = Optional.present(
-                            ScheduledDraftMessageStateFilterGql(
-                                ne = Optional.present(ScheduledDraftMessageStateGql.CANCELLED),
+            result shouldNotBe null
+            result.nextToken shouldBe null
+            result.items.size shouldBe 1
+            result.items[0] shouldBe expectedScheduledDraftMessageResult
+
+            verify(mockApiClient).listScheduledDraftMessagesForEmailAddressIdQuery(
+                check { queryInput ->
+                    queryInput.emailAddressId shouldBe dummyEmailAddressId
+                    queryInput.nextToken shouldBe Optional.absent()
+                    queryInput.limit shouldBe Optional.absent()
+                    queryInput.filter shouldBe
+                        Optional.present(
+                            ScheduledDraftMessageFilterGql(
+                                state =
+                                    Optional.present(
+                                        ScheduledDraftMessageStateFilterGql(
+                                            ne = Optional.present(ScheduledDraftMessageStateGql.CANCELLED),
+                                        ),
+                                    ),
                             ),
-                        ),
-                    ),
-                )
-            },
-        )
-    }
+                        )
+                },
+            )
+        }
 }

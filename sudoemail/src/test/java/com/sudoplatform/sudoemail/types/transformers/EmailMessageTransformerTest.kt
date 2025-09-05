@@ -18,7 +18,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class EmailMessageTransformerTest : BaseTests() {
-
     @Test
     fun testEmailAddressParsing() {
         val bareAddress = "foo@bar.com"

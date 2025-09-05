@@ -38,56 +38,60 @@ class GetEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
-
-    @Test
-    fun getEmailAddressShouldReturnEmailAddressResult() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val aliasInput = "John Doe"
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof, alias = aliasInput)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val getAddressInput = GetEmailAddressInput(emailAddress.id)
-        val retrievedEmailAddress = emailClient.getEmailAddress(getAddressInput)
-            ?: throw AssertionError("should not be null")
-
-        with(retrievedEmailAddress) {
-            id shouldBe emailAddress.id
-            owner shouldBe emailAddress.owner
-            owners shouldBe emailAddress.owners
-            retrievedEmailAddress.emailAddress shouldBe emailAddress.emailAddress
-            size shouldBe emailAddress.size
-            numberOfEmailMessages shouldBe 0
-            version shouldBe emailAddress.version
-            createdAt.time shouldBe emailAddress.createdAt.time
-            updatedAt.time shouldBe emailAddress.createdAt.time
-            lastReceivedAt shouldBe emailAddress.lastReceivedAt
-            alias shouldBe aliasInput
-            folders.size shouldBe 4
-            folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
         }
-    }
 
     @Test
-    fun getEmailAddressShouldReturnNullForNonExistentAddress() = runTest {
-        val emailDomains = getEmailDomains(emailClient)
-        emailDomains.size shouldBeGreaterThanOrEqual 1
+    fun getEmailAddressShouldReturnEmailAddressResult() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val localPart = generateSafeLocalPart()
-        val emailAddressInput = localPart + "@" + emailDomains.first()
-        val getAddressInput = GetEmailAddressInput(emailAddressInput)
-        val retrievedEmailAddress = emailClient.getEmailAddress(getAddressInput)
-        retrievedEmailAddress shouldBe null
-    }
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val aliasInput = "John Doe"
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof, alias = aliasInput)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val getAddressInput = GetEmailAddressInput(emailAddress.id)
+            val retrievedEmailAddress =
+                emailClient.getEmailAddress(getAddressInput)
+                    ?: throw AssertionError("should not be null")
+
+            with(retrievedEmailAddress) {
+                id shouldBe emailAddress.id
+                owner shouldBe emailAddress.owner
+                owners shouldBe emailAddress.owners
+                retrievedEmailAddress.emailAddress shouldBe emailAddress.emailAddress
+                size shouldBe emailAddress.size
+                numberOfEmailMessages shouldBe 0
+                version shouldBe emailAddress.version
+                createdAt.time shouldBe emailAddress.createdAt.time
+                updatedAt.time shouldBe emailAddress.createdAt.time
+                lastReceivedAt shouldBe emailAddress.lastReceivedAt
+                alias shouldBe aliasInput
+                folders.size shouldBe 4
+                folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+            }
+        }
+
+    @Test
+    fun getEmailAddressShouldReturnNullForNonExistentAddress() =
+        runTest {
+            val emailDomains = getEmailDomains(emailClient)
+            emailDomains.size shouldBeGreaterThanOrEqual 1
+
+            val localPart = generateSafeLocalPart()
+            val emailAddressInput = localPart + "@" + emailDomains.first()
+            val getAddressInput = GetEmailAddressInput(emailAddressInput)
+            val retrievedEmailAddress = emailClient.getEmailAddress(getAddressInput)
+            retrievedEmailAddress shouldBe null
+        }
 }

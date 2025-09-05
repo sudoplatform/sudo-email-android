@@ -24,7 +24,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailClientConfigTest : BaseTests() {
-
     private val mockContext by before {
         mock<Context>()
     }
@@ -38,9 +37,7 @@ class SudoEmailClientConfigTest : BaseTests() {
                 return null
             }
 
-            override suspend fun validateConfig(): ValidationResult {
-                return ValidationResult(emptyList(), emptyList())
-            }
+            override suspend fun validateConfig(): ValidationResult = ValidationResult(emptyList(), emptyList())
         }
     }
 
@@ -58,46 +55,50 @@ class SudoEmailClientConfigTest : BaseTests() {
             SudoEmailClient.readConfiguration(mockContext, logger, configManager(emptyConfigJson))
         }
 
-        val missingRegionJson = """
+        val missingRegionJson =
+            """
             {
                 "bucket": "foo",
                 "transientBucket": "ids-userdata-eml-dev-transientuserdatabucket0d043-5tkr1hts9sja"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         shouldThrow<SudoEmailClient.Builder.ConfigurationException> {
             SudoEmailClient.readConfiguration(mockContext, logger, configManager(missingRegionJson))
         }
 
-        val missingBucketJson = """
+        val missingBucketJson =
+            """
             {
                 "region": "us-east-1"
                 "transientBucket": "ids-userdata-eml-dev-transientuserdatabucket0d043-5tkr1hts9sja"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         shouldThrow<SudoEmailClient.Builder.ConfigurationException> {
             SudoEmailClient.readConfiguration(mockContext, logger, configManager(missingBucketJson))
         }
 
-        val missingTransientBucketJson = """
+        val missingTransientBucketJson =
+            """
             {
                 "region": "us-east-1"
                 "bucket": "foo"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         shouldThrow<SudoEmailClient.Builder.ConfigurationException> {
             SudoEmailClient.readConfiguration(mockContext, logger, configManager(missingTransientBucketJson))
         }
 
-        val completeConfigJson = """
+        val completeConfigJson =
+            """
             {
                 "region": "us-east-1",
                 "bucket": "foo",
                 "transientBucket": "ids-userdata-eml-dev-transientuserdatabucket0d043-5tkr1hts9sja"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         SudoEmailClient.readConfiguration(mockContext, logger, configManager(completeConfigJson))
     }

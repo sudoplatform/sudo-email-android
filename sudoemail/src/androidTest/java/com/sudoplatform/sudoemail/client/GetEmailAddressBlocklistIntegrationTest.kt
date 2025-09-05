@@ -39,11 +39,12 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     private fun blockAddresses(
         addresses: List<String>,
@@ -63,108 +64,111 @@ class GetEmailAddressBlocklistIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun getEmailAddressBlocklistReturnsUnsealedBlockedAddresses() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun getEmailAddressBlocklistReturnsUnsealedBlockedAddresses() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-        receiverEmailAddress shouldNotBe null
-        emailAddressList.add(receiverEmailAddress)
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
+            receiverEmailAddress shouldNotBe null
+            emailAddressList.add(receiverEmailAddress)
 
-        val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-        emailAddressToBlock shouldNotBe null
-        emailAddressList.add(emailAddressToBlock)
+            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
+            emailAddressToBlock shouldNotBe null
+            emailAddressList.add(emailAddressToBlock)
 
-        blockAddresses(listOf(emailAddressToBlock.emailAddress))
+            blockAddresses(listOf(emailAddressToBlock.emailAddress))
 
-        val result = emailClient.getEmailAddressBlocklist()
+            val result = emailClient.getEmailAddressBlocklist()
 
-        result.size shouldBe 1
-        result.first().address shouldBe emailAddressToBlock.emailAddress
-        result.first().status shouldBe UnsealedBlockedAddressStatus.Completed
-        result.first().hashedBlockedValue shouldNotBe null
-        result.first().action shouldBe BlockedEmailAddressAction.DROP
-        result.first().emailAddressId shouldBe null
+            result.size shouldBe 1
+            result.first().address shouldBe emailAddressToBlock.emailAddress
+            result.first().status shouldBe UnsealedBlockedAddressStatus.Completed
+            result.first().hashedBlockedValue shouldNotBe null
+            result.first().action shouldBe BlockedEmailAddressAction.DROP
+            result.first().emailAddressId shouldBe null
 
-        emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
-    }
-
-    @Test
-    fun getEmailAddressBlocklistReturnsMultipleUnsealedBlockedAddresses() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-        receiverEmailAddress shouldNotBe null
-        emailAddressList.add(receiverEmailAddress)
-
-        val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-        emailAddressToBlock shouldNotBe null
-        emailAddressList.add(emailAddressToBlock)
-        val outOfNetworkAddressToBlock = "spammyMcSpamface${UUID.randomUUID()}@spambot.com"
-        blockAddresses(
-            listOf(
-                emailAddressToBlock.emailAddress,
-                outOfNetworkAddressToBlock,
-            ),
-            action = BlockedEmailAddressAction.SPAM,
-        )
-
-        val result = emailClient.getEmailAddressBlocklist()
-
-        result.size shouldBe 2
-        val blockedInNetworkEmailAddress = result.filter { it.address == emailAddressToBlock.emailAddress }
-        blockedInNetworkEmailAddress.size shouldBe 1
-        blockedInNetworkEmailAddress.first().address shouldBe emailAddressToBlock.emailAddress
-        blockedInNetworkEmailAddress.first().status shouldBe UnsealedBlockedAddressStatus.Completed
-        blockedInNetworkEmailAddress.first().hashedBlockedValue shouldNotBe null
-        blockedInNetworkEmailAddress.first().action shouldBe BlockedEmailAddressAction.SPAM
-        blockedInNetworkEmailAddress.first().emailAddressId shouldBe null
-
-        emailClient.unblockEmailAddresses(
-            listOf(
-                emailAddressToBlock.emailAddress,
-                outOfNetworkAddressToBlock,
-            ),
-        )
-    }
+            emailClient.unblockEmailAddresses(listOf(emailAddressToBlock.emailAddress))
+        }
 
     @Test
-    fun getEmailAddressBlocklistReturnsUnsealedBlockedAddressesIncludingEmailAddressId() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun getEmailAddressBlocklistReturnsMultipleUnsealedBlockedAddresses() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-        receiverEmailAddress shouldNotBe null
-        emailAddressList.add(receiverEmailAddress)
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
+            receiverEmailAddress shouldNotBe null
+            emailAddressList.add(receiverEmailAddress)
 
-        val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-        emailAddressToBlock shouldNotBe null
-        emailAddressList.add(emailAddressToBlock)
+            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
+            emailAddressToBlock shouldNotBe null
+            emailAddressList.add(emailAddressToBlock)
+            val outOfNetworkAddressToBlock = "spammyMcSpamface${UUID.randomUUID()}@spambot.com"
+            blockAddresses(
+                listOf(
+                    emailAddressToBlock.emailAddress,
+                    outOfNetworkAddressToBlock,
+                ),
+                action = BlockedEmailAddressAction.SPAM,
+            )
 
-        blockAddresses(listOf(emailAddressToBlock.emailAddress), emailAddressId = receiverEmailAddress.id)
+            val result = emailClient.getEmailAddressBlocklist()
 
-        val result = emailClient.getEmailAddressBlocklist()
+            result.size shouldBe 2
+            val blockedInNetworkEmailAddress = result.filter { it.address == emailAddressToBlock.emailAddress }
+            blockedInNetworkEmailAddress.size shouldBe 1
+            blockedInNetworkEmailAddress.first().address shouldBe emailAddressToBlock.emailAddress
+            blockedInNetworkEmailAddress.first().status shouldBe UnsealedBlockedAddressStatus.Completed
+            blockedInNetworkEmailAddress.first().hashedBlockedValue shouldNotBe null
+            blockedInNetworkEmailAddress.first().action shouldBe BlockedEmailAddressAction.SPAM
+            blockedInNetworkEmailAddress.first().emailAddressId shouldBe null
 
-        result.size shouldBe 1
-        result.first().address shouldBe emailAddressToBlock.emailAddress
-        result.first().status shouldBe UnsealedBlockedAddressStatus.Completed
-        result.first().hashedBlockedValue shouldNotBe null
-        result.first().action shouldBe BlockedEmailAddressAction.DROP
-        result.first().emailAddressId shouldBe receiverEmailAddress.id
+            emailClient.unblockEmailAddresses(
+                listOf(
+                    emailAddressToBlock.emailAddress,
+                    outOfNetworkAddressToBlock,
+                ),
+            )
+        }
 
-        emailClient.unblockEmailAddressesByHashedValue(listOf(result.first().hashedBlockedValue))
-    }
+    @Test
+    fun getEmailAddressBlocklistReturnsUnsealedBlockedAddressesIncludingEmailAddressId() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
+            receiverEmailAddress shouldNotBe null
+            emailAddressList.add(receiverEmailAddress)
+
+            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
+            emailAddressToBlock shouldNotBe null
+            emailAddressList.add(emailAddressToBlock)
+
+            blockAddresses(listOf(emailAddressToBlock.emailAddress), emailAddressId = receiverEmailAddress.id)
+
+            val result = emailClient.getEmailAddressBlocklist()
+
+            result.size shouldBe 1
+            result.first().address shouldBe emailAddressToBlock.emailAddress
+            result.first().status shouldBe UnsealedBlockedAddressStatus.Completed
+            result.first().hashedBlockedValue shouldNotBe null
+            result.first().action shouldBe BlockedEmailAddressAction.DROP
+            result.first().emailAddressId shouldBe receiverEmailAddress.id
+
+            emailClient.unblockEmailAddressesByHashedValue(listOf(result.first().hashedBlockedValue))
+        }
 }

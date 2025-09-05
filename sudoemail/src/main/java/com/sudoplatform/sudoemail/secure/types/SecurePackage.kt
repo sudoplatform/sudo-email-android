@@ -20,7 +20,5 @@ internal data class SecurePackage(
     val keyAttachments: Set<EmailAttachment>,
     val bodyAttachment: EmailAttachment,
 ) {
-    fun toList(): List<EmailAttachment> {
-        return keyAttachments.toList() + bodyAttachment
-    }
+    fun toList(): List<EmailAttachment> = keyAttachments.toList() + bodyAttachment
 }

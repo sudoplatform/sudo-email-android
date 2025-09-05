@@ -12,7 +12,6 @@ import com.sudoplatform.sudoemail.keys.DeviceKeyManager
  * Responsible for performing sealing operations on data in the email service.
  */
 internal interface SealingService {
-
     /**
      * Seals the [payload] with the key [keyId].
      *
@@ -21,7 +20,10 @@ internal interface SealingService {
      * @return The sealed data as a [ByteArray].
      */
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    fun sealString(keyId: String, payload: ByteArray): ByteArray
+    fun sealString(
+        keyId: String,
+        payload: ByteArray,
+    ): ByteArray
 
     /**
      * Unseals the [payload] with the key [keyId].
@@ -31,5 +33,8 @@ internal interface SealingService {
      * @return The unsealed data as a [ByteArray].
      */
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    fun unsealString(keyId: String, payload: ByteArray): ByteArray
+    fun unsealString(
+        keyId: String,
+        payload: ByteArray,
+    ): ByteArray
 }

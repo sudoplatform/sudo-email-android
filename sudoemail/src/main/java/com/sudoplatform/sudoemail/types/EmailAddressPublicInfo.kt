@@ -30,7 +30,6 @@ data class EmailAddressPublicInfo(
     val publicKey: String,
     val publicKeyDetails: EmailAddressPublicKey,
 ) : Parcelable {
-
     /**
      * (Deprecated) Constructor for creating an instance of [EmailAddressPublicInfo].
      *

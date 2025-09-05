@@ -39,11 +39,12 @@ internal data class SealedKey(
      * @return The JSON encoded version of this object.
      */
     fun toJson(): String {
-        val jsonObject = JsonObject().apply {
-            addProperty(PUBLIC_KEY_ID_JSON, publicKeyId)
-            addProperty(ENCRYPTED_KEY_JSON, encryptedKey.base64())
-            addProperty(ALGORITHM_JSON, algorithm.name)
-        }
+        val jsonObject =
+            JsonObject().apply {
+                addProperty(PUBLIC_KEY_ID_JSON, publicKeyId)
+                addProperty(ENCRYPTED_KEY_JSON, encryptedKey.base64())
+                addProperty(ALGORITHM_JSON, algorithm.name)
+            }
         return jsonObject.toString()
     }
 
@@ -77,10 +78,11 @@ internal data class SealedKeyComponents(
         fun fromJson(data: ByteArray): SealedKeyComponents {
             JsonParser.parseString(data.toString(Charsets.UTF_8))?.let { jsonElement ->
                 with(jsonElement.asJsonObject) {
-                    val encryptedKey = get(ENCRYPTED_KEY_JSON).asString.decodeBase64()
-                        ?: throw EmailCryptoServiceException.SecureDataParsingException(
-                            "Base64 decoding of encrypted key failed",
-                        )
+                    val encryptedKey =
+                        get(ENCRYPTED_KEY_JSON).asString.decodeBase64()
+                            ?: throw EmailCryptoServiceException.SecureDataParsingException(
+                                "Base64 decoding of encrypted key failed",
+                            )
                     val privateKeyId = get(PUBLIC_KEY_ID_JSON).asString
                     var algorithm = PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
                     try {

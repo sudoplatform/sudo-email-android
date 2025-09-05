@@ -47,117 +47,129 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun updateEmailMessagesShouldReturnSuccessForUpdatingSingleMessage() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun updateEmailMessagesShouldReturnSuccessForUpdatingSingleMessage() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val sendResult = sendEmailMessage(emailClient, emailAddress)
-        sendResult.id.isBlank() shouldBe false
+            val sendResult = sendEmailMessage(emailClient, emailAddress)
+            sendResult.id.isBlank() shouldBe false
 
-        waitForMessages(1)
+            waitForMessages(1)
 
-        val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
-            ?: fail("EmailFolder could not be found")
+            val sentFolder =
+                getFolderByName(emailClient, emailAddress.id, "SENT")
+                    ?: fail("EmailFolder could not be found")
 
-        val retrievedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
-            ?: fail("Email message could not be found")
-        with(retrievedEmailMessage) {
-            folderId shouldBe sentFolder.id
-            seen shouldBe true
+            val retrievedEmailMessage =
+                emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
+                    ?: fail("Email message could not be found")
+            with(retrievedEmailMessage) {
+                folderId shouldBe sentFolder.id
+                seen shouldBe true
+            }
+
+            val trashFolder =
+                getFolderByName(emailClient, emailAddress.id, "TRASH")
+                    ?: fail("EmailFolder could not be found")
+
+            val input =
+                UpdateEmailMessagesInput(
+                    listOf(sendResult.id),
+                    UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
+                )
+            val result = emailClient.updateEmailMessages(input)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+            result.successValues?.first()?.id shouldBe sendResult.id
+            result.failureValues?.isEmpty() shouldBe true
+
+            val updatedEmailMessage =
+                emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
+                    ?: fail("Email message could not be found")
+            with(updatedEmailMessage) {
+                folderId shouldBe trashFolder.id
+                seen shouldBe false
+            }
         }
-
-        val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
-            ?: fail("EmailFolder could not be found")
-
-        val input = UpdateEmailMessagesInput(
-            listOf(sendResult.id),
-            UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
-        )
-        val result = emailClient.updateEmailMessages(input)
-        result.status shouldBe BatchOperationStatus.SUCCESS
-        result.successValues?.first()?.id shouldBe sendResult.id
-        result.failureValues?.isEmpty() shouldBe true
-
-        val updatedEmailMessage = emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
-            ?: fail("Email message could not be found")
-        with(updatedEmailMessage) {
-            folderId shouldBe trashFolder.id
-            seen shouldBe false
-        }
-    }
 
     @Test
-    fun updateEmailMessagesShouldReturnSuccessForUpdatingMultipleMessages() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun updateEmailMessagesShouldReturnSuccessForUpdatingMultipleMessages() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val messageCount = 2
-        val sentEmailIds = mutableListOf<String>()
-        for (i in 0 until messageCount) {
-            val result = sendEmailMessage(emailClient, emailAddress)
-            result.id.isBlank() shouldBe false
-            sentEmailIds.add(result.id)
+            val messageCount = 2
+            val sentEmailIds = mutableListOf<String>()
+            for (i in 0 until messageCount) {
+                val result = sendEmailMessage(emailClient, emailAddress)
+                result.id.isBlank() shouldBe false
+                sentEmailIds.add(result.id)
+            }
+            sentEmailIds.size shouldBeGreaterThan 0
+
+            waitForMessages(messageCount)
+
+            val trashFolder =
+                getFolderByName(emailClient, emailAddress.id, "TRASH")
+                    ?: fail("EmailFolder could not be found")
+
+            val input =
+                UpdateEmailMessagesInput(
+                    sentEmailIds,
+                    UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
+                )
+            val result = emailClient.updateEmailMessages(input)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+            result.successValues?.size shouldBe 2
+            result.failureValues?.isEmpty() shouldBe true
+
+            val sentFolder =
+                getFolderByName(emailClient, emailAddress.id, "SENT")
+                    ?: fail("EmailFolder could not be found")
+
+            val listEmailMessagesInput =
+                ListEmailMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                )
+            val listEmailMessages =
+                emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
+            val outbound =
+                (listEmailMessages as ListAPIResult.Success<EmailMessage>).result.items.filter { it.direction == Direction.OUTBOUND }
+            with(outbound[0]) {
+                folderId shouldBe trashFolder.id
+                seen shouldBe false
+                previousFolderId shouldBe sentFolder.id
+            }
+            with(outbound[1]) {
+                folderId shouldBe trashFolder.id
+                seen shouldBe false
+                previousFolderId shouldBe sentFolder.id
+            }
         }
-        sentEmailIds.size shouldBeGreaterThan 0
-
-        waitForMessages(messageCount)
-
-        val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
-            ?: fail("EmailFolder could not be found")
-
-        val input = UpdateEmailMessagesInput(
-            sentEmailIds,
-            UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
-        )
-        val result = emailClient.updateEmailMessages(input)
-        result.status shouldBe BatchOperationStatus.SUCCESS
-        result.successValues?.size shouldBe 2
-        result.failureValues?.isEmpty() shouldBe true
-
-        val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
-            ?: fail("EmailFolder could not be found")
-
-        val listEmailMessagesInput = ListEmailMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-        )
-        val listEmailMessages =
-            emailClient.listEmailMessagesForEmailAddressId(listEmailMessagesInput)
-        val outbound =
-            (listEmailMessages as ListAPIResult.Success<EmailMessage>).result.items.filter { it.direction == Direction.OUTBOUND }
-        with(outbound[0]) {
-            folderId shouldBe trashFolder.id
-            seen shouldBe false
-            previousFolderId shouldBe sentFolder.id
-        }
-        with(outbound[1]) {
-            folderId shouldBe trashFolder.id
-            seen shouldBe false
-            previousFolderId shouldBe sentFolder.id
-        }
-    }
 
     @Test
     fun updateEmailMessagesShouldKeepPreviousFolderIdUnchangedWhenMovingToSameFolder() =
@@ -178,8 +190,9 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
             waitForMessages(1)
 
-            val sentFolder = getFolderByName(emailClient, emailAddress.id, "SENT")
-                ?: fail("EmailFolder could not be found")
+            val sentFolder =
+                getFolderByName(emailClient, emailAddress.id, "SENT")
+                    ?: fail("EmailFolder could not be found")
 
             val retrievedEmailMessage =
                 emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
@@ -190,10 +203,11 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 previousFolderId shouldBe null
             }
 
-            val input = UpdateEmailMessagesInput(
-                listOf(sendResult.id),
-                UpdateEmailMessagesInput.UpdatableValues(sentFolder.id, false),
-            )
+            val input =
+                UpdateEmailMessagesInput(
+                    listOf(sendResult.id),
+                    UpdateEmailMessagesInput.UpdatableValues(sentFolder.id, false),
+                )
             val updateResult = emailClient.updateEmailMessages(input)
             updateResult.status shouldBe BatchOperationStatus.SUCCESS
 
@@ -237,13 +251,15 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
             emailIdList.addAll(sentEmailIds)
             emailIdList.addAll(nonExistentIds)
 
-            val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
-                ?: fail("EmailFolder could not be found")
+            val trashFolder =
+                getFolderByName(emailClient, emailAddress.id, "TRASH")
+                    ?: fail("EmailFolder could not be found")
 
-            val input = UpdateEmailMessagesInput(
-                emailIdList,
-                UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
-            )
+            val input =
+                UpdateEmailMessagesInput(
+                    emailIdList,
+                    UpdateEmailMessagesInput.UpdatableValues(trashFolder.id, false),
+                )
             val result = emailClient.updateEmailMessages(input)
             result.status shouldBe BatchOperationStatus.PARTIAL
             result.successValues?.size shouldBe sentEmailIds.size
@@ -259,47 +275,54 @@ class UpdateEmailMessagesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun updateEmailMessagesShouldReturnFailureWhenUpdatingMultipleNonExistentMessages() =
         runTest {
-            val input = UpdateEmailMessagesInput(
-                listOf("id1", "id2", "id3"),
-                UpdateEmailMessagesInput.UpdatableValues("folderId", false),
-            )
+            val input =
+                UpdateEmailMessagesInput(
+                    listOf("id1", "id2", "id3"),
+                    UpdateEmailMessagesInput.UpdatableValues("folderId", false),
+                )
             val result = emailClient.updateEmailMessages(input)
             result.status shouldBe BatchOperationStatus.FAILURE
         }
 
     @Test
-    fun updateEmailMessagesShouldThrowWithInvalidArgumentWithEmptyInput() = runTest {
-        val input = UpdateEmailMessagesInput(
-            emptyList(),
-            UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
-        )
-        shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
-            emailClient.updateEmailMessages(input)
+    fun updateEmailMessagesShouldThrowWithInvalidArgumentWithEmptyInput() =
+        runTest {
+            val input =
+                UpdateEmailMessagesInput(
+                    emptyList(),
+                    UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
+                )
+            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                emailClient.updateEmailMessages(input)
+            }
         }
-    }
 
     @Test
-    fun updateEmailMessagesShouldAllowInputLimitEdgeCase() = runTest {
-        val (updateEmailMessagesLimit) = emailClient.getConfigurationData()
-        val inputIds = Array(updateEmailMessagesLimit) { it.toString() }.toList()
-        val input = UpdateEmailMessagesInput(
-            inputIds,
-            UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
-        )
-        val result = emailClient.updateEmailMessages(input)
-        result.status shouldBe BatchOperationStatus.FAILURE
-    }
+    fun updateEmailMessagesShouldAllowInputLimitEdgeCase() =
+        runTest {
+            val (updateEmailMessagesLimit) = emailClient.getConfigurationData()
+            val inputIds = Array(updateEmailMessagesLimit) { it.toString() }.toList()
+            val input =
+                UpdateEmailMessagesInput(
+                    inputIds,
+                    UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
+                )
+            val result = emailClient.updateEmailMessages(input)
+            result.status shouldBe BatchOperationStatus.FAILURE
+        }
 
     @Test
-    fun updateEmailMessagesShouldThrowWhenInputLimitExceeded() = runTest {
-        val (updateEmailMessagesLimit) = emailClient.getConfigurationData()
-        val inputIds = Array(updateEmailMessagesLimit + 1) { it.toString() }.toList()
-        val input = UpdateEmailMessagesInput(
-            inputIds,
-            UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
-        )
-        shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-            emailClient.updateEmailMessages(input)
+    fun updateEmailMessagesShouldThrowWhenInputLimitExceeded() =
+        runTest {
+            val (updateEmailMessagesLimit) = emailClient.getConfigurationData()
+            val inputIds = Array(updateEmailMessagesLimit + 1) { it.toString() }.toList()
+            val input =
+                UpdateEmailMessagesInput(
+                    inputIds,
+                    UpdateEmailMessagesInput.UpdatableValues("TRASH", true),
+                )
+            shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
+                emailClient.updateEmailMessages(input)
+            }
         }
-    }
 }

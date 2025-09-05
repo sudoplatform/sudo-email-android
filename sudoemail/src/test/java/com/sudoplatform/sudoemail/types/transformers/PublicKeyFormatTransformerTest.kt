@@ -14,7 +14,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class PublicKeyFormatTransformerTest : BaseTests() {
-
     @Test
     fun testTransformingToEntity() {
         PublicKeyFormatTransformer.toEntity(KeyFormat.RSA_PUBLIC_KEY) shouldBe PublicKeyFormat.RSA_PUBLIC_KEY

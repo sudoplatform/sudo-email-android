@@ -34,7 +34,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailSubscribeTest : BaseTests() {
-
     private val mockContext by before {
         mock<Context>()
     }
@@ -117,22 +116,23 @@ class SudoEmailSubscribeTest : BaseTests() {
     }
 
     @Test
-    fun `subscribeToEmailMessages() should throw when not authenticated`() = runTest {
-        mockUserClient.stub {
-            on { getSubject() } doReturn null
-        }
+    fun `subscribeToEmailMessages() should throw when not authenticated`() =
+        runTest {
+            mockUserClient.stub {
+                on { getSubject() } doReturn null
+            }
 
-        shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            client.subscribeToEmailMessages("id", mockEmailMessageSubscriber)
-        }
+            shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
+                client.subscribeToEmailMessages("id", mockEmailMessageSubscriber)
+            }
 
-        shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
-            client.subscribeToEmailMessages(
-                "id",
-                mockEmailMessageSubscriber,
-            )
-        }
+            shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
+                client.subscribeToEmailMessages(
+                    "id",
+                    mockEmailMessageSubscriber,
+                )
+            }
 
-        verify(mockUserClient, times(2)).getSubject()
-    }
+            verify(mockUserClient, times(2)).getSubject()
+        }
 }

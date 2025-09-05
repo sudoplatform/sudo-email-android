@@ -26,7 +26,6 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 @Suppress("UNUSED_VARIABLE")
 class Samples : BaseTests() {
-
     private val context by before { mock<Context>() }
 
     @Test
@@ -35,27 +34,34 @@ class Samples : BaseTests() {
     }
 
     fun sudoEmailClient(sudoUserClient: SudoUserClient) {
-        val emailClient = SudoEmailClient.builder()
-            .setContext(context)
-            .setSudoUserClient(sudoUserClient)
-            .build()
+        val emailClient =
+            SudoEmailClient
+                .builder()
+                .setContext(context)
+                .setSudoUserClient(sudoUserClient)
+                .build()
     }
 
     fun sudoEmailNotifiableClient(sudoUserClient: SudoUserClient) {
-        val notificationHandler = object : SudoEmailNotificationHandler {
-            override fun onEmailMessageReceived(message: EmailMessageReceivedNotification) {
-                // Handle messageReceived notification
+        val notificationHandler =
+            object : SudoEmailNotificationHandler {
+                override fun onEmailMessageReceived(message: EmailMessageReceivedNotification) {
+                    // Handle messageReceived notification
+                }
             }
-        }
 
-        val notifiableClient = SudoEmailNotifiableClient.builder()
-            .setContext(context)
-            .setNotificationHandler(notificationHandler)
-            .build()
+        val notifiableClient =
+            SudoEmailNotifiableClient
+                .builder()
+                .setContext(context)
+                .setNotificationHandler(notificationHandler)
+                .build()
 
-        val sudoNotificationClient = SudoNotificationClient.builder()
-            .setSudoUserClient(sudoUserClient)
-            .setNotifiableClients(listOf(notifiableClient))
-            .build()
+        val sudoNotificationClient =
+            SudoNotificationClient
+                .builder()
+                .setSudoUserClient(sudoUserClient)
+                .setNotifiableClients(listOf(notifiableClient))
+                .build()
     }
 }

@@ -149,80 +149,87 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
     }
 
     @Test
-    fun `cancelScheduledDraftMessage() should throw EmailAddressNotFoundException if no address found`() = runTest {
-        val error = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("errorType" to "AddressNotFound"),
-        )
-
-        mockApiClient.stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
+    fun `cancelScheduledDraftMessage() should throw EmailAddressNotFoundException if no address found`() =
+        runTest {
+            val error =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("errorType" to "AddressNotFound"),
                 )
-            } doAnswer {
-                GraphQLResponse(null, listOf(error))
-            }
-        }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                client.cancelScheduledDraftMessage(input)
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailAddressQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    GraphQLResponse(null, listOf(error))
+                }
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                        client.cancelScheduledDraftMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+        }
 
     @Test
-    fun `cancelScheduledDraftMessage() should throw an error if graphQl mutation fails`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                cancelScheduledDraftMessageMutation(
-                    any(),
-                )
-            }.thenThrow(UnknownError("ERROR"))
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.cancelScheduledDraftMessage(input)
+    fun `cancelScheduledDraftMessage() should throw an error if graphQl mutation fails`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    cancelScheduledDraftMessageMutation(
+                        any(),
+                    )
+                }.thenThrow(UnknownError("ERROR"))
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockUserClient, times(1)).getCredentialsProvider()
-        verify(mockApiClient).cancelScheduledDraftMessageMutation(
-            any(),
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.cancelScheduledDraftMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockUserClient, times(1)).getCredentialsProvider()
+            verify(mockApiClient).cancelScheduledDraftMessageMutation(
+                any(),
+            )
+        }
 
     @Test
-    fun `cancelScheduledDraftMessage() should return draft id on success`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.cancelScheduledDraftMessage(input)
+    fun `cancelScheduledDraftMessage() should return draft id on success`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.cancelScheduledDraftMessage(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldBe dummyDraftId
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockUserClient, times(1)).getCredentialsProvider()
+            verify(mockApiClient).cancelScheduledDraftMessageMutation(
+                any(),
+            )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldBe dummyDraftId
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockUserClient, times(1)).getCredentialsProvider()
-        verify(mockApiClient).cancelScheduledDraftMessageMutation(
-            any(),
-        )
-    }
 }

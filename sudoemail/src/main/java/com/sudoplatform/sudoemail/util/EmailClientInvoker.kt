@@ -14,18 +14,26 @@ import kotlin.coroutines.cancellation.CancellationException
  * Helper class to allow invocation of suspendable SudoEmailClient methods without waiting
  * for them to complete.
  */
-internal class EmailClientInvoker(private val emailClient: SudoEmailClient, private val logger: Logger) {
-    private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
-        this.logger.info("Exception occurred during async invocation")
-    }
+internal class EmailClientInvoker(
+    private val emailClient: SudoEmailClient,
+    private val logger: Logger,
+) {
+    private val exceptionHandler =
+        CoroutineExceptionHandler { _, exception ->
+            this.logger.info("Exception occurred during async invocation")
+        }
 
-    private val customScope = CoroutineScope(
-        Dispatchers.IO +
-            SupervisorJob() +
-            exceptionHandler,
-    )
+    private val customScope =
+        CoroutineScope(
+            Dispatchers.IO +
+                SupervisorJob() +
+                exceptionHandler,
+        )
 
-    fun cancelScheduledDraftEmailMessage(emailMessageId: String, emailAddressId: String) {
+    fun cancelScheduledDraftEmailMessage(
+        emailMessageId: String,
+        emailAddressId: String,
+    ) {
         customScope.launch {
             try {
                 // Background work

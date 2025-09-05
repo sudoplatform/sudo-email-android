@@ -23,9 +23,7 @@ data class BatchOperationResult<S, F>(
             status: BatchOperationStatus,
             successValues: List<S>? = null,
             failureValues: List<S>? = null,
-        ): BatchOperationResult<S, S> {
-            return BatchOperationResult(status, successValues, failureValues)
-        }
+        ): BatchOperationResult<S, S> = BatchOperationResult(status, successValues, failureValues)
 
         /**
          * Creates a [BatchOperationResult] where the [successValues] and [failureValues] can
@@ -35,9 +33,7 @@ data class BatchOperationResult<S, F>(
             status: BatchOperationStatus,
             successValues: List<S>? = null,
             failureValues: List<F>? = null,
-        ): BatchOperationResult<S, F> {
-            return BatchOperationResult(status, successValues, failureValues)
-        }
+        ): BatchOperationResult<S, F> = BatchOperationResult(status, successValues, failureValues)
     }
 }
 

@@ -6,7 +6,7 @@
 
 package com.sudoplatform.sudoemail.types.transformers
 
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessageState
 import com.sudoplatform.sudoemail.types.inputs.EqualStateFilter
@@ -27,7 +27,6 @@ import com.sudoplatform.sudoemail.graphql.type.ScheduledDraftMessageStateFilterI
  */
 @RunWith(RobolectricTestRunner::class)
 class ScheduledDraftMessageFilterTransformerTest : BaseTests() {
-
     @Test
     fun scheduledDraftMessageFilterTransformerParsesEmptyFilterProperly() {
         val inputFilter = ScheduledDraftMessageFilterInput()
@@ -38,69 +37,81 @@ class ScheduledDraftMessageFilterTransformerTest : BaseTests() {
 
     @Test
     fun scheduledDraftMessageFilterTransformerParsesEqualFilterProperly() {
-        val inputFilter = ScheduledDraftMessageFilterInput(
-            state = EqualStateFilter(
-                equal = ScheduledDraftMessageState.SCHEDULED,
-            ),
-        )
+        val inputFilter =
+            ScheduledDraftMessageFilterInput(
+                state =
+                    EqualStateFilter(
+                        equal = ScheduledDraftMessageState.SCHEDULED,
+                    ),
+            )
 
         val transformed = ScheduledDraftMessageFilterTransformer.toGraphQl(inputFilter)
         transformed shouldNotBe null
-        transformed?.state shouldBe Optional.present(
-            ScheduledDraftMessageFilterGql(
-                eq = Optional.present(ScheduledDraftMessageStateGql.SCHEDULED),
-            ),
-        )
+        transformed?.state shouldBe
+            Optional.present(
+                ScheduledDraftMessageFilterGql(
+                    eq = Optional.present(ScheduledDraftMessageStateGql.SCHEDULED),
+                ),
+            )
     }
 
     @Test
     fun scheduledDraftMessageFilterTransformerParsesOneOfFilterProperly() {
-        val inputFilter = ScheduledDraftMessageFilterInput(
-            state = OneOfStateFilter(
-                oneOf = listOf(ScheduledDraftMessageState.SCHEDULED, ScheduledDraftMessageState.SENT),
-            ),
-        )
+        val inputFilter =
+            ScheduledDraftMessageFilterInput(
+                state =
+                    OneOfStateFilter(
+                        oneOf = listOf(ScheduledDraftMessageState.SCHEDULED, ScheduledDraftMessageState.SENT),
+                    ),
+            )
 
         val transformed = ScheduledDraftMessageFilterTransformer.toGraphQl(inputFilter)
         transformed shouldNotBe null
-        transformed?.state shouldBe Optional.present(
-            ScheduledDraftMessageFilterGql(
-                `in` = Optional.present(listOf(ScheduledDraftMessageStateGql.SCHEDULED, ScheduledDraftMessageStateGql.SENT)),
-            ),
-        )
+        transformed?.state shouldBe
+            Optional.present(
+                ScheduledDraftMessageFilterGql(
+                    `in` = Optional.present(listOf(ScheduledDraftMessageStateGql.SCHEDULED, ScheduledDraftMessageStateGql.SENT)),
+                ),
+            )
     }
 
     @Test
     fun scheduledDraftMessageFilterTransformerParsesNotEqualFilterProperly() {
-        val inputFilter = ScheduledDraftMessageFilterInput(
-            state = NotEqualStateFilter(
-                notEqual = ScheduledDraftMessageState.CANCELLED,
-            ),
-        )
+        val inputFilter =
+            ScheduledDraftMessageFilterInput(
+                state =
+                    NotEqualStateFilter(
+                        notEqual = ScheduledDraftMessageState.CANCELLED,
+                    ),
+            )
 
         val transformed = ScheduledDraftMessageFilterTransformer.toGraphQl(inputFilter)
         transformed shouldNotBe null
-        transformed?.state shouldBe Optional.present(
-            ScheduledDraftMessageFilterGql(
-                ne = Optional.present(ScheduledDraftMessageStateGql.CANCELLED),
-            ),
-        )
+        transformed?.state shouldBe
+            Optional.present(
+                ScheduledDraftMessageFilterGql(
+                    ne = Optional.present(ScheduledDraftMessageStateGql.CANCELLED),
+                ),
+            )
     }
 
     @Test
     fun scheduledDraftMessageFilterTransformerParsesNotOneOfEqualFilterProperly() {
-        val inputFilter = ScheduledDraftMessageFilterInput(
-            state = NotOneOfStateFilter(
-                notOneOf = listOf(ScheduledDraftMessageState.CANCELLED, ScheduledDraftMessageState.FAILED),
-            ),
-        )
+        val inputFilter =
+            ScheduledDraftMessageFilterInput(
+                state =
+                    NotOneOfStateFilter(
+                        notOneOf = listOf(ScheduledDraftMessageState.CANCELLED, ScheduledDraftMessageState.FAILED),
+                    ),
+            )
 
         val transformed = ScheduledDraftMessageFilterTransformer.toGraphQl(inputFilter)
         transformed shouldNotBe null
-        transformed?.state shouldBe Optional.present(
-            ScheduledDraftMessageFilterGql(
-                notIn = Optional.present(listOf(ScheduledDraftMessageStateGql.CANCELLED, ScheduledDraftMessageStateGql.FAILED)),
-            ),
-        )
+        transformed?.state shouldBe
+            Optional.present(
+                ScheduledDraftMessageFilterGql(
+                    notIn = Optional.present(listOf(ScheduledDraftMessageStateGql.CANCELLED, ScheduledDraftMessageStateGql.FAILED)),
+                ),
+            )
     }
 }

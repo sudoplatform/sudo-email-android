@@ -44,7 +44,6 @@ internal data class EmailHeaderDetails(
  * types to the entity type that is exposed to users.
  */
 internal object EmailMessageTransformer {
-
     /**
      * Transform the [SealedEmailMessage] GraphQL type to its entity type.
      *
@@ -56,12 +55,13 @@ internal object EmailMessageTransformer {
         deviceKeyManager: DeviceKeyManager,
         sealedEmailMessage: SealedEmailMessage,
     ): EmailMessage {
-        val unsealedRfc822Header = EmailHeaderDetailsUnsealer.toEmailHeaderDetails(
-            sealedEmailMessage.rfc822Header.base64EncodedSealedData,
-            sealedEmailMessage.rfc822Header.keyId,
-            sealedEmailMessage.rfc822Header.algorithm,
-            deviceKeyManager,
-        )
+        val unsealedRfc822Header =
+            EmailHeaderDetailsUnsealer.toEmailHeaderDetails(
+                sealedEmailMessage.rfc822Header.base64EncodedSealedData,
+                sealedEmailMessage.rfc822Header.keyId,
+                sealedEmailMessage.rfc822Header.algorithm,
+                deviceKeyManager,
+            )
 
         return EmailMessage(
             id = sealedEmailMessage.id,
@@ -88,8 +88,9 @@ internal object EmailMessageTransformer {
             replyTo = unsealedRfc822Header.replyTo,
             subject = unsealedRfc822Header.subject,
             hasAttachments = unsealedRfc822Header.hasAttachments,
-            encryptionStatus = sealedEmailMessage.encryptionStatus
-                ?.toEmailMessageEncryptionStatus() ?: EncryptionStatus.UNENCRYPTED,
+            encryptionStatus =
+                sealedEmailMessage.encryptionStatus
+                    ?.toEmailMessageEncryptionStatus() ?: EncryptionStatus.UNENCRYPTED,
             date = unsealedRfc822Header.date,
         )
     }
@@ -100,10 +101,8 @@ internal object EmailMessageTransformer {
      * @param sealedEmailMessage [SealedEmailMessage] The GraphQL type.
      * @return The [PartialEmailMessage] entity type.
      */
-    fun toPartialEntity(
-        sealedEmailMessage: SealedEmailMessage,
-    ): PartialEmailMessage {
-        return PartialEmailMessage(
+    fun toPartialEntity(sealedEmailMessage: SealedEmailMessage): PartialEmailMessage =
+        PartialEmailMessage(
             id = sealedEmailMessage.id,
             clientRefId = sealedEmailMessage.clientRefId,
             owner = sealedEmailMessage.owner,
@@ -121,11 +120,11 @@ internal object EmailMessageTransformer {
             createdAt = sealedEmailMessage.createdAtEpochMs.toDate(),
             updatedAt = sealedEmailMessage.updatedAtEpochMs.toDate(),
             size = sealedEmailMessage.size,
-            encryptionStatus = sealedEmailMessage.encryptionStatus
-                ?.toEmailMessageEncryptionStatus()
-                ?: EncryptionStatus.UNENCRYPTED,
+            encryptionStatus =
+                sealedEmailMessage.encryptionStatus
+                    ?.toEmailMessageEncryptionStatus()
+                    ?: EncryptionStatus.UNENCRYPTED,
         )
-    }
 
     /**
      * Transform and unseal the RFC 822 data result.
@@ -198,13 +197,10 @@ internal object EmailMessageTransformer {
         return null
     }
 
-    private fun List<SealedEmailMessage.Owner>.toOwners(): List<Owner> {
-        return this.map {
+    private fun List<SealedEmailMessage.Owner>.toOwners(): List<Owner> =
+        this.map {
             it.toOwner()
         }
-    }
 
-    private fun SealedEmailMessage.Owner.toOwner(): Owner {
-        return Owner(id = id, issuer = issuer)
-    }
+    private fun SealedEmailMessage.Owner.toOwner(): Owner = Owner(id = id, issuer = issuer)
 }

@@ -15,7 +15,6 @@ import org.junit.Test
  * Test the correct operation of the methods for the [SealedKey] type.
  */
 class SealedKeyTest {
-
     private val stubSymmetricKey = "symmetricKey".toByteArray()
     private val sealedKey = SealedKey("publicKeyId", stubSymmetricKey)
 
@@ -42,10 +41,11 @@ class SealedKeyTest {
         val encodedSealedKey = sealedKey.toJson()
 
         val decodedSealedKeyComponents = SealedKeyComponents.fromJson(encodedSealedKey.toByteArray())
-        decodedSealedKeyComponents shouldBe SealedKeyComponents(
-            "publicKeyId",
-            ByteString.EMPTY,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-        )
+        decodedSealedKeyComponents shouldBe
+            SealedKeyComponents(
+                "publicKeyId",
+                ByteString.EMPTY,
+                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+            )
     }
 }

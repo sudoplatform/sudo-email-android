@@ -32,16 +32,25 @@ internal class Unsealer(
         const val BLOCK_SIZE_RSA = 256
     }
 
-    private val algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm = when (keyInfo.algorithm) {
-        DEFAULT_PUBLIC_KEY_ALGORITHM -> KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
-        else -> KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_PKCS1
-    }
+    private val algorithm: KeyManagerInterface.PublicKeyEncryptionAlgorithm =
+        when (keyInfo.algorithm) {
+            DEFAULT_PUBLIC_KEY_ALGORITHM -> KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1
+            else -> KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_PKCS1
+        }
 
-    sealed class UnsealerException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause) {
-        class SealedDataTooShortException(message: String? = null, cause: Throwable? = null) :
-            UnsealerException(message, cause)
-        class UnsupportedAlgorithmException(message: String? = null, cause: Throwable? = null) :
-            UnsealerException(message, cause)
+    sealed class UnsealerException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class SealedDataTooShortException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : UnsealerException(message, cause)
+
+        class UnsupportedAlgorithmException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : UnsealerException(message, cause)
     }
 
     /**
@@ -55,8 +64,11 @@ internal class Unsealer(
         return decrypt(keyInfo, valueBytes)
     }
 
-    private fun decrypt(keyInfo: KeyInfo, data: ByteArray): String {
-        return when (keyInfo.keyType) {
+    private fun decrypt(
+        keyInfo: KeyInfo,
+        data: ByteArray,
+    ): String =
+        when (keyInfo.keyType) {
             KeyType.PRIVATE_KEY -> {
                 if (data.size < KEY_SIZE_AES) {
                     throw UnsealerException.SealedDataTooShortException("Sealed value too short")
@@ -70,7 +82,6 @@ internal class Unsealer(
                 String(deviceKeyManager.decryptWithSymmetricKeyId(keyInfo.keyId, data))
             }
         }
-    }
 
     /**
      * The sealed value is a base64 encoded string that when base64 decoded contains:
@@ -78,9 +89,7 @@ internal class Unsealer(
      * bytes 256..end : the data that is encrypted with the symmetric key
      */
     @Throws(UnsealerException::class)
-    fun unsealBytes(valueBase64: ByteArray): ByteArray {
-        return unsealRawBytes(Base64.decode(valueBase64))
-    }
+    fun unsealBytes(valueBase64: ByteArray): ByteArray = unsealRawBytes(Base64.decode(valueBase64))
 
     private fun unsealRawBytes(valueBytes: ByteArray): ByteArray {
         if (valueBytes.size < KEY_SIZE_AES) {
@@ -116,7 +125,10 @@ internal class Unsealer(
         return unsealValue(sealedValue.algorithm, sealedValue.base64EncodedSealedData)
     }
 
-    private fun unsealValue(algorithm: String, base64EncodedSealedData: String): String {
+    private fun unsealValue(
+        algorithm: String,
+        base64EncodedSealedData: String,
+    ): String {
         if (!SymmetricKeyEncryptionAlgorithm.isAlgorithmSupported(algorithm)) {
             throw UnsealerException.UnsupportedAlgorithmException(algorithm)
         }

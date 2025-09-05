@@ -15,17 +15,14 @@ import com.sudoplatform.sudoemail.types.ConfigurationData
  */
 
 internal object EmailConfigurationTransformer {
-
     /**
      * Transform the [EmailConfigurationData] GraphQL type to its entity type.
      *
      * @param emailConfigurationData [EmailConfigurationData] The GraphQL type.
      * @return The [ConfigurationData] entity type.
      */
-    fun toEntity(
-        emailConfigurationData: EmailConfigurationData,
-    ): ConfigurationData {
-        return ConfigurationData(
+    fun toEntity(emailConfigurationData: EmailConfigurationData): ConfigurationData =
+        ConfigurationData(
             deleteEmailMessagesLimit = emailConfigurationData.deleteEmailMessagesLimit,
             updateEmailMessagesLimit = emailConfigurationData.updateEmailMessagesLimit,
             emailMessageMaxInboundMessageSize = emailConfigurationData.emailMessageMaxInboundMessageSize,
@@ -34,5 +31,4 @@ internal object EmailConfigurationTransformer {
             encryptedEmailMessageRecipientsLimit = emailConfigurationData.encryptedEmailMessageRecipientsLimit,
             prohibitedFileExtensions = emailConfigurationData.prohibitedFileExtensions,
         )
-    }
 }

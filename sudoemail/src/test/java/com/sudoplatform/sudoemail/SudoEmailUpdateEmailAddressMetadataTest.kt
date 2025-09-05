@@ -49,7 +49,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
-
     private val input by before {
         UpdateEmailAddressMetadataInput(
             "emailAddressId",
@@ -138,152 +137,166 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
     }
 
     @Test
-    fun `updateEmailAddressMetadata() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.updateEmailAddressMetadata(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
+    fun `updateEmailAddressMetadata() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.updateEmailAddressMetadata(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        result shouldBe "emailAddressId"
-        verify(mockApiClient).updateEmailAddressMetadataMutation(
-            check { input ->
-                input.id shouldBe "emailAddressId"
-            },
-        )
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-    }
-
-    @Test
-    fun `updateEmailAddressMetadata() should throw when response is null`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                updateEmailAddressMetadataMutation(
-                    any(),
-                )
-            }.thenAnswer {
-                GraphQLResponse(null, null)
-            }
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
-                client.updateEmailAddressMetadata(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).updateEmailAddressMetadataMutation(
-            check { input ->
-                input.id shouldBe "emailAddressId"
-            },
-        )
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-    }
-
-    @Test
-    fun `updateEmailAddressMetadata() should throw when unsealing fails`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                updateEmailAddressMetadataMutation(
-                    any(),
-                )
-            } doThrow Unsealer.UnsealerException.UnsupportedAlgorithmException(
-                "Mock Unsealer Exception",
+            result shouldBe "emailAddressId"
+            verify(mockApiClient).updateEmailAddressMetadataMutation(
+                check { input ->
+                    input.id shouldBe "emailAddressId"
+                },
             )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UnsealingException> {
-                client.updateEmailAddressMetadata(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).updateEmailAddressMetadataMutation(
-            check { input ->
-                input.id shouldBe "emailAddressId"
-            },
-        )
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-    }
 
     @Test
-    fun `updateEmailAddressMetadata() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                updateEmailAddressMetadataMutation(
-                    any(),
+    fun `updateEmailAddressMetadata() should throw when response is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailAddressMetadataMutation(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, null)
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UpdateFailedException> {
+                        client.updateEmailAddressMetadata(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).updateEmailAddressMetadataMutation(
+                check { input ->
+                    input.id shouldBe "emailAddressId"
+                },
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+        }
+
+    @Test
+    fun `updateEmailAddressMetadata() should throw when unsealing fails`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailAddressMetadataMutation(
+                        any(),
+                    )
+                } doThrow
+                    Unsealer.UnsealerException.UnsupportedAlgorithmException(
+                        "Mock Unsealer Exception",
+                    )
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UnsealingException> {
+                        client.updateEmailAddressMetadata(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).updateEmailAddressMetadataMutation(
+                check { input ->
+                    input.id shouldBe "emailAddressId"
+                },
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+        }
+
+    @Test
+    fun `updateEmailAddressMetadata() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailAddressMetadataMutation(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
-                client.updateEmailAddressMetadata(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        client.updateEmailAddressMetadata(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).updateEmailAddressMetadataMutation(
-            check { input ->
-                input.id shouldBe "emailAddressId"
-            },
-        )
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-    }
+            verify(mockApiClient).updateEmailAddressMetadataMutation(
+                check { input ->
+                    input.id shouldBe "emailAddressId"
+                },
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+        }
 
     @Test
-    fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                updateEmailAddressMetadataMutation(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                client.updateEmailAddressMetadata(input)
+    fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailAddressMetadataMutation(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).updateEmailAddressMetadataMutation(
-            check { input ->
-                input.id shouldBe "emailAddressId"
-            },
-        )
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
+                        client.updateEmailAddressMetadata(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).updateEmailAddressMetadataMutation(
+                check { input ->
+                    input.id shouldBe "emailAddressId"
+                },
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+        }
 
     @Test
-    fun `updateEmailAddressMetadata() should not block coroutine cancellation exception`() = runTest {
-        mockServiceKeyManager.stub {
-            on { getCurrentSymmetricKeyId() } doThrow CancellationException("mock")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<CancellationException> {
-                client.updateEmailAddressMetadata(input)
+    fun `updateEmailAddressMetadata() should not block coroutine cancellation exception`() =
+        runTest {
+            mockServiceKeyManager.stub {
+                on { getCurrentSymmetricKeyId() } doThrow CancellationException("mock")
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.updateEmailAddressMetadata(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+        }
 }

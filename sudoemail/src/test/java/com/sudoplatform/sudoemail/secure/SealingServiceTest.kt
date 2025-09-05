@@ -26,7 +26,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SealingServiceTest : BaseTests() {
-
     private val mockDeviceKeyManager by before {
         mock<DeviceKeyManager>().stub {
             on { encryptWithSymmetricKeyId(anyString(), any(), eq(null)) } doReturn ByteArray(42)

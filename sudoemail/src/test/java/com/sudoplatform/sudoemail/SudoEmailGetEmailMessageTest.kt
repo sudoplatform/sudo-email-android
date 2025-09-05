@@ -51,7 +51,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailMessageTest : BaseTests() {
-
     private val input by before {
         GetEmailMessageInput(id = "emailMessageId")
     }
@@ -155,86 +154,90 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailMessage() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getEmailMessage(input)
+    fun `getEmailMessage() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessage(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+
+            val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+            with(result!!) {
+                id shouldBe "id"
+                owner shouldBe "owner"
+                owners.size shouldBe 1
+                emailAddressId shouldBe "emailAddressId"
+                clientRefId shouldBe "clientRefId"
+                from.shouldContainExactlyInAnyOrder(addresses)
+                to.shouldContainExactlyInAnyOrder(addresses)
+                cc.shouldContainExactlyInAnyOrder(addresses)
+                replyTo.shouldContainExactlyInAnyOrder(addresses)
+                bcc.isEmpty() shouldBe true
+                direction shouldBe Direction.INBOUND
+                subject shouldBe "testSubject"
+                hasAttachments shouldBe false
+                seen shouldBe false
+                state shouldBe State.DELIVERED
+                createdAt shouldBe Date(1L)
+                updatedAt shouldBe Date(1L)
+                date shouldBe null
+            }
+
+            verify(mockApiClient).getEmailMessageQuery(
+                any(),
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-
-        val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-        with(result!!) {
-            id shouldBe "id"
-            owner shouldBe "owner"
-            owners.size shouldBe 1
-            emailAddressId shouldBe "emailAddressId"
-            clientRefId shouldBe "clientRefId"
-            from.shouldContainExactlyInAnyOrder(addresses)
-            to.shouldContainExactlyInAnyOrder(addresses)
-            cc.shouldContainExactlyInAnyOrder(addresses)
-            replyTo.shouldContainExactlyInAnyOrder(addresses)
-            bcc.isEmpty() shouldBe true
-            direction shouldBe Direction.INBOUND
-            subject shouldBe "testSubject"
-            hasAttachments shouldBe false
-            seen shouldBe false
-            state shouldBe State.DELIVERED
-            createdAt shouldBe Date(1L)
-            updatedAt shouldBe Date(1L)
-            date shouldBe null
-        }
-
-        verify(mockApiClient).getEmailMessageQuery(
-            any(),
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
 
     @Test
-    fun `getEmailMessage() should return results when date is set`() = runTest {
-        mockKeyManager.stub {
-            on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
-                DataFactory.unsealedHeaderDetailsWithDateString.toByteArray()
-        }
+    fun `getEmailMessage() should return results when date is set`() =
+        runTest {
+            mockKeyManager.stub {
+                on { decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>()) } doReturn
+                    DataFactory.unsealedHeaderDetailsWithDateString.toByteArray()
+            }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getEmailMessage(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-        result shouldNotBe null
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessage(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+            result shouldNotBe null
 
-        val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
-        with(result!!) {
-            id shouldBe "id"
-            owner shouldBe "owner"
-            owners.size shouldBe 1
-            emailAddressId shouldBe "emailAddressId"
-            clientRefId shouldBe "clientRefId"
-            from.shouldContainExactlyInAnyOrder(addresses)
-            to.shouldContainExactlyInAnyOrder(addresses)
-            cc.shouldContainExactlyInAnyOrder(addresses)
-            replyTo.shouldContainExactlyInAnyOrder(addresses)
-            bcc.isEmpty() shouldBe true
-            direction shouldBe Direction.INBOUND
-            subject shouldBe "testSubject"
-            hasAttachments shouldBe false
-            seen shouldBe false
-            state shouldBe State.DELIVERED
-            createdAt shouldBe Date(1L)
-            updatedAt shouldBe Date(1L)
-            date shouldBe Date(2L)
-        }
+            val addresses = listOf(EmailMessage.EmailAddress("foobar@unittest.org"))
+            with(result!!) {
+                id shouldBe "id"
+                owner shouldBe "owner"
+                owners.size shouldBe 1
+                emailAddressId shouldBe "emailAddressId"
+                clientRefId shouldBe "clientRefId"
+                from.shouldContainExactlyInAnyOrder(addresses)
+                to.shouldContainExactlyInAnyOrder(addresses)
+                cc.shouldContainExactlyInAnyOrder(addresses)
+                replyTo.shouldContainExactlyInAnyOrder(addresses)
+                bcc.isEmpty() shouldBe true
+                direction shouldBe Direction.INBOUND
+                subject shouldBe "testSubject"
+                hasAttachments shouldBe false
+                seen shouldBe false
+                state shouldBe State.DELIVERED
+                createdAt shouldBe Date(1L)
+                updatedAt shouldBe Date(1L)
+                date shouldBe Date(2L)
+            }
 
-        verify(mockApiClient).getEmailMessageQuery(
-            any(),
-        )
-        verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
-        verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
-    }
+            verify(mockApiClient).getEmailMessageQuery(
+                any(),
+            )
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
 
     @Test
     fun `getEmailMessage() should return results when hasAttachments is true`() =
@@ -244,9 +247,10 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
                     DataFactory.unsealedHeaderDetailsHasAttachmentsTrueString.toByteArray()
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailMessage(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -289,9 +293,10 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
                     DataFactory.unsealedHeaderDetailsHasAttachmentsUnsetString.toByteArray()
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailMessage(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -339,9 +344,10 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailMessage(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailMessage(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -353,86 +359,94 @@ class SudoEmailGetEmailMessageTest : BaseTests() {
         }
 
     @Test
-    fun `getEmailMessage() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                getEmailMessageQuery(
-                    any(),
+    fun `getEmailMessage() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMessageQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.getEmailMessage(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.getEmailMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).getEmailMessageQuery(
-            any(),
-        )
-    }
+            verify(mockApiClient).getEmailMessageQuery(
+                any(),
+            )
+        }
 
     @Test
-    fun `getEmailMessage() should throw when unknown error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to "blah"),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                getEmailMessageQuery(
-                    any(),
+    fun `getEmailMessage() should throw when unknown error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to "blah"),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMessageQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.getEmailMessage(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.getEmailMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).getEmailMessageQuery(
-            any(),
-        )
-    }
+            verify(mockApiClient).getEmailMessageQuery(
+                any(),
+            )
+        }
 
     @Test
-    fun `getEmailMessage() should not suppress CancellationException`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailMessageQuery(
-                    any(),
-                )
-            } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<CancellationException> {
-                client.getEmailMessage(input)
+    fun `getEmailMessage() should not suppress CancellationException`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMessageQuery(
+                        any(),
+                    )
+                } doThrow CancellationException("Mock Cancellation Exception")
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).getEmailMessageQuery(
-            any(),
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.getEmailMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailMessageQuery(
+                any(),
+            )
+        }
 }

@@ -62,3 +62,6 @@ secret.properties
 
 sudoemail/src/main/assets/**
 **/jacoco.exec
+
+# MCP
+.mcp-project.json

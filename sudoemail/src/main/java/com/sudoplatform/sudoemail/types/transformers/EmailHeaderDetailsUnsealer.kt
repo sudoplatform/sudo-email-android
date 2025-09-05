@@ -13,7 +13,6 @@ import com.sudoplatform.sudoemail.keys.DeviceKeyManager
  * Unpack and decrypt the sealed fields of an email message header [EmailHeaderDetails].
  */
 internal object EmailHeaderDetailsUnsealer {
-
     /**
      * Unseal and transform the email message header details to [EmailHeaderDetails].
      *
@@ -29,11 +28,12 @@ internal object EmailHeaderDetailsUnsealer {
         algorithm: String,
         deviceKeyManager: DeviceKeyManager,
     ): EmailHeaderDetails {
-        val keyInfo = KeyInfo(
-            keyId,
-            KeyType.PRIVATE_KEY,
-            algorithm,
-        )
+        val keyInfo =
+            KeyInfo(
+                keyId,
+                KeyType.PRIVATE_KEY,
+                algorithm,
+            )
         val unsealer = Unsealer(deviceKeyManager, keyInfo)
 
         val unsealedRfc822HeaderString =

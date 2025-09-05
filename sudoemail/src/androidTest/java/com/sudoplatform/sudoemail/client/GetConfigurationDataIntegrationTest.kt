@@ -33,22 +33,24 @@ class GetConfigurationDataIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun getConfigurationDataShouldReturnConfigurationData() = runTest {
-        val configurationData = emailClient.getConfigurationData()
-        with(configurationData) {
-            deleteEmailMessagesLimit shouldBeGreaterThanOrEqual 1
-            updateEmailMessagesLimit shouldBeGreaterThanOrEqual 1
-            emailMessageMaxInboundMessageSize shouldBeGreaterThanOrEqual 1
-            emailMessageMaxOutboundMessageSize shouldBeGreaterThanOrEqual 1
-            emailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
-            encryptedEmailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
+    fun getConfigurationDataShouldReturnConfigurationData() =
+        runTest {
+            val configurationData = emailClient.getConfigurationData()
+            with(configurationData) {
+                deleteEmailMessagesLimit shouldBeGreaterThanOrEqual 1
+                updateEmailMessagesLimit shouldBeGreaterThanOrEqual 1
+                emailMessageMaxInboundMessageSize shouldBeGreaterThanOrEqual 1
+                emailMessageMaxOutboundMessageSize shouldBeGreaterThanOrEqual 1
+                emailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
+                encryptedEmailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
+            }
         }
-    }
 }

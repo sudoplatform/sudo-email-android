@@ -15,11 +15,8 @@ import com.sudoplatform.sudoemail.graphql.fragment.ScheduledDraftMessage as Sche
  * entity type that is exposed to users.
  */
 object ScheduledDraftMessageTransformer {
-
-    fun toEntity(
-        graphQl: ScheduledDraftMessageGraphQl,
-    ): ScheduledDraftMessage {
-        return ScheduledDraftMessage(
+    fun toEntity(graphQl: ScheduledDraftMessageGraphQl): ScheduledDraftMessage =
+        ScheduledDraftMessage(
             id = graphQl.draftMessageKey.substringAfterLast('/'),
             emailAddressId = graphQl.emailAddressId,
             sendAt = graphQl.sendAtEpochMs.toDate(),
@@ -29,13 +26,8 @@ object ScheduledDraftMessageTransformer {
             updatedAt = graphQl.updatedAtEpochMs.toDate(),
             createdAt = graphQl.createdAtEpochMs.toDate(),
         )
-    }
 
-    private fun List<ScheduledDraftMessageGraphQl.Owner>.toOwners(): List<Owner> {
-        return this.map { it.toOwner() }
-    }
+    private fun List<ScheduledDraftMessageGraphQl.Owner>.toOwners(): List<Owner> = this.map { it.toOwner() }
 
-    private fun ScheduledDraftMessageGraphQl.Owner.toOwner(): Owner {
-        return Owner(id = id, issuer = issuer)
-    }
+    private fun ScheduledDraftMessageGraphQl.Owner.toOwner(): Owner = Owner(id = id, issuer = issuer)
 }

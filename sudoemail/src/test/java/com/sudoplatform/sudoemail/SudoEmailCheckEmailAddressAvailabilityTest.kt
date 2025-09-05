@@ -49,7 +49,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
-
     private val localParts = listOf("foo")
     private val domains = listOf("bar.com")
     private val addresses = listOf("foo@bar.com", "food@bar.com")
@@ -147,177 +146,192 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     }
 
     @Test
-    fun `checkEmailAddressAvailability() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.checkEmailAddressAvailability(input)
+    fun `checkEmailAddressAvailability() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.checkEmailAddressAvailability(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe false
+            result.size shouldBe 2
+            result shouldContainExactlyInAnyOrder addresses
+
+            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+                any(),
+            )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.isEmpty() shouldBe false
-        result.size shouldBe 2
-        result shouldContainExactlyInAnyOrder addresses
-
-        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-            any(),
-        )
-    }
 
     @Test
-    fun `checkEmailAddressAvailability() should return empty list output when query result data is empty`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                checkEmailAddressAvailabilityQuery(
-                    any(),
-                )
-            } doAnswer {
-                DataFactory.checkEmailAddressAvailabilityQueryResponse()
+    fun `checkEmailAddressAvailability() should return empty list output when query result data is empty`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    checkEmailAddressAvailabilityQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    DataFactory.checkEmailAddressAvailabilityQueryResponse()
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.checkEmailAddressAvailability(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe true
+            result.size shouldBe 0
+
+            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+                any(),
+            )
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.checkEmailAddressAvailability(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.isEmpty() shouldBe true
-        result.size shouldBe 0
-
-        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-            any(),
-        )
-    }
 
     @Test
-    fun `checkEmailAddressAvailability() should return empty list output when query response is null`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                checkEmailAddressAvailabilityQuery(
-                    any(),
-                )
-            } doAnswer {
-                GraphQLResponse(null, null)
+    fun `checkEmailAddressAvailability() should return empty list output when query response is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    checkEmailAddressAvailabilityQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    GraphQLResponse(null, null)
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.checkEmailAddressAvailability(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe true
+            result.size shouldBe 0
+
+            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+                any(),
+            )
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.checkEmailAddressAvailability(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.isEmpty() shouldBe true
-        result.size shouldBe 0
-
-        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-            any(),
-        )
-    }
 
     @Test
-    fun `checkEmailAddressAvailability() should throw when response has error`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "Test generated error",
-            emptyList(),
-            emptyList(),
-            mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                checkEmailAddressAvailabilityQuery(
-                    any(),
+    fun `checkEmailAddressAvailability() should throw when response has error`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
                 )
-            } doAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    checkEmailAddressAvailabilityQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        client.checkEmailAddressAvailability(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+                any(),
+            )
         }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+    @Test
+    fun `checkEmailAddressAvailability() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    checkEmailAddressAvailabilityQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
+            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        client.checkEmailAddressAvailability(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+                any(),
+            )
+        }
+
+    @Test
+    fun `checkEmailAddressAvailability() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    checkEmailAddressAvailabilityQuery(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
+                        client.checkEmailAddressAvailability(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+                any(),
+            )
+        }
+
+    @Test
+    fun `checkEmailAddressAvailability() should not block coroutine cancellation exception`() =
+        runBlocking<Unit> {
+            mockApiClient.stub {
+                onBlocking {
+                    checkEmailAddressAvailabilityQuery(
+                        any(),
+                    )
+                } doThrow CancellationException("Mock Cancellation Exception")
+            }
+
+            shouldThrow<CancellationException> {
                 client.checkEmailAddressAvailability(input)
             }
+
+            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+                any(),
+            )
         }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-            any(),
-        )
-    }
-
-    @Test
-    fun `checkEmailAddressAvailability() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                checkEmailAddressAvailabilityQuery(
-                    any(),
-                )
-            } doAnswer {
-                GraphQLResponse(null, listOf(testError))
-            }
-        }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
-                client.checkEmailAddressAvailability(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-            any(),
-        )
-    }
-
-    @Test
-    fun `checkEmailAddressAvailability() should throw when unknown error occurs`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                checkEmailAddressAvailabilityQuery(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                client.checkEmailAddressAvailability(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-            any(),
-        )
-    }
-
-    @Test
-    fun `checkEmailAddressAvailability() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockApiClient.stub {
-            onBlocking {
-                checkEmailAddressAvailabilityQuery(
-                    any(),
-                )
-            } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        shouldThrow<CancellationException> {
-            client.checkEmailAddressAvailability(input)
-        }
-
-        verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-            any(),
-        )
-    }
 }

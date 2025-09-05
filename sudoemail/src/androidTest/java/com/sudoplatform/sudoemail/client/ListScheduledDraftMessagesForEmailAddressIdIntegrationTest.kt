@@ -43,227 +43,268 @@ class ListScheduledDraftMessagesForEmailAddressIdIntegrationTest : BaseIntegrati
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
-
-    @Test
-    fun listScheduledDraftMessagesForEmailAddressIdShouldFailWithInvalidEmailAddressId() = runTest {
-        val input = ListScheduledDraftMessagesForEmailAddressIdInput(
-            emailAddressId = "dummyEmailAddressId",
-        )
-
-        shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-            emailClient.listScheduledDraftMessagesForEmailAddressId(input)
-        }
-    }
-
-    @Test
-    fun listScheduledDraftMessagesForEmailAddressIdReturnsEmptyListWhenNoDraftsScheduled() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val input = ListScheduledDraftMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-        )
-
-        val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
-
-        response shouldNotBe null
-        response.nextToken shouldBe null
-        response.items.size shouldBe 0
-    }
-
-    @Test
-    fun listScheduledDraftMessagesForEmailAddressIdShouldReturnSingleItemProperly() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val sendAt = Date(Date().time + java.time.Duration.ofDays(1).toMillis())
-        val draftId = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
-
-        val input = ListScheduledDraftMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-        )
-
-        val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
-
-        response shouldNotBe null
-        response.nextToken shouldBe null
-        response.items.size shouldBe 1
-        val scheduledDraftMessage = response.items[0]
-        scheduledDraftMessage.id shouldBe draftId
-        scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
-        scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
-        scheduledDraftMessage.sendAt shouldBe sendAt
-    }
-
-    @Test
-    fun listScheduledDraftMessagesForEmailAddressIdReturnsMultipleItemsProperly() = runTest {
-        val numMessages = 3
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val sendAt = Date(Date().time + java.time.Duration.ofDays(1).toMillis())
-        val draftIds = mutableListOf<String>()
-        for (i in 0 until numMessages) {
-            val scheduleResult = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
-            scheduleResult shouldNotBe null
-            draftIds.add(scheduleResult)
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
         }
 
-        val input = ListScheduledDraftMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-        )
+    @Test
+    fun listScheduledDraftMessagesForEmailAddressIdShouldFailWithInvalidEmailAddressId() =
+        runTest {
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = "dummyEmailAddressId",
+                )
 
-        val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
-
-        response shouldNotBe null
-        response.nextToken shouldBe null
-        response.items.size shouldBe numMessages
-        for (scheduledDraftMessage in response.items) {
-            draftIds shouldContain scheduledDraftMessage.id
-            scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
-            scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
-            scheduledDraftMessage.sendAt shouldBe sendAt
+            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+            }
         }
-    }
 
     @Test
-    fun listScheduledDraftMessagesForEmailAddressIdShouldRespectLimitAndPaginateProperly() = runTest {
-        val numMessages = 5
-        val sudo = createSudo(TestData.sudo)
-        val limit = 3
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun listScheduledDraftMessagesForEmailAddressIdReturnsEmptyListWhenNoDraftsScheduled() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val sendAt = Date(Date().time + java.time.Duration.ofDays(1).toMillis())
-        val draftIds = mutableListOf<String>()
-        for (i in 0 until numMessages) {
-            val scheduleResult = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
-            scheduleResult shouldNotBe null
-            draftIds.add(scheduleResult)
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                )
+
+            val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            response shouldNotBe null
+            response.nextToken shouldBe null
+            response.items.size shouldBe 0
         }
 
-        val input = ListScheduledDraftMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            limit = limit,
-        )
+    @Test
+    fun listScheduledDraftMessagesForEmailAddressIdShouldReturnSingleItemProperly() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val responsePage1 = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        responsePage1 shouldNotBe null
-        responsePage1.nextToken shouldNotBe null
-        responsePage1.items.size shouldBe limit
-        for (scheduledDraftMessage in responsePage1.items) {
-            draftIds shouldContain scheduledDraftMessage.id
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val sendAt =
+                Date(
+                    Date().time +
+                        java.time.Duration
+                            .ofDays(1)
+                            .toMillis(),
+                )
+            val draftId = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
+
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                )
+
+            val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            response shouldNotBe null
+            response.nextToken shouldBe null
+            response.items.size shouldBe 1
+            val scheduledDraftMessage = response.items[0]
+            scheduledDraftMessage.id shouldBe draftId
             scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
             scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
             scheduledDraftMessage.sendAt shouldBe sendAt
         }
 
-        val responsePage2 = emailClient.listScheduledDraftMessagesForEmailAddressId(
-            ListScheduledDraftMessagesForEmailAddressIdInput(
-                emailAddressId = emailAddress.id,
-                limit = limit,
-                nextToken = responsePage1.nextToken,
-            ),
-        )
+    @Test
+    fun listScheduledDraftMessagesForEmailAddressIdReturnsMultipleItemsProperly() =
+        runTest {
+            val numMessages = 3
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        responsePage2 shouldNotBe null
-        responsePage2.nextToken shouldBe null
-        responsePage2.items.size shouldBe numMessages - limit
-        for (scheduledDraftMessage in responsePage2.items) {
-            draftIds shouldContain scheduledDraftMessage.id
-            scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
-            scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
-            scheduledDraftMessage.sendAt shouldBe sendAt
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val sendAt =
+                Date(
+                    Date().time +
+                        java.time.Duration
+                            .ofDays(1)
+                            .toMillis(),
+                )
+            val draftIds = mutableListOf<String>()
+            for (i in 0 until numMessages) {
+                val scheduleResult = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
+                scheduleResult shouldNotBe null
+                draftIds.add(scheduleResult)
+            }
+
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                )
+
+            val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            response shouldNotBe null
+            response.nextToken shouldBe null
+            response.items.size shouldBe numMessages
+            for (scheduledDraftMessage in response.items) {
+                draftIds shouldContain scheduledDraftMessage.id
+                scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
+                scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
+                scheduledDraftMessage.sendAt shouldBe sendAt
+            }
         }
-    }
 
     @Test
-    fun listScheduledDraftMessagesForEmailAddressIdShouldFilterByStateProperly() = runTest {
-        val numMessages = 3
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun listScheduledDraftMessagesForEmailAddressIdShouldRespectLimitAndPaginateProperly() =
+        runTest {
+            val numMessages = 5
+            val sudo = createSudo(TestData.sudo)
+            val limit = 3
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val sendAt = Date(Date().time + java.time.Duration.ofDays(1).toMillis())
-        val draftIds = mutableListOf<String>()
-        for (i in 0 until numMessages) {
-            val scheduleResult = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
-            scheduleResult shouldNotBe null
-            draftIds.add(scheduleResult)
+            val sendAt =
+                Date(
+                    Date().time +
+                        java.time.Duration
+                            .ofDays(1)
+                            .toMillis(),
+                )
+            val draftIds = mutableListOf<String>()
+            for (i in 0 until numMessages) {
+                val scheduleResult = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
+                scheduleResult shouldNotBe null
+                draftIds.add(scheduleResult)
+            }
+
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                    limit = limit,
+                )
+
+            val responsePage1 = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            responsePage1 shouldNotBe null
+            responsePage1.nextToken shouldNotBe null
+            responsePage1.items.size shouldBe limit
+            for (scheduledDraftMessage in responsePage1.items) {
+                draftIds shouldContain scheduledDraftMessage.id
+                scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
+                scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
+                scheduledDraftMessage.sendAt shouldBe sendAt
+            }
+
+            val responsePage2 =
+                emailClient.listScheduledDraftMessagesForEmailAddressId(
+                    ListScheduledDraftMessagesForEmailAddressIdInput(
+                        emailAddressId = emailAddress.id,
+                        limit = limit,
+                        nextToken = responsePage1.nextToken,
+                    ),
+                )
+
+            responsePage2 shouldNotBe null
+            responsePage2.nextToken shouldBe null
+            responsePage2.items.size shouldBe numMessages - limit
+            for (scheduledDraftMessage in responsePage2.items) {
+                draftIds shouldContain scheduledDraftMessage.id
+                scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
+                scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
+                scheduledDraftMessage.sendAt shouldBe sendAt
+            }
         }
 
-        val cancelled = emailClient.cancelScheduledDraftMessage(
-            CancelScheduledDraftMessageInput(
-                id = draftIds[0],
-                emailAddressId = emailAddress.id,
-            ),
-        )
-        cancelled shouldBe draftIds[0]
+    @Test
+    fun listScheduledDraftMessagesForEmailAddressIdShouldFilterByStateProperly() =
+        runTest {
+            val numMessages = 3
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val input = ListScheduledDraftMessagesForEmailAddressIdInput(
-            emailAddressId = emailAddress.id,
-            filter = ScheduledDraftMessageFilterInput(
-                state = NotEqualStateFilter(
-                    notEqual = ScheduledDraftMessageState.CANCELLED,
-                ),
-            ),
-        )
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        response shouldNotBe null
-        response.nextToken shouldBe null
-        response.items.size shouldBe numMessages - 1
-        for (scheduledDraftMessage in response.items) {
-            draftIds shouldContain scheduledDraftMessage.id
-            scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
-            scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
-            scheduledDraftMessage.sendAt shouldBe sendAt
+            val sendAt =
+                Date(
+                    Date().time +
+                        java.time.Duration
+                            .ofDays(1)
+                            .toMillis(),
+                )
+            val draftIds = mutableListOf<String>()
+            for (i in 0 until numMessages) {
+                val scheduleResult = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
+                scheduleResult shouldNotBe null
+                draftIds.add(scheduleResult)
+            }
+
+            val cancelled =
+                emailClient.cancelScheduledDraftMessage(
+                    CancelScheduledDraftMessageInput(
+                        id = draftIds[0],
+                        emailAddressId = emailAddress.id,
+                    ),
+                )
+            cancelled shouldBe draftIds[0]
+
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                    filter =
+                        ScheduledDraftMessageFilterInput(
+                            state =
+                                NotEqualStateFilter(
+                                    notEqual = ScheduledDraftMessageState.CANCELLED,
+                                ),
+                        ),
+                )
+
+            val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            response shouldNotBe null
+            response.nextToken shouldBe null
+            response.items.size shouldBe numMessages - 1
+            for (scheduledDraftMessage in response.items) {
+                draftIds shouldContain scheduledDraftMessage.id
+                scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
+                scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
+                scheduledDraftMessage.sendAt shouldBe sendAt
+            }
+            response.items.find { it.id == cancelled } shouldBe null
         }
-        response.items.find { it.id == cancelled } shouldBe null
-    }
 }

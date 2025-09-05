@@ -46,92 +46,97 @@ class EmailAddressPublicKeyIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        ownershipProofList.clear()
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            ownershipProofList.clear()
+            sudoClient.reset()
+        }
 
-    private fun setupTestData() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo.id shouldNotBe null
-        sudoList.add(sudo)
+    private fun setupTestData() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo.id shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-        ownershipProofList.add(ownershipProof)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+            ownershipProofList.add(ownershipProof)
 
-        val provisionedAddress = provisionEmailAddress(emailClient, ownershipProof)
-        provisionedAddress shouldNotBe null
-        emailAddressList.add(provisionedAddress)
-    }
-
-    private fun testEmailLifecycle(emailAddress: EmailAddress) = runTest {
-        // Send message from email address
-        val outgoingMessageResult =
-            sendEmailMessage(
-                emailClient,
-                fromAddress = emailAddress,
-                toAddresses = listOf(EmailMessage.EmailAddress(emailAddressList[0].emailAddress)),
-            )
-        outgoingMessageResult.id shouldNotBe null
-
-        // Receive message with email address
-        val incomingMessageResult =
-            sendEmailMessage(
-                emailClient,
-                fromAddress = emailAddressList[0],
-                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
-            )
-        incomingMessageResult.id shouldNotBe null
-        emailClient.getEmailMessage(GetEmailMessageInput(incomingMessageResult.id)) shouldNotBe null
-
-        // Deprovision second test address
-        val deprovisionedAddress = emailClient.deprovisionEmailAddress(emailAddress.id)
-        deprovisionedAddress shouldNotBe null
-    }
-
-    @Test
-    fun provisionalEmailAddressWithReusedPublicKeyShouldHandleLifecycle() = runTest {
-        setupTestData()
-
-        // Get public key of another email address
-        var publicInfoInput =
-            LookupEmailAddressesPublicInfoInput(listOf(emailAddressList[0].emailAddress))
-        var publicInfo = emailClient.lookupEmailAddressesPublicInfo(publicInfoInput)
-        publicInfo shouldHaveAtLeastSize 1
-        val keyId = publicInfo[0].keyId
-
-        // Allow failure here (temporarily - see PEMC-1039) as test environment may not be configured to allow duplicate keys,
-        // so the assumptions here are:
-        //  - Success -> environment allows duplicate keys, therefore provisioning the address with a duplicate key succeeds
-        //  - Failure -> environment does not allow duplicate keys, and has somewhere thrown an invalid/duplicate key error
-        try {
-            // Provision email address with the generated public key
-            val provisionedAddress =
-                provisionEmailAddress(emailClient, ownershipProofList[0], keyId = keyId)
+            val provisionedAddress = provisionEmailAddress(emailClient, ownershipProof)
             provisionedAddress shouldNotBe null
-
-            // Verify new provisioned address has same key
-            publicInfoInput =
-                LookupEmailAddressesPublicInfoInput(listOf(provisionedAddress.emailAddress))
-            publicInfo = emailClient.lookupEmailAddressesPublicInfo(publicInfoInput)
-            publicInfo shouldHaveAtLeastSize 1
-            keyId shouldBe publicInfo[0].keyId
-
-            testEmailLifecycle(provisionedAddress)
-        } catch (e: Throwable) {
-            // Continue
+            emailAddressList.add(provisionedAddress)
         }
-    }
+
+    private fun testEmailLifecycle(emailAddress: EmailAddress) =
+        runTest {
+            // Send message from email address
+            val outgoingMessageResult =
+                sendEmailMessage(
+                    emailClient,
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddressList[0].emailAddress)),
+                )
+            outgoingMessageResult.id shouldNotBe null
+
+            // Receive message with email address
+            val incomingMessageResult =
+                sendEmailMessage(
+                    emailClient,
+                    fromAddress = emailAddressList[0],
+                    toAddresses = listOf(EmailMessage.EmailAddress(emailAddress.emailAddress)),
+                )
+            incomingMessageResult.id shouldNotBe null
+            emailClient.getEmailMessage(GetEmailMessageInput(incomingMessageResult.id)) shouldNotBe null
+
+            // Deprovision second test address
+            val deprovisionedAddress = emailClient.deprovisionEmailAddress(emailAddress.id)
+            deprovisionedAddress shouldNotBe null
+        }
 
     @Test
-    fun provisionalEmailAddressWithInvalidPublicKeyShouldThrow() = runTest {
-        setupTestData()
+    fun provisionalEmailAddressWithReusedPublicKeyShouldHandleLifecycle() =
+        runTest {
+            setupTestData()
 
-        shouldThrow<KeyNotFoundException> {
-            provisionEmailAddress(emailClient, ownershipProofList[0], keyId = "invalidKeyId")
+            // Get public key of another email address
+            var publicInfoInput =
+                LookupEmailAddressesPublicInfoInput(listOf(emailAddressList[0].emailAddress))
+            var publicInfo = emailClient.lookupEmailAddressesPublicInfo(publicInfoInput)
+            publicInfo shouldHaveAtLeastSize 1
+            val keyId = publicInfo[0].keyId
+
+            // Allow failure here (temporarily - see PEMC-1039) as test environment may not be configured to allow duplicate keys,
+            // so the assumptions here are:
+            //  - Success -> environment allows duplicate keys, therefore provisioning the address with a duplicate key succeeds
+            //  - Failure -> environment does not allow duplicate keys, and has somewhere thrown an invalid/duplicate key error
+            try {
+                // Provision email address with the generated public key
+                val provisionedAddress =
+                    provisionEmailAddress(emailClient, ownershipProofList[0], keyId = keyId)
+                provisionedAddress shouldNotBe null
+
+                // Verify new provisioned address has same key
+                publicInfoInput =
+                    LookupEmailAddressesPublicInfoInput(listOf(provisionedAddress.emailAddress))
+                publicInfo = emailClient.lookupEmailAddressesPublicInfo(publicInfoInput)
+                publicInfo shouldHaveAtLeastSize 1
+                keyId shouldBe publicInfo[0].keyId
+
+                testEmailLifecycle(provisionedAddress)
+            } catch (e: Throwable) {
+                // Continue
+            }
         }
-    }
+
+    @Test
+    fun provisionalEmailAddressWithInvalidPublicKeyShouldThrow() =
+        runTest {
+            setupTestData()
+
+            shouldThrow<KeyNotFoundException> {
+                provisionEmailAddress(emailClient, ownershipProofList[0], keyId = "invalidKeyId")
+            }
+        }
 }

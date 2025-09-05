@@ -37,16 +37,18 @@ class UnblockEmailAddressesByHashedValueIntegrationTest : BaseIntegrationTest() 
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
-    private fun blockAddresses(addresses: List<String>) = runTest {
-        val result = emailClient.blockEmailAddresses(addresses)
-        result.status shouldBe BatchOperationStatus.SUCCESS
-    }
+    private fun blockAddresses(addresses: List<String>) =
+        runTest {
+            val result = emailClient.blockEmailAddresses(addresses)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+        }
 
     @Test
     fun unblockEmailAddressesThrowsAnErrorIfPassedAnEmptyAddressesArray() =
@@ -57,29 +59,30 @@ class UnblockEmailAddressesByHashedValueIntegrationTest : BaseIntegrationTest() 
         }
 
     @Test
-    fun unblockingABlockedAddressShouldReturnSuccess() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun unblockingABlockedAddressShouldReturnSuccess() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        receiverEmailAddress shouldNotBe null
-        emailAddressList.add(receiverEmailAddress)
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            receiverEmailAddress shouldNotBe null
+            emailAddressList.add(receiverEmailAddress)
 
-        val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddressToBlock shouldNotBe null
-        emailAddressList.add(emailAddressToBlock)
+            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddressToBlock shouldNotBe null
+            emailAddressList.add(emailAddressToBlock)
 
-        blockAddresses(listOf(emailAddressToBlock.emailAddress))
+            blockAddresses(listOf(emailAddressToBlock.emailAddress))
 
-        val blocklist = emailClient.getEmailAddressBlocklist()
+            val blocklist = emailClient.getEmailAddressBlocklist()
 
-        val hashedValues = blocklist.map { it.hashedBlockedValue }
+            val hashedValues = blocklist.map { it.hashedBlockedValue }
 
-        val result = emailClient.unblockEmailAddressesByHashedValue(hashedValues)
-        result.status shouldBe BatchOperationStatus.SUCCESS
-    }
+            val result = emailClient.unblockEmailAddressesByHashedValue(hashedValues)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+        }
 }

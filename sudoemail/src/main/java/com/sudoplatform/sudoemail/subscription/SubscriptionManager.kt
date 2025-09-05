@@ -12,7 +12,6 @@ import com.amplifyframework.api.graphql.GraphQLOperation
  * Manages subscriptions for a specific GraphQL subscription.
  */
 internal open class SubscriptionManager<T, S : Subscriber> {
-
     /**
      * Map of subscribers.
      */
@@ -26,9 +25,7 @@ internal open class SubscriptionManager<T, S : Subscriber> {
     /**
      * Retrieves the map of subscribers.
      */
-    protected fun getSubscribers(): MutableMap<String, S> {
-        return this.subscribers
-    }
+    protected fun getSubscribers(): MutableMap<String, S> = this.subscribers
 
     /**
      * Adds or replaces a subscriber with the specified identifier.
@@ -36,7 +33,10 @@ internal open class SubscriptionManager<T, S : Subscriber> {
      * @param id [String] Identifier of the subscriber.
      * @param subscriber [S] Subscriber to subscribe.
      */
-    internal fun replaceSubscriber(id: String, subscriber: S) {
+    internal fun replaceSubscriber(
+        id: String,
+        subscriber: S,
+    ) {
         synchronized(this) {
             subscribers[id] = subscriber
         }

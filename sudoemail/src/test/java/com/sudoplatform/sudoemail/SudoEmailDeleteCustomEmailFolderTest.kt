@@ -133,68 +133,74 @@ class SudoEmailDeleteCustomEmailFolderTest : BaseTests() {
     }
 
     @Test
-    fun `deleteCustomEmailFolder() should throw an error if graphQl mutation fails`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                deleteCustomEmailFolderMutation(
-                    any(),
-                )
-            }.thenThrow(UnknownError("ERROR"))
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
-                client.deleteCustomEmailFolder(input)
+    fun `deleteCustomEmailFolder() should throw an error if graphQl mutation fails`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    deleteCustomEmailFolderMutation(
+                        any(),
+                    )
+                }.thenThrow(UnknownError("ERROR"))
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).deleteCustomEmailFolderMutation(
-            any(),
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
+                        client.deleteCustomEmailFolder(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).deleteCustomEmailFolderMutation(
+                any(),
+            )
+        }
 
     @Test
-    fun `deleteCustomEmailFolder() should return deleted folder`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.deleteCustomEmailFolder(input)
+    fun `deleteCustomEmailFolder() should return deleted folder`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteCustomEmailFolder(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result!!.id shouldBe "folderId"
+            result.customFolderName shouldBe mockCustomFolderName
+
+            verify(mockApiClient).deleteCustomEmailFolderMutation(
+                any(),
+            )
+            verify(mockServiceKeyManager).decryptWithSymmetricKeyId(anyString(), any<ByteArray>())
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result!!.id shouldBe "folderId"
-        result.customFolderName shouldBe mockCustomFolderName
-
-        verify(mockApiClient).deleteCustomEmailFolderMutation(
-            any(),
-        )
-        verify(mockServiceKeyManager).decryptWithSymmetricKeyId(anyString(), any<ByteArray>())
-    }
 
     @Test
-    fun `deleteCustomEmailFolder() should return null if folder not found`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                deleteCustomEmailFolderMutation(
-                    any(),
-                )
-            } doAnswer {
-                GraphQLResponse(null, null)
+    fun `deleteCustomEmailFolder() should return null if folder not found`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    deleteCustomEmailFolderMutation(
+                        any(),
+                    )
+                } doAnswer {
+                    GraphQLResponse(null, null)
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteCustomEmailFolder(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldBe null
+
+            verify(mockApiClient).deleteCustomEmailFolderMutation(
+                any(),
+            )
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.deleteCustomEmailFolder(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldBe null
-
-        verify(mockApiClient).deleteCustomEmailFolderMutation(
-            any(),
-        )
-    }
 }

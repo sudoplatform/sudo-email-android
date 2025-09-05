@@ -22,17 +22,19 @@ internal class DefaultServiceKeyManager(
     private val keyRingServiceName: String,
     private val userClient: SudoUserClient,
     private val keyManager: KeyManagerInterface,
-    private val logger: Logger = Logger(
-        LogConstants.SUDOLOG_TAG,
-        AndroidUtilsLogDriver(LogLevel.INFO),
-    ),
-) : DefaultDeviceKeyManager(keyManager, logger), ServiceKeyManager {
-
+    private val logger: Logger =
+        Logger(
+            LogConstants.SUDOLOG_TAG,
+            AndroidUtilsLogDriver(LogLevel.INFO),
+        ),
+) : DefaultDeviceKeyManager(keyManager, logger),
+    ServiceKeyManager {
     @Throws(DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException::class)
     override fun getKeyRingId(): String {
         try {
-            val userId = userClient.getSubject()
-                ?: throw DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException("UserId not found")
+            val userId =
+                userClient.getSubject()
+                    ?: throw DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException("UserId not found")
             return "$keyRingServiceName.$userId"
         } catch (e: Exception) {
             throw DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException(
@@ -44,10 +46,12 @@ internal class DefaultServiceKeyManager(
 
     override fun getKeyPairWithId(id: String): KeyPair? {
         try {
-            val publicKey = keyManager.getPublicKeyData(id)
-                ?: return null
-            val privateKey = keyManager.getPrivateKeyData(id)
-                ?: return null
+            val publicKey =
+                keyManager.getPublicKeyData(id)
+                    ?: return null
+            val privateKey =
+                keyManager.getPrivateKeyData(id)
+                    ?: return null
             return KeyPair(
                 keyId = id,
                 keyRingId = getKeyRingId(),

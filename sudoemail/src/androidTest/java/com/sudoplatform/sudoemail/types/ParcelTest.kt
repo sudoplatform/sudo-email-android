@@ -19,62 +19,65 @@ import java.util.Date
  */
 @RunWith(AndroidJUnit4::class)
 class ParcelTest {
-
     @Test
     fun parcellableClassesCanBeParcelledAndUnparcelled() {
         val rfc822Address = "example@sudoplatform.com"
-        val emailAddress = EmailMessageTransformer.toEmailAddress(rfc822Address)
-            ?: throw AssertionError("Parsing should not fail")
+        val emailAddress =
+            EmailMessageTransformer.toEmailAddress(rfc822Address)
+                ?: throw AssertionError("Parsing should not fail")
         val owner = Owner("id", "issuer")
-        val emailFolder = EmailFolder(
-            "folderId",
-            "owner",
-            owners = listOf(owner),
-            "emailAddressId",
-            "INBOX",
-            0.0,
-            0,
-            1,
-            createdAt = Date(42L),
-            updatedAt = Date(43L),
-            customFolderName = null,
-        )
-        val provisionedEmailAddress = EmailAddress(
-            id = "emailAddressId",
-            owner = "owner",
-            owners = listOf(owner),
-            emailAddress = rfc822Address,
-            size = 0.0,
-            numberOfEmailMessages = 0,
-            version = 1,
-            createdAt = Date(42L),
-            updatedAt = Date(43L),
-            null,
-            null,
-            listOf(emailFolder),
-        )
-        val emailMessage = EmailMessage(
-            id = "id",
-            owner = "owner",
-            owners = listOf(owner),
-            emailAddressId = "emailAddressId",
-            folderId = "folderId",
-            previousFolderId = "previousFolderId",
-            seen = false,
-            repliedTo = false,
-            forwarded = false,
-            direction = Direction.OUTBOUND,
-            state = State.SENT,
-            version = 1,
-            sortDate = Date(42L),
-            from = listOf(emailAddress),
-            to = listOf(emailAddress),
-            createdAt = Date(42L),
-            updatedAt = Date(43L),
-            size = 0.0,
-            hasAttachments = false,
-            encryptionStatus = EncryptionStatus.UNENCRYPTED,
-        )
+        val emailFolder =
+            EmailFolder(
+                "folderId",
+                "owner",
+                owners = listOf(owner),
+                "emailAddressId",
+                "INBOX",
+                0.0,
+                0,
+                1,
+                createdAt = Date(42L),
+                updatedAt = Date(43L),
+                customFolderName = null,
+            )
+        val provisionedEmailAddress =
+            EmailAddress(
+                id = "emailAddressId",
+                owner = "owner",
+                owners = listOf(owner),
+                emailAddress = rfc822Address,
+                size = 0.0,
+                numberOfEmailMessages = 0,
+                version = 1,
+                createdAt = Date(42L),
+                updatedAt = Date(43L),
+                null,
+                null,
+                listOf(emailFolder),
+            )
+        val emailMessage =
+            EmailMessage(
+                id = "id",
+                owner = "owner",
+                owners = listOf(owner),
+                emailAddressId = "emailAddressId",
+                folderId = "folderId",
+                previousFolderId = "previousFolderId",
+                seen = false,
+                repliedTo = false,
+                forwarded = false,
+                direction = Direction.OUTBOUND,
+                state = State.SENT,
+                version = 1,
+                sortDate = Date(42L),
+                from = listOf(emailAddress),
+                to = listOf(emailAddress),
+                createdAt = Date(42L),
+                updatedAt = Date(43L),
+                size = 0.0,
+                hasAttachments = false,
+                encryptionStatus = EncryptionStatus.UNENCRYPTED,
+            )
 
         val bundle = Bundle()
         bundle.putParcelable("owner", owner)

@@ -42,6 +42,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -59,7 +61,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
-
     private val draftIds = listOf("draftId1", "draftId2")
     private val emailAddressId = "emailAddressId"
 
@@ -169,12 +170,13 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
     @Test
     fun `deleteDraftEmailMessages() should throw an error if email address not found`() =
         runTest {
-            val error = GraphQLResponse.Error(
-                "mock",
-                null,
-                null,
-                mapOf("errorType" to "AddressNotFound"),
-            )
+            val error =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("errorType" to "AddressNotFound"),
+                )
             mockApiClient.stub {
                 onBlocking {
                     getEmailAddressQuery(
@@ -192,11 +194,12 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                    client.deleteDraftEmailMessages(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                        client.deleteDraftEmailMessages(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -209,9 +212,10 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
     @Test
     fun `deleteDraftEmailMessages() should return success result if all operations succeeded`() =
         runTest {
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.deleteDraftEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteDraftEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -226,16 +230,10 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 any(),
             )
             // S3 client delete method is called once per draft id
-            verify(mockS3Client).delete(
-                check {
-                    it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-                },
-            )
-            verify(mockS3Client).delete(
-                check {
-                    it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-                },
-            )
+            val s3Captor = argumentCaptor<String>()
+            verify(mockS3Client, times(2)).delete(s3Captor.capture())
+            s3Captor.allValues shouldContain "email/$emailAddressId/draft/${draftIds[0]}"
+            s3Captor.allValues shouldContain "email/$emailAddressId/draft/${draftIds[1]}"
             verify(mockApiClient, times(draftIds.size)).cancelScheduledDraftMessageMutation(
                 any(),
             )
@@ -249,15 +247,16 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             // Throw an exception from internal S3 client to provoke failure
             whenever(
                 mockS3Client.delete(
-                    check {
-                        it shouldContain "$emailAddressId/draft/${draftIds[1]}"
+                    argThat {
+                        equals("email/$emailAddressId/draft/${draftIds[1]}")
                     },
                 ),
             ).thenThrow(S3Exception.DeleteException("S3 delete failed"))
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.deleteDraftEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteDraftEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
             // Wait a little longer to allow the async operations to complete
@@ -271,25 +270,20 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 DeleteEmailMessageSuccessResult(draftIds[0]),
             )
             result.failureValues?.shouldHaveSize(1)
-            result.failureValues?.first() shouldBe EmailMessageOperationFailureResult(
-                draftIds[1],
-                "S3 delete failed",
-            )
+            result.failureValues?.first() shouldBe
+                EmailMessageOperationFailureResult(
+                    draftIds[1],
+                    "S3 delete failed",
+                )
 
             verify(mockApiClient, times(2)).getEmailAddressQuery(
                 any(),
             )
             // S3 client delete method is called once per draft id
-            verify(mockS3Client).delete(
-                check {
-                    it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-                },
-            )
-            verify(mockS3Client).delete(
-                check {
-                    it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-                },
-            )
+            val s3Captor = argumentCaptor<String>()
+            verify(mockS3Client, times(2)).delete(s3Captor.capture())
+            s3Captor.allValues shouldContain "email/$emailAddressId/draft/${draftIds[0]}"
+            s3Captor.allValues shouldContain "email/$emailAddressId/draft/${draftIds[1]}"
             verify(mockApiClient).cancelScheduledDraftMessageMutation(
                 any(),
             )
@@ -303,9 +297,10 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             whenever(mockS3Client.delete(any()))
                 .thenThrow(S3Exception.DeleteException("S3 delete failed"))
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.deleteDraftEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteDraftEmailMessages(input)
+                }
 
             deferredResult.start()
             val result = deferredResult.await()
@@ -327,15 +322,9 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 any(),
             )
             // S3 client delete method is called once per draft id
-            verify(mockS3Client).delete(
-                check {
-                    it shouldContain "$emailAddressId/draft/${draftIds[0]}"
-                },
-            )
-            verify(mockS3Client).delete(
-                check {
-                    it shouldContain "$emailAddressId/draft/${draftIds[1]}"
-                },
-            )
+            val s3Captor = argumentCaptor<String>()
+            verify(mockS3Client, times(2)).delete(s3Captor.capture())
+            s3Captor.allValues shouldContain "email/$emailAddressId/draft/${draftIds[0]}"
+            s3Captor.allValues shouldContain "email/$emailAddressId/draft/${draftIds[1]}"
         }
 }

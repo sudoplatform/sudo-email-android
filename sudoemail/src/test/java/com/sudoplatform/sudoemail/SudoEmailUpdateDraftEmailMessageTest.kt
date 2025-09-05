@@ -56,10 +56,11 @@ class SudoEmailUpdateDraftEmailMessageTest : BaseTests() {
     private val uuidRegex =
         Regex("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
 
-    private val mockUserMetadata = listOf(
-        "key-id" to "keyId",
-        "algorithm" to "algorithm",
-    ).toMap()
+    private val mockUserMetadata =
+        listOf(
+            "key-id" to "keyId",
+            "algorithm" to "algorithm",
+        ).toMap()
 
     private val mockS3ObjectMetadata = ObjectMetadata()
 
@@ -191,12 +192,13 @@ class SudoEmailUpdateDraftEmailMessageTest : BaseTests() {
     @Test
     fun `updateDraftEmailMessage() should log and throw an error if sender address not found`() =
         runTest {
-            val error = GraphQLResponse.Error(
-                "mock",
-                null,
-                null,
-                mapOf("errorType" to "AddressNotFound"),
-            )
+            val error =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("errorType" to "AddressNotFound"),
+                )
             mockApiClient.stub {
                 onBlocking {
                     getEmailAddressQuery(
@@ -207,11 +209,12 @@ class SudoEmailUpdateDraftEmailMessageTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                    client.updateDraftEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                        client.updateDraftEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -231,11 +234,12 @@ class SudoEmailUpdateDraftEmailMessageTest : BaseTests() {
                 } doThrow error
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
-                    client.updateDraftEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
+                        client.updateDraftEmailMessage(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -255,97 +259,102 @@ class SudoEmailUpdateDraftEmailMessageTest : BaseTests() {
         }
 
     @Test
-    fun `updateDraftEmailMessage() should log and throw an error if s3 upload errors`() = runTest {
-        val error = CancellationException("Unknown exception")
+    fun `updateDraftEmailMessage() should log and throw an error if s3 upload errors`() =
+        runTest {
+            val error = CancellationException("Unknown exception")
 
-        mockS3Client.stub {
-            onBlocking {
-                upload(
-                    any(),
-                    any(),
-                    anyOrNull(),
-                )
-            } doThrow error
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<CancellationException> {
-                client.updateDraftEmailMessage(input)
+            mockS3Client.stub {
+                onBlocking {
+                    upload(
+                        any(),
+                        any(),
+                        anyOrNull(),
+                    )
+                } doThrow error
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        verify(mockSealingService).sealString("symmetricKeyId", input.rfc822Data)
-        verify(mockS3Client).getObjectMetadata(
-            check {
-                it shouldContain mockDraftId
-            },
-        )
-        verify(mockS3Client).download(
-            check {
-                it shouldContain mockDraftId
-            },
-        )
-        verify(mockS3Client).upload(
-            check {
-                it shouldNotBe null
-            },
-            check {
-                it shouldContain input.senderEmailAddressId
-            },
-            check {
-                it shouldNotBe null
-            },
-        )
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.updateDraftEmailMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSealingService).sealString("symmetricKeyId", input.rfc822Data)
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain mockDraftId
+                },
+            )
+            verify(mockS3Client).download(
+                check {
+                    it shouldContain mockDraftId
+                },
+            )
+            verify(mockS3Client).upload(
+                check {
+                    it shouldNotBe null
+                },
+                check {
+                    it shouldContain input.senderEmailAddressId
+                },
+                check {
+                    it shouldNotBe null
+                },
+            )
+        }
 
     @Test
-    fun `updateDraftEmailMessage() should return uuid on success`() = runTest {
-        val mockDraftId = UUID.randomUUID().toString()
-        val updateDraftInput = UpdateDraftEmailMessageInput(
-            mockDraftId,
-            "rfc822data".toByteArray(),
-            "senderEmailAddressId",
-        )
+    fun `updateDraftEmailMessage() should return uuid on success`() =
+        runTest {
+            val mockDraftId = UUID.randomUUID().toString()
+            val updateDraftInput =
+                UpdateDraftEmailMessageInput(
+                    mockDraftId,
+                    "rfc822data".toByteArray(),
+                    "senderEmailAddressId",
+                )
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.updateDraftEmailMessage(updateDraftInput)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.updateDraftEmailMessage(updateDraftInput)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldMatch uuidRegex
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSealingService).sealString("symmetricKeyId", updateDraftInput.rfc822Data)
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain mockDraftId
+                },
+            )
+            verify(mockS3Client).download(
+                check {
+                    it shouldContain mockDraftId
+                },
+            )
+            verify(mockS3Client).upload(
+                check {
+                    it shouldNotBe null
+                },
+                check {
+                    it shouldContain updateDraftInput.senderEmailAddressId
+                },
+                check {
+                    it shouldNotBe null
+                },
+            )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldMatch uuidRegex
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        verify(mockSealingService).sealString("symmetricKeyId", updateDraftInput.rfc822Data)
-        verify(mockS3Client).getObjectMetadata(
-            check {
-                it shouldContain mockDraftId
-            },
-        )
-        verify(mockS3Client).download(
-            check {
-                it shouldContain mockDraftId
-            },
-        )
-        verify(mockS3Client).upload(
-            check {
-                it shouldNotBe null
-            },
-            check {
-                it shouldContain updateDraftInput.senderEmailAddressId
-            },
-            check {
-                it shouldNotBe null
-            },
-        )
-    }
 }

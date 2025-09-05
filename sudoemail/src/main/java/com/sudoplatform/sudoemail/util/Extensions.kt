@@ -14,16 +14,16 @@ import com.sudoplatform.sudoemail.types.EmailAttachment
  * throughout the Sudo Platform Email SDK.
  */
 
+private const val SRC_TAG = "src"
+private const val FILE_TAG = "file:"
+private const val CID_TAG = "cid:"
+private const val STYLE = "style=\"width: 288px;\""
+
 /** Regex to match all image tags. */
 private val IMAGE_SOURCE_REGEX = "<img[^>]*>".toRegex()
 
 /** Regex to identify the parameter type and the value within the tag. */
 private val IMAGE_PARAMETERS_REGEX = "(src|alt)=\"([^\"\\s]*)\"".toRegex()
-
-private const val SRC_TAG = "src"
-private const val FILE_TAG = "file:"
-private const val CID_TAG = "cid:"
-private const val STYLE = "style=\"width: 288px;\""
 
 /**
  * Replaces inline attachment file paths with corresponding Content-IDs (cids).
@@ -62,30 +62,39 @@ internal fun replaceInlinePathsWithCids(
  * Extract a URI based on a sequence of regular expression matches
  * on HTML tags.
  */
-private fun extractUriFromTags(tags: Sequence<MatchResult>): String? {
-    return tags.mapNotNull {
-        val tag = it.groups[1]?.value
-        val tagValue = it.groups[2]?.value
+private fun extractUriFromTags(tags: Sequence<MatchResult>): String? =
+    tags
+        .mapNotNull {
+            val tag = it.groups[1]?.value
+            val tagValue = it.groups[2]?.value
 
-        if (tag == SRC_TAG && tagValue?.startsWith(FILE_TAG) == true) {
-            tagValue
-        } else {
-            null
-        }
-    }.firstOrNull()
-}
+            if (tag == SRC_TAG && tagValue?.startsWith(FILE_TAG) == true) {
+                tagValue
+            } else {
+                null
+            }
+        }.firstOrNull()
 
 /**
  * Replaces a URI in a HTML tag with a Content-ID (cid) and updates the HTML body accordingly.
  */
-private fun replaceUriForCid(originalTag: String, body: String, uri: String, cid: String): String {
-    val replacementTag = originalTag
-        .replace(STYLE, "")
-        .replace("$SRC_TAG=\"$uri\"", "$SRC_TAG=\"$CID_TAG$cid\" $STYLE")
+private fun replaceUriForCid(
+    originalTag: String,
+    body: String,
+    uri: String,
+    cid: String,
+): String {
+    val replacementTag =
+        originalTag
+            .replace(STYLE, "")
+            .replace("$SRC_TAG=\"$uri\"", "$SRC_TAG=\"$CID_TAG$cid\" $STYLE")
     return body.replace(originalTag, replacementTag)
 }
 
-private fun resolveCidForImage(path: String, inlineAttachment: EmailAttachment): String {
+private fun resolveCidForImage(
+    path: String,
+    inlineAttachment: EmailAttachment,
+): String {
     var cid = path.hashCode().toString()
     inlineAttachment.contentId.let { cid = it }
     return cid

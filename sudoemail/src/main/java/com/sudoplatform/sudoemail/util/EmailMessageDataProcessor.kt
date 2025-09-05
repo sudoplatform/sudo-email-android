@@ -16,7 +16,6 @@ import java.io.IOException
  * parsing of the email message content.
  */
 interface EmailMessageDataProcessor {
-
     /**
      * Encode an email message to a [ByteArray] of data.
      */

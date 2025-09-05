@@ -48,7 +48,6 @@ import java.util.Date
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailAddressTest : BaseTests() {
-
     private val input by before {
         GetEmailAddressInput("emailAddressId")
     }
@@ -144,142 +143,152 @@ class SudoEmailGetEmailAddressTest : BaseTests() {
     }
 
     @Test
-    fun `getEmailAddress() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getEmailAddress(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
+    fun `getEmailAddress() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddress(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        result shouldNotBe null
-        with(result!!) {
-            id shouldBe "emailAddressId"
-            owner shouldBe "owner"
-            owners.first().id shouldBe "ownerId"
-            owners.first().issuer shouldBe "issuer"
-            emailAddress shouldBe "example@sudoplatform.com"
-            size shouldBe 0.0
-            numberOfEmailMessages shouldBe 0
-            version shouldBe 1
-            createdAt shouldBe Date(1L)
-            updatedAt shouldBe Date(1L)
-            lastReceivedAt shouldBe Date(1L)
-            alias shouldBe null
-            folders.size shouldBe 1
-            with(folders[0]) {
-                id shouldBe "folderId"
+            result shouldNotBe null
+            with(result!!) {
+                id shouldBe "emailAddressId"
                 owner shouldBe "owner"
                 owners.first().id shouldBe "ownerId"
                 owners.first().issuer shouldBe "issuer"
-                emailAddressId shouldBe "emailAddressId"
-                folderName shouldBe "folderName"
+                emailAddress shouldBe "example@sudoplatform.com"
                 size shouldBe 0.0
-                unseenCount shouldBe 0.0
+                numberOfEmailMessages shouldBe 0
                 version shouldBe 1
                 createdAt shouldBe Date(1L)
                 updatedAt shouldBe Date(1L)
+                lastReceivedAt shouldBe Date(1L)
+                alias shouldBe null
+                folders.size shouldBe 1
+                with(folders[0]) {
+                    id shouldBe "folderId"
+                    owner shouldBe "owner"
+                    owners.first().id shouldBe "ownerId"
+                    owners.first().issuer shouldBe "issuer"
+                    emailAddressId shouldBe "emailAddressId"
+                    folderName shouldBe "folderName"
+                    size shouldBe 0.0
+                    unseenCount shouldBe 0.0
+                    version shouldBe 1
+                    createdAt shouldBe Date(1L)
+                    updatedAt shouldBe Date(1L)
+                }
             }
-        }
 
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+        }
 
     @Test
-    fun `getEmailAddress() should return null result when query response is null`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
-                )
-            }.thenAnswer {
-                GraphQLResponse(null, null)
+    fun `getEmailAddress() should return null result when query response is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailAddressQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, null)
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddress(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldBe null
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getEmailAddress(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldBe null
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
 
     @Test
-    fun `getEmailAddress() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
+    fun `getEmailAddress() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailAddressQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        client.getEmailAddress(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
         }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+
+    @Test
+    fun `getEmailAddress() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailAddressQuery(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
+                        client.getEmailAddress(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+        }
+
+    @Test
+    fun `getEmailAddress() should not block coroutine cancellation exception`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailAddressQuery(
+                        any(),
+                    )
+                } doThrow CancellationException("Mock Cancellation Exception")
+            }
+
+            shouldThrow<CancellationException> {
                 client.getEmailAddress(input)
             }
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
         }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
-
-    @Test
-    fun `getEmailAddress() should throw when unknown error occurs`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                client.getEmailAddress(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
-
-    @Test
-    fun `getEmailAddress() should not block coroutine cancellation exception`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
-                )
-            } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        shouldThrow<CancellationException> {
-            client.getEmailAddress(input)
-        }
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-    }
 }

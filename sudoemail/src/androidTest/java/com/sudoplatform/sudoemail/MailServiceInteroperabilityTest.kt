@@ -41,20 +41,20 @@ import kotlin.time.Duration
  * and await the auto-reply, ensuring that they body text is as expected.
  */
 @RunWith(value = Parameterized::class)
-class MailServiceInteroperabilityTest(private val externalAddress: String) : BaseIntegrationTest() {
-
+class MailServiceInteroperabilityTest(
+    private val externalAddress: String,
+) : BaseIntegrationTest() {
     companion object {
         @JvmStatic
         @Parameters
-        fun data(): List<String> {
-            return listOf(
+        fun data(): List<String> =
+            listOf(
                 "sudo.platform.testing@gmail.com",
                 "sudo_platform_testing@yahoo.com",
                 "sudo.platform.testing@outlook.com",
                 "sudo.platform.testing@proton.me",
 //                "sudoplatformtesting@icloud.com", // No iCloud testing for now until we can get a long-lived user with a consistent address
             )
-        }
     }
 
     private val emailAddressList = mutableListOf<EmailAddress>()
@@ -67,11 +67,12 @@ class MailServiceInteroperabilityTest(private val externalAddress: String) : Bas
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
     fun shouldBeAbleToSendToAndReceiveFromEachExternalAddress() =
@@ -97,7 +98,9 @@ class MailServiceInteroperabilityTest(private val externalAddress: String) : Bas
             val listInput = ListEmailAddressesInput()
             when (val listEmailAddresses = emailClient.listEmailAddresses(listInput)) {
                 is ListAPIResult.Success -> {
-                    listEmailAddresses.result.items.first().emailAddress shouldBe emailAddress.emailAddress
+                    listEmailAddresses.result.items
+                        .first()
+                        .emailAddress shouldBe emailAddress.emailAddress
                 }
 
                 else -> {
@@ -105,22 +108,24 @@ class MailServiceInteroperabilityTest(private val externalAddress: String) : Bas
                 }
             }
 
-            val attachment = EmailAttachment(
-                fileName = "goodExtension.pdf",
-                contentId = UUID.randomUUID().toString(),
-                mimeType = "application/pdf",
-                inlineAttachment = false,
-                data = "This file has a valid file extension".toByteArray(),
-            )
+            val attachment =
+                EmailAttachment(
+                    fileName = "goodExtension.pdf",
+                    contentId = UUID.randomUUID().toString(),
+                    mimeType = "application/pdf",
+                    inlineAttachment = false,
+                    data = "This file has a valid file extension".toByteArray(),
+                )
 
-            val sendResult = sendEmailMessage(
-                emailClient,
-                emailAddress,
-                subject = "Test $timestamp",
-                body = "Test Body $timestamp",
-                attachments = listOf(attachment),
-                toAddresses = listOf(EmailMessage.EmailAddress(externalAddress)),
-            )
+            val sendResult =
+                sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                    subject = "Test $timestamp",
+                    body = "Test Body $timestamp",
+                    attachments = listOf(attachment),
+                    toAddresses = listOf(EmailMessage.EmailAddress(externalAddress)),
+                )
             sendResult.id.isBlank() shouldBe false
             sendResult.createdAt shouldNotBe null
 
@@ -129,16 +134,18 @@ class MailServiceInteroperabilityTest(private val externalAddress: String) : Bas
                 !externalAddress.endsWith("yahoo.com") // And yahoo keeps sending us to spam and not sending auto-reply
             ) {
                 val incomingMessageId: String
-                val inboxFolder = getFolderByName(emailClient, emailAddress.id, "INBOX")
-                    ?: fail("EmailFolder could not be found")
+                val inboxFolder =
+                    getFolderByName(emailClient, emailAddress.id, "INBOX")
+                        ?: fail("EmailFolder could not be found")
 
                 when (
-                    val messageList = waitForMessagesByFolder(
-                        1,
-                        ListEmailMessagesForEmailFolderIdInput(
-                            inboxFolder.id,
-                        ),
-                    )
+                    val messageList =
+                        waitForMessagesByFolder(
+                            1,
+                            ListEmailMessagesForEmailFolderIdInput(
+                                inboxFolder.id,
+                            ),
+                        )
                 ) {
                     is ListAPIResult.Success -> {
                         val inbound = messageList.result.items
@@ -157,8 +164,9 @@ class MailServiceInteroperabilityTest(private val externalAddress: String) : Bas
 
                 val messageWithBodyInput =
                     GetEmailMessageWithBodyInput(incomingMessageId, emailAddress.id)
-                val result = emailClient.getEmailMessageWithBody(messageWithBodyInput)
-                    ?: throw AssertionError("should not be null")
+                val result =
+                    emailClient.getEmailMessageWithBody(messageWithBodyInput)
+                        ?: throw AssertionError("should not be null")
                 result.id shouldNotBe null
                 result.body shouldContain "Message received. This is an auto-reply"
                 result.attachments.isEmpty() shouldBe true

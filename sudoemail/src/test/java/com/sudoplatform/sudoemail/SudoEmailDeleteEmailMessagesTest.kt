@@ -49,7 +49,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailDeleteEmailMessagesTest : BaseTests() {
-
     private val context by before {
         InstrumentationRegistry.getInstrumentation().targetContext
     }
@@ -154,9 +153,10 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                     DataFactory.deleteEmailMessagesMutationResponse(emptyList())
                 }
             }
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.deleteEmailMessages(listOf("id1", "id2"))
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteEmailMessages(listOf("id1", "id2"))
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -174,9 +174,10 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
     @Test
     fun `deleteEmailMessages() should return failure result when no error present`() =
         runTest {
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.deleteEmailMessages(listOf("id1", "id2"))
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteEmailMessages(listOf("id1", "id2"))
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -204,9 +205,10 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.deleteEmailMessages(listOf("id1", "id2"))
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteEmailMessages(listOf("id1", "id2"))
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -230,11 +232,12 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
             for (i in 0..mockDeleteEmailMessagesLimit + 1) {
                 ids.add(UUID.randomUUID().toString())
             }
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-                    client.deleteEmailMessages(ids)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
+                        client.deleteEmailMessages(ids)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -257,11 +260,12 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                    client.deleteEmailMessages(listOf("id1", "id2"))
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.deleteEmailMessages(listOf("id1", "id2"))
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -276,12 +280,13 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
     @Test
     fun `deleteEmailMessages() should throw when response has unexpected error`() =
         runTest {
-            val testError = GraphQLResponse.Error(
-                "mock",
-                null,
-                null,
-                mapOf("httpStatus" to "blah"),
-            )
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to "blah"),
+                )
             mockApiClient.stub {
                 onBlocking {
                     deleteEmailMessagesMutation(
@@ -292,11 +297,12 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                    client.deleteEmailMessages(listOf("id1", "id2"))
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.deleteEmailMessages(listOf("id1", "id2"))
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -309,63 +315,68 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `deleteEmailMessages() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
+    fun `deleteEmailMessages() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.deleteEmailMessages(listOf("id1", "id2"))
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.deleteEmailMessages(listOf("id1", "id2"))
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id1", "id2")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id1", "id2")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
-    fun `deleteEmailMessages() should throw when unknown error occurs()`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                deleteEmailMessagesMutation(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.deleteEmailMessages(listOf("id1", "id2"))
+    fun `deleteEmailMessages() should throw when unknown error occurs()`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    deleteEmailMessagesMutation(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).deleteEmailMessagesMutation(
-            check { input ->
-                input.messageIds shouldBe listOf("id1", "id2")
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.deleteEmailMessages(listOf("id1", "id2"))
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).deleteEmailMessagesMutation(
+                check { input ->
+                    input.messageIds shouldBe listOf("id1", "id2")
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
     fun `deleteEmailMessage() should not block coroutine cancellation exception`() =
@@ -378,11 +389,12 @@ class SudoEmailDeleteEmailMessagesTest : BaseTests() {
                 } doThrow CancellationException("Mock Cancellation Exception")
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<CancellationException> {
-                    client.deleteEmailMessages(listOf("id1", "id2"))
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.deleteEmailMessages(listOf("id1", "id2"))
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 

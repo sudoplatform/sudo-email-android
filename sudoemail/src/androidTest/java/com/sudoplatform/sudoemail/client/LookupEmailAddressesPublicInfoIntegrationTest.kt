@@ -40,62 +40,67 @@ class LookupEmailAddressesPublicInfoIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
-    private fun setupEmailAddress() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    private fun setupEmailAddress() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val aliasInput = "John Doe"
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof, alias = aliasInput)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-    }
+            val aliasInput = "John Doe"
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof, alias = aliasInput)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+        }
 
     @Test
-    fun lookupEmailAddressesPublicInfoShouldReturnEmailAddressPublicInfoResult() = runTest {
-        setupEmailAddress()
+    fun lookupEmailAddressesPublicInfoShouldReturnEmailAddressPublicInfoResult() =
+        runTest {
+            setupEmailAddress()
 
-        val inputEmailAddress = emailAddressList[0].emailAddress
-        val input = LookupEmailAddressesPublicInfoInput(listOf(inputEmailAddress))
-        val retrievedPublicInfo = emailClient.lookupEmailAddressesPublicInfo(input)
+            val inputEmailAddress = emailAddressList[0].emailAddress
+            val input = LookupEmailAddressesPublicInfoInput(listOf(inputEmailAddress))
+            val retrievedPublicInfo = emailClient.lookupEmailAddressesPublicInfo(input)
 
-        retrievedPublicInfo shouldBe beInstanceOf<List<EmailAddressPublicInfo>>()
-        retrievedPublicInfo.count() shouldBe 1
-        with(retrievedPublicInfo[0]) {
-            emailAddress shouldBe inputEmailAddress
-            keyId.shouldBeInstanceOf<String>()
-            publicKey.shouldBeInstanceOf<String>()
+            retrievedPublicInfo shouldBe beInstanceOf<List<EmailAddressPublicInfo>>()
+            retrievedPublicInfo.count() shouldBe 1
+            with(retrievedPublicInfo[0]) {
+                emailAddress shouldBe inputEmailAddress
+                keyId.shouldBeInstanceOf<String>()
+                publicKey.shouldBeInstanceOf<String>()
+            }
         }
-    }
 
     @Test
-    fun lookupEmailAddressesPublicInfoShouldReturnEmptyListWhenNoEmailAddressesFound() = runTest {
-        setupEmailAddress()
+    fun lookupEmailAddressesPublicInfoShouldReturnEmptyListWhenNoEmailAddressesFound() =
+        runTest {
+            setupEmailAddress()
 
-        val inputEmailAddress = "fake@email.com"
-        val input = LookupEmailAddressesPublicInfoInput(listOf(inputEmailAddress))
-        val retrievedPublicInfo = emailClient.lookupEmailAddressesPublicInfo(input)
+            val inputEmailAddress = "fake@email.com"
+            val input = LookupEmailAddressesPublicInfoInput(listOf(inputEmailAddress))
+            val retrievedPublicInfo = emailClient.lookupEmailAddressesPublicInfo(input)
 
-        retrievedPublicInfo shouldBe beInstanceOf<List<EmailAddressPublicInfo>>()
-        retrievedPublicInfo.count() shouldBe 0
-    }
-
-    fun lookupEmailAddressesPublicInfoShouldThrowLimitExceededException() = runTest {
-        val inputEmailAddress = "fake@email.com"
-        val inputEmailAddresses = List(51) { inputEmailAddress }
-        val input = LookupEmailAddressesPublicInfoInput(inputEmailAddresses)
-
-        shouldThrow<SudoEmailClient.EmailAddressException.LimitExceededException> {
-            emailClient.lookupEmailAddressesPublicInfo(input)
+            retrievedPublicInfo shouldBe beInstanceOf<List<EmailAddressPublicInfo>>()
+            retrievedPublicInfo.count() shouldBe 0
         }
-    }
+
+    fun lookupEmailAddressesPublicInfoShouldThrowLimitExceededException() =
+        runTest {
+            val inputEmailAddress = "fake@email.com"
+            val inputEmailAddresses = List(51) { inputEmailAddress }
+            val input = LookupEmailAddressesPublicInfoInput(inputEmailAddresses)
+
+            shouldThrow<SudoEmailClient.EmailAddressException.LimitExceededException> {
+                emailClient.lookupEmailAddressesPublicInfo(input)
+            }
+        }
 }

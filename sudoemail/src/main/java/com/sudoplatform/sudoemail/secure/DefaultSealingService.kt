@@ -16,9 +16,11 @@ internal class DefaultSealingService(
     private val deviceKeyManager: DeviceKeyManager,
     private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
 ) : SealingService {
-
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    override fun sealString(keyId: String, payload: ByteArray): ByteArray {
+    override fun sealString(
+        keyId: String,
+        payload: ByteArray,
+    ): ByteArray {
         try {
             return deviceKeyManager.encryptWithSymmetricKeyId(keyId, payload)
         } catch (e: Exception) {
@@ -28,7 +30,10 @@ internal class DefaultSealingService(
     }
 
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
-    override fun unsealString(keyId: String, payload: ByteArray): ByteArray {
+    override fun unsealString(
+        keyId: String,
+        payload: ByteArray,
+    ): ByteArray {
         try {
             return deviceKeyManager.decryptWithSymmetricKeyId(keyId, payload)
         } catch (e: Exception) {

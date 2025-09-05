@@ -8,7 +8,7 @@ package com.sudoplatform.sudoemail
 
 import android.content.Context
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
@@ -51,7 +51,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
-
     private val input by before {
         ListEmailFoldersForEmailAddressIdInput(
             "emailAddressId",
@@ -172,236 +171,250 @@ class SudoEmailListEmailFoldersForEmailAddressIdTest : BaseTests() {
     }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listEmailFoldersForEmailAddressId(input)
+    fun `listEmailFoldersForEmailAddressId() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailFoldersForEmailAddressId(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.items.isEmpty() shouldBe false
+            result.items.size shouldBe 1
+            result.nextToken shouldBe null
+
+            with(result.items[0]) {
+                id shouldBe "folderId"
+                owner shouldBe "owner"
+                owners.first().id shouldBe "ownerId"
+                owners.first().issuer shouldBe "issuer"
+                emailAddressId shouldBe "emailAddressId"
+                folderName shouldBe "folderName"
+                size shouldBe 0.0
+                unseenCount shouldBe 0
+                version shouldBe 1
+                createdAt shouldBe Date(1L)
+                updatedAt shouldBe Date(1L)
+            }
+
+            verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+                check { input ->
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
         }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.items.isEmpty() shouldBe false
-        result.items.size shouldBe 1
-        result.nextToken shouldBe null
-
-        with(result.items[0]) {
-            id shouldBe "folderId"
-            owner shouldBe "owner"
-            owners.first().id shouldBe "ownerId"
-            owners.first().issuer shouldBe "issuer"
-            emailAddressId shouldBe "emailAddressId"
-            folderName shouldBe "folderName"
-            size shouldBe 0.0
-            unseenCount shouldBe 0
-            version shouldBe 1
-            createdAt shouldBe Date(1L)
-            updatedAt shouldBe Date(1L)
-        }
-
-        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
-            check { input ->
-                input.emailAddressId shouldBe "emailAddressId"
-                input.limit shouldBe Optional.Present(10)
-                input.nextToken shouldBe Optional.absent()
-            },
-        )
-    }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return results when populating nextToken`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listEmailFoldersForEmailAddressIdQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponseWithNextToken
+    fun `listEmailFoldersForEmailAddressId() should return results when populating nextToken`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailFoldersForEmailAddressIdQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    queryResponseWithNextToken
+                }
             }
+
+            val input = ListEmailFoldersForEmailAddressIdInput("emailAddressId", 1, "dummyNextToken")
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailFoldersForEmailAddressId(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.items.isEmpty() shouldBe false
+            result.items.size shouldBe 1
+            result.nextToken shouldBe "dummyNextToken"
+
+            with(result.items[0]) {
+                id shouldBe "folderId"
+                owner shouldBe "owner"
+                owners.first().id shouldBe "ownerId"
+                owners.first().issuer shouldBe "issuer"
+                emailAddressId shouldBe "emailAddressId"
+                folderName shouldBe "folderName"
+                size shouldBe 0.0
+                unseenCount shouldBe 0
+                version shouldBe 1
+                createdAt shouldBe Date(1L)
+                updatedAt shouldBe Date(1L)
+            }
+
+            verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+                check { input ->
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(1)
+                    input.nextToken shouldBe Optional.Present("dummyNextToken")
+                },
+            )
         }
-
-        val input = ListEmailFoldersForEmailAddressIdInput("emailAddressId", 1, "dummyNextToken")
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listEmailFoldersForEmailAddressId(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.items.isEmpty() shouldBe false
-        result.items.size shouldBe 1
-        result.nextToken shouldBe "dummyNextToken"
-
-        with(result.items[0]) {
-            id shouldBe "folderId"
-            owner shouldBe "owner"
-            owners.first().id shouldBe "ownerId"
-            owners.first().issuer shouldBe "issuer"
-            emailAddressId shouldBe "emailAddressId"
-            folderName shouldBe "folderName"
-            size shouldBe 0.0
-            unseenCount shouldBe 0
-            version shouldBe 1
-            createdAt shouldBe Date(1L)
-            updatedAt shouldBe Date(1L)
-        }
-
-        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
-            check { input ->
-                input.emailAddressId shouldBe "emailAddressId"
-                input.limit shouldBe Optional.Present(1)
-                input.nextToken shouldBe Optional.Present("dummyNextToken")
-            },
-        )
-    }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return empty list output when query result data is empty`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listEmailFoldersForEmailAddressIdQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponseWithEmptyList
+    fun `listEmailFoldersForEmailAddressId() should return empty list output when query result data is empty`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailFoldersForEmailAddressIdQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    queryResponseWithEmptyList
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailFoldersForEmailAddressId(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.items.isEmpty() shouldBe true
+            result.items.size shouldBe 0
+            result.nextToken shouldBe null
+
+            verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+                check { input ->
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listEmailFoldersForEmailAddressId(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.items.isEmpty() shouldBe true
-        result.items.size shouldBe 0
-        result.nextToken shouldBe null
-
-        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
-            check { input ->
-                input.emailAddressId shouldBe "emailAddressId"
-                input.limit shouldBe Optional.Present(10)
-                input.nextToken shouldBe Optional.absent()
-            },
-        )
-    }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should return empty list output when query response is null`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listEmailFoldersForEmailAddressIdQuery(
-                    any(),
-                )
-            }.thenAnswer {
-                GraphQLResponse(null, null)
+    fun `listEmailFoldersForEmailAddressId() should return empty list output when query response is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailFoldersForEmailAddressIdQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, null)
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailFoldersForEmailAddressId(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.items.isEmpty() shouldBe true
+            result.items.size shouldBe 0
+            result.nextToken shouldBe null
+
+            verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+                check { input ->
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.listEmailFoldersForEmailAddressId(input)
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result shouldNotBe null
-        result.items.isEmpty() shouldBe true
-        result.items.size shouldBe 0
-        result.nextToken shouldBe null
-
-        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
-            check { input ->
-                input.emailAddressId shouldBe "emailAddressId"
-                input.limit shouldBe Optional.Present(10)
-                input.nextToken shouldBe Optional.absent()
-            },
-        )
-    }
 
     @Test
-    fun `listEmailFoldersForEmailAddressId() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                listEmailFoldersForEmailAddressIdQuery(
-                    any(),
+    fun `listEmailFoldersForEmailAddressId() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailFoldersForEmailAddressIdQuery(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
+                        client.listEmailFoldersForEmailAddressId(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+                check { input ->
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
         }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
+    @Test
+    fun `listEmailFoldersForEmailAddressId() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailFoldersForEmailAddressIdQuery(
+                        any(),
+                    )
+                } doThrow
+                    RuntimeException("Mock Runtime Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
+                        client.listEmailFoldersForEmailAddressId(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+                check { input ->
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
+        }
+
+    @Test
+    fun `listEmailFoldersForEmailAddressId() should not block coroutine cancellation exception`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailFoldersForEmailAddressIdQuery(
+                        any(),
+                    )
+                } doThrow
+                    CancellationException("Mock Cancellation Exception")
+            }
+
+            shouldThrow<CancellationException> {
                 client.listEmailFoldersForEmailAddressId(input)
             }
+
+            verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
+                check { input ->
+                    input.emailAddressId shouldBe "emailAddressId"
+                    input.limit shouldBe Optional.Present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
         }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
-            check { input ->
-                input.emailAddressId shouldBe "emailAddressId"
-                input.limit shouldBe Optional.present(10)
-                input.nextToken shouldBe Optional.absent()
-            },
-        )
-    }
-
-    @Test
-    fun `listEmailFoldersForEmailAddressId() should throw when unknown error occurs`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listEmailFoldersForEmailAddressIdQuery(
-                    any(),
-                )
-            } doThrow
-                RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
-                client.listEmailFoldersForEmailAddressId(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
-            check { input ->
-                input.emailAddressId shouldBe "emailAddressId"
-                input.limit shouldBe Optional.present(10)
-                input.nextToken shouldBe Optional.absent()
-            },
-        )
-    }
-
-    @Test
-    fun `listEmailFoldersForEmailAddressId() should not block coroutine cancellation exception`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                listEmailFoldersForEmailAddressIdQuery(
-                    any(),
-                )
-            } doThrow
-                CancellationException("Mock Cancellation Exception")
-        }
-
-        shouldThrow<CancellationException> {
-            client.listEmailFoldersForEmailAddressId(input)
-        }
-
-        verify(mockApiClient).listEmailFoldersForEmailAddressIdQuery(
-            check { input ->
-                input.emailAddressId shouldBe "emailAddressId"
-                input.limit shouldBe Optional.Present(10)
-                input.nextToken shouldBe Optional.absent()
-            },
-        )
-    }
 }

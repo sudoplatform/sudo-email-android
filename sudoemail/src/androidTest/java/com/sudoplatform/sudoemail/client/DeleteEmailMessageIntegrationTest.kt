@@ -36,41 +36,44 @@ class DeleteEmailMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun deleteEmailMessageShouldSucceed() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun deleteEmailMessageShouldSucceed() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val sendResult = sendEmailMessage(emailClient, emailAddress)
-        sendResult.id.isBlank() shouldBe false
-        sendResult.createdAt shouldNotBe null
+            val sendResult = sendEmailMessage(emailClient, emailAddress)
+            sendResult.id.isBlank() shouldBe false
+            sendResult.createdAt shouldNotBe null
 
-        waitForMessages(1)
+            waitForMessages(1)
 
-        val result = emailClient.deleteEmailMessage(sendResult.id)
-        result shouldBe DeleteEmailMessageSuccessResult(sendResult.id)
+            val result = emailClient.deleteEmailMessage(sendResult.id)
+            result shouldBe DeleteEmailMessageSuccessResult(sendResult.id)
 
-        waitForMessages(0)
-    }
+            waitForMessages(0)
+        }
 
     @Test
-    fun deleteEmailMessageShouldReturnNullForNonExistentMessage() = runTest {
-        val id = "nonExistentId"
-        val result = emailClient.deleteEmailMessage(id)
-        result shouldBe DeleteEmailMessageSuccessResult(id)
-    }
+    fun deleteEmailMessageShouldReturnNullForNonExistentMessage() =
+        runTest {
+            val id = "nonExistentId"
+            val result = emailClient.deleteEmailMessage(id)
+            result shouldBe DeleteEmailMessageSuccessResult(id)
+        }
 }

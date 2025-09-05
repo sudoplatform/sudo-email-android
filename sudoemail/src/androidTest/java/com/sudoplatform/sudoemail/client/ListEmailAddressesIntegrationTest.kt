@@ -39,54 +39,56 @@ class ListEmailAddressesIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun listEmailAddressesShouldReturnSingleEmailAddressListOutputResult() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun listEmailAddressesShouldReturnSingleEmailAddressListOutputResult() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val aliasInput = "John Doe"
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof, alias = aliasInput)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val aliasInput = "John Doe"
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof, alias = aliasInput)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = ListEmailAddressesInput()
-        val listEmailAddresses = emailClient.listEmailAddresses(input)
-        listEmailAddresses shouldNotBe null
+            val input = ListEmailAddressesInput()
+            val listEmailAddresses = emailClient.listEmailAddresses(input)
+            listEmailAddresses shouldNotBe null
 
-        when (listEmailAddresses) {
-            is ListAPIResult.Success -> {
-                listEmailAddresses.result.items.size shouldBe 1
-                listEmailAddresses.result.nextToken shouldBe null
+            when (listEmailAddresses) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.size shouldBe 1
+                    listEmailAddresses.result.nextToken shouldBe null
 
-                with(listEmailAddresses.result.items[0]) {
-                    id shouldBe emailAddress.id
-                    owner shouldBe emailAddress.owner
-                    owners shouldBe emailAddress.owners
-                    listEmailAddresses.result.items[0].emailAddress shouldBe emailAddress.emailAddress
-                    size shouldBe emailAddress.size
-                    numberOfEmailMessages shouldBe 0
-                    version shouldBe emailAddress.version
-                    createdAt.time shouldBe emailAddress.createdAt.time
-                    updatedAt.time shouldBe emailAddress.createdAt.time
-                    lastReceivedAt shouldBe emailAddress.lastReceivedAt
-                    alias shouldBe aliasInput
-                    folders.size shouldBe 4
-                    folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                    with(listEmailAddresses.result.items[0]) {
+                        id shouldBe emailAddress.id
+                        owner shouldBe emailAddress.owner
+                        owners shouldBe emailAddress.owners
+                        listEmailAddresses.result.items[0].emailAddress shouldBe emailAddress.emailAddress
+                        size shouldBe emailAddress.size
+                        numberOfEmailMessages shouldBe 0
+                        version shouldBe emailAddress.version
+                        createdAt.time shouldBe emailAddress.createdAt.time
+                        updatedAt.time shouldBe emailAddress.createdAt.time
+                        lastReceivedAt shouldBe emailAddress.lastReceivedAt
+                        alias shouldBe aliasInput
+                        folders.size shouldBe 4
+                        folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                    }
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
                 }
             }
-            else -> {
-                fail("Unexpected ListAPIResult")
-            }
         }
-    }
 }

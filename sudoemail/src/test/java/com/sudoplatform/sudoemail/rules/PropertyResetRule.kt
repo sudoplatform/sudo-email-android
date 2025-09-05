@@ -27,7 +27,6 @@ import kotlin.reflect.KProperty
  * ```
  */
 class PropertyResetRule : ExternalResource() {
-
     private val befores = mutableListOf<PropertyResetDelegate<*>>()
 
     override fun before() {
@@ -48,11 +47,15 @@ class PropertyResetRule : ExternalResource() {
 /**
  * @see [PropertyResetRule]
  */
-class PropertyResetDelegate<out T>(private val initializer: () -> T) {
-
+class PropertyResetDelegate<T>(
+    private val initializer: () -> T,
+) {
     private var value: T = initializer()
 
-    operator fun getValue(thisRef: Any?, property: KProperty<*>) = value
+    operator fun getValue(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): T = value
 
     fun reset() {
         value = initializer()
@@ -60,11 +63,10 @@ class PropertyResetDelegate<out T>(private val initializer: () -> T) {
 }
 
 interface PropertyResetter {
-
     @get:Rule
     val reset: PropertyResetRule
 
-    fun <T> before(initializer: () -> T) = reset.before(initializer)
+    fun <T> before(initializer: () -> T): PropertyResetDelegate<T> = reset.before(initializer)
 }
 
 class ActualPropertyResetter : PropertyResetter {

@@ -24,4 +24,5 @@ data class DraftEmailMessageMetadata(
     override val id: String,
     override val emailAddressId: String,
     override val updatedAt: Date,
-) : Parcelable, DraftEmailMessage
+) : Parcelable,
+    DraftEmailMessage

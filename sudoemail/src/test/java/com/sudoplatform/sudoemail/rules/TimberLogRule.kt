@@ -21,23 +21,29 @@ class TimberLogRule(
      */
     private val defaultMinPriority: Int = Log.VERBOSE,
 ) : ExternalResource() {
-
     /**
      * This value can be changed in each test function to adjust
      * the minimum priority of logs to output
      */
     var minPriority: Int = defaultMinPriority
 
-    private val tree: Tree = object : Tree() {
-        override fun isLoggable(tag: String?, priority: Int): Boolean {
-            return priority >= minPriority
-        }
+    private val tree: Tree =
+        object : Tree() {
+            override fun isLoggable(
+                tag: String?,
+                priority: Int,
+            ): Boolean = priority >= minPriority
 
-        override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-            println("${tag ?: ""}:$message")
-            t?.printStackTrace()
+            override fun log(
+                priority: Int,
+                tag: String?,
+                message: String,
+                t: Throwable?,
+            ) {
+                println("${tag ?: ""}:$message")
+                t?.printStackTrace()
+            }
         }
-    }
 
     override fun before() {
         minPriority = defaultMinPriority

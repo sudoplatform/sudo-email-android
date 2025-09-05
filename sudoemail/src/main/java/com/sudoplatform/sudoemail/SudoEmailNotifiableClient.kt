@@ -43,60 +43,68 @@ interface SudoEmailNotifiableClient : NotifiableClient {
         /**
          * Provide the application context (required input).
          */
-        fun setContext(context: Context) = also {
-            this.context = context
-        }
+        fun setContext(context: Context) =
+            also {
+                this.context = context
+            }
 
         /**
          * Provide the notification handler (required input).
          */
-        fun setNotificationHandler(notificationHandler: SudoEmailNotificationHandler) = also {
-            this.notificationHandler = notificationHandler
-        }
+        fun setNotificationHandler(notificationHandler: SudoEmailNotificationHandler) =
+            also {
+                this.notificationHandler = notificationHandler
+            }
 
         /**
          * Provide the implementation of the [KeyManagerInterface] used for key management and
          * cryptographic operations (optional input). If a value is not supplied a default
          * implementation will be used.
          */
-        fun setKeyManager(keyManager: KeyManagerInterface) = also {
-            this.keyManager = keyManager
-        }
+        fun setKeyManager(keyManager: KeyManagerInterface) =
+            also {
+                this.keyManager = keyManager
+            }
 
         /**
          * Provide the implementation of the [Logger] used for logging errors (optional input).
          * If a value is not supplied a default implementation will be used.
          */
-        fun setLogger(logger: Logger) = also {
-            this.logger = logger
-        }
+        fun setLogger(logger: Logger) =
+            also {
+                this.logger = logger
+            }
 
         /**
          * Provide the namespace to use for internal data and cryptographic keys. This should be unique
          * per client per app to avoid name conflicts between multiple clients. If a value is not supplied
          * a default value will be used.
          */
-        fun setNamespace(namespace: String) = also {
-            this.namespace = namespace
-        }
+        fun setNamespace(namespace: String) =
+            also {
+                this.namespace = namespace
+            }
 
         /**
          * Provide the database name to use for exportable key store database.
          */
-        fun setDatabaseName(databaseName: String) = also {
-            this.databaseName = databaseName
-        }
+        fun setDatabaseName(databaseName: String) =
+            also {
+                this.databaseName = databaseName
+            }
 
         fun build(): SudoEmailNotifiableClient {
             Objects.requireNonNull(context, "context must be provided")
             Objects.requireNonNull(notificationHandler, "notificationHandler must be provided")
 
-            val deviceKeyManager = DefaultDeviceKeyManager(
-                keyManager = keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(
-                    this.namespace,
-                    this.databaseName,
-                ),
-            )
+            val deviceKeyManager =
+                DefaultDeviceKeyManager(
+                    keyManager =
+                        keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(
+                            this.namespace,
+                            this.databaseName,
+                        ),
+                )
 
             return DefaultSudoEmailNotifiableClient(
                 deviceKeyManager,

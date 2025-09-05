@@ -15,7 +15,6 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessage
  * [DraftEmailMessage]s' RFC 822 data.
  */
 internal object DraftEmailMessageTransformer {
-
     /**
      * Uses the [SealingService] to seal the RFC 822 data, then encodes it into Base64.
      *
@@ -24,7 +23,11 @@ internal object DraftEmailMessageTransformer {
      * @param symmetricKeyId [String] The symmetric key used to seal the data.
      * @return The encrypted and encoded data as a [ByteArray].
      */
-    fun toEncryptedAndEncodedRfc822Data(sealingService: SealingService, rfc822Data: ByteArray, symmetricKeyId: String): ByteArray {
+    fun toEncryptedAndEncodedRfc822Data(
+        sealingService: SealingService,
+        rfc822Data: ByteArray,
+        symmetricKeyId: String,
+    ): ByteArray {
         val sealedRfc822Data = sealingService.sealString(symmetricKeyId, rfc822Data)
         return Base64.encode(sealedRfc822Data)
     }
@@ -37,7 +40,11 @@ internal object DraftEmailMessageTransformer {
      * @param symmetricKeyId [String] The symmetric key used to unseal the data.
      * @return The decrypted and decoded data as a [ByteArray].
      */
-    fun toDecodedAndDecryptedRfc822Data(sealingService: SealingService, sealedRfc822Data: ByteArray, symmetricKeyId: String): ByteArray {
+    fun toDecodedAndDecryptedRfc822Data(
+        sealingService: SealingService,
+        sealedRfc822Data: ByteArray,
+        symmetricKeyId: String,
+    ): ByteArray {
         val decodedRfc822Data = Base64.decode(sealedRfc822Data)
         return sealingService.unsealString(symmetricKeyId, decodedRfc822Data)
     }

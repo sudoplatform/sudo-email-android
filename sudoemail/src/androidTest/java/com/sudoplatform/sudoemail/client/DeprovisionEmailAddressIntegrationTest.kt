@@ -38,60 +38,64 @@ class DeprovisionEmailAddressIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun deprovisionEmailAddressShouldReturnEmailAddressResult() = runTest {
-        val emailDomains = getEmailDomains(emailClient)
-        emailDomains.size shouldBeGreaterThanOrEqual 1
+    fun deprovisionEmailAddressShouldReturnEmailAddressResult() =
+        runTest {
+            val emailDomains = getEmailDomains(emailClient)
+            emailDomains.size shouldBeGreaterThanOrEqual 1
 
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val localPart = generateSafeLocalPart()
-        val emailAddress = localPart + "@" + emailDomains.first()
-        val aliasInput = "John Doe"
-        val provisionInput = ProvisionEmailAddressInput(
-            emailAddress = emailAddress,
-            ownershipProofToken = ownershipProof,
-            alias = aliasInput,
-        )
-        val provisionedAddress = emailClient.provisionEmailAddress(provisionInput)
-        provisionedAddress shouldNotBe null
+            val localPart = generateSafeLocalPart()
+            val emailAddress = localPart + "@" + emailDomains.first()
+            val aliasInput = "John Doe"
+            val provisionInput =
+                ProvisionEmailAddressInput(
+                    emailAddress = emailAddress,
+                    ownershipProofToken = ownershipProof,
+                    alias = aliasInput,
+                )
+            val provisionedAddress = emailClient.provisionEmailAddress(provisionInput)
+            provisionedAddress shouldNotBe null
 
-        val deprovisionedEmailAddress = emailClient.deprovisionEmailAddress(provisionedAddress.id)
-        deprovisionedEmailAddress shouldNotBe null
+            val deprovisionedEmailAddress = emailClient.deprovisionEmailAddress(provisionedAddress.id)
+            deprovisionedEmailAddress shouldNotBe null
 
-        with(deprovisionedEmailAddress) {
-            id shouldBe provisionedAddress.id
-            owner shouldBe provisionedAddress.owner
-            owners shouldBe provisionedAddress.owners
-            deprovisionedEmailAddress.emailAddress shouldBe provisionedAddress.emailAddress
-            size shouldBe provisionedAddress.size
-            version shouldBe provisionedAddress.version
-            createdAt.time shouldBe provisionedAddress.createdAt.time
-            updatedAt.time shouldBe provisionedAddress.updatedAt.time
-            lastReceivedAt shouldBe provisionedAddress.lastReceivedAt
+            with(deprovisionedEmailAddress) {
+                id shouldBe provisionedAddress.id
+                owner shouldBe provisionedAddress.owner
+                owners shouldBe provisionedAddress.owners
+                deprovisionedEmailAddress.emailAddress shouldBe provisionedAddress.emailAddress
+                size shouldBe provisionedAddress.size
+                version shouldBe provisionedAddress.version
+                createdAt.time shouldBe provisionedAddress.createdAt.time
+                updatedAt.time shouldBe provisionedAddress.updatedAt.time
+                lastReceivedAt shouldBe provisionedAddress.lastReceivedAt
+            }
         }
-    }
 
     @Test
-    fun deprovisionEmailAddressShouldThrowWithNonExistentAddress() = runTest {
-        val emailDomains = getEmailDomains(emailClient)
-        emailDomains.size shouldBeGreaterThanOrEqual 1
+    fun deprovisionEmailAddressShouldThrowWithNonExistentAddress() =
+        runTest {
+            val emailDomains = getEmailDomains(emailClient)
+            emailDomains.size shouldBeGreaterThanOrEqual 1
 
-        val localPart = generateSafeLocalPart()
-        val emailAddressInput = localPart + "@" + emailDomains.first()
-        shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-            emailClient.deprovisionEmailAddress(emailAddressInput)
+            val localPart = generateSafeLocalPart()
+            val emailAddressInput = localPart + "@" + emailDomains.first()
+            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                emailClient.deprovisionEmailAddress(emailAddressInput)
+            }
         }
-    }
 }

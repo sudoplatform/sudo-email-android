@@ -38,14 +38,16 @@ internal data class SecureData(
         fun fromJson(data: ByteString): SecureData {
             JsonParser.parseString(data.utf8())?.let { jsonElement ->
                 with(jsonElement.asJsonObject) {
-                    val encryptedData = this.get(ENCRYPTED_DATA_JSON).asString.decodeBase64()
-                        ?: throw EmailCryptoServiceException.SecureDataParsingException(
-                            "Base64 decoding of encrypted key failed",
-                        )
-                    val initVectorData = this.get(INIT_VECTOR_KEY_ID).asString.decodeBase64()
-                        ?: throw EmailCryptoServiceException.SecureDataParsingException(
-                            "Base64 decoding of IV failed",
-                        )
+                    val encryptedData =
+                        this.get(ENCRYPTED_DATA_JSON).asString.decodeBase64()
+                            ?: throw EmailCryptoServiceException.SecureDataParsingException(
+                                "Base64 decoding of encrypted key failed",
+                            )
+                    val initVectorData =
+                        this.get(INIT_VECTOR_KEY_ID).asString.decodeBase64()
+                            ?: throw EmailCryptoServiceException.SecureDataParsingException(
+                                "Base64 decoding of IV failed",
+                            )
                     return SecureData(encryptedData, initVectorData)
                 }
             }
@@ -61,10 +63,11 @@ internal data class SecureData(
      * @return The JSON encoded version of this object.
      */
     fun toJson(): String {
-        val jsonObject = JsonObject().apply {
-            addProperty(ENCRYPTED_DATA_JSON, encryptedData.base64())
-            addProperty(INIT_VECTOR_KEY_ID, initVectorKeyID.base64())
-        }
+        val jsonObject =
+            JsonObject().apply {
+                addProperty(ENCRYPTED_DATA_JSON, encryptedData.base64())
+                addProperty(INIT_VECTOR_KEY_ID, initVectorKeyID.base64())
+            }
         return jsonObject.toString()
     }
 }

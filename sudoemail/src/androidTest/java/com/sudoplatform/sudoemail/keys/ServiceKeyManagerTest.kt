@@ -38,25 +38,27 @@ import java.util.logging.Logger
  */
 @RunWith(AndroidJUnit4::class)
 class ServiceKeyManagerTest {
-
     private val keyRingServiceName = "sudo-email"
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private val userClient by lazy {
-        SudoUserClient.builder(BaseIntegrationTest.context)
+        SudoUserClient
+            .builder(BaseIntegrationTest.context)
             .setNamespace("eml-client-test")
             .build()
     }
 
     private val sudoClient by lazy {
         val containerURI = Uri.fromFile(BaseIntegrationTest.context.cacheDir)
-        SudoProfilesClient.builder(BaseIntegrationTest.context, userClient, containerURI)
+        SudoProfilesClient
+            .builder(BaseIntegrationTest.context, userClient, containerURI)
             .build()
     }
 
     private val entitlementsClient by lazy {
-        SudoEntitlementsClient.builder()
+        SudoEntitlementsClient
+            .builder()
             .setContext(BaseIntegrationTest.context)
             .setSudoUserClient(userClient)
             .build()
@@ -90,23 +92,26 @@ class ServiceKeyManagerTest {
     }
 
     @After
-    fun fini() = runTest {
-        if (userClient.isRegistered()) {
-            userClient.deregister()
+    fun fini() =
+        runTest {
+            if (userClient.isRegistered()) {
+                userClient.deregister()
+            }
+            userClient.reset()
+            sudoClient.reset()
+
+            Timber.uprootAll()
         }
-        userClient.reset()
-        sudoClient.reset()
 
-        Timber.uprootAll()
-    }
-
-    private fun readTextFile(fileName: String): String {
-        return context.assets.open(fileName).bufferedReader().use {
+    private fun readTextFile(fileName: String): String =
+        context.assets.open(fileName).bufferedReader().use {
             it.readText().trim()
         }
-    }
 
-    private fun readArgument(argumentName: String, fallbackFileName: String?): String {
+    private fun readArgument(
+        argumentName: String,
+        fallbackFileName: String?,
+    ): String {
         val argumentValue = InstrumentationRegistry.getArguments().getString(argumentName)?.trim()
         if (argumentValue != null) {
             return argumentValue
@@ -123,13 +128,14 @@ class ServiceKeyManagerTest {
         val privateKey = readArgument("REGISTER_KEY", "register_key.private")
         val keyId = readArgument("REGISTER_KEY_ID", "register_key.id")
 
-        val authProvider = TESTAuthenticationProvider(
-            name = "eml-client-test",
-            privateKey = privateKey,
-            publicKey = null,
-            keyManager = keyManager,
-            keyId = keyId,
-        )
+        val authProvider =
+            TESTAuthenticationProvider(
+                name = "eml-client-test",
+                privateKey = privateKey,
+                publicKey = null,
+                keyManager = keyManager,
+                keyId = keyId,
+            )
 
         userClient.registerWithAuthenticationProvider(authProvider, "eml-client-test")
     }
@@ -145,15 +151,16 @@ class ServiceKeyManagerTest {
     private suspend fun registerSignInAndEntitle() {
         registerAndSignIn()
         val externalId = entitlementsClient.getExternalId()
-        val entitlements = listOf(
-            Entitlement("sudoplatform.sudo.max", "test", 3),
-            Entitlement("sudoplatform.email.emailAddressUserEntitled", "test", 1),
-            Entitlement("sudoplatform.email.emailStorageMaxPerUser", "test", 500000),
-            Entitlement("sudoplatform.email.emailAddressMaxPerSudo", "test", 3),
-            Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
-            Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
-            Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
-        )
+        val entitlements =
+            listOf(
+                Entitlement("sudoplatform.sudo.max", "test", 3),
+                Entitlement("sudoplatform.email.emailAddressUserEntitled", "test", 1),
+                Entitlement("sudoplatform.email.emailStorageMaxPerUser", "test", 500000),
+                Entitlement("sudoplatform.email.emailAddressMaxPerSudo", "test", 3),
+                Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
+                Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
+                Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
+            )
         entitlementsAdminClient.applyEntitlementsToUser(externalId, entitlements)
         entitlementsClient.redeemEntitlements()
     }
@@ -166,100 +173,106 @@ class ServiceKeyManagerTest {
     }
 
     @Test
-    fun shouldBeAbleToPerformOperationsAfterSignIn() = runTest {
-        registerSignInAndEntitle()
+    fun shouldBeAbleToPerformOperationsAfterSignIn() =
+        runTest {
+            registerSignInAndEntitle()
 
-        serviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
+            serviceKeyManager.getKeyPairWithId("bogusValue") shouldBe null
 
-        val keyPair = serviceKeyManager.generateKeyPair()
-        with(keyPair) {
-            this shouldNotBe null
-            keyRingId shouldStartWith keyRingServiceName
-            keyId.isBlank() shouldBe false
-            publicKey shouldNotBe null
-            publicKey.size.shouldBeGreaterThan(0)
-            privateKey shouldNotBe null
-            privateKey.size.shouldBeGreaterThan(0)
+            val keyPair = serviceKeyManager.generateKeyPair()
+            with(keyPair) {
+                this shouldNotBe null
+                keyRingId shouldStartWith keyRingServiceName
+                keyId.isBlank() shouldBe false
+                publicKey shouldNotBe null
+                publicKey.size.shouldBeGreaterThan(0)
+                privateKey shouldNotBe null
+                privateKey.size.shouldBeGreaterThan(0)
+            }
+
+            val newKeyPair = serviceKeyManager.generateKeyPair()
+            newKeyPair shouldNotBe null
+            newKeyPair shouldNotBe keyPair
+
+            val fetchedKeyPair = serviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
+            fetchedKeyPair shouldNotBe null
+            fetchedKeyPair shouldNotBe keyPair
+            fetchedKeyPair shouldBe newKeyPair
+
+            serviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
+
+            val privateKeyExists = serviceKeyManager.privateKeyExists(newKeyPair.keyId)
+            privateKeyExists shouldBe true
+
+            val clearData = "hello world".toByteArray()
+            val secretData =
+                serviceKeyManager.encryptWithKeyPairId(
+                    newKeyPair.keyId,
+                    clearData,
+                    KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+                )
+            var decryptedData =
+                serviceKeyManager.decryptWithKeyPairId(
+                    secretData,
+                    newKeyPair.keyId,
+                    KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+                )
+            decryptedData shouldBe clearData
+
+            val clearData2 = "hello world2".toByteArray()
+            val secretData2 =
+                serviceKeyManager.encryptWithPublicKey(
+                    newKeyPair.publicKey,
+                    clearData2,
+                    KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY,
+                    KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+                )
+            val decryptedData2 =
+                serviceKeyManager.decryptWithKeyPairId(
+                    secretData2,
+                    newKeyPair.keyId,
+                    KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+                )
+            decryptedData2 shouldBe clearData2
+
+            keyManager.deleteSymmetricKey("symmetricKey")
+            keyManager.generateSymmetricKey("symmetricKey")
+            val symmetricKey = serviceKeyManager.getSymmetricKeyData("symmetricKey")
+            val symmetricSecretData = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
+
+            decryptedData = serviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, symmetricSecretData)
+            decryptedData shouldBe clearData
+
+            // Encrypt/decrypt with IV
+            val randomData = serviceKeyManager.createRandomData(16)
+            randomData shouldNotBe null
+
+            val symmetricKeyExists = serviceKeyManager.symmetricKeyExists("symmetricKey")
+            symmetricKeyExists shouldBe true
+
+            val clearData3 = "hello world3".toByteArray()
+            val secretData3 = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData3, randomData)
+            val decryptedData3 = serviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData3, randomData)
+            decryptedData3 shouldBe clearData3
+
+            // exportKeys and importKeys
+            val exportedKeys = serviceKeyManager.exportKeys()
+            exportedKeys shouldNotBe null
+            serviceKeyManager.removeAllKeys()
+            shouldThrow<com.sudoplatform.sudokeymanager.KeyNotFoundException> {
+                keyManager.encryptWithPublicKey(
+                    newKeyPair.keyId,
+                    clearData,
+                    KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+                )
+            }
+            serviceKeyManager.importKeys(exportedKeys)
+            decryptedData =
+                serviceKeyManager.decryptWithKeyPairId(
+                    secretData,
+                    newKeyPair.keyId,
+                    KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
+                )
+            decryptedData shouldBe clearData
         }
-
-        val newKeyPair = serviceKeyManager.generateKeyPair()
-        newKeyPair shouldNotBe null
-        newKeyPair shouldNotBe keyPair
-
-        val fetchedKeyPair = serviceKeyManager.getKeyPairWithId(newKeyPair.keyId)
-        fetchedKeyPair shouldNotBe null
-        fetchedKeyPair shouldNotBe keyPair
-        fetchedKeyPair shouldBe newKeyPair
-
-        serviceKeyManager.getKeyRingId() shouldStartWith keyRingServiceName
-
-        val privateKeyExists = serviceKeyManager.privateKeyExists(newKeyPair.keyId)
-        privateKeyExists shouldBe true
-
-        val clearData = "hello world".toByteArray()
-        val secretData = serviceKeyManager.encryptWithKeyPairId(
-            newKeyPair.keyId,
-            clearData,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-        )
-        var decryptedData = serviceKeyManager.decryptWithKeyPairId(
-            secretData,
-            newKeyPair.keyId,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-        )
-        decryptedData shouldBe clearData
-
-        val clearData2 = "hello world2".toByteArray()
-        val secretData2 = serviceKeyManager.encryptWithPublicKey(
-            newKeyPair.publicKey,
-            clearData2,
-            KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-        )
-        val decryptedData2 = serviceKeyManager.decryptWithKeyPairId(
-            secretData2,
-            newKeyPair.keyId,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-        )
-        decryptedData2 shouldBe clearData2
-
-        keyManager.deleteSymmetricKey("symmetricKey")
-        keyManager.generateSymmetricKey("symmetricKey")
-        val symmetricKey = serviceKeyManager.getSymmetricKeyData("symmetricKey")
-        val symmetricSecretData = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData)
-
-        decryptedData = serviceKeyManager.decryptWithSymmetricKey(symmetricKey!!, symmetricSecretData)
-        decryptedData shouldBe clearData
-
-        // Encrypt/decrypt with IV
-        val randomData = serviceKeyManager.createRandomData(16)
-        randomData shouldNotBe null
-
-        val symmetricKeyExists = serviceKeyManager.symmetricKeyExists("symmetricKey")
-        symmetricKeyExists shouldBe true
-
-        val clearData3 = "hello world3".toByteArray()
-        val secretData3 = serviceKeyManager.encryptWithSymmetricKeyId("symmetricKey", clearData3, randomData)
-        val decryptedData3 = serviceKeyManager.decryptWithSymmetricKey(symmetricKey, secretData3, randomData)
-        decryptedData3 shouldBe clearData3
-
-        // exportKeys and importKeys
-        val exportedKeys = serviceKeyManager.exportKeys()
-        exportedKeys shouldNotBe null
-        serviceKeyManager.removeAllKeys()
-        shouldThrow<com.sudoplatform.sudokeymanager.KeyNotFoundException> {
-            keyManager.encryptWithPublicKey(
-                newKeyPair.keyId,
-                clearData,
-                KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-            )
-        }
-        serviceKeyManager.importKeys(exportedKeys)
-        decryptedData = serviceKeyManager.decryptWithKeyPairId(
-            secretData,
-            newKeyPair.keyId,
-            KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1,
-        )
-        decryptedData shouldBe clearData
-    }
 }

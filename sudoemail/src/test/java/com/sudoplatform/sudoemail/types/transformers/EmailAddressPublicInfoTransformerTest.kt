@@ -24,7 +24,6 @@ import com.sudoplatform.sudoemail.types.EmailAddressPublicKey as EmailAddressPub
  */
 @RunWith(RobolectricTestRunner::class)
 class EmailAddressPublicInfoTransformerTest : BaseTests() {
-
     private val fragment by before {
         EmailAddressPublicInfoFragment(
             "emailAddress",

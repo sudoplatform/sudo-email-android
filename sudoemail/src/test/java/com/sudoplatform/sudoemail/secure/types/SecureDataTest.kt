@@ -16,7 +16,6 @@ import java.util.Base64
  * Test the correct operation of the methods for the [SecureData] type.
  */
 class SecureDataTest {
-
     private val encryptedDataString = "encryptedData"
     private val initVectorKeyIDString = "initVectorKeyID"
 
@@ -26,10 +25,11 @@ class SecureDataTest {
         val initVectorKeyID =
             Base64.getEncoder().encodeToString(initVectorKeyIDString.toByteArray())
 
-        val secureData = SecureData(
-            encryptedDataString.toByteArray().toByteString(),
-            initVectorKeyIDString.toByteArray().toByteString(),
-        )
+        val secureData =
+            SecureData(
+                encryptedDataString.toByteArray().toByteString(),
+                initVectorKeyIDString.toByteArray().toByteString(),
+            )
 
         val encodedSecureData = secureData.toJson()
         encodedSecureData shouldBe

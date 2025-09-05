@@ -60,8 +60,9 @@ private val HTML_TAG_BODY_REGEX = "(?si)<html.*</html>".toRegex()
  * A class which handles the processing of email message data which includes the encoding and
  * parsing of the RFC 822 compatible email message content.
  */
-class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDataProcessor {
-
+class Rfc822MessageDataProcessor(
+    private val context: Context,
+) : EmailMessageDataProcessor {
     private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
 
     private val session = Session.getInstance(Properties())
@@ -203,11 +204,13 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
 
         // Determine if attachments are inline or regular attachments based on the fact the CID appears in the body.
         // The content disposition header does not seem to be reliable.
-        val (inlineAttachments, attachments) = allAttachments.partition {
-            it.inlineAttachment || (it.contentId.isNotEmpty() && body.contains("cid:${it.contentId}"))
-        }.let { (inline, regular) ->
-            inline.map { it.copy(inlineAttachment = true) } to regular.map { it.copy(inlineAttachment = false) }
-        }
+        val (inlineAttachments, attachments) =
+            allAttachments
+                .partition {
+                    it.inlineAttachment || (it.contentId.isNotEmpty() && body.contains("cid:${it.contentId}"))
+                }.let { (inline, regular) ->
+                    inline.map { it.copy(inlineAttachment = true) } to regular.map { it.copy(inlineAttachment = false) }
+                }
 
         return SimplifiedEmailMessage(
             from,
@@ -233,7 +236,11 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
      * @param attachments [MutableList<EmailAttachment>] The email attachments which are inline or
      *  regular attachments.
      */
-    private fun partitionEmailBody(message: Part, parts: MutableList<ViewablePart>, attachments: MutableList<EmailAttachment>) {
+    private fun partitionEmailBody(
+        message: Part,
+        parts: MutableList<ViewablePart>,
+        attachments: MutableList<EmailAttachment>,
+    ) {
         when {
             message.fileName != null -> attachments.add(extractAttachment(message))
             message.isMimeType(MimeTypes.MULTIPART_ALTERNATIVE) -> {
@@ -270,20 +277,23 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
      */
     private fun buildEmailBody(parts: List<ViewablePart>): ViewableBody {
         val isHtml = parts.any { it.part.isMimeType(MimeTypes.TEXT_HTML) } || parts.any { it is ViewableMessageHeader }
-        val body = parts.mapNotNull {
-            if (isHtml) {
-                it.asHtmlText(context)
-            } else {
-                it.asPlainText(context)
-            }
-        }.joinToString(separator = if (isHtml) "\n<br>\n" else "\n\n").let { text ->
-            // There can be instances where a HTML body is not wrapped in <html> tags, add them.
-            if (isHtml && !HTML_TAG_BODY_REGEX.containsMatchIn(text)) {
-                "<html>$text</html>"
-            } else {
-                text
-            }
-        }
+        val body =
+            parts
+                .mapNotNull {
+                    if (isHtml) {
+                        it.asHtmlText(context)
+                    } else {
+                        it.asPlainText(context)
+                    }
+                }.joinToString(separator = if (isHtml) "\n<br>\n" else "\n\n")
+                .let { text ->
+                    // There can be instances where a HTML body is not wrapped in <html> tags, add them.
+                    if (isHtml && !HTML_TAG_BODY_REGEX.containsMatchIn(text)) {
+                        "<html>$text</html>"
+                    } else {
+                        text
+                    }
+                }
         return ViewableBody(body, isHtml)
     }
 
@@ -294,13 +304,17 @@ class Rfc822MessageDataProcessor(private val context: Context) : EmailMessageDat
      * @param defaultFileName [String] The file name of the attachment.
      * @return The [EmailAttachment].
      */
-    private fun extractAttachment(part: Part, defaultFileName: String = "unknown"): EmailAttachment {
+    private fun extractAttachment(
+        part: Part,
+        defaultFileName: String = "unknown",
+    ): EmailAttachment {
         val mimeType = part.contentType.substringBefore(';').trim()
-        val decodedFileName = try {
-            MimeUtility.decodeText(part.fileName)
-        } catch (e: Exception) {
-            defaultFileName
-        }
+        val decodedFileName =
+            try {
+                MimeUtility.decodeText(part.fileName)
+            } catch (e: Exception) {
+                defaultFileName
+            }
         val contentId = part.getHeader("Content-ID")?.firstOrNull()?.trim('<', '>') ?: ""
         val data = (part.content as? InputStream) ?: part.inputStream
         val isInLine = part.disposition.equals(Part.INLINE, true)

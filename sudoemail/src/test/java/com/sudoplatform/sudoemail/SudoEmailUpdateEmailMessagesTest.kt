@@ -8,7 +8,7 @@ package com.sudoplatform.sudoemail
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amplifyframework.api.graphql.GraphQLResponse
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.graphql.fragment.UpdateEmailMessagesResult
@@ -54,7 +54,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailUpdateEmailMessagesTest : BaseTests() {
-
     private val input by before {
         UpdateEmailMessagesInput(
             listOf("id1", "id2"),
@@ -73,19 +72,21 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     private val mutationPartialResponse by before {
         DataFactory.updateEmailMessagesMutationResponse(
             UpdateEmailMessagesStatus.PARTIAL,
-            failedMessages = listOf(
-                UpdateEmailMessagesResult.FailedMessage(
-                    "id2",
-                    "error",
+            failedMessages =
+                listOf(
+                    UpdateEmailMessagesResult.FailedMessage(
+                        "id2",
+                        "error",
+                    ),
                 ),
-            ),
-            successMessages = listOf(
-                UpdateEmailMessagesResult.SuccessMessage(
-                    "id1",
-                    1.0,
-                    2.0,
+            successMessages =
+                listOf(
+                    UpdateEmailMessagesResult.SuccessMessage(
+                        "id1",
+                        1.0,
+                        2.0,
+                    ),
                 ),
-            ),
         )
     }
 
@@ -188,9 +189,10 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     @Test
     fun `updateEmailMessages() should return success result when no error present`() =
         runTest {
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.updateEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.updateEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -220,9 +222,10 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.updateEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.updateEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -252,27 +255,30 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.updateEmailMessages(input)
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.updateEmailMessages(input)
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.PARTIAL
-            result.successValues shouldBe listOf(
-                UpdatedEmailMessageSuccess(
-                    "id1",
-                    1.0.toDate(),
-                    2.0.toDate(),
-                ),
-            )
-            result.failureValues shouldBe listOf(
-                EmailMessageOperationFailureResult(
-                    "id2",
-                    "error",
-                ),
-            )
+            result.successValues shouldBe
+                listOf(
+                    UpdatedEmailMessageSuccess(
+                        "id1",
+                        1.0.toDate(),
+                        2.0.toDate(),
+                    ),
+                )
+            result.failureValues shouldBe
+                listOf(
+                    EmailMessageOperationFailureResult(
+                        "id2",
+                        "error",
+                    ),
+                )
 
             verify(mockApiClient).updateEmailMessagesMutation(
                 check { mutationInput ->
@@ -291,15 +297,17 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
             for (i in 0..mockUpdateEmailMessagesLimit + 1) {
                 ids.add(UUID.randomUUID().toString())
             }
-            val input = UpdateEmailMessagesInput(
-                ids,
-                UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
-            )
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
-                    client.updateEmailMessages(input)
+            val input =
+                UpdateEmailMessagesInput(
+                    ids,
+                    UpdateEmailMessagesInput.UpdatableValues("folderId2", true),
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.LimitExceededException> {
+                        client.updateEmailMessages(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -322,11 +330,12 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                    client.updateEmailMessages(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.updateEmailMessages(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -343,12 +352,13 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
     @Test
     fun `updateEmailMessages() should throw when response has unexpected error`() =
         runTest {
-            val testError = GraphQLResponse.Error(
-                "mock",
-                null,
-                null,
-                mapOf("httpStatus" to "blah"),
-            )
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to "blah"),
+                )
             mockApiClient.stub {
                 onBlocking {
                     updateEmailMessagesMutation(
@@ -359,11 +369,12 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                    client.updateEmailMessages(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.updateEmailMessages(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 
@@ -378,67 +389,72 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `updateEmailMessages() should throw when http error occurs`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "mock",
-            null,
-            null,
-            mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-        )
-        mockApiClient.stub {
-            onBlocking {
-                updateEmailMessagesMutation(
-                    any(),
+    fun `updateEmailMessages() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
                 )
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMessagesMutation(
+                        any(),
+                    )
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
             }
-        }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                client.updateEmailMessages(input)
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.updateEmailMessages(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-        verify(mockApiClient).updateEmailMessagesMutation(
-            check { mutationInput ->
-                mutationInput.messageIds shouldBe listOf("id1", "id2")
-                mutationInput.values.folderId shouldBe Optional.Present("folderId2")
-                mutationInput.values.seen shouldBe Optional.Present(true)
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
+                    mutationInput.messageIds shouldBe listOf("id1", "id2")
+                    mutationInput.values.folderId shouldBe Optional.Present("folderId2")
+                    mutationInput.values.seen shouldBe Optional.Present(true)
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
-    fun `updateEmailMessages() should throw when unknown error occurs()`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                updateEmailMessagesMutation(
-                    any(),
-                )
-            } doThrow RuntimeException("Mock Runtime Exception")
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                client.updateEmailMessages(input)
+    fun `updateEmailMessages() should throw when unknown error occurs()`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMessagesMutation(
+                        any(),
+                    )
+                } doThrow RuntimeException("Mock Runtime Exception")
             }
-        }
-        deferredResult.start()
-        deferredResult.await()
 
-        verify(mockApiClient).updateEmailMessagesMutation(
-            check { mutationInput ->
-                mutationInput.messageIds shouldBe listOf("id1", "id2")
-                mutationInput.values.folderId shouldBe Optional.Present("folderId2")
-                mutationInput.values.seen shouldBe Optional.Present(true)
-            },
-        )
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
+                        client.updateEmailMessages(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).updateEmailMessagesMutation(
+                check { mutationInput ->
+                    mutationInput.messageIds shouldBe listOf("id1", "id2")
+                    mutationInput.values.folderId shouldBe Optional.Present("folderId2")
+                    mutationInput.values.seen shouldBe Optional.Present(true)
+                },
+            )
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
     fun `updateEmailMessage() should not block coroutine cancellation exception`() =
@@ -451,11 +467,12 @@ class SudoEmailUpdateEmailMessagesTest : BaseTests() {
                 } doThrow CancellationException("Mock Cancellation Exception")
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<CancellationException> {
-                    client.updateEmailMessages(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<CancellationException> {
+                        client.updateEmailMessages(input)
+                    }
                 }
-            }
             deferredResult.start()
             deferredResult.await()
 

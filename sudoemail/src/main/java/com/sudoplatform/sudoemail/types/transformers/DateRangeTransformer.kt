@@ -14,7 +14,6 @@ import com.sudoplatform.sudoemail.types.DateRange
  * the entity type that is exposed to users.
  */
 internal object DateRangeTransformer {
-
     /**
      * Transform the input type [DateRange] into the corresponding GraphQL type [DateRangeInput].
      */

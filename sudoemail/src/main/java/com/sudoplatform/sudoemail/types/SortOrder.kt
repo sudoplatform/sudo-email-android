@@ -26,8 +26,8 @@ enum class SortOrder {
 
     ;
 
-    fun toSortOrderInput(sortOrder: SortOrder): SortOrderInput {
-        return when (sortOrder) {
+    fun toSortOrderInput(sortOrder: SortOrder): SortOrderInput =
+        when (sortOrder) {
             ASC -> {
                 SortOrderInput.ASC
             }
@@ -35,5 +35,4 @@ enum class SortOrder {
                 SortOrderInput.DESC
             }
         }
-    }
 }

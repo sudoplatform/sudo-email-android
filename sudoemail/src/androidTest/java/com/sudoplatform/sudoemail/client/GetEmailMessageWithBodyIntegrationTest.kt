@@ -44,41 +44,44 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun getEmailMessageWithBodyShouldReturnSuccessfulResult() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun getEmailMessageWithBodyShouldReturnSuccessfulResult() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val sendResult = sendEmailMessage(emailClient, emailAddress, body = messageBody)
-        sendResult.id.isBlank() shouldBe false
+            val sendResult = sendEmailMessage(emailClient, emailAddress, body = messageBody)
+            sendResult.id.isBlank() shouldBe false
 
-        waitForMessage(sendResult.id)
+            waitForMessage(sendResult.id)
 
-        emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
-            ?: fail("Email message not found")
+            emailClient.getEmailMessage(GetEmailMessageInput(sendResult.id))
+                ?: fail("Email message not found")
 
-        val input = GetEmailMessageWithBodyInput(sendResult.id, emailAddress.id)
-        val result = emailClient.getEmailMessageWithBody(input)
-            ?: throw AssertionError("should not be null")
-        result.id shouldBe sendResult.id
-        result.body.contains(messageBody)
-        result.attachments.isEmpty() shouldBe true
-        result.inlineAttachments.isEmpty() shouldBe true
-    }
+            val input = GetEmailMessageWithBodyInput(sendResult.id, emailAddress.id)
+            val result =
+                emailClient.getEmailMessageWithBody(input)
+                    ?: throw AssertionError("should not be null")
+            result.id shouldBe sendResult.id
+            result.body.contains(messageBody)
+            result.attachments.isEmpty() shouldBe true
+            result.inlineAttachments.isEmpty() shouldBe true
+        }
 
     @Test
     fun getEmailMessageWithBodyForEncryptedMessageShouldReturnUnencryptedMessageBody() =
@@ -98,12 +101,13 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
             receiverEmailAddress shouldNotBe null
             emailAddressList.add(receiverEmailAddress)
 
-            val sendResult = sendEmailMessage(
-                emailClient,
-                emailAddress,
-                toAddresses = listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
-                body = messageBody,
-            )
+            val sendResult =
+                sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
+                    body = messageBody,
+                )
             sendResult.id.isBlank() shouldBe false
 
             waitForMessage(sendResult.id)
@@ -112,8 +116,9 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
                 ?: fail("Email message not found")
 
             val input = GetEmailMessageWithBodyInput(sendResult.id, emailAddress.id)
-            val result = emailClient.getEmailMessageWithBody(input)
-                ?: throw AssertionError("should not be null")
+            val result =
+                emailClient.getEmailMessageWithBody(input)
+                    ?: throw AssertionError("should not be null")
             result.id shouldBe sendResult.id
             result.body.contains(messageBody)
             result.attachments.isEmpty() shouldBe true
@@ -138,29 +143,32 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
             receiverEmailAddress shouldNotBe null
             emailAddressList.add(receiverEmailAddress)
 
-            val attachment = EmailAttachment(
-                fileName = "goodExtension.pdf",
-                contentId = UUID.randomUUID().toString(),
-                mimeType = "application/pdf",
-                inlineAttachment = false,
-                data = "This file has a valid file extension".toByteArray(),
-            )
-            val inlineAttachment = EmailAttachment(
-                fileName = "goodImage.png",
-                contentId = UUID.randomUUID().toString(),
-                mimeType = "image/png",
-                inlineAttachment = true,
-                data = ByteArray(42),
-            )
+            val attachment =
+                EmailAttachment(
+                    fileName = "goodExtension.pdf",
+                    contentId = UUID.randomUUID().toString(),
+                    mimeType = "application/pdf",
+                    inlineAttachment = false,
+                    data = "This file has a valid file extension".toByteArray(),
+                )
+            val inlineAttachment =
+                EmailAttachment(
+                    fileName = "goodImage.png",
+                    contentId = UUID.randomUUID().toString(),
+                    mimeType = "image/png",
+                    inlineAttachment = true,
+                    data = ByteArray(42),
+                )
 
-            val sendResult = sendEmailMessage(
-                emailClient,
-                emailAddress,
-                toAddresses = listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
-                body = messageBody,
-                attachments = listOf(attachment),
-                inlineAttachments = listOf(inlineAttachment),
-            )
+            val sendResult =
+                sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
+                    body = messageBody,
+                    attachments = listOf(attachment),
+                    inlineAttachments = listOf(inlineAttachment),
+                )
             sendResult.id.isBlank() shouldBe false
 
             waitForMessage(sendResult.id)
@@ -169,8 +177,9 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
                 ?: fail("Email message not found")
 
             val input = GetEmailMessageWithBodyInput(sendResult.id, emailAddress.id)
-            val result = emailClient.getEmailMessageWithBody(input)
-                ?: throw AssertionError("should not be null")
+            val result =
+                emailClient.getEmailMessageWithBody(input)
+                    ?: throw AssertionError("should not be null")
             result.id shouldBe sendResult.id
             result.body.contains(messageBody)
             result.attachments.isEmpty() shouldBe false

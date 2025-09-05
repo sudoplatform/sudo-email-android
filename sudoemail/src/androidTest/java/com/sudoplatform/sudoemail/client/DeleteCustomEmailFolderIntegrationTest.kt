@@ -44,13 +44,17 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
-    private suspend fun createCustomEmailFolder(emailAddressId: String, emailFolderName: String): EmailFolder {
+    private suspend fun createCustomEmailFolder(
+        emailAddressId: String,
+        emailFolderName: String,
+    ): EmailFolder {
         val input = CreateCustomEmailFolderInput(emailAddressId, emailFolderName)
 
         val result = emailClient.createCustomEmailFolder(input)
@@ -58,120 +62,126 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
     }
 
     @Test
-    fun deleteCustomEmailFolderShouldReturnNullForUnknownFolder() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun deleteCustomEmailFolderShouldReturnNullForUnknownFolder() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = DeleteCustomEmailFolderInput("bad-id", emailAddress.id)
+            val input = DeleteCustomEmailFolderInput("bad-id", emailAddress.id)
 
-        val result = emailClient.deleteCustomEmailFolder(input)
-        result shouldBe null
-    }
-
-    @Test
-    fun deleteCustomEmailFolderShouldReturnDeletedFolderOnSuccess() = runTest {
-        val customFolderName = "TEST"
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val customFolder = createCustomEmailFolder(emailAddress.id, customFolderName)
-
-        val input = DeleteCustomEmailFolderInput(customFolder.id, emailAddress.id)
-        val result = emailClient.deleteCustomEmailFolder(input)
-        result shouldNotBe null
-        result!!.id shouldStartWith emailAddress.id
-        result.customFolderName shouldBe "TEST"
-    }
-
-    @Test
-    fun deleteCustomEmailFolderShouldMoveMessagesToTrashOnFolderDeletion() = runTest {
-        val customFolderName = "TEST"
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val customFolder = createCustomEmailFolder(emailAddress.id, customFolderName)
-
-        val sendResult = sendEmailMessage(
-            emailClient,
-            emailAddress,
-
-        )
-
-        sendResult shouldNotBe null
-
-        val updateResult = emailClient.updateEmailMessages(
-            UpdateEmailMessagesInput(
-                listOf(sendResult.id),
-                UpdateEmailMessagesInput.UpdatableValues(customFolder.id),
-            ),
-        )
-
-        updateResult shouldNotBe null
-
-        when (
-            val listEmailMessages = emailClient.listEmailMessagesForEmailFolderId(
-                ListEmailMessagesForEmailFolderIdInput(customFolder.id),
-            )
-        ) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items shouldHaveSize 1
-                listEmailMessages.result.items[0].id shouldBe sendResult.id
-                listEmailMessages.result.items[0].folderId shouldBe customFolder.id
-            }
-
-            is ListAPIResult.Partial -> {
-                fail("Unexpected failure to list messages")
-            }
+            val result = emailClient.deleteCustomEmailFolder(input)
+            result shouldBe null
         }
 
-        val input = DeleteCustomEmailFolderInput(customFolder.id, emailAddress.id)
-        val result = emailClient.deleteCustomEmailFolder(input)
-        result shouldNotBe null
-        result!!.id shouldStartWith emailAddress.id
-        result.customFolderName shouldBe "TEST"
+    @Test
+    fun deleteCustomEmailFolderShouldReturnDeletedFolderOnSuccess() =
+        runTest {
+            val customFolderName = "TEST"
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        trashFolder shouldNotBe null
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        when (
-            val listEmailMessages = emailClient.listEmailMessagesForEmailFolderId(
-                ListEmailMessagesForEmailFolderIdInput(trashFolder!!.id),
-            )
-        ) {
-            is ListAPIResult.Success -> {
-                listEmailMessages.result.items shouldHaveSize 1
-                listEmailMessages.result.items[0].id shouldBe sendResult.id
-                listEmailMessages.result.items[0].folderId shouldBe trashFolder.id
+            val customFolder = createCustomEmailFolder(emailAddress.id, customFolderName)
+
+            val input = DeleteCustomEmailFolderInput(customFolder.id, emailAddress.id)
+            val result = emailClient.deleteCustomEmailFolder(input)
+            result shouldNotBe null
+            result!!.id shouldStartWith emailAddress.id
+            result.customFolderName shouldBe "TEST"
+        }
+
+    @Test
+    fun deleteCustomEmailFolderShouldMoveMessagesToTrashOnFolderDeletion() =
+        runTest {
+            val customFolderName = "TEST"
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val customFolder = createCustomEmailFolder(emailAddress.id, customFolderName)
+
+            val sendResult =
+                sendEmailMessage(
+                    emailClient,
+                    emailAddress,
+                )
+
+            sendResult shouldNotBe null
+
+            val updateResult =
+                emailClient.updateEmailMessages(
+                    UpdateEmailMessagesInput(
+                        listOf(sendResult.id),
+                        UpdateEmailMessagesInput.UpdatableValues(customFolder.id),
+                    ),
+                )
+
+            updateResult shouldNotBe null
+
+            when (
+                val listEmailMessages =
+                    emailClient.listEmailMessagesForEmailFolderId(
+                        ListEmailMessagesForEmailFolderIdInput(customFolder.id),
+                    )
+            ) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items shouldHaveSize 1
+                    listEmailMessages.result.items[0].id shouldBe sendResult.id
+                    listEmailMessages.result.items[0].folderId shouldBe customFolder.id
+                }
+
+                is ListAPIResult.Partial -> {
+                    fail("Unexpected failure to list messages")
+                }
             }
 
-            is ListAPIResult.Partial -> {
-                fail("Unexpected failure to list messages")
+            val input = DeleteCustomEmailFolderInput(customFolder.id, emailAddress.id)
+            val result = emailClient.deleteCustomEmailFolder(input)
+            result shouldNotBe null
+            result!!.id shouldStartWith emailAddress.id
+            result.customFolderName shouldBe "TEST"
+
+            val trashFolder = getFolderByName(emailClient, emailAddress.id, "TRASH")
+
+            trashFolder shouldNotBe null
+
+            when (
+                val listEmailMessages =
+                    emailClient.listEmailMessagesForEmailFolderId(
+                        ListEmailMessagesForEmailFolderIdInput(trashFolder!!.id),
+                    )
+            ) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items shouldHaveSize 1
+                    listEmailMessages.result.items[0].id shouldBe sendResult.id
+                    listEmailMessages.result.items[0].folderId shouldBe trashFolder.id
+                }
+
+                is ListAPIResult.Partial -> {
+                    fail("Unexpected failure to list messages")
+                }
             }
         }
-    }
 }

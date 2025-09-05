@@ -35,7 +35,6 @@ internal class SubscriptionService(
     private val userClient: SudoUserClient,
     private val logger: Logger = Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO)),
 ) : AutoCloseable {
-
     companion object {
         private const val ERROR_UNAUTHENTICATED_MSG = "User client does not have subject. Is the user authenticated?"
     }
@@ -45,51 +44,56 @@ internal class SubscriptionService(
     private val deleteSubscriptionManager = EmailMessageSubscriptionManager<OnEmailMessageDeletedSubscription.Data>()
     private val updateSubscriptionManager = EmailMessageSubscriptionManager<OnEmailMessageUpdatedSubscription.Data>()
 
-    suspend fun subscribeEmailMessages(id: String, subscriber: EmailMessageSubscriber) {
-        val userSubject = userClient.getSubject()
-            ?: throw SudoEmailClient.EmailMessageException.AuthenticationException(ERROR_UNAUTHENTICATED_MSG)
+    suspend fun subscribeEmailMessages(
+        id: String,
+        subscriber: EmailMessageSubscriber,
+    ) {
+        val userSubject =
+            userClient.getSubject()
+                ?: throw SudoEmailClient.EmailMessageException.AuthenticationException(ERROR_UNAUTHENTICATED_MSG)
 
         createSubscriptionManager.replaceSubscriber(id, subscriber)
         deleteSubscriptionManager.replaceSubscriber(id, subscriber)
         updateSubscriptionManager.replaceSubscriber(id, subscriber)
 
-        scope.launch {
-            if (createSubscriptionManager.watcher == null) {
-                val watcher =
-                    apiClient.onEmailMessageCreatedSubscription(
-                        userSubject,
-                        createCallback.onSubscriptionEstablished,
-                        createCallback.onSubscription,
-                        createCallback.onSubscriptionCompleted,
-                        createCallback.onFailure,
-                    )
-                createSubscriptionManager.watcher = watcher
-            }
+        scope
+            .launch {
+                if (createSubscriptionManager.watcher == null) {
+                    val watcher =
+                        apiClient.onEmailMessageCreatedSubscription(
+                            userSubject,
+                            createCallback.onSubscriptionEstablished,
+                            createCallback.onSubscription,
+                            createCallback.onSubscriptionCompleted,
+                            createCallback.onFailure,
+                        )
+                    createSubscriptionManager.watcher = watcher
+                }
 
-            if (deleteSubscriptionManager.watcher == null) {
-                val watcher =
-                    apiClient.onEmailMessageDeletedSubscription(
-                        userSubject,
-                        deleteCallback.onSubscriptionEstablished,
-                        deleteCallback.onSubscription,
-                        deleteCallback.onSubscriptionCompleted,
-                        deleteCallback.onFailure,
-                    )
-                deleteSubscriptionManager.watcher = watcher
-            }
+                if (deleteSubscriptionManager.watcher == null) {
+                    val watcher =
+                        apiClient.onEmailMessageDeletedSubscription(
+                            userSubject,
+                            deleteCallback.onSubscriptionEstablished,
+                            deleteCallback.onSubscription,
+                            deleteCallback.onSubscriptionCompleted,
+                            deleteCallback.onFailure,
+                        )
+                    deleteSubscriptionManager.watcher = watcher
+                }
 
-            if (updateSubscriptionManager.watcher == null) {
-                val watcher =
-                    apiClient.onEmailMessageUpdatedSubscription(
-                        userSubject,
-                        updateCallback.onSubscriptionEstablished,
-                        updateCallback.onSubscription,
-                        updateCallback.onSubscriptionCompleted,
-                        updateCallback.onFailure,
-                    )
-                updateSubscriptionManager.watcher = watcher
-            }
-        }.join()
+                if (updateSubscriptionManager.watcher == null) {
+                    val watcher =
+                        apiClient.onEmailMessageUpdatedSubscription(
+                            userSubject,
+                            updateCallback.onSubscriptionEstablished,
+                            updateCallback.onSubscription,
+                            updateCallback.onSubscriptionCompleted,
+                            updateCallback.onFailure,
+                        )
+                    updateSubscriptionManager.watcher = watcher
+                }
+            }.join()
     }
 
     fun unsubscribeEmailMessages(id: String) {
@@ -107,84 +111,87 @@ internal class SubscriptionService(
         scope.cancel()
     }
 
-    private val createCallback = object {
-        val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageCreatedSubscription.Data>) -> Unit =
-            {
-                createSubscriptionManager.connectionStatusChanged(
-                    Subscriber.ConnectionState.CONNECTED,
-                )
+    private val createCallback =
+        object {
+            val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageCreatedSubscription.Data>) -> Unit =
+                {
+                    createSubscriptionManager.connectionStatusChanged(
+                        Subscriber.ConnectionState.CONNECTED,
+                    )
+                }
+            val onSubscription: (GraphQLResponse<OnEmailMessageCreatedSubscription.Data>) -> Unit = {
+                scope.launch {
+                    val createEmailMessage = it.data?.onEmailMessageCreated ?: return@launch
+                    createSubscriptionManager.emailMessageChanged(
+                        EmailMessageTransformer.toEntity(
+                            deviceKeyManager,
+                            createEmailMessage.sealedEmailMessage,
+                        ),
+                        EmailMessageSubscriber.ChangeType.CREATED,
+                    )
+                }
             }
-        val onSubscription: (GraphQLResponse<OnEmailMessageCreatedSubscription.Data>) -> Unit = {
-            scope.launch {
-                val createEmailMessage = it.data?.onEmailMessageCreated ?: return@launch
-                createSubscriptionManager.emailMessageChanged(
-                    EmailMessageTransformer.toEntity(
-                        deviceKeyManager,
-                        createEmailMessage.sealedEmailMessage,
-                    ),
-                    EmailMessageSubscriber.ChangeType.CREATED,
-                )
+            val onSubscriptionCompleted = {
+                createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
+            }
+            val onFailure: (ApiException) -> Unit = {
+                logger.error("Email message create subscription error $it")
             }
         }
-        val onSubscriptionCompleted = {
-            createSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
-        }
-        val onFailure: (ApiException) -> Unit = {
-            logger.error("Email message create subscription error $it")
-        }
-    }
 
-    private val deleteCallback = object {
-        val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageDeletedSubscription.Data>) -> Unit =
-            {
-                deleteSubscriptionManager.connectionStatusChanged(
-                    Subscriber.ConnectionState.CONNECTED,
-                )
+    private val deleteCallback =
+        object {
+            val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageDeletedSubscription.Data>) -> Unit =
+                {
+                    deleteSubscriptionManager.connectionStatusChanged(
+                        Subscriber.ConnectionState.CONNECTED,
+                    )
+                }
+            val onSubscription: (GraphQLResponse<OnEmailMessageDeletedSubscription.Data>) -> Unit = {
+                scope.launch {
+                    val deleteEmailMessage = it.data?.onEmailMessageDeleted ?: return@launch
+                    deleteSubscriptionManager.emailMessageChanged(
+                        EmailMessageTransformer.toEntity(
+                            deviceKeyManager,
+                            deleteEmailMessage.sealedEmailMessage,
+                        ),
+                        EmailMessageSubscriber.ChangeType.DELETED,
+                    )
+                }
             }
-        val onSubscription: (GraphQLResponse<OnEmailMessageDeletedSubscription.Data>) -> Unit = {
-            scope.launch {
-                val deleteEmailMessage = it.data?.onEmailMessageDeleted ?: return@launch
-                deleteSubscriptionManager.emailMessageChanged(
-                    EmailMessageTransformer.toEntity(
-                        deviceKeyManager,
-                        deleteEmailMessage.sealedEmailMessage,
-                    ),
-                    EmailMessageSubscriber.ChangeType.DELETED,
-                )
+            val onSubscriptionCompleted = {
+                deleteSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
+            }
+            val onFailure: (ApiException) -> Unit = {
+                logger.error("Email message delete subscription error $it")
             }
         }
-        val onSubscriptionCompleted = {
-            deleteSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
-        }
-        val onFailure: (ApiException) -> Unit = {
-            logger.error("Email message delete subscription error $it")
-        }
-    }
 
-    private val updateCallback = object {
-        val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageUpdatedSubscription.Data>) -> Unit =
-            {
-                updateSubscriptionManager.connectionStatusChanged(
-                    Subscriber.ConnectionState.CONNECTED,
-                )
+    private val updateCallback =
+        object {
+            val onSubscriptionEstablished: (GraphQLResponse<OnEmailMessageUpdatedSubscription.Data>) -> Unit =
+                {
+                    updateSubscriptionManager.connectionStatusChanged(
+                        Subscriber.ConnectionState.CONNECTED,
+                    )
+                }
+            val onSubscription: (GraphQLResponse<OnEmailMessageUpdatedSubscription.Data>) -> Unit = {
+                scope.launch {
+                    val updateEmailMessage = it.data?.onEmailMessageUpdated ?: return@launch
+                    updateSubscriptionManager.emailMessageChanged(
+                        EmailMessageTransformer.toEntity(
+                            deviceKeyManager,
+                            updateEmailMessage.sealedEmailMessage,
+                        ),
+                        EmailMessageSubscriber.ChangeType.UPDATED,
+                    )
+                }
             }
-        val onSubscription: (GraphQLResponse<OnEmailMessageUpdatedSubscription.Data>) -> Unit = {
-            scope.launch {
-                val updateEmailMessage = it.data?.onEmailMessageUpdated ?: return@launch
-                updateSubscriptionManager.emailMessageChanged(
-                    EmailMessageTransformer.toEntity(
-                        deviceKeyManager,
-                        updateEmailMessage.sealedEmailMessage,
-                    ),
-                    EmailMessageSubscriber.ChangeType.UPDATED,
-                )
+            val onSubscriptionCompleted = {
+                updateSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
+            }
+            val onFailure: (ApiException) -> Unit = {
+                logger.error("Email message update subscription error $it")
             }
         }
-        val onSubscriptionCompleted = {
-            updateSubscriptionManager.connectionStatusChanged(Subscriber.ConnectionState.DISCONNECTED)
-        }
-        val onFailure: (ApiException) -> Unit = {
-            logger.error("Email message update subscription error $it")
-        }
-    }
 }

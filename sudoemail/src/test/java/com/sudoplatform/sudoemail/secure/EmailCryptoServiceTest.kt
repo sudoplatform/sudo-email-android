@@ -45,27 +45,27 @@ import java.util.Base64
  * Test the correct operation of [EmailCryptoService] using mocks and spies.
  */
 class EmailCryptoServiceTest : BaseTests() {
-
-    private val stubPublicInfo = listOf(
-        EmailAddressPublicInfo(
-            "foo@bar.com",
-            "keyId1",
-            EmailAddressPublicKey(
-                "publicKey1",
-                PublicKeyFormat.RSA_PUBLIC_KEY,
-                "algorithm",
+    private val stubPublicInfo =
+        listOf(
+            EmailAddressPublicInfo(
+                "foo@bar.com",
+                "keyId1",
+                EmailAddressPublicKey(
+                    "publicKey1",
+                    PublicKeyFormat.RSA_PUBLIC_KEY,
+                    "algorithm",
+                ),
             ),
-        ),
-        EmailAddressPublicInfo(
-            "foo@bar.com",
-            "keyId2",
-            EmailAddressPublicKey(
-                "publicKey2",
-                PublicKeyFormat.RSA_PUBLIC_KEY,
-                "algorithm",
+            EmailAddressPublicInfo(
+                "foo@bar.com",
+                "keyId2",
+                EmailAddressPublicKey(
+                    "publicKey2",
+                    PublicKeyFormat.RSA_PUBLIC_KEY,
+                    "algorithm",
+                ),
             ),
-        ),
-    )
+        )
 
     private val encryptedData = Base64.getEncoder().encodeToString("encryptedData".toByteArray())
     private val initVectorKeyID =
@@ -81,20 +81,22 @@ class EmailCryptoServiceTest : BaseTests() {
             "$ALGORITHM_JSON":"RSA_ECB_OAEPSHA1"
         }"""
 
-    private val bodyAttachment = EmailAttachment(
-        fileName = SecureEmailAttachmentType.BODY.fileName,
-        contentId = SecureEmailAttachmentType.BODY.contentId,
-        mimeType = SecureEmailAttachmentType.BODY.mimeType,
-        inlineAttachment = false,
-        data = stubData.toByteArray(),
-    )
-    private val keyAttachment = EmailAttachment(
-        fileName = SecureEmailAttachmentType.KEY_EXCHANGE.fileName,
-        contentId = SecureEmailAttachmentType.KEY_EXCHANGE.contentId,
-        mimeType = SecureEmailAttachmentType.KEY_EXCHANGE.mimeType,
-        inlineAttachment = false,
-        data = stubKey.toByteArray(),
-    )
+    private val bodyAttachment =
+        EmailAttachment(
+            fileName = SecureEmailAttachmentType.BODY.fileName,
+            contentId = SecureEmailAttachmentType.BODY.contentId,
+            mimeType = SecureEmailAttachmentType.BODY.mimeType,
+            inlineAttachment = false,
+            data = stubData.toByteArray(),
+        )
+    private val keyAttachment =
+        EmailAttachment(
+            fileName = SecureEmailAttachmentType.KEY_EXCHANGE.fileName,
+            contentId = SecureEmailAttachmentType.KEY_EXCHANGE.contentId,
+            mimeType = SecureEmailAttachmentType.KEY_EXCHANGE.mimeType,
+            inlineAttachment = false,
+            data = stubKey.toByteArray(),
+        )
     private val securePackage = SecurePackage(setOf(keyAttachment), bodyAttachment)
 
     private val mockDeviceKeyManager by before {
@@ -122,155 +124,169 @@ class EmailCryptoServiceTest : BaseTests() {
     }
 
     @Test
-    fun `encrypt() should return results when no error present`() = runTest {
-        val stubPublicInfo = listOf(
-            EmailAddressPublicInfo(
-                "foo@bar.com",
-                "keyId1",
-                EmailAddressPublicKey(
-                    encryptedData,
-                    PublicKeyFormat.RSA_PUBLIC_KEY,
-                    "algorithm",
-                ),
-            ),
-            EmailAddressPublicInfo(
-                "foo@bar.com",
-                "keyId2",
-                EmailAddressPublicKey(
-                    encryptedData,
-                    PublicKeyFormat.SPKI,
-                    "algorithm",
-                ),
-            ),
-        )
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            emailCryptoService.encrypt(stubData.toByteArray(), stubPublicInfo)
-        }
+    fun `encrypt() should return results when no error present`() =
+        runTest {
+            val stubPublicInfo =
+                listOf(
+                    EmailAddressPublicInfo(
+                        "foo@bar.com",
+                        "keyId1",
+                        EmailAddressPublicKey(
+                            encryptedData,
+                            PublicKeyFormat.RSA_PUBLIC_KEY,
+                            "algorithm",
+                        ),
+                    ),
+                    EmailAddressPublicInfo(
+                        "foo@bar.com",
+                        "keyId2",
+                        EmailAddressPublicKey(
+                            encryptedData,
+                            PublicKeyFormat.SPKI,
+                            "algorithm",
+                        ),
+                    ),
+                )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    emailCryptoService.encrypt(stubData.toByteArray(), stubPublicInfo)
+                }
 
-        deferredResult.start()
-        delay(100L)
+            deferredResult.start()
+            delay(100L)
 
-        val result = deferredResult.await()
-        result shouldNotBe null
+            val result = deferredResult.await()
+            result shouldNotBe null
 
-        with(result) {
-            bodyAttachment.fileName shouldBe securePackage.bodyAttachment.fileName
-            bodyAttachment.contentId shouldBe securePackage.bodyAttachment.contentId
-            bodyAttachment.mimeType shouldBe securePackage.bodyAttachment.mimeType
-            bodyAttachment.inlineAttachment shouldBe false
-            bodyAttachment.data shouldNotBe null
+            with(result) {
+                bodyAttachment.fileName shouldBe securePackage.bodyAttachment.fileName
+                bodyAttachment.contentId shouldBe securePackage.bodyAttachment.contentId
+                bodyAttachment.mimeType shouldBe securePackage.bodyAttachment.mimeType
+                bodyAttachment.inlineAttachment shouldBe false
+                bodyAttachment.data shouldNotBe null
 
-            var fileNameIndex: Int
-            keyAttachments.forEachIndexed { index, key ->
-                fileNameIndex = index + 1
-                key.fileName shouldBe "${securePackage.keyAttachments.first().fileName} $fileNameIndex"
-                key.contentId shouldBe securePackage.keyAttachments.first().contentId
-                key.mimeType shouldBe securePackage.keyAttachments.first().mimeType
-                key.inlineAttachment shouldBe false
-                key.data shouldNotBe null
+                var fileNameIndex: Int
+                keyAttachments.forEachIndexed { index, key ->
+                    fileNameIndex = index + 1
+                    key.fileName shouldBe "${securePackage.keyAttachments.first().fileName} $fileNameIndex"
+                    key.contentId shouldBe securePackage.keyAttachments.first().contentId
+                    key.mimeType shouldBe securePackage.keyAttachments.first().mimeType
+                    key.inlineAttachment shouldBe false
+                    key.data shouldNotBe null
+                }
             }
-        }
 
-        verify(mockDeviceKeyManager).generateRandomSymmetricKey()
-        verify(mockDeviceKeyManager).createRandomData(anyInt())
-        verify(mockDeviceKeyManager).encryptWithSymmetricKey(any(), any(), any())
-        val deviceKeyManagerOrder = inOrder(mockDeviceKeyManager)
-        deviceKeyManagerOrder.verify(mockDeviceKeyManager).encryptWithPublicKey(
-            any(),
-            any(),
-            eq(KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY),
-            eq(KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1),
-        )
-        deviceKeyManagerOrder.verify(mockDeviceKeyManager).encryptWithPublicKey(
-            any(),
-            any(),
-            eq(KeyManagerInterface.PublicKeyFormat.SPKI),
-            eq(KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1),
-        )
-    }
-
-    @Test
-    fun `encrypt() should throw error if data is empty`() = runTest {
-        val data = ByteArray(0)
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                emailCryptoService.encrypt(data, stubPublicInfo)
-            }
-        }
-        deferredResult.start()
-        delay(100L)
-
-        deferredResult.await()
-    }
-
-    @Test
-    fun `encrypt() should throw error if keyIds are empty`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                emailCryptoService.encrypt(stubData.toByteArray(), emptyList())
-            }
-        }
-        deferredResult.start()
-        delay(100L)
-
-        deferredResult.await()
-    }
-
-    @Test
-    fun `encrypt() should throw error if device key manager error occurs`() = runTest {
-        mockDeviceKeyManager.stub {
-            on { generateRandomSymmetricKey() } doThrow DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
-                "Mock",
+            verify(mockDeviceKeyManager).generateRandomSymmetricKey()
+            verify(mockDeviceKeyManager).createRandomData(anyInt())
+            verify(mockDeviceKeyManager).encryptWithSymmetricKey(any(), any(), any())
+            val deviceKeyManagerOrder = inOrder(mockDeviceKeyManager)
+            deviceKeyManagerOrder.verify(mockDeviceKeyManager).encryptWithPublicKey(
+                any(),
+                any(),
+                eq(KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY),
+                eq(KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1),
+            )
+            deviceKeyManagerOrder.verify(mockDeviceKeyManager).encryptWithPublicKey(
+                any(),
+                any(),
+                eq(KeyManagerInterface.PublicKeyFormat.SPKI),
+                eq(KeyManagerInterface.PublicKeyEncryptionAlgorithm.RSA_ECB_OAEPSHA1),
             )
         }
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<EmailCryptoService.EmailCryptoServiceException.SecureDataEncryptionException> {
-                emailCryptoService.encrypt(stubData.toByteArray(), stubPublicInfo)
-            }
-        }
-        deferredResult.start()
-        delay(100L)
-
-        deferredResult.await()
-
-        verify(mockDeviceKeyManager).generateRandomSymmetricKey()
-    }
 
     @Test
-    fun `decrypt() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            emailCryptoService.decrypt(securePackage)
+    fun `encrypt() should throw error if data is empty`() =
+        runTest {
+            val data = ByteArray(0)
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
+                        emailCryptoService.encrypt(data, stubPublicInfo)
+                    }
+                }
+            deferredResult.start()
+            delay(100L)
+
+            deferredResult.await()
         }
 
-        deferredResult.start()
-        delay(100L)
+    @Test
+    fun `encrypt() should throw error if keyIds are empty`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
+                        emailCryptoService.encrypt(stubData.toByteArray(), emptyList())
+                    }
+                }
+            deferredResult.start()
+            delay(100L)
 
-        val result = deferredResult.await()
-        result shouldBe ByteArray(42)
+            deferredResult.await()
+        }
 
-        verify(mockDeviceKeyManager).privateKeyExists(anyString())
-        verify(mockDeviceKeyManager).decryptWithKeyPairId(any(), anyString(), any())
-        verify(mockDeviceKeyManager).decryptWithSymmetricKey(any(), any(), any())
-    }
+    @Test
+    fun `encrypt() should throw error if device key manager error occurs`() =
+        runTest {
+            mockDeviceKeyManager.stub {
+                on { generateRandomSymmetricKey() } doThrow
+                    DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException(
+                        "Mock",
+                    )
+            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<EmailCryptoService.EmailCryptoServiceException.SecureDataEncryptionException> {
+                        emailCryptoService.encrypt(stubData.toByteArray(), stubPublicInfo)
+                    }
+                }
+            deferredResult.start()
+            delay(100L)
+
+            deferredResult.await()
+
+            verify(mockDeviceKeyManager).generateRandomSymmetricKey()
+        }
+
+    @Test
+    fun `decrypt() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    emailCryptoService.decrypt(securePackage)
+                }
+
+            deferredResult.start()
+            delay(100L)
+
+            val result = deferredResult.await()
+            result shouldBe ByteArray(42)
+
+            verify(mockDeviceKeyManager).privateKeyExists(anyString())
+            verify(mockDeviceKeyManager).decryptWithKeyPairId(any(), anyString(), any())
+            verify(mockDeviceKeyManager).decryptWithSymmetricKey(any(), any(), any())
+        }
 
     @Test
     fun `decrypt() should throw error for empty body attachment on secure package`() =
         runTest {
-            val bodyAttachment = EmailAttachment(
-                fileName = SecureEmailAttachmentType.BODY.fileName,
-                contentId = SecureEmailAttachmentType.BODY.contentId,
-                mimeType = SecureEmailAttachmentType.BODY.mimeType,
-                inlineAttachment = false,
-                data = ByteArray(0),
-            )
+            val bodyAttachment =
+                EmailAttachment(
+                    fileName = SecureEmailAttachmentType.BODY.fileName,
+                    contentId = SecureEmailAttachmentType.BODY.contentId,
+                    mimeType = SecureEmailAttachmentType.BODY.mimeType,
+                    inlineAttachment = false,
+                    data = ByteArray(0),
+                )
             val securePackage = SecurePackage(setOf(keyAttachment), bodyAttachment)
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                    emailCryptoService.decrypt(securePackage)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
+                        emailCryptoService.decrypt(securePackage)
+                    }
                 }
-            }
             deferredResult.start()
             delay(100L)
 
@@ -282,11 +298,12 @@ class EmailCryptoServiceTest : BaseTests() {
         runTest {
             val securePackage = SecurePackage(emptySet(), bodyAttachment)
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
-                    emailCryptoService.decrypt(securePackage)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<EmailCryptoService.EmailCryptoServiceException.InvalidArgumentException> {
+                        emailCryptoService.decrypt(securePackage)
+                    }
                 }
-            }
             deferredResult.start()
             delay(100L)
 
@@ -294,21 +311,23 @@ class EmailCryptoServiceTest : BaseTests() {
         }
 
     @Test
-    fun `decrypt() should throw error if no keys exist for user`() = runTest {
-        mockDeviceKeyManager.stub {
-            on { privateKeyExists(anyString()) } doReturn false
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<EmailCryptoService.EmailCryptoServiceException.KeyNotFoundException> {
-                emailCryptoService.decrypt(securePackage)
+    fun `decrypt() should throw error if no keys exist for user`() =
+        runTest {
+            mockDeviceKeyManager.stub {
+                on { privateKeyExists(anyString()) } doReturn false
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<EmailCryptoService.EmailCryptoServiceException.KeyNotFoundException> {
+                        emailCryptoService.decrypt(securePackage)
+                    }
+                }
+            deferredResult.start()
+            delay(100L)
+
+            deferredResult.await()
+
+            verify(mockDeviceKeyManager).privateKeyExists(anyString())
         }
-        deferredResult.start()
-        delay(100L)
-
-        deferredResult.await()
-
-        verify(mockDeviceKeyManager).privateKeyExists(anyString())
-    }
 }

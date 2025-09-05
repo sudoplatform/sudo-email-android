@@ -75,36 +75,36 @@ data class MessageDetails(
  * Test the operation of the [SudoEmailClient].
  */
 abstract class BaseIntegrationTest {
-
     protected val toSimulatorAddress = "ooto@simulator.amazonses.com"
     protected val successSimulatorAddress = "success@simulator.amazonses.com"
     protected val ootoResponseSubjectPrefix = "Out of the Office: "
     protected val fromSimulatorAddress = "MAILER-DAEMON@amazonses.com"
 
     companion object {
-
         val context: Context = ApplicationProvider.getApplicationContext()
 
-        private const val verbose = false
-        private val logLevel = if (verbose) LogLevel.VERBOSE else LogLevel.INFO
+        private const val VERBOSE = false
+        private val logLevel = if (VERBOSE) LogLevel.VERBOSE else LogLevel.INFO
         val logger =
             com.sudoplatform.sudologging.Logger("email-test", AndroidUtilsLogDriver(logLevel))
 
         @JvmStatic
-        protected val entitlements = listOf(
-            Entitlement("sudoplatform.sudo.max", "test", 3),
-            Entitlement("sudoplatform.email.emailAddressUserEntitled", "test", 1),
-            Entitlement("sudoplatform.email.emailStorageMaxPerUser", "test", 500000),
-            Entitlement("sudoplatform.email.emailAddressMaxPerSudo", "test", 3),
-            Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
-            Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
-            Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
-            Entitlement("sudoplatform.email.emailAddressMaxProvisionsExpendable", "test", 60),
-        )
+        protected val entitlements =
+            listOf(
+                Entitlement("sudoplatform.sudo.max", "test", 3),
+                Entitlement("sudoplatform.email.emailAddressUserEntitled", "test", 1),
+                Entitlement("sudoplatform.email.emailStorageMaxPerUser", "test", 500000),
+                Entitlement("sudoplatform.email.emailAddressMaxPerSudo", "test", 3),
+                Entitlement("sudoplatform.email.emailStorageMaxPerEmailAddress", "test", 500000),
+                Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
+                Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
+                Entitlement("sudoplatform.email.emailAddressMaxProvisionsExpendable", "test", 60),
+            )
 
         @JvmStatic
         protected val userClient by lazy {
-            SudoUserClient.builder(context)
+            SudoUserClient
+                .builder(context)
                 .setNamespace("eml-client-test")
                 .build()
         }
@@ -112,13 +112,15 @@ abstract class BaseIntegrationTest {
         @JvmStatic
         protected val sudoClient by lazy {
             val containerURI = Uri.fromFile(context.cacheDir)
-            SudoProfilesClient.builder(context, userClient, containerURI)
+            SudoProfilesClient
+                .builder(context, userClient, containerURI)
                 .build()
         }
 
         @JvmStatic
         protected val entitlementsClient by lazy {
-            SudoEntitlementsClient.builder()
+            SudoEntitlementsClient
+                .builder()
                 .setContext(context)
                 .setSudoUserClient(userClient)
                 .build()
@@ -138,14 +140,16 @@ abstract class BaseIntegrationTest {
         @JvmStatic
         protected lateinit var emailClient: SudoEmailClient
 
-        private fun readTextFile(fileName: String): String {
-            return context.assets.open(fileName).bufferedReader().use {
+        private fun readTextFile(fileName: String): String =
+            context.assets.open(fileName).bufferedReader().use {
                 it.readText().trim()
             }
-        }
 
         @JvmStatic
-        protected fun readArgument(argumentName: String, fallbackFileName: String?): String {
+        protected fun readArgument(
+            argumentName: String,
+            fallbackFileName: String?,
+        ): String {
             val argumentValue =
                 InstrumentationRegistry.getArguments().getString(argumentName)?.trim()
             if (argumentValue != null) {
@@ -163,13 +167,14 @@ abstract class BaseIntegrationTest {
             val privateKey = readArgument("REGISTER_KEY", "register_key.private")
             val keyId = readArgument("REGISTER_KEY_ID", "register_key.id")
 
-            val authProvider = TESTAuthenticationProvider(
-                name = "eml-client-test",
-                privateKey = privateKey,
-                publicKey = null,
-                keyManager = keyManager,
-                keyId = keyId,
-            )
+            val authProvider =
+                TESTAuthenticationProvider(
+                    name = "eml-client-test",
+                    privateKey = privateKey,
+                    publicKey = null,
+                    keyManager = keyManager,
+                    keyId = keyId,
+                )
 
             userClient.registerWithAuthenticationProvider(authProvider, "eml-client-test")
         }
@@ -204,12 +209,13 @@ abstract class BaseIntegrationTest {
         fun init() {
             Timber.plant(Timber.DebugTree())
             StrictMode.setVmPolicy(
-                StrictMode.VmPolicy.Builder()
+                StrictMode.VmPolicy
+                    .Builder()
                     .detectLeakedClosableObjects()
                     .penaltyLog()
                     .build(),
             )
-            if (verbose) {
+            if (VERBOSE) {
                 Logger.getLogger("com.amazonaws").level = java.util.logging.Level.FINEST
                 Logger.getLogger("org.apache.http").level = java.util.logging.Level.FINEST
             }
@@ -218,11 +224,13 @@ abstract class BaseIntegrationTest {
             userClient.reset()
 
             sudoClient.generateEncryptionKey()
-            emailClient = SudoEmailClient.builder()
-                .setContext(context)
-                .setSudoUserClient(userClient)
-                .setLogger(logger)
-                .build()
+            emailClient =
+                SudoEmailClient
+                    .builder()
+                    .setContext(context)
+                    .setSudoUserClient(userClient)
+                    .setLogger(logger)
+                    .build()
 
             runTest {
                 registerSignInAndEntitle()
@@ -231,50 +239,46 @@ abstract class BaseIntegrationTest {
 
         @AfterClass
         @JvmStatic
-        fun fini() = runTest {
-            if (userClient.isRegistered()) {
-                deregister()
+        fun fini() =
+            runTest {
+                if (userClient.isRegistered()) {
+                    deregister()
+                }
+                emailClient.reset()
+                sudoClient.reset()
+                userClient.reset()
+                Timber.uprootAll()
             }
-            emailClient.reset()
-            sudoClient.reset()
-            userClient.reset()
-            Timber.uprootAll()
-        }
     }
 
-    protected suspend fun createSudo(sudoInput: Sudo): Sudo {
-        return sudoClient.createSudo(sudoInput)
-    }
+    protected suspend fun createSudo(sudoInput: Sudo): Sudo = sudoClient.createSudo(sudoInput)
 
-    protected suspend fun getOwnershipProof(sudo: Sudo): String {
-        return sudoClient.getOwnershipProof(sudo, "sudoplatform.email.email-address")
-    }
+    protected suspend fun getOwnershipProof(sudo: Sudo): String = sudoClient.getOwnershipProof(sudo, "sudoplatform.email.email-address")
 
-    protected suspend fun getEmailDomains(client: SudoEmailClient): List<String> {
-        return client.getSupportedEmailDomains()
-    }
+    protected suspend fun getEmailDomains(client: SudoEmailClient): List<String> = client.getSupportedEmailDomains()
 
     protected fun generateSafeLocalPart(prefix: String? = null): String {
         val safePrefix = prefix ?: "safe-"
-        val safeMap = mapOf(
-            "-" to "-",
-            "0" to "0",
-            "1" to "1",
-            "2" to "2",
-            "3" to "3",
-            "4" to "4",
-            "5" to "5",
-            "6" to "6",
-            "7" to "7",
-            "8" to "8",
-            "9" to "9",
-            "a" to "10",
-            "b" to "11",
-            "c" to "12",
-            "d" to "13",
-            "e" to "14",
-            "f" to "15",
-        )
+        val safeMap =
+            mapOf(
+                "-" to "-",
+                "0" to "0",
+                "1" to "1",
+                "2" to "2",
+                "3" to "3",
+                "4" to "4",
+                "5" to "5",
+                "6" to "6",
+                "7" to "7",
+                "8" to "8",
+                "9" to "9",
+                "a" to "10",
+                "b" to "11",
+                "c" to "12",
+                "d" to "13",
+                "e" to "14",
+                "f" to "15",
+            )
         val pref = if (safePrefix.endsWith("-")) safePrefix else "$safePrefix-"
         val uuid = UUID.randomUUID().toString().map { it.toString() }
         val localPart = (pref + uuid.map { safeMap[it] }.joinToString(""))
@@ -297,23 +301,25 @@ abstract class BaseIntegrationTest {
 
         val localPart = generateSafeLocalPart(prefix)
         val emailAddress = address ?: (localPart + "@" + emailDomains.first())
-        val provisionInput = ProvisionEmailAddressInput(
-            emailAddress = emailAddress,
-            ownershipProofToken = ownershipProofToken,
-            alias = alias,
-            keyId = keyId,
-        )
+        val provisionInput =
+            ProvisionEmailAddressInput(
+                emailAddress = emailAddress,
+                ownershipProofToken = ownershipProofToken,
+                alias = alias,
+                keyId = keyId,
+            )
         return client.provisionEmailAddress(provisionInput)
     }
 
     protected suspend fun sendEmailMessage(
         client: SudoEmailClient,
         fromAddress: EmailAddress,
-        toAddresses: List<EmailMessage.EmailAddress> = listOf(
-            EmailMessage.EmailAddress(
-                successSimulatorAddress,
+        toAddresses: List<EmailMessage.EmailAddress> =
+            listOf(
+                EmailMessage.EmailAddress(
+                    successSimulatorAddress,
+                ),
             ),
-        ),
         ccAddresses: List<EmailMessage.EmailAddress> = emptyList(),
         bccAddresses: List<EmailMessage.EmailAddress> = emptyList(),
         replyToAddresses: List<EmailMessage.EmailAddress> = emptyList(),
@@ -325,50 +331,59 @@ abstract class BaseIntegrationTest {
         forwardingMessageId: String? = null,
     ): SendEmailMessageResult {
         val messageSubject = subject ?: "Hello ${UUID.randomUUID()}"
-        val emailBody = body ?: buildString {
-            for (i in 0 until 500) {
-                appendLine("Body of message ${UUID.randomUUID()}")
+        val emailBody =
+            body ?: buildString {
+                for (i in 0 until 500) {
+                    appendLine("Body of message ${UUID.randomUUID()}")
+                }
             }
-        }
-        val emailMessageHeader = InternetMessageFormatHeader(
-            EmailMessage.EmailAddress(fromAddress.emailAddress, fromAddress.alias),
-            toAddresses,
-            ccAddresses,
-            bccAddresses,
-            replyToAddresses,
-            messageSubject,
-        )
-        val sendEmailMessageInput = SendEmailMessageInput(
-            fromAddress.id,
-            emailMessageHeader,
-            emailBody,
-            attachments,
-            inlineAttachments,
-            replyingMessageId,
-            forwardingMessageId,
-        )
+        val emailMessageHeader =
+            InternetMessageFormatHeader(
+                EmailMessage.EmailAddress(fromAddress.emailAddress, fromAddress.alias),
+                toAddresses,
+                ccAddresses,
+                bccAddresses,
+                replyToAddresses,
+                messageSubject,
+            )
+        val sendEmailMessageInput =
+            SendEmailMessageInput(
+                fromAddress.id,
+                emailMessageHeader,
+                emailBody,
+                attachments,
+                inlineAttachments,
+                replyingMessageId,
+                forwardingMessageId,
+            )
         return client.sendEmailMessage(sendEmailMessageInput)
     }
 
     private val uuidRegex =
         Regex("[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
 
-    private suspend fun checkForMatchingMessage(client: SudoEmailClient, folderId: String, subjectToFind: String): Boolean {
+    private suspend fun checkForMatchingMessage(
+        client: SudoEmailClient,
+        folderId: String,
+        subjectToFind: String,
+    ): Boolean {
         var responseFound = false
-        val listResult = client.listEmailMessagesForEmailFolderId(
-            ListEmailMessagesForEmailFolderIdInput(
-                folderId = folderId,
-            ),
-        )
-        val messagesList = when (listResult) {
-            is ListAPIResult.Success -> {
-                listResult.result.items
-            }
+        val listResult =
+            client.listEmailMessagesForEmailFolderId(
+                ListEmailMessagesForEmailFolderIdInput(
+                    folderId = folderId,
+                ),
+            )
+        val messagesList =
+            when (listResult) {
+                is ListAPIResult.Success -> {
+                    listResult.result.items
+                }
 
-            is ListAPIResult.Partial -> {
-                listResult.result.items
+                is ListAPIResult.Partial -> {
+                    listResult.result.items
+                }
             }
-        }
         var listIndex = 0
         while (!responseFound && listIndex < messagesList.size) {
             val message = messagesList[listIndex]
@@ -391,7 +406,8 @@ abstract class BaseIntegrationTest {
 
     /** Wait for single message to arrive. */
     protected fun waitForMessage(id: String) {
-        Awaitility.await()
+        Awaitility
+            .await()
             .atMost(Duration.TEN_SECONDS)
             .pollInterval(Duration.ONE_SECOND)
             .until {
@@ -423,13 +439,14 @@ abstract class BaseIntegrationTest {
                         failed.removeAll { true }
                         var nextToken: String? = null
                         do {
-                            val input = ListEmailMessagesInput(
-                                dateRange = listInput.dateRange,
-                                sortOrder = listInput.sortOrder,
-                                includeDeletedMessages = listInput.includeDeletedMessages,
-                                limit = listInput.limit,
-                                nextToken = nextToken,
-                            )
+                            val input =
+                                ListEmailMessagesInput(
+                                    dateRange = listInput.dateRange,
+                                    sortOrder = listInput.sortOrder,
+                                    includeDeletedMessages = listInput.includeDeletedMessages,
+                                    limit = listInput.limit,
+                                    nextToken = nextToken,
+                                )
 
                             when (val listEmailMessages = listEmailMessages(input)) {
                                 is ListAPIResult.Success -> {
@@ -450,18 +467,20 @@ abstract class BaseIntegrationTest {
 
         if (failed.size > 0) {
             return ListAPIResult.Partial(
-                result = ListAPIResult.ListPartialResult(
-                    items = items.filter(predicate),
-                    failed = failed,
-                    nextToken = null,
-                ),
+                result =
+                    ListAPIResult.ListPartialResult(
+                        items = items.filter(predicate),
+                        failed = failed,
+                        nextToken = null,
+                    ),
             )
         } else {
             return ListAPIResult.Success(
-                result = ListAPIResult.ListSuccessResult(
-                    items = items.filter(predicate),
-                    nextToken = null,
-                ),
+                result =
+                    ListAPIResult.ListSuccessResult(
+                        items = items.filter(predicate),
+                        nextToken = null,
+                    ),
             )
         }
     }
@@ -486,14 +505,15 @@ abstract class BaseIntegrationTest {
                         failed.removeAll { true }
                         var nextToken: String? = null
                         do {
-                            val input = ListEmailMessagesForEmailFolderIdInput(
-                                folderId = listInput.folderId,
-                                dateRange = listInput.dateRange,
-                                sortOrder = listInput.sortOrder,
-                                includeDeletedMessages = listInput.includeDeletedMessages,
-                                limit = listInput.limit,
-                                nextToken = nextToken,
-                            )
+                            val input =
+                                ListEmailMessagesForEmailFolderIdInput(
+                                    folderId = listInput.folderId,
+                                    dateRange = listInput.dateRange,
+                                    sortOrder = listInput.sortOrder,
+                                    includeDeletedMessages = listInput.includeDeletedMessages,
+                                    limit = listInput.limit,
+                                    nextToken = nextToken,
+                                )
 
                             when (val listEmailMessages = listEmailMessagesForEmailFolderId(input)) {
                                 is ListAPIResult.Success -> {
@@ -514,18 +534,20 @@ abstract class BaseIntegrationTest {
 
         if (failed.size > 0) {
             return ListAPIResult.Partial(
-                result = ListAPIResult.ListPartialResult(
-                    items = items,
-                    failed = failed,
-                    nextToken = null,
-                ),
+                result =
+                    ListAPIResult.ListPartialResult(
+                        items = items,
+                        failed = failed,
+                        nextToken = null,
+                    ),
             )
         } else {
             return ListAPIResult.Success(
-                result = ListAPIResult.ListSuccessResult(
-                    items = items,
-                    nextToken = null,
-                ),
+                result =
+                    ListAPIResult.ListSuccessResult(
+                        items = items,
+                        nextToken = null,
+                    ),
             )
         }
     }
@@ -548,14 +570,15 @@ abstract class BaseIntegrationTest {
                         failed.removeAll { true }
                         var nextToken: String? = null
                         do {
-                            val input = ListEmailMessagesForEmailAddressIdInput(
-                                emailAddressId = listInput.emailAddressId,
-                                dateRange = listInput.dateRange,
-                                sortOrder = listInput.sortOrder,
-                                includeDeletedMessages = listInput.includeDeletedMessages,
-                                limit = listInput.limit,
-                                nextToken = nextToken,
-                            )
+                            val input =
+                                ListEmailMessagesForEmailAddressIdInput(
+                                    emailAddressId = listInput.emailAddressId,
+                                    dateRange = listInput.dateRange,
+                                    sortOrder = listInput.sortOrder,
+                                    includeDeletedMessages = listInput.includeDeletedMessages,
+                                    limit = listInput.limit,
+                                    nextToken = nextToken,
+                                )
 
                             when (val listEmailMessages = listEmailMessagesForEmailAddressId(input)) {
                                 is ListAPIResult.Success -> {
@@ -576,18 +599,20 @@ abstract class BaseIntegrationTest {
 
         if (failed.size > 0) {
             return ListAPIResult.Partial(
-                result = ListAPIResult.ListPartialResult(
-                    items = items,
-                    failed = failed,
-                    nextToken = null,
-                ),
+                result =
+                    ListAPIResult.ListPartialResult(
+                        items = items,
+                        failed = failed,
+                        nextToken = null,
+                    ),
             )
         } else {
             return ListAPIResult.Success(
-                result = ListAPIResult.ListSuccessResult(
-                    items = items,
-                    nextToken = null,
-                ),
+                result =
+                    ListAPIResult.ListSuccessResult(
+                        items = items,
+                        nextToken = null,
+                    ),
             )
         }
     }
@@ -595,22 +620,30 @@ abstract class BaseIntegrationTest {
     protected suspend fun scheduleSendDraftMessage(
         senderAddress: EmailAddress,
         to: List<String>? = null,
-        sendAt: Date = Date(Date().time + java.time.Duration.ofDays(1).toMillis()),
+        sendAt: Date =
+            Date(
+                Date().time +
+                    java.time.Duration
+                        .ofDays(1)
+                        .toMillis(),
+            ),
     ): String {
-        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
-            from = senderAddress.emailAddress,
-            to = to ?: listOf(senderAddress.emailAddress),
-        )
+        val rfc822Data =
+            Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                from = senderAddress.emailAddress,
+                to = to ?: listOf(senderAddress.emailAddress),
+            )
         val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, senderAddress.id)
         val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
 
         draftId shouldNotBe null
 
-        val input = ScheduleSendDraftMessageInput(
-            draftId,
-            senderAddress.id,
-            sendAt,
-        )
+        val input =
+            ScheduleSendDraftMessageInput(
+                draftId,
+                senderAddress.id,
+                sendAt,
+            )
 
         val response = emailClient.scheduleSendDraftMessage(input)
         response shouldNotBe null

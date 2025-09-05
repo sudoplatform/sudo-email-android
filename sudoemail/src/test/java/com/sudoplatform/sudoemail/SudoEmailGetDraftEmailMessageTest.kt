@@ -51,16 +51,17 @@ import java.util.UUID
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetDraftEmailMessageTest : BaseTests() {
+    private val mockUserMetadata =
+        listOf(
+            "key-id" to "keyId",
+            "algorithm" to "algorithm",
+        ).toMap()
 
-    private val mockUserMetadata = listOf(
-        "key-id" to "keyId",
-        "algorithm" to "algorithm",
-    ).toMap()
-
-    private val mockUserMetadataWithLegacyKeyId = listOf(
-        "keyId" to "keyId",
-        "algorithm" to "algorithm",
-    ).toMap()
+    private val mockUserMetadataWithLegacyKeyId =
+        listOf(
+            "keyId" to "keyId",
+            "algorithm" to "algorithm",
+        ).toMap()
 
     private val mockS3ObjectMetadata = ObjectMetadata()
 
@@ -191,12 +192,13 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     @Test
     fun `getDraftEmailMessage() should log and throw an error if sender address not found`() =
         runTest {
-            val error = GraphQLResponse.Error(
-                "mock",
-                null,
-                null,
-                mapOf("errorType" to "AddressNotFound"),
-            )
+            val error =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("errorType" to "AddressNotFound"),
+                )
             mockApiClient.stub {
                 onBlocking {
                     getEmailAddressQuery(
@@ -207,11 +209,12 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                    client.getDraftEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                        client.getDraftEmailMessage(input)
+                    }
                 }
-            }
 
             deferredResult.start()
             deferredResult.await()
@@ -232,11 +235,12 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
                 } doThrow error
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
-                    client.getDraftEmailMessage(input)
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
+                        client.getDraftEmailMessage(input)
+                    }
                 }
-            }
 
             deferredResult.start()
             deferredResult.await()
@@ -257,111 +261,117 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         }
 
     @Test
-    fun `getDraftEmailMessage() should throw error if no keyId is found in s3Object`() = runTest {
-        val mockBadObjectUserMetadata = listOf("algorithm" to "algorithm").toMap()
-        val mockBadObjectMetadata = ObjectMetadata()
-        mockBadObjectMetadata.lastModified = timestamp
-        mockBadObjectMetadata.userMetadata = mockBadObjectUserMetadata
+    fun `getDraftEmailMessage() should throw error if no keyId is found in s3Object`() =
+        runTest {
+            val mockBadObjectUserMetadata = listOf("algorithm" to "algorithm").toMap()
+            val mockBadObjectMetadata = ObjectMetadata()
+            mockBadObjectMetadata.lastModified = timestamp
+            mockBadObjectMetadata.userMetadata = mockBadObjectUserMetadata
 
-        mockS3Client.stub {
-            onBlocking {
-                getObjectMetadata(any())
-            } doReturn mockBadObjectMetadata
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
-                client.getDraftEmailMessage(input)
+            mockS3Client.stub {
+                onBlocking {
+                    getObjectMetadata(any())
+                } doReturn mockBadObjectMetadata
             }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.UnsealingException> {
+                        client.getDraftEmailMessage(input)
+                    }
+                }
+
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
         }
-
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            check {
-                it shouldContain mockDraftId.toString()
-            },
-        )
-    }
 
     @Test
-    fun `getDraftEmailMessage() should return proper data if no errors`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getDraftEmailMessage(input)
+    fun `getDraftEmailMessage() should return proper data if no errors`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getDraftEmailMessage(input)
+                }
+
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result.id shouldBe mockDraftId.toString()
+            result.emailAddressId shouldBe "emailAddressId"
+            result.updatedAt shouldBe timestamp
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
+            verify(mockS3Client).download(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
+            verify(mockSealingService).unsealString(anyString(), any())
         }
-
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result.id shouldBe mockDraftId.toString()
-        result.emailAddressId shouldBe "emailAddressId"
-        result.updatedAt shouldBe timestamp
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            check {
-                it shouldContain mockDraftId.toString()
-            },
-        )
-        verify(mockS3Client).download(
-            check {
-                it shouldContain mockDraftId.toString()
-            },
-        )
-        verify(mockSealingService).unsealString(anyString(), any())
-    }
 
     @Test
-    fun `getDraftEmailMessage() should migrate message with legacy key id metadata key`() = runTest {
-        val emailAddressId = "emailAddressId"
-        mockS3ObjectMetadata.userMetadata = mockUserMetadataWithLegacyKeyId
-        mockS3Client.stub {
-            onBlocking {
-                getObjectMetadata(anyString())
-            } doReturn mockS3ObjectMetadata
-            onBlocking {
-                updateObjectMetadata(anyString(), any())
-            } doReturn Unit
+    fun `getDraftEmailMessage() should migrate message with legacy key id metadata key`() =
+        runTest {
+            val emailAddressId = "emailAddressId"
+            mockS3ObjectMetadata.userMetadata = mockUserMetadataWithLegacyKeyId
+            mockS3Client.stub {
+                onBlocking {
+                    getObjectMetadata(anyString())
+                } doReturn mockS3ObjectMetadata
+                onBlocking {
+                    updateObjectMetadata(anyString(), any())
+                } doReturn Unit
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getDraftEmailMessage(input)
+                }
+
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result.id shouldBe mockDraftId.toString()
+            result.emailAddressId shouldBe emailAddressId
+            result.updatedAt shouldBe timestamp
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain emailAddressId
+                },
+            )
+            verify(mockS3Client).download(
+                check {
+                    it shouldContain emailAddressId
+                },
+            )
+            verify(mockS3Client).updateObjectMetadata(
+                check {
+                    it shouldContain emailAddressId
+                },
+                check {
+                    it["key-id"] shouldBe "keyId"
+                },
+            )
+            verify(mockSealingService).unsealString(anyString(), any())
         }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getDraftEmailMessage(input)
-        }
-
-        deferredResult.start()
-        val result = deferredResult.await()
-
-        result.id shouldBe mockDraftId.toString()
-        result.emailAddressId shouldBe emailAddressId
-        result.updatedAt shouldBe timestamp
-
-        verify(mockApiClient).getEmailAddressQuery(
-            any(),
-        )
-        verify(mockS3Client).getObjectMetadata(
-            check {
-                it shouldContain emailAddressId
-            },
-        )
-        verify(mockS3Client).download(
-            check {
-                it shouldContain emailAddressId
-            },
-        )
-        verify(mockS3Client).updateObjectMetadata(
-            check {
-                it shouldContain emailAddressId
-            },
-            check {
-                it["key-id"] shouldBe "keyId"
-            },
-        )
-        verify(mockSealingService).unsealString(anyString(), any())
-    }
 }

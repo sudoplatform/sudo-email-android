@@ -38,7 +38,6 @@ import java.util.Date
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailNotifiableClientTest : BaseTests() {
-
     private val mockDeviceKeyManager by before {
         mock<DeviceKeyManager>()
     }
@@ -47,13 +46,14 @@ class SudoEmailNotifiableClientTest : BaseTests() {
         mock<RemoteMessage>()
     }
 
-    private val testNotificationHandler = object : SudoEmailNotificationHandler {
-        val messageReceivedNotifications = mutableListOf<EmailMessageReceivedNotification>()
+    private val testNotificationHandler =
+        object : SudoEmailNotificationHandler {
+            val messageReceivedNotifications = mutableListOf<EmailMessageReceivedNotification>()
 
-        override fun onEmailMessageReceived(message: EmailMessageReceivedNotification) {
-            messageReceivedNotifications.add(message)
+            override fun onEmailMessageReceived(message: EmailMessageReceivedNotification) {
+                messageReceivedNotifications.add(message)
+            }
         }
-    }
 
     private val client by before {
         DefaultSudoEmailNotifiableClient(
@@ -81,34 +81,36 @@ class SudoEmailNotifiableClientTest : BaseTests() {
             it.fieldName shouldStartWith "meta."
         }
 
-        schema.schema.map { it.fieldName } shouldContainAll listOf(
-            "meta.type",
-            "meta.emailAddressId",
-            "meta.folderId",
-            "meta.sudoId",
-            "meta.keyId",
-        )
+        schema.schema.map { it.fieldName } shouldContainAll
+            listOf(
+                "meta.type",
+                "meta.emailAddressId",
+                "meta.folderId",
+                "meta.sudoId",
+                "meta.keyId",
+            )
     }
 
     @Test
     fun `processPayload does nothing for badly formatted payloads`() {
-        val payloads = listOf(
-            mapOf(),
-            mapOf(Pair("sudoplatform", "this is not JSON")),
-            mapOf(Pair("sudoplatform", "{}")),
-            mapOf(Pair("sudoplatform", "{\"servicename\":\"sudoService\",\"data\":\"\"}")),
-            mapOf(Pair("sudoplatform", "{\"servicename\":\"emService\",\"data\":\"this is not json\"}")),
-            mapOf(Pair("sudoplatform", "{\"servicename\":\"emService\",\"data\":\"{\\\"wrong\\\":\\\"property\\\"}\"}")),
-            mapOf(
-                Pair(
-                    "sudoplatform",
-                    "{\"servicename\":\"emService\",\"data\":" +
-                        "\"{\\\"keyId\\\":\\\"key-id\\\"," +
-                        "\\\"algorithm\\\":\\\"algorithm\\\"," +
-                        "\\\"sealed\\\":\\\"invalid-sealed-data\\\"}\"}",
+        val payloads =
+            listOf(
+                mapOf(),
+                mapOf(Pair("sudoplatform", "this is not JSON")),
+                mapOf(Pair("sudoplatform", "{}")),
+                mapOf(Pair("sudoplatform", "{\"servicename\":\"sudoService\",\"data\":\"\"}")),
+                mapOf(Pair("sudoplatform", "{\"servicename\":\"emService\",\"data\":\"this is not json\"}")),
+                mapOf(Pair("sudoplatform", "{\"servicename\":\"emService\",\"data\":\"{\\\"wrong\\\":\\\"property\\\"}\"}")),
+                mapOf(
+                    Pair(
+                        "sudoplatform",
+                        "{\"servicename\":\"emService\",\"data\":" +
+                            "\"{\\\"keyId\\\":\\\"key-id\\\"," +
+                            "\\\"algorithm\\\":\\\"algorithm\\\"," +
+                            "\\\"sealed\\\":\\\"invalid-sealed-data\\\"}\"}",
+                    ),
                 ),
-            ),
-        )
+            )
 
         payloads.forEach { payload ->
             reset(mockRemoteMessage)
@@ -149,20 +151,21 @@ class SudoEmailNotifiableClientTest : BaseTests() {
 
         mockRemoteMessage.stub { on { data } doReturn payload }
 
-        val internalNotification = MessageReceivedNotification(
-            type = "messageReceived",
-            messageId = "message-id",
-            owner = "owner-id",
-            sudoId = "sudo-id",
-            emailAddressId = "email-address-id",
-            folderId = "folder-id",
-            encryptionStatus = EncryptionStatus.ENCRYPTED,
-            hasAttachments = false,
-            subject = "email subject",
-            from = EmailMessage.EmailAddress("address@company.com"),
-            receivedAtEpochMs = 2000,
-            sentAtEpochMs = 1000,
-        )
+        val internalNotification =
+            MessageReceivedNotification(
+                type = "messageReceived",
+                messageId = "message-id",
+                owner = "owner-id",
+                sudoId = "sudo-id",
+                emailAddressId = "email-address-id",
+                folderId = "folder-id",
+                encryptionStatus = EncryptionStatus.ENCRYPTED,
+                hasAttachments = false,
+                subject = "email subject",
+                from = EmailMessage.EmailAddress("address@company.com"),
+                receivedAtEpochMs = 2000,
+                sentAtEpochMs = 1000,
+            )
 
         val decryptedAesKey = "decrypted-aes-key"
         val encodedInternalMessageReceivedNotification = Json.encodeToString(MessageReceivedNotification.serializer(), internalNotification)
@@ -175,20 +178,21 @@ class SudoEmailNotifiableClientTest : BaseTests() {
 
         testNotificationHandler.messageReceivedNotifications shouldHaveSize 1
 
-        testNotificationHandler.messageReceivedNotifications[0] shouldBe EmailMessageReceivedNotification(
-            id = internalNotification.messageId,
-            owner = internalNotification.owner,
-            sudoId = internalNotification.sudoId,
-            emailAddressId = internalNotification.emailAddressId,
-            folderId = internalNotification.folderId,
-            encryptionStatus = internalNotification.encryptionStatus,
-            hasAttachments = internalNotification.hasAttachments,
-            from = internalNotification.from,
-            replyTo = internalNotification.replyTo,
-            subject = internalNotification.subject,
-            receivedAt = Date(internalNotification.receivedAtEpochMs),
-            sentAt = Date(internalNotification.sentAtEpochMs),
-        )
+        testNotificationHandler.messageReceivedNotifications[0] shouldBe
+            EmailMessageReceivedNotification(
+                id = internalNotification.messageId,
+                owner = internalNotification.owner,
+                sudoId = internalNotification.sudoId,
+                emailAddressId = internalNotification.emailAddressId,
+                folderId = internalNotification.folderId,
+                encryptionStatus = internalNotification.encryptionStatus,
+                hasAttachments = internalNotification.hasAttachments,
+                from = internalNotification.from,
+                replyTo = internalNotification.replyTo,
+                subject = internalNotification.subject,
+                receivedAt = Date(internalNotification.receivedAtEpochMs),
+                sentAt = Date(internalNotification.sentAtEpochMs),
+            )
 
         val dataCaptor = argumentCaptor<ByteArray>()
         val keyIdCaptor = argumentCaptor<String>()

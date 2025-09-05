@@ -37,72 +37,79 @@ class CancelScheduledDraftMessageIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
-
-    @Test
-    fun cancelScheduledDraftMessageShouldFailWithInvalidEmailAddressId() = runTest {
-        val input = CancelScheduledDraftMessageInput(
-            id = "dummyId",
-            emailAddressId = "dummyEmailAddressId",
-        )
-
-        shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-            emailClient.cancelScheduledDraftMessage(input)
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
         }
-    }
 
     @Test
-    fun cancelScheduledDraftMessageShouldSucceedWithInvalidDraftId() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun cancelScheduledDraftMessageShouldFailWithInvalidEmailAddressId() =
+        runTest {
+            val input =
+                CancelScheduledDraftMessageInput(
+                    id = "dummyId",
+                    emailAddressId = "dummyEmailAddressId",
+                )
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-        val draftId = "dummyDraftId"
-
-        val input = CancelScheduledDraftMessageInput(
-            id = draftId,
-            emailAddressId = emailAddress.id,
-        )
-
-        val response = emailClient.cancelScheduledDraftMessage(input)
-
-        response shouldNotBe null
-        response shouldBe draftId
-    }
+            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                emailClient.cancelScheduledDraftMessage(input)
+            }
+        }
 
     @Test
-    fun cancelScheduledDraftMessageShouldReturnDraftIdOnSuccess() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun cancelScheduledDraftMessageShouldSucceedWithInvalidDraftId() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+            val draftId = "dummyDraftId"
 
-        val draftId = scheduleSendDraftMessage(emailAddress)
+            val input =
+                CancelScheduledDraftMessageInput(
+                    id = draftId,
+                    emailAddressId = emailAddress.id,
+                )
 
-        val input = CancelScheduledDraftMessageInput(
-            id = draftId,
-            emailAddressId = emailAddress.id,
-        )
+            val response = emailClient.cancelScheduledDraftMessage(input)
 
-        val response = emailClient.cancelScheduledDraftMessage(input)
+            response shouldNotBe null
+            response shouldBe draftId
+        }
 
-        response shouldNotBe null
-        response shouldBe draftId
-    }
+    @Test
+    fun cancelScheduledDraftMessageShouldReturnDraftIdOnSuccess() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val draftId = scheduleSendDraftMessage(emailAddress)
+
+            val input =
+                CancelScheduledDraftMessageInput(
+                    id = draftId,
+                    emailAddressId = emailAddress.id,
+                )
+
+            val response = emailClient.cancelScheduledDraftMessage(input)
+
+            response shouldNotBe null
+            response shouldBe draftId
+        }
 }

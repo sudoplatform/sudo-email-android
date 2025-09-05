@@ -38,75 +38,79 @@ class CreateCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
-
-    @Test
-    fun createCustomEmailFolderShouldFailWithInvalidEmailAddressId() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
-
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val input = CreateCustomEmailFolderInput("bad-id", "TEST")
-
-        shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
-            emailClient.createCustomEmailFolder(input)
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
         }
-    }
 
     @Test
-    fun createCustomEmailFolderShouldReturnNewFolderOnSuccess() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun createCustomEmailFolderShouldFailWithInvalidEmailAddressId() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input = CreateCustomEmailFolderInput(emailAddress.id, "TEST")
+            val input = CreateCustomEmailFolderInput("bad-id", "TEST")
 
-        val result = emailClient.createCustomEmailFolder(input)
-        result.id shouldStartWith emailAddress.id
-        result.customFolderName shouldBe "TEST"
-    }
+            shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
+                emailClient.createCustomEmailFolder(input)
+            }
+        }
 
     @Test
-    fun createCustomEmailFolderShouldWorkMultipleTimes() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun createCustomEmailFolderShouldReturnNewFolderOnSuccess() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val input1 = CreateCustomEmailFolderInput(emailAddress.id, "TEST1")
+            val input = CreateCustomEmailFolderInput(emailAddress.id, "TEST")
 
-        val result1 = emailClient.createCustomEmailFolder(input1)
-        result1.id shouldStartWith emailAddress.id
-        result1.customFolderName shouldBe "TEST1"
+            val result = emailClient.createCustomEmailFolder(input)
+            result.id shouldStartWith emailAddress.id
+            result.customFolderName shouldBe "TEST"
+        }
 
-        val input2 = CreateCustomEmailFolderInput(emailAddress.id, "TEST2")
+    @Test
+    fun createCustomEmailFolderShouldWorkMultipleTimes() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val result2 = emailClient.createCustomEmailFolder(input2)
-        result2.id shouldStartWith emailAddress.id
-        result2.customFolderName shouldBe "TEST2"
-    }
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val input1 = CreateCustomEmailFolderInput(emailAddress.id, "TEST1")
+
+            val result1 = emailClient.createCustomEmailFolder(input1)
+            result1.id shouldStartWith emailAddress.id
+            result1.customFolderName shouldBe "TEST1"
+
+            val input2 = CreateCustomEmailFolderInput(emailAddress.id, "TEST2")
+
+            val result2 = emailClient.createCustomEmailFolder(input2)
+            result2.id shouldStartWith emailAddress.id
+            result2.customFolderName shouldBe "TEST2"
+        }
 }

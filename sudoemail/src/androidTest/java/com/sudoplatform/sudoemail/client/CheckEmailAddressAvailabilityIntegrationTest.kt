@@ -39,84 +39,93 @@ class CheckEmailAddressAvailabilityIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
+        }
 
     @Test
-    fun checkEmailAddressAvailabilityShouldSucceed() = runTest {
-        val sudo = sudoClient.createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
+    fun checkEmailAddressAvailabilityShouldSucceed() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
 
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailDomains = getEmailDomains(emailClient)
-        emailDomains.size shouldBeGreaterThanOrEqual 1
+            val emailDomains = getEmailDomains(emailClient)
+            emailDomains.size shouldBeGreaterThanOrEqual 1
 
-        val localPart1 = generateSafeLocalPart()
-        val localPart2 = generateSafeLocalPart()
-        val localParts = listOf(
-            localPart1,
-            localPart2,
-        )
+            val localPart1 = generateSafeLocalPart()
+            val localPart2 = generateSafeLocalPart()
+            val localParts =
+                listOf(
+                    localPart1,
+                    localPart2,
+                )
 
-        var input = CheckEmailAddressAvailabilityInput(
-            localParts,
-            domains = emailDomains,
-        )
-        val emailAddresses = emailClient.checkEmailAddressAvailability(input)
-        emailAddresses.isEmpty() shouldBe false
-        emailAddresses.forEach { address ->
-            val parts = address.split("@")
-            emailDomains shouldContain parts[1]
+            var input =
+                CheckEmailAddressAvailabilityInput(
+                    localParts,
+                    domains = emailDomains,
+                )
+            val emailAddresses = emailClient.checkEmailAddressAvailability(input)
+            emailAddresses.isEmpty() shouldBe false
+            emailAddresses.forEach { address ->
+                val parts = address.split("@")
+                emailDomains shouldContain parts[1]
 
-            // Provision it to prove it's real
-            val provisionedAddress = provisionEmailAddress(emailClient, ownershipProof, address)
-            emailClient.deprovisionEmailAddress(provisionedAddress.id)
+                // Provision it to prove it's real
+                val provisionedAddress = provisionEmailAddress(emailClient, ownershipProof, address)
+                emailClient.deprovisionEmailAddress(provisionedAddress.id)
+            }
+
+            // Check without the domains
+            input =
+                CheckEmailAddressAvailabilityInput(
+                    localParts,
+                    domains = null,
+                )
+            emailClient.checkEmailAddressAvailability(input)
         }
-
-        // Check without the domains
-        input = CheckEmailAddressAvailabilityInput(
-            localParts,
-            domains = null,
-        )
-        emailClient.checkEmailAddressAvailability(input)
-    }
 
     @Test
-    fun checkEmailAddressAvailabilityWithBadInputShouldFail() = runTest {
-        val emailDomains = getEmailDomains(emailClient)
-        emailDomains.size shouldBeGreaterThanOrEqual 1
+    fun checkEmailAddressAvailabilityWithBadInputShouldFail() =
+        runTest {
+            val emailDomains = getEmailDomains(emailClient)
+            emailDomains.size shouldBeGreaterThanOrEqual 1
 
-        val localPart = generateSafeLocalPart()
-        val localParts = listOf(localPart)
+            val localPart = generateSafeLocalPart()
+            val localParts = listOf(localPart)
 
-        var input = CheckEmailAddressAvailabilityInput(
-            localParts,
-            domains = listOf("gmail.com"),
-        )
-        shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
-            emailClient.checkEmailAddressAvailability(input)
+            var input =
+                CheckEmailAddressAvailabilityInput(
+                    localParts,
+                    domains = listOf("gmail.com"),
+                )
+            shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
+                emailClient.checkEmailAddressAvailability(input)
+            }
+
+            input =
+                CheckEmailAddressAvailabilityInput(
+                    localParts = listOf("foo@gmail.com"),
+                    domains = emailDomains,
+                )
+            shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
+                emailClient.checkEmailAddressAvailability(input)
+            }
+
+            input =
+                CheckEmailAddressAvailabilityInput(
+                    localParts = listOf(""),
+                    domains = emailDomains,
+                )
+            shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
+                emailClient.checkEmailAddressAvailability(input)
+            }
         }
-
-        input = CheckEmailAddressAvailabilityInput(
-            localParts = listOf("foo@gmail.com"),
-            domains = emailDomains,
-        )
-        shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
-            emailClient.checkEmailAddressAvailability(input)
-        }
-
-        input = CheckEmailAddressAvailabilityInput(
-            localParts = listOf(""),
-            domains = emailDomains,
-        )
-        shouldThrow<SudoEmailClient.EmailAddressException.InvalidEmailAddressException> {
-            emailClient.checkEmailAddressAvailability(input)
-        }
-    }
 }

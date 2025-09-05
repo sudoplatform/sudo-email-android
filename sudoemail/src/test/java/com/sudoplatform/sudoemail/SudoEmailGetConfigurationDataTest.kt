@@ -46,7 +46,6 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetConfigurationDataTest : BaseTests() {
-
     private val queryResponse by before {
         DataFactory.getEmailConfigQueryResponse()
     }
@@ -136,106 +135,116 @@ class SudoEmailGetConfigurationDataTest : BaseTests() {
     }
 
     @Test
-    fun `getConfigurationData() should return results when no error present`() = runTest {
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            client.getConfigurationData()
-        }
-        deferredResult.start()
-        val result = deferredResult.await()
+    fun `getConfigurationData() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getConfigurationData()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
 
-        result shouldNotBe null
-        with(result) {
-            deleteEmailMessagesLimit shouldBe 10
-            updateEmailMessagesLimit shouldBe 5
-            emailMessageMaxInboundMessageSize shouldBe 200
-            emailMessageMaxOutboundMessageSize shouldBe 100
-            emailMessageRecipientsLimit shouldBe 5
-            encryptedEmailMessageRecipientsLimit shouldBe 10
-            prohibitedFileExtensions shouldBe listOf(".js", ".exe", ".lib")
-        }
+            result shouldNotBe null
+            with(result) {
+                deleteEmailMessagesLimit shouldBe 10
+                updateEmailMessagesLimit shouldBe 5
+                emailMessageMaxInboundMessageSize shouldBe 200
+                emailMessageMaxOutboundMessageSize shouldBe 100
+                emailMessageRecipientsLimit shouldBe 5
+                encryptedEmailMessageRecipientsLimit shouldBe 10
+                prohibitedFileExtensions shouldBe listOf(".js", ".exe", ".lib")
+            }
 
-        verify(mockApiClient).getEmailConfigQuery()
-    }
+            verify(mockApiClient).getEmailConfigQuery()
+        }
 
     @Test
-    fun `getConfigurationData() should throw when unknown error occurs`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailConfigQuery()
-            } doThrow RuntimeException("Mock Runtime Exception")
+    fun `getConfigurationData() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailConfigQuery()
+                } doThrow RuntimeException("Mock Runtime Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailConfigurationException.UnknownException> {
+                        client.getConfigurationData()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailConfigQuery()
         }
 
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailConfigurationException.UnknownException> {
+    @Test
+    fun `getConfigurationData() should throw when no config data is returned`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailConfigQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, null)
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailConfigurationException.FailedException> {
+                        client.getConfigurationData()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailConfigQuery()
+        }
+
+    @Test
+    fun `getConfigurationData() should throw when query response contains errors`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    null,
+                    null,
+                    null,
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailConfigQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailConfigurationException.FailedException> {
+                        client.getConfigurationData()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailConfigQuery()
+        }
+
+    @Test
+    fun `getConfigurationData() should not block coroutine cancellation exception`() =
+        runBlocking<Unit> {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailConfigQuery()
+                } doThrow CancellationException("Mock Cancellation Exception")
+            }
+
+            shouldThrow<CancellationException> {
                 client.getConfigurationData()
             }
+
+            verify(mockApiClient).getEmailConfigQuery()
         }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailConfigQuery()
-    }
-
-    @Test
-    fun `getConfigurationData() should throw when no config data is returned`() = runTest {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailConfigQuery()
-            }.thenAnswer {
-                GraphQLResponse(null, null)
-            }
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailConfigurationException.FailedException> {
-                client.getConfigurationData()
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailConfigQuery()
-    }
-
-    @Test
-    fun `getConfigurationData() should throw when query response contains errors`() = runTest {
-        val testError = GraphQLResponse.Error(
-            "Test generated error",
-            null,
-            null,
-            null,
-        )
-        mockApiClient.stub {
-            onBlocking {
-                getEmailConfigQuery()
-            }.thenAnswer {
-                GraphQLResponse(null, listOf(testError))
-            }
-        }
-
-        val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-            shouldThrow<SudoEmailClient.EmailConfigurationException.FailedException> {
-                client.getConfigurationData()
-            }
-        }
-        deferredResult.start()
-        deferredResult.await()
-
-        verify(mockApiClient).getEmailConfigQuery()
-    }
-
-    @Test
-    fun `getConfigurationData() should not block coroutine cancellation exception`() = runBlocking<Unit> {
-        mockApiClient.stub {
-            onBlocking {
-                getEmailConfigQuery()
-            } doThrow CancellationException("Mock Cancellation Exception")
-        }
-
-        shouldThrow<CancellationException> {
-            client.getConfigurationData()
-        }
-
-        verify(mockApiClient).getEmailConfigQuery()
-    }
 }

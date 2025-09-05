@@ -52,21 +52,22 @@ import org.robolectric.RobolectricTestRunner
 class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     private val owner = "mockOwner"
     private val mockEmailAddressId = "mockEmailAddressId"
-    private val mockData = listOf(
-        DataFactory.GetEmailAddressBlocklistQueryDataValues(
-            sealedData = String(Base64.encode("dummySealedData1".toByteArray())),
-            unsealedData = "dummyUnsealedData1".toByteArray(),
-            hashedValue = "hashedValue1",
-            action = BlockedAddressAction.DROP,
-            emailAddressId = mockEmailAddressId,
-        ),
-        DataFactory.GetEmailAddressBlocklistQueryDataValues(
-            sealedData = String(Base64.encode("dummySealedData2".toByteArray())),
-            unsealedData = "dummyUnsealedData2".toByteArray(),
-            hashedValue = "hashedValue2",
-            action = BlockedAddressAction.SPAM,
-        ),
-    )
+    private val mockData =
+        listOf(
+            DataFactory.GetEmailAddressBlocklistQueryDataValues(
+                sealedData = String(Base64.encode("dummySealedData1".toByteArray())),
+                unsealedData = "dummyUnsealedData1".toByteArray(),
+                hashedValue = "hashedValue1",
+                action = BlockedAddressAction.DROP,
+                emailAddressId = mockEmailAddressId,
+            ),
+            DataFactory.GetEmailAddressBlocklistQueryDataValues(
+                sealedData = String(Base64.encode("dummySealedData2".toByteArray())),
+                unsealedData = "dummyUnsealedData2".toByteArray(),
+                hashedValue = "hashedValue2",
+                action = BlockedAddressAction.SPAM,
+            ),
+        )
 
     private val queryResponse by before {
         DataFactory.getEmailAddressBlocklistQueryResponse(
@@ -127,10 +128,11 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                     any(),
                     any(),
                 )
-            } doReturnConsecutively listOf(
-                mockData[0].unsealedData,
-                mockData[1].unsealedData,
-            )
+            } doReturnConsecutively
+                listOf(
+                    mockData[0].unsealedData,
+                    mockData[1].unsealedData,
+                )
         }
     }
 
@@ -175,12 +177,13 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     @Test
     fun `getEmailAddressBlocklist() should throw an error if response contains errors`() =
         runTest {
-            val error = GraphQLResponse.Error(
-                "mock",
-                null,
-                null,
-                mapOf("errorType" to "SystemError"),
-            )
+            val error =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("errorType" to "SystemError"),
+                )
             mockApiClient.stub {
                 onBlocking {
                     getEmailAddressBlocklistQuery(
@@ -191,11 +194,12 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
-                    client.getEmailAddressBlocklist()
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
+                        client.getEmailAddressBlocklist()
+                    }
                 }
-            }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -222,9 +226,10 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 }
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailAddressBlocklist()
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddressBlocklist()
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -242,9 +247,10 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
     @Test
     fun `getEmailAddressBlocklist() returns array of unsealed values on success`() =
         runTest {
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailAddressBlocklist()
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddressBlocklist()
+                }
             deferredResult.start()
             val result = deferredResult.await()
 
@@ -290,9 +296,10 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 } doReturn mockData[1].unsealedData
             }
 
-            val deferredResult = async(StandardTestDispatcher(testScheduler)) {
-                client.getEmailAddressBlocklist()
-            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddressBlocklist()
+                }
             deferredResult.start()
             val result = deferredResult.await()
             result shouldNotBe null

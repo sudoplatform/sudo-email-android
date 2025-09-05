@@ -60,7 +60,10 @@ data class BlockedAddress(
  */
 sealed class UnsealedBlockedAddressStatus {
     object Completed : UnsealedBlockedAddressStatus()
-    data class Failed(val cause: Exception) : UnsealedBlockedAddressStatus()
+
+    data class Failed(
+        val cause: Exception,
+    ) : UnsealedBlockedAddressStatus()
 }
 
 /**

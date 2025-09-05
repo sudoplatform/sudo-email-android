@@ -41,85 +41,94 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     }
 
     @After
-    fun teardown() = runTest {
-        emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-        sudoList.map { sudoClient.deleteSudo(it) }
-        sudoClient.reset()
-    }
-
-    @Test
-    fun deleteDraftEmailMessagesShouldThrowErrorIfSenderEmailAddressNotFound() = runTest {
-        val mockDraftId = UUID.randomUUID()
-        val mockEmailAddressId = "non-existent-email-address-id"
-
-        val input = DeleteDraftEmailMessagesInput(
-            listOf(mockDraftId.toString()),
-            mockEmailAddressId,
-        )
-        shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-            emailClient.deleteDraftEmailMessages(input)
+    fun teardown() =
+        runTest {
+            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.map { sudoClient.deleteSudo(it) }
+            sudoClient.reset()
         }
-    }
 
     @Test
-    fun deleteDraftEmailMessagesShouldReturnSuccessOnNonExistentMessage() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun deleteDraftEmailMessagesShouldThrowErrorIfSenderEmailAddressNotFound() =
+        runTest {
+            val mockDraftId = UUID.randomUUID()
+            val mockEmailAddressId = "non-existent-email-address-id"
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
-
-        val mockDraftId = UUID.randomUUID().toString()
-
-        val input = DeleteDraftEmailMessagesInput(
-            listOf(mockDraftId),
-            emailAddress.id,
-        )
-
-        val result = emailClient.deleteDraftEmailMessages(input)
-        result.status shouldBe BatchOperationStatus.SUCCESS
-    }
+            val input =
+                DeleteDraftEmailMessagesInput(
+                    listOf(mockDraftId.toString()),
+                    mockEmailAddressId,
+                )
+            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
+                emailClient.deleteDraftEmailMessages(input)
+            }
+        }
 
     @Test
-    fun deleteDraftEmailMessagesShouldReturnSuccessResult() = runTest {
-        val sudo = createSudo(TestData.sudo)
-        sudo shouldNotBe null
-        sudoList.add(sudo)
-        val ownershipProof = getOwnershipProof(sudo)
-        ownershipProof shouldNotBe null
+    fun deleteDraftEmailMessagesShouldReturnSuccessOnNonExistentMessage() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-        emailAddress shouldNotBe null
-        emailAddressList.add(emailAddress)
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
 
-        val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
-            from = emailAddress.emailAddress,
-            to = listOf(emailAddress.emailAddress),
-            subject = "Test Draft",
-        )
+            val mockDraftId = UUID.randomUUID().toString()
 
-        val createDraftInput = CreateDraftEmailMessageInput(
-            rfc822Data = rfc822Data,
-            senderEmailAddressId = emailAddress.id,
-        )
+            val input =
+                DeleteDraftEmailMessagesInput(
+                    listOf(mockDraftId),
+                    emailAddress.id,
+                )
 
-        val draftId = emailClient.createDraftEmailMessage(createDraftInput)
+            val result = emailClient.deleteDraftEmailMessages(input)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+        }
 
-        val deleteDraftEmailMessagesInput = DeleteDraftEmailMessagesInput(
-            listOf(draftId),
-            emailAddress.id,
-        )
-        val result = emailClient.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
-        result.status shouldBe BatchOperationStatus.SUCCESS
+    @Test
+    fun deleteDraftEmailMessagesShouldReturnSuccessResult() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
 
-        val listDraftEmailMessagesResult =
-            emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
-        listDraftEmailMessagesResult.find { it.id == draftId } shouldBe null
-    }
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val rfc822Data =
+                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailAddress.emailAddress,
+                    to = listOf(emailAddress.emailAddress),
+                    subject = "Test Draft",
+                )
+
+            val createDraftInput =
+                CreateDraftEmailMessageInput(
+                    rfc822Data = rfc822Data,
+                    senderEmailAddressId = emailAddress.id,
+                )
+
+            val draftId = emailClient.createDraftEmailMessage(createDraftInput)
+
+            val deleteDraftEmailMessagesInput =
+                DeleteDraftEmailMessagesInput(
+                    listOf(draftId),
+                    emailAddress.id,
+                )
+            val result = emailClient.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
+            result.status shouldBe BatchOperationStatus.SUCCESS
+
+            val listDraftEmailMessagesResult =
+                emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
+            listDraftEmailMessagesResult.find { it.id == draftId } shouldBe null
+        }
 
     @Test
     fun deleteDraftEmailMessagesShouldDeleteMultipleMessagesAtOnce() =
@@ -137,24 +146,27 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
             val draftIds = mutableListOf<String>()
 
             (0..(10)).forEach { _ ->
-                val rfc822Data = Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
-                    from = emailAddress.emailAddress,
-                    to = listOf(emailAddress.emailAddress),
-                    subject = "Test Draft",
-                )
+                val rfc822Data =
+                    Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                        from = emailAddress.emailAddress,
+                        to = listOf(emailAddress.emailAddress),
+                        subject = "Test Draft",
+                    )
 
-                val createDraftInput = CreateDraftEmailMessageInput(
-                    rfc822Data = rfc822Data,
-                    senderEmailAddressId = emailAddress.id,
-                )
+                val createDraftInput =
+                    CreateDraftEmailMessageInput(
+                        rfc822Data = rfc822Data,
+                        senderEmailAddressId = emailAddress.id,
+                    )
                 val draftId = emailClient.createDraftEmailMessage(createDraftInput)
                 draftIds.add(draftId)
             }
 
-            val input = DeleteDraftEmailMessagesInput(
-                draftIds,
-                emailAddress.id,
-            )
+            val input =
+                DeleteDraftEmailMessagesInput(
+                    draftIds,
+                    emailAddress.id,
+                )
             val result = emailClient.deleteDraftEmailMessages(input)
             result.status shouldBe BatchOperationStatus.SUCCESS
         }
