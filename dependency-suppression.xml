@@ -47,21 +47,6 @@
    </suppress>
    <suppress until="2025-12-30">
       <notes><![CDATA[
-   file name: core-0.0.9-alpha02.jar (shaded: io.netty:netty-codec-http2:4.1.72.Final)
-   ]]></notes>
-      <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
-      <cve>CVE-2022-41881</cve>
-      <cve>CVE-2022-41915</cve>
-      <cve>CVE-2023-44487</cve>
-      <cve>CVE-2023-34462</cve>
-      <cve>CVE-2022-24823</cve>
-      <cve>CVE-2024-29025</cve>
-      <cve>CVE-2024-47535</cve>
-      <cve>CVE-2025-24970</cve>
-      <cve>CVE-2025-25193</cve>
-   </suppress>
-   <suppress until="2025-12-30">
-      <notes><![CDATA[
    file name: grpc-api-1.57.0.jar
    ]]></notes>
       <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
@@ -147,13 +132,6 @@
    </suppress>
    <suppress until="2025-12-30">
       <notes><![CDATA[
-   netty-codec-http2 4.1.110.Final, 4.1.93.Final
-   ]]></notes>
-      <packageUrl regex="true">^pkg:maven/io\.netty/netty-codec-http2@.*$</packageUrl>
-      <cve>CVE-2025-55163</cve>
-   </suppress>
-   <suppress until="2025-12-30">
-      <notes><![CDATA[
    ktlint-cli-reporter-checkstyle 1.7.1
    ]]></notes>
       <packageUrl regex="true">^pkg:maven/com\.pinterest\.ktlint/ktlint-cli-reporter-checkstyle@.*$</packageUrl>
@@ -166,12 +144,5 @@
    ]]></notes>
       <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java-util@.*$</packageUrl>
       <cve>CVE-2024-7254</cve>
-   </suppress>
-   <suppress until="2025-12-30">
-      <notes><![CDATA[
-   netty-codec 4.1.110.Final, 4.1.93.Final
-   ]]></notes>
-      <packageUrl regex="true">^pkg:maven/io\.netty/netty-codec@4\.1\.(110|93)\.Final$</packageUrl>
-      <cve>CVE-2025-58057</cve>
    </suppress>
 </suppressions>

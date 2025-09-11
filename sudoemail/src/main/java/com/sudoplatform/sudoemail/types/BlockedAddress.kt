@@ -27,6 +27,17 @@ enum class BlockedEmailAddressAction {
 }
 
 /**
+ * Level at which the email address is blocked
+ */
+enum class BlockedEmailAddressLevel {
+    /** Block just the specific email address */
+    ADDRESS,
+
+    /** Block all email addresses from the same domain */
+    DOMAIN,
+}
+
+/**
  * Representation of a blocked email address used in the Sudo Platform Email SDK
  *
  * @property createdAt [Date] When the address was blocked

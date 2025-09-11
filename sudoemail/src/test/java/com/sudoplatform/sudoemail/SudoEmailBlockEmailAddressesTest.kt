@@ -17,6 +17,7 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
+import com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel
 import com.sudoplatform.sudoemail.util.EmailAddressParser
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoemail.util.StringHasher
@@ -128,7 +129,7 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
         addresses =
             listOf(
                 "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
-                "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
+                "spammyMcSpamface${UUID.randomUUID()}@spambot2.com",
             )
     }
 
@@ -160,6 +161,29 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
                 }
             deferredResult.start()
             deferredResult.await()
+        }
+
+    @Test
+    fun `blockEmailAddresses() should throw an InvalidInputException if passed an array with invalid email`() =
+        runTest {
+            val addresses =
+                listOf(
+                    "validemail${UUID.randomUUID()}@spambot.com",
+                    "invalidemail",
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
+                        client.blockEmailAddresses(addresses)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSealingService, times(addresses.size - 1)).sealString(any(), any())
+            verify(mockUserClient).getSubject()
         }
 
     @Test
@@ -298,6 +322,40 @@ class SudoEmailBlockEmailAddressesTest : BaseTests() {
                         blockedAddress.hashedBlockedValue == expectedHash
                     } shouldNotBe null
                     input.emailAddressId.getOrNull() shouldBe mockEmailAddressId
+                },
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSealingService, times(addresses.size)).sealString(any(), any())
+            verify(mockUserClient).getSubject()
+        }
+
+    @Test
+    fun `blockEmailAddresses() should accept and pass level parameter`() =
+        runTest {
+            addresses.size shouldNotBe 0
+            val expectedHash = StringHasher.hashString("$owner|${EmailAddressParser.getDomain(addresses.first())}")
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.blockEmailAddresses(addresses, level = BlockedEmailAddressLevel.DOMAIN)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.status shouldBe BatchOperationStatus.SUCCESS
+
+            verify(mockApiClient).blockEmailAddressesMutation(
+                check { input ->
+                    input.owner shouldBe "mockOwner"
+                    input.blockedAddresses.size shouldBe addresses.size
+                    val inputAction =
+                        input.blockedAddresses
+                            .first()
+                            .action
+                            .getOrNull()
+                    val inputHashedBlockedValue = input.blockedAddresses.first().hashedBlockedValue
+                    inputAction.toString() shouldBe BlockedEmailAddressAction.DROP.toString()
+                    inputHashedBlockedValue shouldBe expectedHash
                 },
             )
             verify(mockServiceKeyManager).getCurrentSymmetricKeyId()

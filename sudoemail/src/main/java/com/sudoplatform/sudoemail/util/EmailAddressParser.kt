@@ -18,4 +18,14 @@ object EmailAddressParser {
             "$localPart@$domain"
         }
     }
+
+    fun validate(email: String): Boolean {
+        val emailRegex = "^\\S+@\\S+\\.\\S+$".toRegex()
+        return email.matches(emailRegex)
+    }
+
+    fun getDomain(email: String): String {
+        val (_, domain) = email.lowercase().split('@', limit = 2)
+        return domain
+    }
 }

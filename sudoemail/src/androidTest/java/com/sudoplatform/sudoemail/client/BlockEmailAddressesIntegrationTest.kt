@@ -7,6 +7,7 @@
 package com.sudoplatform.sudoemail.client
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import aws.smithy.kotlin.runtime.content.Document
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
@@ -46,6 +47,10 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @After
     fun teardown() =
         runTest {
+            val blocklist = emailClient.getEmailAddressBlocklist()
+            if (blocklist.isNotEmpty()) {
+                emailClient.unblockEmailAddressesByHashedValue(blocklist.map { it.hashedBlockedValue })
+            }
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
             sudoList.map { sudoClient.deleteSudo(it) }
             sudoClient.reset()
@@ -56,6 +61,14 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
         runTest {
             shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
                 emailClient.blockEmailAddresses(emptyList())
+            }
+        }
+
+    @Test
+    fun blockEmailAddressesThrowsAnErrorIfPassedAnInvalidEmailAddress() =
+        runTest {
+            shouldThrow<SudoEmailClient.EmailBlocklistException.InvalidInputException> {
+                emailClient.blockEmailAddresses(listOf("not-an-email-address"))
             }
         }
 
@@ -169,6 +182,35 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
                         emailAddressToBlock.emailAddress,
                     ),
                     emailAddressId = receiverEmailAddress.id,
+                )
+
+            result.status shouldBe BatchOperationStatus.SUCCESS
+        }
+
+    @Test
+    fun blockEmailAddressesShouldSuccessfullyBlockASingleAddressWithLevelParameter() =
+        runTest {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
+            receiverEmailAddress shouldNotBe null
+            emailAddressList.add(receiverEmailAddress)
+
+            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
+            emailAddressToBlock shouldNotBe null
+            emailAddressList.add(emailAddressToBlock)
+
+            val result =
+                emailClient.blockEmailAddresses(
+                    listOf(
+                        emailAddressToBlock.emailAddress,
+                    ),
+                    level = com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel.DOMAIN,
                 )
 
             result.status shouldBe BatchOperationStatus.SUCCESS
@@ -403,7 +445,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun blockingByEmailAddressIdDoesNotBlockForOtherEmailAddresses() =
-        runTest(timeout = kotlin.time.Duration.parse("2m")) {
+        runTest(timeout = kotlin.time.Duration.parse("3m")) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -462,6 +504,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
                     ListEmailMessagesForEmailFolderIdInput(
                         folderId = receiver2InboxFolderId,
                     ),
+                atMost = Duration.TWO_MINUTES,
             )
 
             waitForMessagesByFolder(
@@ -469,6 +512,63 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
                 listInput =
                     ListEmailMessagesForEmailFolderIdInput(
                         folderId = receiver1InboxFolderId,
+                    ),
+                atMost = Duration.TWO_MINUTES,
+            )
+        }
+
+    @Test
+    fun blockingByDomainShouldBlockAllAddressesWithThatDomain() =
+        runTest(timeout = kotlin.time.Duration.parse("2m")) {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val receiver = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
+            receiver shouldNotBe null
+            emailAddressList.add(receiver)
+
+            val sender1 = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender1-${UUID.randomUUID()}")
+            sender1 shouldNotBe null
+            emailAddressList.add(sender1)
+
+            val sender2 = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender2-${UUID.randomUUID()}")
+            sender2 shouldNotBe null
+            emailAddressList.add(sender2)
+
+            val listFoldersInput = ListEmailFoldersForEmailAddressIdInput(receiver.id)
+            val inboxFolder =
+                emailClient.listEmailFoldersForEmailAddressId(listFoldersInput).items.find { it.folderName == "INBOX" }
+            inboxFolder shouldNotBe null
+            val inboxFolderId = inboxFolder?.id ?: fail("inbox folder unexpectedly null")
+
+            val result =
+                emailClient.blockEmailAddresses(
+                    listOf(
+                        sender1.emailAddress,
+                    ),
+                    level = com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel.DOMAIN,
+                )
+            result.status shouldBe BatchOperationStatus.SUCCESS
+
+            // Send a message from sender2
+            sendEmailMessage(
+                emailClient,
+                fromAddress = sender2,
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = receiver.emailAddress)),
+                body = "This message should not get through ${UUID.randomUUID()}",
+            )
+
+            waitForMessagesByFolder(
+                atMost = Duration.TWO_MINUTES,
+                pollInterval = Duration.ONE_MINUTE,
+                count = 0,
+                listInput =
+                    ListEmailMessagesForEmailFolderIdInput(
+                        folderId = inboxFolderId,
                     ),
             )
         }

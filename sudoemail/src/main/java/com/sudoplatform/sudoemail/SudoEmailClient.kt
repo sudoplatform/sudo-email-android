@@ -20,6 +20,7 @@ import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
+import com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel
 import com.sudoplatform.sudoemail.types.ConfigurationData
 import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
@@ -1076,6 +1077,7 @@ interface SudoEmailClient : AutoCloseable {
      * @param addresses [List<String>] The list of email addresses to block
      * @param action [BlockedEmailAddressAction] (optional) The action to take on incoming messages from the blocked address(es). Defaults to DROP
      * @property emailAddressId [String] If present, the blocked address is only blocked for this email address.
+     * @property level [BlockedEmailAddressLevel] (optional) The level at which to block the address. Defaults to ADDRESS
      * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
      *  of email addresses that succeeded or failed to be blocked.
      */
@@ -1083,6 +1085,7 @@ interface SudoEmailClient : AutoCloseable {
         addresses: List<String>,
         action: BlockedEmailAddressAction? = BlockedEmailAddressAction.DROP,
         emailAddressId: String? = null,
+        level: BlockedEmailAddressLevel? = BlockedEmailAddressLevel.ADDRESS,
     ): BatchOperationResult<String, String>
 
     /**

@@ -52,6 +52,7 @@ import com.sudoplatform.sudoemail.subscription.SubscriptionService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
+import com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel
 import com.sudoplatform.sudoemail.types.ConfigurationData
 import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.DeleteEmailMessagesResult
@@ -2217,6 +2218,7 @@ internal class DefaultSudoEmailClient(
         addresses: List<String>,
         action: BlockedEmailAddressAction?,
         emailAddressId: String?,
+        level: BlockedEmailAddressLevel?,
     ): BatchOperationResult<String, String> {
         if (addresses.isEmpty()) {
             throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
@@ -2237,15 +2239,33 @@ internal class DefaultSudoEmailClient(
         val sealedBlockedValues = mutableListOf<ByteArray>()
         val prefix = emailAddressId ?: owner
         addresses.forEach { address ->
-            val normalized = EmailAddressParser.normalize(address)
-            if (normalizedAddresses.add(normalized)) {
-                sealedBlockedValues.add(
-                    sealingService.sealString(
-                        symmetricKeyId,
-                        normalized.toByteArray(),
-                    ),
+            if (EmailAddressParser.validate(address)) {
+                val normalized = EmailAddressParser.normalize(address)
+                val stringToHash =
+                    when (level) {
+                        BlockedEmailAddressLevel.ADDRESS -> {
+                            normalized
+                        }
+
+                        BlockedEmailAddressLevel.DOMAIN -> {
+                            EmailAddressParser.getDomain(normalized)
+                        }
+
+                        else -> throw SudoEmailClient.EmailBlocklistException.InvalidInputException("Invalid block level: $level")
+                    }
+                if (normalizedAddresses.add(stringToHash)) {
+                    sealedBlockedValues.add(
+                        sealingService.sealString(
+                            symmetricKeyId,
+                            stringToHash.toByteArray(),
+                        ),
+                    )
+                    hashedBlockedValues.add(StringHasher.hashString("$prefix|$stringToHash"))
+                }
+            } else {
+                throw SudoEmailClient.EmailBlocklistException.InvalidInputException(
+                    "Invalid email address: $address",
                 )
-                hashedBlockedValues.add(StringHasher.hashString("$prefix|$normalized"))
             }
         }
 
