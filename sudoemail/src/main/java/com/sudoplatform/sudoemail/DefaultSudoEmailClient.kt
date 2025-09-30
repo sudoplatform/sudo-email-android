@@ -901,46 +901,29 @@ internal class DefaultSudoEmailClient(
                     }
 
             if (allRecipientsInternal) {
-                // Lookup public key information for each recipient and sender
-                val recipientsAndSender =
-                    mutableListOf<String>().apply {
-                        addAll(allRecipients)
-                        add(emailMessageHeader.from.emailAddress)
-                    }
-                val lookupPublicInfoInput =
-                    LookupEmailAddressesPublicInfoInput(
-                        emailAddresses = recipientsAndSender,
-                    )
-                val emailAddressesPublicInfo = lookupEmailAddressesPublicInfo(lookupPublicInfoInput)
-
-                // Check whether internal recipient addresses and associated public keys exist in the platform
-                val isInNetworkAddresses =
-                    allRecipients.all { recipient ->
-                        emailAddressesPublicInfo.any { info -> info.emailAddress == recipient }
-                    }
-                if (!isInNetworkAddresses) {
-                    throw SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException(
-                        IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG,
-                    )
-                } else {
-                    if (allRecipients.size > encryptedEmailMessageRecipientsLimit) {
-                        throw SudoEmailClient.EmailMessageException.LimitExceededException(
-                            "$RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG$encryptedEmailMessageRecipientsLimit",
-                        )
-                    }
-                    // Process encrypted email message
-                    return sendInNetworkEmailMessage(
-                        senderEmailAddressId,
-                        emailMessageHeader,
-                        body,
-                        attachments,
-                        inlineAttachments,
-                        emailAddressesPublicInfo,
-                        replyingMessageId,
-                        forwardingMessageId,
-                        emailMessageMaxOutboundMessageSize,
+                if (allRecipients.size > encryptedEmailMessageRecipientsLimit) {
+                    throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                        "$RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG$encryptedEmailMessageRecipientsLimit",
                     )
                 }
+                val allRecipientsAndSender = allRecipients.toMutableList()
+                allRecipientsAndSender.add(emailMessageHeader.from.emailAddress)
+                val emailAddressesPublicInfo =
+                    retrieveAndVerifyPublicInfo(
+                        allRecipientsAndSender,
+                    )
+                // Process encrypted email message
+                return sendInNetworkEmailMessage(
+                    senderEmailAddressId,
+                    emailMessageHeader,
+                    body,
+                    attachments,
+                    inlineAttachments,
+                    emailAddressesPublicInfo,
+                    replyingMessageId,
+                    forwardingMessageId,
+                    emailMessageMaxOutboundMessageSize,
+                )
             }
             if (allRecipients.size > emailMessageRecipientsLimit) {
                 throw SudoEmailClient.EmailMessageException.LimitExceededException(
@@ -1172,9 +1155,7 @@ internal class DefaultSudoEmailClient(
                 )
 
             if (encryptionStatus == EncryptionStatus.ENCRYPTED) {
-                val encryptedEmailMessage =
-                    emailCryptoService.encrypt(rfc822Data, emailAddressesPublicInfo)
-                val secureAttachments = encryptedEmailMessage.toList()
+                val secureAttachments = createSecureAttachments(rfc822Data, emailAddressesPublicInfo)
 
                 // Encode the RFC 822 data with the secureAttachments
                 rfc822Data =
@@ -1752,6 +1733,96 @@ internal class DefaultSudoEmailClient(
 
         val draftId = if (id !== null) id else UUID.randomUUID().toString()
         val s3Key = this.constructS3KeyForDraftEmailMessage(senderEmailAddressId, draftId)
+        var cleanRfc822Data = rfc822Data
+
+        // Process the RFC 822 data to ensure it is valid and encrypt if necessary
+        val (
+            _, _, _, _, _,
+            encryptedEmailMessageRecipientsLimit,
+            prohibitedFileExtensions,
+        ) = getConfigurationData()
+        val domains = getConfiguredEmailDomains()
+
+        val messageData = emailMessageDataProcessor.parseInternetMessageData(rfc822Data)
+
+        verifyAttachmentValidity(
+            prohibitedFileExtensions,
+            messageData.attachments,
+            messageData.inlineAttachments,
+        )
+
+        // Now check if this might be an in-network message
+        val allRecipients =
+            mutableListOf<String>()
+                .apply {
+                    addAll(messageData.to)
+                    addAll(messageData.cc)
+                    addAll(messageData.bcc)
+                }.map { it }
+
+        // Check if all recipient domains are ours
+        val allRecipientsInternal =
+            allRecipients.isNotEmpty() &&
+                allRecipients.all { recipient ->
+                    domains.any { domain ->
+                        recipient.contains(domain)
+                    }
+                }
+
+        if (allRecipientsInternal) {
+            // It is, so let's encrypt it
+            if (allRecipients.size > encryptedEmailMessageRecipientsLimit) {
+                throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                    "$RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG$encryptedEmailMessageRecipientsLimit",
+                )
+            }
+
+            val cleanBody =
+                if (messageData.inlineAttachments.isNotEmpty() && messageData.body != null) {
+                    replaceInlinePathsWithCids(messageData.body, messageData.inlineAttachments) ?: messageData.body
+                } else {
+                    messageData.body
+                }
+            cleanRfc822Data =
+                emailMessageDataProcessor.encodeToInternetMessageData(
+                    from = messageData.from[0],
+                    to = messageData.to,
+                    cc = messageData.cc,
+                    bcc = messageData.bcc,
+                    subject = messageData.subject,
+                    cleanBody,
+                    attachments = messageData.attachments,
+                    inlineAttachments = messageData.attachments,
+                    isHtml = true,
+                    EncryptionStatus.UNENCRYPTED,
+                    replyingMessageId = messageData.replyingMessageId,
+                    forwardingMessageId = messageData.replyingMessageId,
+                )
+
+            val allRecipientsAndSender = allRecipients.toMutableList()
+            allRecipientsAndSender.add(messageData.from[0])
+            val emailAddressesPublicInfo =
+                retrieveAndVerifyPublicInfo(
+                    allRecipientsAndSender,
+                )
+            val secureAttachments = createSecureAttachments(rfc822Data = cleanRfc822Data, emailAddressesPublicInfo)
+            cleanRfc822Data =
+                emailMessageDataProcessor.encodeToInternetMessageData(
+                    from = messageData.from[0],
+                    to = messageData.to,
+                    cc = messageData.cc,
+                    bcc = messageData.bcc,
+                    subject = messageData.subject,
+                    body = messageData.body,
+                    attachments = secureAttachments,
+                    inlineAttachments = messageData.attachments,
+                    isHtml = false,
+                    EncryptionStatus.ENCRYPTED,
+                    replyingMessageId = messageData.replyingMessageId,
+                    forwardingMessageId = messageData.replyingMessageId,
+                )
+        }
+
         val metadataObject =
             mapOf(
                 DRAFT_METADATA_KEY_ID_NAME to symmetricKeyId,
@@ -1761,7 +1832,7 @@ internal class DefaultSudoEmailClient(
         val uploadData =
             DraftEmailMessageTransformer.toEncryptedAndEncodedRfc822Data(
                 this.sealingService,
-                rfc822Data,
+                cleanRfc822Data,
                 symmetricKeyId,
             )
         s3EmailClient.upload(uploadData, s3Key, metadataObject)
@@ -1895,15 +1966,39 @@ internal class DefaultSudoEmailClient(
         try {
             val s3Key = constructS3KeyForDraftEmailMessage(input.emailAddressId, input.id)
 
-            val (keyId, _, updatedAt) = getDraftMessageObjectMetadata(s3Key)
+            val (keyId, algorithm, updatedAt) = getDraftMessageObjectMetadata(s3Key)
 
             val sealedRfc822Data = s3EmailClient.download(s3Key)
-            val unsealedRfc822Data =
+            var unsealedRfc822Data =
                 DraftEmailMessageTransformer.toDecodedAndDecryptedRfc822Data(
                     this.sealingService,
                     sealedRfc822Data,
                     keyId,
                 )
+            val parsedMessage = emailMessageDataProcessor.parseInternetMessageData(unsealedRfc822Data)
+
+            // Check if the draft is E2EE encrypted, and if so, decrypt it
+            val keyAttachments =
+                parsedMessage.attachments.filter {
+                    it.contentId.contains(SecureEmailAttachmentType.KEY_EXCHANGE.contentId) ||
+                        it.contentId.contains(LEGACY_KEY_EXCHANGE_CONTENT_ID)
+                }
+
+            if (keyAttachments.isNotEmpty()) {
+                // Draft was E2EE, so decrypt it
+                val bodyAttachment =
+                    parsedMessage.attachments.filter {
+                        it.contentId.contains(SecureEmailAttachmentType.BODY.contentId) ||
+                            it.contentId.contains(LEGACY_BODY_CONTENT_ID)
+                    }
+                if (bodyAttachment.isEmpty()) {
+                    throw SudoEmailClient.EmailMessageException.FailedException(
+                        BODY_ATTACHMENT_NOT_FOUND_ERROR_MSG,
+                    )
+                }
+                val securePackage = SecurePackage(keyAttachments.toSet(), bodyAttachment.first())
+                unsealedRfc822Data = emailCryptoService.decrypt(securePackage)
+            }
             return DraftEmailMessageWithContent(
                 id = input.id,
                 emailAddressId = input.emailAddressId,
@@ -2629,6 +2724,35 @@ internal class DefaultSudoEmailClient(
                     throw SudoEmailClient.EmailMessageException.InvalidMessageContentException("Extension not supported")
                 }
             }
+    }
+
+    private suspend fun retrieveAndVerifyPublicInfo(addresses: List<String>): List<EmailAddressPublicInfo> {
+        val lookupPublicInfoInput =
+            LookupEmailAddressesPublicInfoInput(
+                emailAddresses = addresses,
+            )
+        val emailAddressesPublicInfo = lookupEmailAddressesPublicInfo(lookupPublicInfoInput)
+
+        // Check whether internal recipient addresses and associated public keys exist in the platform
+        val isInNetworkAddresses =
+            addresses.all { recipient ->
+                emailAddressesPublicInfo.any { info -> info.emailAddress == recipient }
+            }
+        if (!isInNetworkAddresses) {
+            throw SudoEmailClient.EmailMessageException.InNetworkAddressNotFoundException(
+                IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG,
+            )
+        }
+        return emailAddressesPublicInfo
+    }
+
+    private suspend fun createSecureAttachments(
+        rfc822Data: ByteArray,
+        emailAddressesPublicInfo: List<EmailAddressPublicInfo>,
+    ): List<EmailAttachment> {
+        val encryptedEmailMessage =
+            emailCryptoService.encrypt(rfc822Data, emailAddressesPublicInfo)
+        return encryptedEmailMessage.toList()
     }
 
     private suspend fun throwIfEmailAddressNotFound(emailAddressId: String) {

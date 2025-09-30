@@ -23,6 +23,7 @@ import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldContain
+import io.kotlintest.matchers.string.shouldInclude
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -94,7 +95,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun getDraftEmailMessageShouldReturnProperMessage() =
+    fun getDraftEmailMessageShouldReturnProperOutNetworkMessage() =
         runTest {
             val sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null
@@ -109,7 +110,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val rfc822Data =
                 Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
-                    to = listOf(emailAddress.emailAddress),
+                    to = listOf(successSimulatorAddress),
                     subject = "Test Draft",
                 )
 
@@ -128,9 +129,54 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             draftEmailMessage.emailAddressId shouldBe emailAddress.id
             val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
 
-            parsedMessage.to shouldContain emailAddress.emailAddress
+            parsedMessage.to shouldContain successSimulatorAddress
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldBe "Test Draft"
+        }
+
+    @Test
+    fun getDraftEmailMessageShouldReturnProperInNetworkMessage() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
+            recipientAddress shouldNotBe null
+            emailAddressList.add(recipientAddress)
+
+            val rfc822Data =
+                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailAddress.emailAddress,
+                    to = listOf(recipientAddress.emailAddress),
+                    subject = "Test Draft",
+                    body = "Test Body",
+                )
+
+            val createDraftInput =
+                CreateDraftEmailMessageInput(
+                    rfc822Data = rfc822Data,
+                    senderEmailAddressId = emailAddress.id,
+                )
+
+            val draftId = emailClient.createDraftEmailMessage(createDraftInput)
+
+            val input = GetDraftEmailMessageInput(draftId, emailAddress.id)
+            val draftEmailMessage = emailClient.getDraftEmailMessage(input)
+
+            draftEmailMessage.id shouldBe draftId
+            draftEmailMessage.emailAddressId shouldBe emailAddress.id
+            val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
+
+            parsedMessage.to shouldContain recipientAddress.emailAddress
+            parsedMessage.from shouldContain emailAddress.emailAddress
+            parsedMessage.subject shouldBe "Test Draft"
+            parsedMessage.body shouldInclude "Test Body"
         }
 
     @Test
@@ -171,7 +217,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val rfc822Data =
                 Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
-                    to = listOf(emailAddress.emailAddress),
+                    to = listOf(successSimulatorAddress),
                     subject = "Test Draft",
                 )
             val draftId = UUID.randomUUID().toString()
@@ -202,7 +248,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             draftEmailMessage.emailAddressId shouldBe emailAddress.id
             val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
 
-            parsedMessage.to shouldContain emailAddress.emailAddress
+            parsedMessage.to shouldContain successSimulatorAddress
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldBe "Test Draft"
 

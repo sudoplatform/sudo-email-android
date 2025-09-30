@@ -77,8 +77,19 @@ class GetEmailAddressIntegrationTest : BaseIntegrationTest() {
                 updatedAt.time shouldBe emailAddress.createdAt.time
                 lastReceivedAt shouldBe emailAddress.lastReceivedAt
                 alias shouldBe aliasInput
-                folders.size shouldBe 4
-                folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+            }
+            when (retrievedEmailAddress.folders.size) {
+                4 -> {
+                    retrievedEmailAddress.folders.map { it.folderName } shouldContainExactlyInAnyOrder
+                        listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                }
+                5 -> {
+                    retrievedEmailAddress.folders.map { it.folderName } shouldContainExactlyInAnyOrder
+                        listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                }
+                else -> {
+                    throw AssertionError("Unexpected number of folders: ${retrievedEmailAddress.folders.size}")
+                }
             }
         }
 

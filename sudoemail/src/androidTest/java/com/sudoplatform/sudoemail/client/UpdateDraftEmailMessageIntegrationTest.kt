@@ -45,7 +45,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun updateDraftEmailMessageShouldProperlyUpdateMessage() =
+    fun updateDraftEmailMessageShouldProperlyUpdateOutNetworkMessage() =
         runTest {
             val sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null
@@ -60,7 +60,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val rfc822Data =
                 Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
-                    to = listOf(emailAddress.emailAddress),
+                    to = listOf(successSimulatorAddress),
                     subject = "Test Draft",
                 )
 
@@ -78,7 +78,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             draftEmailMessage.id shouldBe draftId
             val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
 
-            parsedMessage.to shouldContain emailAddress.emailAddress
+            parsedMessage.to shouldContain successSimulatorAddress
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldBe "Test Draft"
 
@@ -109,7 +109,80 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
                     context,
                 ).parseInternetMessageData(updatedDraftMessage.rfc822Data)
 
-            parsedUpdatedDraftEmailMessage.to shouldContain emailAddress.emailAddress
+            parsedUpdatedDraftEmailMessage.to shouldContain successSimulatorAddress
+            parsedUpdatedDraftEmailMessage.from shouldContain emailAddress.emailAddress
+            parsedUpdatedDraftEmailMessage.subject shouldBe "Test Draft updated"
+        }
+
+    @Test
+    fun updateDraftEmailMessageShouldProperlyUpdateInNetworkMessage() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
+            recipientAddress shouldNotBe null
+            emailAddressList.add(recipientAddress)
+
+            val rfc822Data =
+                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailAddress.emailAddress,
+                    to = listOf(recipientAddress.emailAddress),
+                    subject = "Test Draft",
+                )
+
+            val createDraftInput =
+                CreateDraftEmailMessageInput(
+                    rfc822Data = rfc822Data,
+                    senderEmailAddressId = emailAddress.id,
+                )
+
+            val draftId = emailClient.createDraftEmailMessage(createDraftInput)
+
+            val input = GetDraftEmailMessageInput(draftId, emailAddress.id)
+            val draftEmailMessage = emailClient.getDraftEmailMessage(input)
+
+            draftEmailMessage.id shouldBe draftId
+            val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
+
+            parsedMessage.to shouldContain recipientAddress.emailAddress
+            parsedMessage.from shouldContain emailAddress.emailAddress
+            parsedMessage.subject shouldBe "Test Draft"
+
+            val updatedRfc822Data =
+                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                    from = parsedMessage.from[0],
+                    to = listOf(parsedMessage.to[0]),
+                    subject = "Test Draft updated",
+                )
+
+            val updateDraftEmailMessageInput =
+                UpdateDraftEmailMessageInput(
+                    id = draftId,
+                    rfc822Data = updatedRfc822Data,
+                    senderEmailAddressId = emailAddress.id,
+                )
+
+            val updateRes = emailClient.updateDraftEmailMessage(updateDraftEmailMessageInput)
+
+            updateRes shouldBe draftId
+
+            val updatedDraftMessage = emailClient.getDraftEmailMessage(GetDraftEmailMessageInput(updateRes, emailAddress.id))
+            updatedDraftMessage.id shouldBe draftId
+            updatedDraftMessage.updatedAt.time shouldBeGreaterThan draftEmailMessage.updatedAt.time
+
+            val parsedUpdatedDraftEmailMessage =
+                Rfc822MessageDataProcessor(
+                    context,
+                ).parseInternetMessageData(updatedDraftMessage.rfc822Data)
+
+            parsedUpdatedDraftEmailMessage.to shouldContain recipientAddress.emailAddress
             parsedUpdatedDraftEmailMessage.from shouldContain emailAddress.emailAddress
             parsedUpdatedDraftEmailMessage.subject shouldBe "Test Draft updated"
         }

@@ -9,6 +9,7 @@ package com.sudoplatform.sudoemail
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.ObjectMetadata
+import com.amazonaws.util.Base64
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
@@ -16,8 +17,11 @@ import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
+import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
+import com.sudoplatform.sudoemail.util.SimplifiedEmailMessage
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.matchers.string.shouldContain
@@ -30,7 +34,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -64,6 +68,47 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         ).toMap()
 
     private val mockS3ObjectMetadata = ObjectMetadata()
+
+    private val secureKeyAttachment =
+        EmailAttachment(
+            SecureEmailAttachmentType.KEY_EXCHANGE.fileName,
+            SecureEmailAttachmentType.KEY_EXCHANGE.contentId,
+            SecureEmailAttachmentType.KEY_EXCHANGE.mimeType,
+            true,
+            ByteArray(1),
+        )
+
+    private val secureBodyAttachment =
+        EmailAttachment(
+            SecureEmailAttachmentType.BODY.fileName,
+            SecureEmailAttachmentType.BODY.contentId,
+            SecureEmailAttachmentType.BODY.mimeType,
+            true,
+            ByteArray(1),
+        )
+
+    private val outNetworkEmailMessage =
+        SimplifiedEmailMessage(
+            listOf("from@internal.com"),
+            listOf("to@external.com"),
+            listOf("cc@external.com"),
+            listOf("bcc@external.com"),
+            "email message subject",
+            "email message body",
+            false,
+        )
+
+    private val inNetworkEmailMessage =
+        SimplifiedEmailMessage(
+            listOf("from@internal.com"),
+            listOf("to@internal.com"),
+            emptyList(),
+            emptyList(),
+            "email message subject",
+            "email message body",
+            false,
+            listOf(secureBodyAttachment, secureKeyAttachment),
+        )
 
     private val mockDraftId = UUID.randomUUID()
     private val input by before {
@@ -116,11 +161,11 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     }
 
     private val mockUploadResponse by before {
-        "42"
+        "foobar"
     }
 
     private val mockDownloadResponse by before {
-        mockSeal("42").toByteArray(Charsets.UTF_8)
+        mockSeal("foobar").toByteArray(Charsets.UTF_8)
     }
 
     private val mockS3Client by before {
@@ -138,17 +183,21 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
     }
 
     private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
+        mock<Rfc822MessageDataProcessor>().stub {
+            on { parseInternetMessageData(any()) } doReturn outNetworkEmailMessage
+        }
     }
 
     private val mockSealingService by before {
         mock<SealingService>().stub {
-            on { unsealString(any(), any()) } doReturn DataFactory.unsealedHeaderDetailsString.toByteArray()
+            on { unsealString(any(), any()) } doReturn Base64.encode(ByteArray(256))
         }
     }
 
     private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
+        mock<EmailCryptoService>().stub {
+            onBlocking { decrypt(any()) } doReturn ByteArray(42)
+        }
     }
 
     private val client by before {
@@ -323,6 +372,8 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
                 },
             )
             verify(mockSealingService).unsealString(anyString(), any())
+
+            verify(mockEmailMessageProcessor).parseInternetMessageData(any())
         }
 
     @Test
@@ -364,6 +415,8 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
                     it shouldContain emailAddressId
                 },
             )
+
+            verify(mockEmailMessageProcessor).parseInternetMessageData(any())
             verify(mockS3Client).updateObjectMetadata(
                 check {
                     it shouldContain emailAddressId
@@ -373,5 +426,89 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
                 },
             )
             verify(mockSealingService).unsealString(anyString(), any())
+        }
+
+    // E2EE path
+    @Test
+    fun `getDraftEmailMessage() should throw FailedException if message has keyAttachments but no bodyAttachment`() =
+        runTest {
+            val inNetworkEmailMessage =
+                SimplifiedEmailMessage(
+                    listOf("from@internal.com"),
+                    listOf("to@internal.com"),
+                    emptyList(),
+                    emptyList(),
+                    "email message subject",
+                    "email message body",
+                    false,
+                    listOf(secureKeyAttachment),
+                )
+            mockEmailMessageProcessor.stub {
+                on { parseInternetMessageData(any()) } doReturn inNetworkEmailMessage
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.getDraftEmailMessage(input)
+                    }
+                }
+
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
+            verify(mockS3Client).download(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
+            verify(mockSealingService).unsealString(anyString(), any())
+            verify(mockEmailMessageProcessor).parseInternetMessageData(any())
+        }
+
+    @Test
+    fun `getDraftEmailMessage() should return proper data for E2EE message if no errors`() =
+        runTest {
+            mockEmailMessageProcessor.stub {
+                on { parseInternetMessageData(any()) } doReturn inNetworkEmailMessage
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getDraftEmailMessage(input)
+                }
+
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result.id shouldBe mockDraftId.toString()
+            result.emailAddressId shouldBe "emailAddressId"
+            result.updatedAt shouldBe timestamp
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client).getObjectMetadata(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
+            verify(mockS3Client).download(
+                check {
+                    it shouldContain mockDraftId.toString()
+                },
+            )
+            verify(mockSealingService).unsealString(anyString(), any())
+
+            verify(mockEmailMessageProcessor).parseInternetMessageData(any())
+            verify(mockEmailCryptoService).decrypt(any())
         }
 }

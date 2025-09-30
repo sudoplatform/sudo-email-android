@@ -183,6 +183,7 @@ afterEvaluate {
 
         analyzers {
             assemblyEnabled = false
+            centralEnabled = false
             ossIndex {
                 username = "${ossIndexUsername}"
                 password = "${ossIndexPassword}"

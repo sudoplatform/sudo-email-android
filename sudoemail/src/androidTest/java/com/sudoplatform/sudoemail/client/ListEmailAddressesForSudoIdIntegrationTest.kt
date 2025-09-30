@@ -84,8 +84,18 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
                         updatedAt.time shouldBe emailAddress.createdAt.time
                         lastReceivedAt shouldBe emailAddress.lastReceivedAt
                         alias shouldBe aliasInput
-                        folders.size shouldBe 4
-                        folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                    }
+                    val folders = listEmailAddresses.result.items[0].folders
+                    when (folders.size) {
+                        4 -> {
+                            folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                        }
+                        5 -> {
+                            folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                        }
+                        else -> {
+                            throw AssertionError("Unexpected number of folders: ${folders.size}")
+                        }
                     }
                 }
                 else -> {
@@ -132,9 +142,21 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
                         partial.createdAt.time shouldBe emailAddress.createdAt.time
                         partial.updatedAt.time shouldBe emailAddress.createdAt.time
                         partial.lastReceivedAt shouldBe emailAddress.lastReceivedAt
-                        partial.folders.size shouldBe 4
-                        partial.folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
                         cause.shouldBeInstanceOf<DeviceKeyManager.DeviceKeyManagerException.DecryptionException>()
+                    }
+                    val folders =
+                        listEmailAddresses.result.failed[0]
+                            .partial.folders
+                    when (folders.size) {
+                        4 -> {
+                            folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                        }
+                        5 -> {
+                            folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                        }
+                        else -> {
+                            throw AssertionError("Unexpected number of folders: ${folders.size}")
+                        }
                     }
                 }
                 else -> {

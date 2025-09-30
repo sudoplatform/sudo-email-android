@@ -74,8 +74,18 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
                 alias shouldBe null
-                folders.size shouldBe 4
-                folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+            }
+            val folders = result.folders
+            when (folders.size) {
+                4 -> {
+                    folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                }
+                5 -> {
+                    folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                }
+                else -> {
+                    throw AssertionError("Unexpected number of folders: ${folders.size}")
+                }
             }
             emailAddressList.add(result)
         }
@@ -104,8 +114,18 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
                 alias shouldBe null
-                folders.size shouldBe 4
-                folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+            }
+            val folders = result1.folders
+            when (folders.size) {
+                4 -> {
+                    folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                }
+                5 -> {
+                    folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                }
+                else -> {
+                    throw AssertionError("Unexpected number of folders: ${folders.size}")
+                }
             }
             emailAddressList.add(result1)
 
@@ -123,8 +143,18 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
                 alias shouldBe null
-                folders.size shouldBe 4
-                folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+            }
+            val folders2 = result2.folders
+            when (folders2.size) {
+                4 -> {
+                    folders2.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                }
+                5 -> {
+                    folders2.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                }
+                else -> {
+                    throw AssertionError("Unexpected number of folders: ${folders2.size}")
+                }
             }
             emailAddressList.add(result2)
 
@@ -156,8 +186,18 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
                 alias shouldBe aliasInput
-                folders.size shouldBe 4
-                folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+            }
+            val folders = result.folders
+            when (folders.size) {
+                4 -> {
+                    folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                }
+                5 -> {
+                    folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                }
+                else -> {
+                    throw AssertionError("Unexpected number of folders: ${folders.size}")
+                }
             }
             emailAddressList.add(result)
         }

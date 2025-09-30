@@ -72,7 +72,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun createDraftEmailMessageShouldReturnUUIDOnSuccess() =
+    fun createDraftEmailMessageShouldReturnUUIDOnSuccessWithOutNetworkMessage() =
         runTest {
             val uuidRegex = Regex("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
             val sudo = createSudo(TestData.sudo)
@@ -88,7 +88,36 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val rfc822Data =
                 Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
-                    to = listOf(emailAddress.emailAddress),
+                    to = listOf(successSimulatorAddress),
+                )
+            val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
+            val response = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
+
+            response shouldMatch uuidRegex
+        }
+
+    @Test
+    fun createDraftEmailMessageShouldReturnUUIDOnSuccessWithInNetworkMessage() =
+        runTest {
+            val uuidRegex = Regex("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
+            recipientAddress shouldNotBe null
+            emailAddressList.add(recipientAddress)
+
+            val rfc822Data =
+                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailAddress.emailAddress,
+                    to = listOf(recipientAddress.emailAddress),
                 )
             val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
             val response = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)

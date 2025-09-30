@@ -118,6 +118,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
                 DataFactory.getEmailAddressPublicInfo("to@bear.com"),
                 DataFactory.getEmailAddressPublicInfo("cc@bear.com"),
                 DataFactory.getEmailAddressPublicInfo("bcc@bear.com"),
+                DataFactory.getEmailAddressPublicInfo("from@bear.com"),
             ),
         )
     }

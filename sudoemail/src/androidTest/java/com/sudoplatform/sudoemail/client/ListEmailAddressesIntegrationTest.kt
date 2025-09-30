@@ -82,8 +82,18 @@ class ListEmailAddressesIntegrationTest : BaseIntegrationTest() {
                         updatedAt.time shouldBe emailAddress.createdAt.time
                         lastReceivedAt shouldBe emailAddress.lastReceivedAt
                         alias shouldBe aliasInput
-                        folders.size shouldBe 4
-                        folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                    }
+                    val folders = listEmailAddresses.result.items[0].folders
+                    when (folders.size) {
+                        4 -> {
+                            folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX")
+                        }
+                        5 -> {
+                            folders.map { it.folderName } shouldContainExactlyInAnyOrder listOf("INBOX", "SENT", "TRASH", "OUTBOX", "SPAM")
+                        }
+                        else -> {
+                            throw AssertionError("Unexpected number of folders: ${folders.size}")
+                        }
                     }
                 }
                 else -> {

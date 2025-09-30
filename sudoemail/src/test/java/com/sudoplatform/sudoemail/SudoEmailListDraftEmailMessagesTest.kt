@@ -9,6 +9,7 @@ package com.sudoplatform.sudoemail
 import androidx.test.platform.app.InstrumentationRegistry
 import com.amazonaws.services.s3.model.AmazonS3Exception
 import com.amazonaws.services.s3.model.ObjectMetadata
+import com.amazonaws.util.Base64
 import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
@@ -17,8 +18,11 @@ import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
+import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
+import com.sudoplatform.sudoemail.util.SimplifiedEmailMessage
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.matchers.maps.shouldContain
@@ -66,6 +70,47 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
         ).toMap()
 
     private val mockS3ObjectMetadata = ObjectMetadata()
+
+    private val secureKeyAttachment =
+        EmailAttachment(
+            SecureEmailAttachmentType.KEY_EXCHANGE.fileName,
+            SecureEmailAttachmentType.KEY_EXCHANGE.contentId,
+            SecureEmailAttachmentType.KEY_EXCHANGE.mimeType,
+            true,
+            ByteArray(1),
+        )
+
+    private val secureBodyAttachment =
+        EmailAttachment(
+            SecureEmailAttachmentType.BODY.fileName,
+            SecureEmailAttachmentType.BODY.contentId,
+            SecureEmailAttachmentType.BODY.mimeType,
+            true,
+            ByteArray(1),
+        )
+
+    private val outNetworkEmailMessage =
+        SimplifiedEmailMessage(
+            listOf("from@internal.com"),
+            listOf("to@external.com"),
+            listOf("cc@external.com"),
+            listOf("bcc@external.com"),
+            "email message subject",
+            "email message body",
+            false,
+        )
+
+    private val inNetworkEmailMessage =
+        SimplifiedEmailMessage(
+            listOf("from@internal.com"),
+            listOf("to@internal.com"),
+            emptyList(),
+            emptyList(),
+            "email message subject",
+            "email message body",
+            false,
+            listOf(secureBodyAttachment, secureKeyAttachment),
+        )
 
     private val listEmailAddressesQueryResponse by before {
         DataFactory.listEmailAddressesQueryResponse(
@@ -161,17 +206,21 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
     }
 
     private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
+        mock<Rfc822MessageDataProcessor>().stub {
+            on { parseInternetMessageData(any()) } doReturn outNetworkEmailMessage
+        }
     }
 
     private val mockSealingService by before {
         mock<SealingService>().stub {
-            on { unsealString(any(), any()) } doReturn DataFactory.unsealedHeaderDetailsString.toByteArray()
+            on { unsealString(any(), any()) } doReturn Base64.encode(ByteArray(256))
         }
     }
 
     private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
+        mock<EmailCryptoService>().stub {
+            onBlocking { decrypt(any()) } doReturn ByteArray(42)
+        }
     }
 
     private val mockNotificationHandler by before {
@@ -256,6 +305,7 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
                 },
             )
             verify(mockSealingService, times(2)).unsealString(anyString(), any())
+            verify(mockEmailMessageProcessor, times(2)).parseInternetMessageData(any())
         }
 
     @Test
@@ -569,5 +619,103 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
                 },
             )
             verify(mockSealingService, times(2)).unsealString(anyString(), any())
+            verify(mockEmailMessageProcessor, times(2)).parseInternetMessageData(any())
+        }
+
+    // E2EE path
+    @Test
+    fun `listDraftEmailMessages() should throw FailedException if message has keyAttachments but no bodyAttachment`() =
+        runTest {
+            val emailAddressId = "emailAddressId"
+            val inNetworkEmailMessage =
+                SimplifiedEmailMessage(
+                    listOf("from@internal.com"),
+                    listOf("to@internal.com"),
+                    emptyList(),
+                    emptyList(),
+                    "email message subject",
+                    "email message body",
+                    false,
+                    listOf(secureKeyAttachment),
+                )
+            mockEmailMessageProcessor.stub {
+                on { parseInternetMessageData(any()) } doReturn inNetworkEmailMessage
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                        client.listDraftEmailMessages()
+                    }
+                }
+
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailAddressesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client, times(1)).getObjectMetadata(anyString())
+            verify(mockS3Client, times(1)).download(anyString())
+            verify(mockS3Client).list(
+                check {
+                    it shouldContain emailAddressId
+                },
+            )
+            verify(mockSealingService, times(1)).unsealString(anyString(), any())
+            verify(mockEmailMessageProcessor, times(1)).parseInternetMessageData(any())
+        }
+
+    @Test
+    fun `listDraftEmailMessages() should return proper data for E2EE message if no errors`() =
+        runTest {
+            val emailAddressId = "emailAddressId"
+            mockEmailMessageProcessor.stub {
+                on { parseInternetMessageData(any()) } doReturn inNetworkEmailMessage
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listDraftEmailMessages()
+                }
+
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result.size shouldBe 2
+            result[0].id shouldBe "id1"
+            result[0].emailAddressId shouldBe emailAddressId
+            result[0].updatedAt.time shouldBe timestamp.time
+            result[0].rfc822Data shouldNotBe null
+            result[1].id shouldBe "id2"
+            result[1].emailAddressId shouldBe emailAddressId
+            result[1].updatedAt.time shouldBe timestamp.time
+            result[1].rfc822Data shouldNotBe null
+
+            verify(mockApiClient).listEmailAddressesQuery(
+                check { input ->
+                    input.limit shouldBe Optional.present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockS3Client, times(2)).getObjectMetadata(anyString())
+            verify(mockS3Client, times(2)).download(anyString())
+            verify(mockS3Client).list(
+                check {
+                    it shouldContain emailAddressId
+                },
+            )
+            verify(mockSealingService, times(2)).unsealString(anyString(), any())
+            verify(mockEmailMessageProcessor, times(2)).parseInternetMessageData(any())
+            verify(mockEmailCryptoService, times(2)).decrypt(any())
         }
 }
