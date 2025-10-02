@@ -28,4 +28,15 @@ object EmailAddressParser {
         val (_, domain) = email.lowercase().split('@', limit = 2)
         return domain
     }
+
+    fun removeDisplayName(email: String): String {
+        // Regex to match display name and extract the email address
+        val regex = Regex("""^(.*<)?([^<>]+@[^<>]+)(>)?$""")
+        val matchResult = regex.find(email.trim())
+        return matchResult
+            ?.groups
+            ?.get(2)
+            ?.value
+            ?.trim() ?: email.trim()
+    }
 }

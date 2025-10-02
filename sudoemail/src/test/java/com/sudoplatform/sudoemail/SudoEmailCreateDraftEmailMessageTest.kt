@@ -117,6 +117,17 @@ class SudoEmailCreateDraftEmailMessageTest : BaseTests() {
             false,
         )
 
+    private val inNetworkMessageWithDisplayName =
+        SimplifiedEmailMessage(
+            listOf("from@internal.com"),
+            listOf("Recipient Name <to@internal.com>"),
+            emptyList(),
+            emptyList(),
+            "email message subject",
+            "email message body",
+            false,
+        )
+
     private val encodeToInternetMessageDataResponse by before {
         ByteArray(42)
     }
@@ -564,6 +575,62 @@ class SudoEmailCreateDraftEmailMessageTest : BaseTests() {
             )
             verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
                 any(),
+            )
+            verify(mockEmailCryptoService).encrypt(
+                any(),
+                any(),
+            )
+            verify(mockSealingService).sealString("symmetricKeyId", encodeToInternetMessageDataResponse)
+            verify(mockS3Client).upload(
+                check {
+                    it shouldNotBe null
+                },
+                check {
+                    it shouldContain input.senderEmailAddressId
+                },
+                check {
+                    it shouldNotBe null
+                },
+            )
+        }
+
+    @Test
+    fun `createDraftEmailMessage() should handle display names in in-network addresses`() =
+        runTest {
+            mockEmailMessageProcessor.stub {
+                onBlocking {
+                    parseInternetMessageData(any())
+                } doReturn inNetworkMessageWithDisplayName
+            }
+
+            val result = client.createDraftEmailMessage(input)
+            result shouldMatch uuidRegex
+
+            verify(mockApiClient).getEmailAddressQuery(
+                any(),
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockApiClient).getEmailConfigQuery()
+            verify(mockApiClient).getConfiguredEmailDomainsQuery()
+            verify(mockEmailMessageProcessor).parseInternetMessageData(any())
+            verify(mockEmailMessageProcessor, times(2)).encodeToInternetMessageData(
+                anyString(),
+                any(),
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                any(),
+                any(),
+                any(),
+                any(),
+                anyOrNull(),
+                anyOrNull(),
+            )
+            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+                check {
+                    it.emailAddresses[0] shouldBe "to@internal.com"
+                },
             )
             verify(mockEmailCryptoService).encrypt(
                 any(),

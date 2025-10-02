@@ -1758,7 +1758,7 @@ internal class DefaultSudoEmailClient(
                     addAll(messageData.to)
                     addAll(messageData.cc)
                     addAll(messageData.bcc)
-                }.map { it }
+                }.map { EmailAddressParser.removeDisplayName(it) }
 
         // Check if all recipient domains are ours
         val allRecipientsInternal =
@@ -1800,7 +1800,7 @@ internal class DefaultSudoEmailClient(
                 )
 
             val allRecipientsAndSender = allRecipients.toMutableList()
-            allRecipientsAndSender.add(messageData.from[0])
+            allRecipientsAndSender.add(EmailAddressParser.removeDisplayName(messageData.from[0]))
             val emailAddressesPublicInfo =
                 retrieveAndVerifyPublicInfo(
                     allRecipientsAndSender,

@@ -14,6 +14,7 @@ import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
@@ -149,11 +150,20 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
             recipientAddress shouldNotBe null
             emailAddressList.add(recipientAddress)
+            // Make sure display name has special characters that require encoding
+            val recipientDisplayName = "Recipient; Name"
 
             val rfc822Data =
                 Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
-                    to = listOf(recipientAddress.emailAddress),
+                    to =
+                        listOf(
+                            EmailMessage
+                                .EmailAddress(
+                                    recipientAddress.emailAddress,
+                                    recipientDisplayName,
+                                ).toString(),
+                        ),
                     subject = "Test Draft",
                     body = "Test Body",
                 )
@@ -173,7 +183,9 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             draftEmailMessage.emailAddressId shouldBe emailAddress.id
             val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
 
-            parsedMessage.to shouldContain recipientAddress.emailAddress
+            parsedMessage.to.count() shouldBe 1
+            parsedMessage.to[0] shouldInclude recipientAddress.emailAddress
+            parsedMessage.to[0] shouldInclude recipientDisplayName
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldBe "Test Draft"
             parsedMessage.body shouldInclude "Test Body"

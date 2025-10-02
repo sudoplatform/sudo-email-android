@@ -11,6 +11,7 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
@@ -113,11 +114,20 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
             recipientAddress shouldNotBe null
             emailAddressList.add(recipientAddress)
+            // Make sure display name has special characters that require encoding
+            val recipientDisplayName = "Recipient; Name"
 
             val rfc822Data =
                 Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
-                    to = listOf(recipientAddress.emailAddress),
+                    to =
+                        listOf(
+                            EmailMessage
+                                .EmailAddress(
+                                    recipientAddress.emailAddress,
+                                    recipientDisplayName,
+                                ).toString(),
+                        ),
                 )
             val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
             val response = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
