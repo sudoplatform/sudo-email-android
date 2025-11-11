@@ -39,3 +39,32 @@ data class EmailFolder(
     val updatedAt: Date,
     val customFolderName: String? = null,
 ) : Parcelable
+
+/**
+ * Representation of an email folder without its unsealed attributes used in the Sudo
+ * Platform Email SDK.
+ *
+ * @property id [String] Unique identifier of the email folder.
+ * @property owner [String] Identifier of the user that owns the email folder.
+ * @property owners [List<Owner>] List of identifiers of the user/accounts associated with this email folder.
+ * @property emailAddressId [String] Identifier of the email address associated with the email folder.
+ * @property folderName [String] Name assigned to the email folder (i.e. INBOX, SENT, TRASH, OUTBOX).
+ * @property size [Double] The total size of all email messages assigned to the email folder in bytes.
+ * @property unseenCount [Int] The total count of unseen email messages assigned to the email folder.
+ * @property version [Int] Current version of the email folder.
+ * @property createdAt [Date] When the email folder was created.
+ * @property updatedAt [Date] When the email folder was last updated.
+ */
+@Parcelize
+data class PartialEmailFolder(
+    val id: String,
+    val owner: String,
+    val owners: List<Owner>,
+    val emailAddressId: String,
+    val folderName: String,
+    val size: Double,
+    val unseenCount: Int,
+    val version: Int,
+    val createdAt: Date,
+    val updatedAt: Date,
+) : Parcelable

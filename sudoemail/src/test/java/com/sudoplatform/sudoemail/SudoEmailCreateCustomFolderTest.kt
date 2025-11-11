@@ -50,9 +50,6 @@ class SudoEmailCreateCustomFolderTest : BaseTests() {
         )
     }
 
-    private val mutationResponse by before {
-    }
-
     private val context by before {
         InstrumentationRegistry.getInstrumentation().targetContext
     }

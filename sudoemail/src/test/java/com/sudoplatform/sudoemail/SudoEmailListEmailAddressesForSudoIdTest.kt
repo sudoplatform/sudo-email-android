@@ -11,13 +11,17 @@ import com.amplifyframework.api.graphql.GraphQLResponse
 import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.data.DataFactory.getEmailFolder
+import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
+import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.ListAPIResult
+import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.transformers.Unsealer
 import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
@@ -91,6 +95,34 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
         )
     }
 
+    private val mockCustomFolderName = "mockCustomFolderName"
+    private val queryResponseWithCustomFolder by before {
+        DataFactory.listEmailAddressesForSudoIdQueryResponse(
+            listOf(
+                DataFactory.EmailAddressQueryResponseData(
+                    folders =
+                        listOf(
+                            EmailAddress.Folder(
+                                "__typename",
+                                getEmailFolder(
+                                    customFolderName =
+                                        EmailFolder.CustomFolderName(
+                                            "SealedAttribute",
+                                            SealedAttribute(
+                                                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                                                keyId = "keyId",
+                                                plainTextType = "plainText",
+                                                base64EncodedSealedData = mockSeal(mockCustomFolderName),
+                                            ),
+                                        ),
+                                ),
+                            ),
+                        ),
+                ),
+            ),
+        )
+    }
+
     private val queryResponseWithNextToken by before {
         DataFactory.listEmailAddressesForSudoIdQueryResponse(
             listOf(DataFactory.EmailAddressQueryResponseData()),
@@ -127,12 +159,7 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
     }
 
     private val mockServiceKeyManager by before {
-        DefaultServiceKeyManager(
-            "keyRingService",
-            mockUserClient,
-            mockKeyManager,
-            mockLogger,
-        )
+        mock<DefaultServiceKeyManager>()
     }
 
     private val mockS3Client by before {
@@ -383,7 +410,7 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
         }
 
     @Test
-    fun `listEmailAddressesForSudoId() should return partial results when unsealing fails`() =
+    fun `listEmailAddressesForSudoId() should return partial results when unsealing alias fails`() =
         runTest {
             mockKeyManager.stub {
                 on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("KeyManagerException")
@@ -452,6 +479,79 @@ class SudoEmailListEmailAddressesForSudoIdTest : BaseTests() {
                     input.nextToken shouldBe Optional.absent()
                 },
             )
+        }
+
+    @Test
+    fun `listEmailAddresses() should return partial results when unsealing custom folder name fails`() =
+        runTest {
+            mockKeyManager.stub {
+                on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("KeyManagerException")
+            }
+
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailAddressesForSudoIdQuery(
+                        any(),
+                    )
+                } doAnswer {
+                    queryResponseWithCustomFolder
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailAddressesForSudoId(input)
+                }
+            deferredResult.start()
+            val listEmailAddresses = deferredResult.await()
+
+            listEmailAddresses shouldNotBe null
+            when (listEmailAddresses) {
+                is ListAPIResult.Partial -> {
+                    listEmailAddresses.result.items.size shouldBe 0
+                    listEmailAddresses.result.failed.size shouldBe 1
+                    listEmailAddresses.result.nextToken shouldBe null
+
+                    with(listEmailAddresses.result.failed[0].partial) {
+                        id shouldBe "emailAddressId"
+                        owner shouldBe "owner"
+                        owners.first().id shouldBe "ownerId"
+                        owners.first().issuer shouldBe "issuer"
+                        emailAddress shouldBe "example@sudoplatform.com"
+                        size shouldBe 0.0
+                        version shouldBe 1
+                        createdAt shouldBe Date(1L)
+                        updatedAt shouldBe Date(1L)
+                        lastReceivedAt shouldBe Date(1L)
+                        folders.size shouldBe 1
+                        with(folders[0]) {
+                            id shouldBe "folderId"
+                            owner shouldBe "owner"
+                            owners.first().id shouldBe "ownerId"
+                            owners.first().issuer shouldBe "issuer"
+                            emailAddressId shouldBe "emailAddressId"
+                            folderName shouldBe "folderName"
+                            size shouldBe 0.0
+                            unseenCount shouldBe 0.0
+                            version shouldBe 1
+                            createdAt shouldBe Date(1L)
+                            updatedAt shouldBe Date(1L)
+                        }
+                    }
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            verify(mockApiClient).listEmailAddressesForSudoIdQuery(
+                check { input ->
+                    input.sudoId shouldBe "sudoId"
+                    input.limit shouldBe Optional.present(10)
+                    input.nextToken shouldBe Optional.absent()
+                },
+            )
+            verify(mockServiceKeyManager).decryptWithSymmetricKeyId(any(), any())
         }
 
     @Test

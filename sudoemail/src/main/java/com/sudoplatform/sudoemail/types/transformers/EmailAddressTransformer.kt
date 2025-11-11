@@ -14,6 +14,7 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.Owner
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
+import com.sudoplatform.sudoemail.types.PartialEmailFolder
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress as EmailAddressFragment
@@ -113,10 +114,7 @@ internal object EmailAddressTransformer {
      * @param emailAddress [EmailAddressFragment] The GraphQL query result.
      * @return The [PartialEmailAddress] entity type.
      */
-    fun toPartialEntity(
-        deviceKeyManager: DeviceKeyManager,
-        emailAddress: EmailAddressFragment,
-    ): PartialEmailAddress {
+    fun toPartialEntity(emailAddress: EmailAddressFragment): PartialEmailAddress {
         val partialEmailAddressWithoutFolders =
             this.toPartialEntity(
                 emailAddressWithoutFolders = emailAddress.emailAddressWithoutFolders,
@@ -132,7 +130,7 @@ internal object EmailAddressTransformer {
             createdAt = partialEmailAddressWithoutFolders.createdAt,
             updatedAt = partialEmailAddressWithoutFolders.updatedAt,
             lastReceivedAt = partialEmailAddressWithoutFolders.lastReceivedAt,
-            folders = emailAddress.folders.toFolders(deviceKeyManager),
+            folders = emailAddress.folders.toPartialFolders(),
         )
     }
 
@@ -172,9 +170,28 @@ internal object EmailAddressTransformer {
                 },
         )
 
+    private fun EmailAddressFragment.Folder.toPartialEmailFolder(): PartialEmailFolder =
+        PartialEmailFolder(
+            id = emailFolder.id,
+            owner = emailFolder.owner,
+            owners = emailFolder.owners.toEmailFolderOwners(),
+            emailAddressId = emailFolder.emailAddressId,
+            folderName = emailFolder.folderName,
+            size = emailFolder.size,
+            unseenCount = emailFolder.unseenCount.toInt(),
+            version = emailFolder.version,
+            createdAt = emailFolder.createdAtEpochMs.toDate(),
+            updatedAt = emailFolder.updatedAtEpochMs.toDate(),
+        )
+
     private fun List<EmailAddressFragment.Folder>.toFolders(deviceKeyManager: DeviceKeyManager): List<EmailFolder> =
         this.map {
             it.toEmailFolder(deviceKeyManager)
+        }
+
+    private fun List<EmailAddressFragment.Folder>.toPartialFolders(): List<PartialEmailFolder> =
+        this.map {
+            it.toPartialEmailFolder()
         }
 
     private fun EmailAddressWithoutFolders.Owner.toOwner(): Owner = Owner(id = id, issuer = issuer)

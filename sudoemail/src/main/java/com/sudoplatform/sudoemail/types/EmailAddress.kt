@@ -55,7 +55,7 @@ data class EmailAddress(
  * @property createdAt [Date] When the email address was created.
  * @property updatedAt [Date] When the email address was last updated.
  * @property lastReceivedAt [Date] When the email address last received an email message.
- * @property folders [List<EmailFolder>] List of folders associated with this email address.
+ * @property folders [List<PartialEmailFolder>] List of folders without its unsealed attributes associated with this email address.
  */
 @Parcelize
 data class PartialEmailAddress(
@@ -69,5 +69,5 @@ data class PartialEmailAddress(
     val createdAt: Date,
     val updatedAt: Date,
     val lastReceivedAt: Date? = null,
-    val folders: List<EmailFolder>,
+    val folders: List<PartialEmailFolder>,
 ) : Parcelable

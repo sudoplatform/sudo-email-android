@@ -584,7 +584,7 @@ internal class DefaultSudoEmailClient(
                 } catch (e: Exception) {
                     val partialEmailAddress =
                         EmailAddressTransformer
-                            .toPartialEntity(serviceKeyManager, sealedEmailAddress.emailAddress)
+                            .toPartialEntity(sealedEmailAddress.emailAddress)
                     val partialResult = PartialResult(partialEmailAddress, e)
                     partials.add(partialResult)
                 }
@@ -643,7 +643,7 @@ internal class DefaultSudoEmailClient(
                 } catch (e: Exception) {
                     val partialEmailAddress =
                         EmailAddressTransformer
-                            .toPartialEntity(serviceKeyManager, sealedEmailAddress.emailAddress)
+                            .toPartialEntity(sealedEmailAddress.emailAddress)
                     val partialResult = PartialResult(partialEmailAddress, e)
                     partials.add(partialResult)
                 }
