@@ -6,28 +6,19 @@
 
 package com.sudoplatform.sudoemail
 
-import android.content.Context
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.apollographql.apollo.api.Optional
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
-import com.sudoplatform.sudoemail.data.DataFactory.getEmailFolder
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
-import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
-import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
-import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
+import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.internal.data.common.mechanisms.Unsealer
+import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressTransformer
+import com.sudoplatform.sudoemail.internal.domain.entities.common.ListAPIResultEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.common.ListPartialResultEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.common.ListSuccessResultEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.common.PartialResultEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UnsealedEmailAddressEntity
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ListEmailAddressesUseCase
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.DefaultSealingService
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.ListAPIResult
-import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
-import com.sudoplatform.sudoemail.types.transformers.Unsealer
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerException
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -38,9 +29,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -50,9 +39,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import java.net.HttpURLConnection
-import java.util.Date
-import java.util.concurrent.CancellationException
 
 /**
  * Test the correct operation of [SudoEmailClient.listEmailAddresses]
@@ -60,145 +46,92 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailListEmailAddressesTest : BaseTests() {
+    private val unsealedEmailAddress = EntityDataFactory.getUnsealedEmailAddressEntity()
+    private val partialEmailAddress = EntityDataFactory.getPartialEmailAddressEntity()
+    private val resultNextToken = "resultNextToken"
     private val input by before {
         ListEmailAddressesInput()
     }
 
-    private val queryResponse by before {
-        DataFactory.listEmailAddressesQueryResponse(
-            listOf(
-                DataFactory.EmailAddressQueryResponseData(),
+    private val listSuccessResult by before {
+        ListAPIResultEntity.Success(
+            ListSuccessResultEntity(
+                listOf(unsealedEmailAddress),
+                null,
             ),
         )
     }
 
-    private val queryResponseWithAlias by before {
-        DataFactory.listEmailAddressesQueryResponse(
-            listOf(
-                DataFactory.EmailAddressQueryResponseData(
-                    DataFactory.getEmailAddressWithoutFolder(
-                        alias =
-                            EmailAddressWithoutFolders.Alias(
-                                "SealedAttribute",
-                                SealedAttribute(
-                                    algorithm = "algorithm",
-                                    keyId = "keyId",
-                                    plainTextType = "string",
-                                    base64EncodedSealedData = "alias",
-                                ),
-                            ),
+    private val listSuccessResultWithNextToken by before {
+        ListAPIResultEntity.Success(
+            ListSuccessResultEntity(
+                listOf(unsealedEmailAddress),
+                resultNextToken,
+            ),
+        )
+    }
+
+    private val listSuccessResultWithEmptyList by before {
+        ListAPIResultEntity.Success(
+            ListSuccessResultEntity(
+                emptyList<UnsealedEmailAddressEntity>(),
+                null,
+            ),
+        )
+    }
+
+    private val listPartialResult by before {
+        ListAPIResultEntity.Partial(
+            ListPartialResultEntity(
+                listOf(unsealedEmailAddress),
+                listOf(
+                    PartialResultEntity(
+                        partialEmailAddress,
+                        Unsealer.UnsealerException.UnsupportedAlgorithmException(),
                     ),
                 ),
+                null,
             ),
         )
     }
 
-    private val mockCustomFolderName = "mockCustomFolderName"
-    private val queryResponseWithCustomFolder by before {
-        DataFactory.listEmailAddressesQueryResponse(
-            listOf(
-                DataFactory.EmailAddressQueryResponseData(
-                    folders =
-                        listOf(
-                            EmailAddress.Folder(
-                                "__typename",
-                                getEmailFolder(
-                                    customFolderName =
-                                        EmailFolder.CustomFolderName(
-                                            "SealedAttribute",
-                                            SealedAttribute(
-                                                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                                keyId = "keyId",
-                                                plainTextType = "plainText",
-                                                base64EncodedSealedData = mockSeal(mockCustomFolderName),
-                                            ),
-                                        ),
-                                ),
-                            ),
-                        ),
-                ),
-            ),
-        )
-    }
-
-    private val queryResponseWithNextToken by before {
-        DataFactory.listEmailAddressesQueryResponse(
-            listOf(
-                DataFactory.EmailAddressQueryResponseData(),
-            ),
-            nextToken = "dummyNextToken",
-        )
-    }
-
-    private val queryResponseWithEmptyList by before {
-        DataFactory.listEmailAddressesQueryResponse(emptyList())
-    }
-
-    private val mockContext by before {
-        mock<Context>()
-    }
-
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
+    private val mockUseCase by before {
+        mock<ListEmailAddressesUseCase>().stub {
             onBlocking {
-                listEmailAddressesQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponse
-            }
+                execute(any())
+            } doReturn listSuccessResult
         }
     }
 
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createListEmailAddressesUseCase() } doReturn mockUseCase
+        }
     }
 
     private val mockServiceKeyManager by before {
-        mock<DefaultServiceKeyManager>()
-    }
-
-    private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
-        }
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        DefaultSealingService(
-            mockServiceKeyManager,
+        DefaultServiceKeyManager(
+            "keyRingService",
+            mockUserClient,
+            mockKeyManager,
             mockLogger,
         )
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            mockContext,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            serviceKeyManager = mockServiceKeyManager,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
@@ -210,8 +143,8 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             mockKeyManager,
             mockApiClient,
             mockS3Client,
-            mockEmailMessageProcessor,
-            mockEmailCryptoService,
+            mockUseCaseFactory,
+            mockUseCase,
         )
     }
 
@@ -230,44 +163,18 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.size shouldBe 1
                     listEmailAddresses.result.nextToken shouldBe null
-
-                    with(listEmailAddresses.result.items[0]) {
-                        id shouldBe "emailAddressId"
-                        owner shouldBe "owner"
-                        owners.first().id shouldBe "ownerId"
-                        owners.first().issuer shouldBe "issuer"
-                        emailAddress shouldBe "example@sudoplatform.com"
-                        size shouldBe 0.0
-                        numberOfEmailMessages shouldBe 0
-                        version shouldBe 1
-                        createdAt shouldBe Date(1L)
-                        updatedAt shouldBe Date(1L)
-                        lastReceivedAt shouldBe Date(1L)
-                        folders.size shouldBe 1
-                        with(folders[0]) {
-                            id shouldBe "folderId"
-                            owner shouldBe "owner"
-                            owners.first().id shouldBe "ownerId"
-                            owners.first().issuer shouldBe "issuer"
-                            emailAddressId shouldBe "emailAddressId"
-                            folderName shouldBe "folderName"
-                            size shouldBe 0.0
-                            unseenCount shouldBe 0.0
-                            version shouldBe 1
-                            createdAt shouldBe Date(1L)
-                            updatedAt shouldBe Date(1L)
-                        }
-                    }
+                    listEmailAddresses.result.items[0] shouldBe EmailAddressTransformer.unsealedEntityToApi(unsealedEmailAddress)
                 }
                 else -> {
                     fail("Unexpected ListAPIResult")
                 }
             }
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
+            verify(mockUseCaseFactory).createListEmailAddressesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.nextToken shouldBe null
+                    useCaseInput.limit shouldBe SudoEmailClient.DEFAULT_EMAIL_ADDRESS_LIMIT
                 },
             )
         }
@@ -275,17 +182,17 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
     @Test
     fun `listEmailAddresses() should return results when populating nextToken`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    listEmailAddressesQuery(
+                    execute(
                         any(),
                     )
                 } doAnswer {
-                    queryResponseWithNextToken
+                    listSuccessResultWithNextToken
                 }
             }
-
-            val input = ListEmailAddressesInput(1, "dummyNextToken")
+            val nextToken = "nextToken"
+            val input = ListEmailAddressesInput(nextToken = nextToken)
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     client.listEmailAddresses(input)
@@ -297,43 +204,33 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             when (listEmailAddresses) {
                 is ListAPIResult.Success -> {
                     listEmailAddresses.result.items.size shouldBe 1
-                    listEmailAddresses.result.nextToken shouldBe "dummyNextToken"
-
-                    with(listEmailAddresses.result.items[0]) {
-                        id shouldBe "emailAddressId"
-                        owner shouldBe "owner"
-                        owners.size shouldBe 1
-                        emailAddress shouldBe "example@sudoplatform.com"
-                        size shouldBe 0.0
-                        version shouldBe 1
-                        createdAt shouldBe Date(1L)
-                        updatedAt shouldBe Date(1L)
-                        lastReceivedAt shouldBe Date(1L)
-                    }
+                    listEmailAddresses.result.nextToken shouldBe resultNextToken
+                    listEmailAddresses.result.items[0] shouldBe EmailAddressTransformer.unsealedEntityToApi(unsealedEmailAddress)
                 }
                 else -> {
                     fail("Unexpected ListAPIResult")
                 }
             }
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(1)
-                    input.nextToken shouldBe Optional.Present("dummyNextToken")
+            verify(mockUseCaseFactory).createListEmailAddressesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.nextToken shouldBe nextToken
+                    useCaseInput.limit shouldBe SudoEmailClient.DEFAULT_EMAIL_ADDRESS_LIMIT
                 },
             )
         }
 
     @Test
-    fun `listEmailAddresses() should return empty list output when query result data is empty`() =
+    fun `listEmailAddresses() should return empty list output when use case result is empty`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    listEmailAddressesQuery(
+                    execute(
                         any(),
                     )
                 } doAnswer {
-                    queryResponseWithEmptyList
+                    listSuccessResultWithEmptyList
                 }
             }
 
@@ -356,24 +253,25 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                 }
             }
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
+            verify(mockUseCaseFactory).createListEmailAddressesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.nextToken shouldBe null
+                    useCaseInput.limit shouldBe SudoEmailClient.DEFAULT_EMAIL_ADDRESS_LIMIT
                 },
             )
         }
 
     @Test
-    fun `listEmailAddresses() should return empty list result when query response is null`() =
+    fun `listEmailAddresses() should return partial result when use case returns partial`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    listEmailAddressesQuery(
+                    execute(
                         any(),
                     )
-                }.thenAnswer {
-                    GraphQLResponse(null, null)
+                } doAnswer {
+                    listPartialResult
                 }
             }
 
@@ -385,10 +283,13 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             val result = deferredResult.await()
 
             result shouldNotBe null
+
             when (result) {
-                is ListAPIResult.Success -> {
-                    result.result.items.isEmpty() shouldBe true
-                    result.result.items.size shouldBe 0
+                is ListAPIResult.Partial -> {
+                    result.result.items.size shouldBe 1
+                    result.result.items[0] shouldBe EmailAddressTransformer.unsealedEntityToApi(unsealedEmailAddress)
+                    result.result.failed.size shouldBe 1
+                    result.result.failed[0].partial shouldBe EmailAddressTransformer.partialEntityToApi(partialEmailAddress)
                     result.result.nextToken shouldBe null
                 }
                 else -> {
@@ -396,200 +297,27 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
                 }
             }
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
+            verify(mockUseCaseFactory).createListEmailAddressesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.nextToken shouldBe null
+                    useCaseInput.limit shouldBe SudoEmailClient.DEFAULT_EMAIL_ADDRESS_LIMIT
                 },
             )
         }
 
     @Test
-    fun `listEmailAddresses() should return partial results when unsealing alias fails`() =
+    fun `listEmailAddresses() should throw when use case error occurs`() =
         runTest {
-            mockKeyManager.stub {
-                on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("KeyManagerException")
-            }
-
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    listEmailAddressesQuery(
-                        any(),
-                    )
-                } doAnswer {
-                    queryResponseWithAlias
-                }
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    client.listEmailAddresses(input)
-                }
-            deferredResult.start()
-            val listEmailAddresses = deferredResult.await()
-
-            listEmailAddresses shouldNotBe null
-            when (listEmailAddresses) {
-                is ListAPIResult.Partial -> {
-                    listEmailAddresses.result.items.size shouldBe 0
-                    listEmailAddresses.result.failed.size shouldBe 1
-                    listEmailAddresses.result.nextToken shouldBe null
-
-                    with(listEmailAddresses.result.failed[0].partial) {
-                        id shouldBe "emailAddressId"
-                        owner shouldBe "owner"
-                        owners.first().id shouldBe "ownerId"
-                        owners.first().issuer shouldBe "issuer"
-                        emailAddress shouldBe "example@sudoplatform.com"
-                        size shouldBe 0.0
-                        version shouldBe 1
-                        createdAt shouldBe Date(1L)
-                        updatedAt shouldBe Date(1L)
-                        lastReceivedAt shouldBe Date(1L)
-                        folders.size shouldBe 1
-                        with(folders[0]) {
-                            id shouldBe "folderId"
-                            owner shouldBe "owner"
-                            owners.first().id shouldBe "ownerId"
-                            owners.first().issuer shouldBe "issuer"
-                            emailAddressId shouldBe "emailAddressId"
-                            folderName shouldBe "folderName"
-                            size shouldBe 0.0
-                            unseenCount shouldBe 0.0
-                            version shouldBe 1
-                            createdAt shouldBe Date(1L)
-                            updatedAt shouldBe Date(1L)
-                        }
-                    }
-                }
-                else -> {
-                    fail("Unexpected ListAPIResult")
-                }
-            }
-
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-        }
-
-    @Test
-    fun `listEmailAddresses() should return partial results when unsealing custom folder name fails`() =
-        runTest {
-            mockKeyManager.stub {
-                on { decryptWithPrivateKey(anyString(), any(), any()) } doThrow KeyManagerException("KeyManagerException")
-            }
-
-            mockApiClient.stub {
-                onBlocking {
-                    listEmailAddressesQuery(
-                        any(),
-                    )
-                } doAnswer {
-                    queryResponseWithCustomFolder
-                }
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    client.listEmailAddresses(input)
-                }
-            deferredResult.start()
-            val listEmailAddresses = deferredResult.await()
-
-            listEmailAddresses shouldNotBe null
-            when (listEmailAddresses) {
-                is ListAPIResult.Partial -> {
-                    listEmailAddresses.result.items.size shouldBe 0
-                    listEmailAddresses.result.failed.size shouldBe 1
-                    listEmailAddresses.result.nextToken shouldBe null
-
-                    with(listEmailAddresses.result.failed[0].partial) {
-                        id shouldBe "emailAddressId"
-                        owner shouldBe "owner"
-                        owners.first().id shouldBe "ownerId"
-                        owners.first().issuer shouldBe "issuer"
-                        emailAddress shouldBe "example@sudoplatform.com"
-                        size shouldBe 0.0
-                        version shouldBe 1
-                        createdAt shouldBe Date(1L)
-                        updatedAt shouldBe Date(1L)
-                        lastReceivedAt shouldBe Date(1L)
-                        folders.size shouldBe 1
-                        with(folders[0]) {
-                            id shouldBe "folderId"
-                            owner shouldBe "owner"
-                            owners.first().id shouldBe "ownerId"
-                            owners.first().issuer shouldBe "issuer"
-                            emailAddressId shouldBe "emailAddressId"
-                            folderName shouldBe "folderName"
-                            size shouldBe 0.0
-                            unseenCount shouldBe 0.0
-                            version shouldBe 1
-                            createdAt shouldBe Date(1L)
-                            updatedAt shouldBe Date(1L)
-                        }
-                    }
-                }
-                else -> {
-                    fail("Unexpected ListAPIResult")
-                }
-            }
-
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockServiceKeyManager).decryptWithSymmetricKeyId(any(), any())
-        }
-
-    @Test
-    fun `listEmailAddresses() should throw when unsealing fails`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    listEmailAddressesQuery(
+                    execute(
                         any(),
                     )
                 } doThrow
-                    Unsealer.UnsealerException.SealedDataTooShortException("Mock Unsealer Exception")
+                    SudoEmailClient.EmailAddressException.FailedException("Mock Exception")
             }
 
-            shouldThrow<SudoEmailClient.EmailAddressException.UnsealingException> {
-                client.listEmailAddresses(input)
-            }
-
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-        }
-
-    @Test
-    fun `listEmailAddresses() should throw when http error occurs`() =
-        runTest {
-            val testError =
-                GraphQLResponse.Error(
-                    "mock",
-                    null,
-                    null,
-                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-                )
-            mockApiClient.stub {
-                onBlocking {
-                    listEmailAddressesQuery(
-                        any(),
-                    )
-                }.thenAnswer {
-                    GraphQLResponse(null, listOf(testError))
-                }
-            }
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
@@ -599,63 +327,43 @@ class SudoEmailListEmailAddressesTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
+            verify(mockUseCaseFactory).createListEmailAddressesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.nextToken shouldBe null
+                    useCaseInput.limit shouldBe SudoEmailClient.DEFAULT_EMAIL_ADDRESS_LIMIT
                 },
             )
         }
 
     @Test
-    fun `listEmailAddresses() should throw when unknown error occurs`() =
+    fun `listEmailAddresses() should pass limit parameter when specified`() =
         runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    listEmailAddressesQuery(
-                        any(),
-                    )
-                } doThrow
-                    RuntimeException("Mock Runtime Exception")
-            }
+            val customLimit = 50
+            val input = ListEmailAddressesInput(limit = customLimit)
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                        client.listEmailAddresses(input)
-                    }
+                    client.listEmailAddresses(input)
                 }
             deferredResult.start()
-            deferredResult.await()
+            val listEmailAddresses = deferredResult.await()
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-        }
-
-    @Test
-    fun `listEmailAddresses() should not block coroutine cancellation exception`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    listEmailAddressesQuery(
-                        any(),
-                    )
-                } doThrow
-                    CancellationException("Mock Cancellation Exception")
+            listEmailAddresses shouldNotBe null
+            when (listEmailAddresses) {
+                is ListAPIResult.Success -> {
+                    listEmailAddresses.result.items.size shouldBe 1
+                }
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
             }
 
-            shouldThrow<CancellationException> {
-                client.listEmailAddresses(input)
-            }
-
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.Present(10)
-                    input.nextToken shouldBe Optional.absent()
+            verify(mockUseCaseFactory).createListEmailAddressesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.limit shouldBe customLimit
+                    useCaseInput.nextToken shouldBe null
                 },
             )
         }

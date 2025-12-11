@@ -6,7 +6,6 @@
 
 package com.sudoplatform.sudoemail
 
-import android.content.Context
 import com.sudoplatform.sudoconfigmanager.SudoConfigManager
 import com.sudoplatform.sudoconfigmanager.ValidationResult
 import com.sudoplatform.sudoemail.logging.LogConstants
@@ -16,7 +15,6 @@ import io.kotlintest.shouldThrow
 import org.json.JSONObject
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 
 /**
@@ -24,10 +22,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailClientConfigTest : BaseTests() {
-    private val mockContext by before {
-        mock<Context>()
-    }
-
     private fun configManager(configJson: String): SudoConfigManager {
         return object : SudoConfigManager {
             override fun getConfigSet(namespace: String): JSONObject? {

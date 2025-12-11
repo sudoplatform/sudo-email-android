@@ -6,20 +6,11 @@
 
 package com.sudoplatform.sudoemail
 
-import androidx.test.platform.app.InstrumentationRegistry
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
-import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
-import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
+import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.UpdateCustomEmailFolderUseCase
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.secure.SealingService
-import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
@@ -28,11 +19,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
@@ -46,114 +36,45 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
     private val mockUpdatedCustomFolderName = "mockUpdatedCustomFolderName"
-    private val mockCustomFolderId = "mockCustomFolderId"
-    private val mockEmailAddressId = "mockEmailAddressId"
+    private val unsealedEmailFolder = EntityDataFactory.getUnsealedEmailFolderEntity(customFolderName = mockUpdatedCustomFolderName)
     private val input by before {
         UpdateCustomEmailFolderInput(
-            mockCustomFolderId,
-            mockEmailAddressId,
+            emailAddressId = mockEmailAddressId,
+            emailFolderId = mockCustomFolderId,
             customFolderName = mockUpdatedCustomFolderName,
         )
     }
 
-    private val mutationResponse by before {
-        DataFactory.updateCustomEmailFolderMutationResponse(
-            DataFactory.getEmailFolder(
-                customFolderName =
-                    EmailFolder.CustomFolderName(
-                        "customFolderName",
-                        sealedAttribute =
-                            SealedAttribute(
-                                algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                keyId = "keyId",
-                                plainTextType = "plainText",
-                                base64EncodedSealedData = mockSeal(mockUpdatedCustomFolderName),
-                            ),
-                    ),
-            ),
-        )
+    private val mockUseCase by before {
+        mock<UpdateCustomEmailFolderUseCase>().stub {
+            onBlocking { execute(any()) } doReturn unsealedEmailFolder
+        }
     }
 
-    private val context by before {
-        InstrumentationRegistry.getInstrumentation().targetContext
-    }
-
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
-    }
-
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>().stub {
-            on { encryptWithSymmetricKey(anyString(), any()) } doReturn ByteArray(42)
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createUpdateCustomEmailFolderUseCase() } doReturn mockUseCase
         }
     }
 
     private val mockServiceKeyManager by before {
-        mock<ServiceKeyManager>().stub {
-            on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
-            on { generateNewCurrentSymmetricKey() } doReturn "newSymmetricKeyId"
-            on { decryptWithSymmetricKeyId(anyString(), any()) } doReturn mockUpdatedCustomFolderName.toByteArray()
-        }
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
-            onBlocking {
-                updateCustomEmailFolderMutation(
-                    any(),
-                )
-            } doAnswer {
-                mutationResponse
-            }
-        }
-    }
-
-    private val mockUploadResponse by before {
-        "42"
-    }
-
-    private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking {
-                upload(
-                    any(),
-                    any(),
-                    anyOrNull(),
-                )
-            } doReturn mockUploadResponse
-        }
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        mock<SealingService>().stub {
-            on { sealString(any(), any()) } doReturn "sealString".toByteArray()
-        }
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
+        mock<ServiceKeyManager>()
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            context,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            serviceKeyManager = mockServiceKeyManager,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
@@ -165,57 +86,10 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
             mockServiceKeyManager,
             mockApiClient,
             mockS3Client,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
+            mockUseCaseFactory,
+            mockUseCase,
         )
     }
-
-    @Test
-    fun `updateCustomEmailFolder() should throw an error if symmetricKeyId is not found`() =
-        runTest {
-            mockServiceKeyManager.stub {
-                on { getCurrentSymmetricKeyId() } doReturn null
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
-                        client.updateCustomEmailFolder(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        }
-
-    @Test
-    fun `updateCustomEmailFolder() should throw an error if graphQl mutation fails`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    updateCustomEmailFolderMutation(
-                        any(),
-                    )
-                }.thenThrow(UnknownError("ERROR"))
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
-                        client.updateCustomEmailFolder(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-            verify(mockSealingService).sealString(any(), any())
-            verify(mockApiClient).updateCustomEmailFolderMutation(
-                any(),
-            )
-        }
 
     @Test
     fun `updateCustomEmailFolder() should return updated folder`() =
@@ -227,14 +101,44 @@ class SudoEmailUpdateCustomEmailFolderTest : BaseTests() {
             deferredResult.start()
             val result = deferredResult.await()
 
-            result.id shouldBe "folderId"
+            result.id shouldBe mockFolderId
             result.customFolderName shouldBe mockUpdatedCustomFolderName
 
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-            verify(mockSealingService).sealString(any(), any())
-            verify(mockApiClient).updateCustomEmailFolderMutation(
-                any(),
+            verify(mockUseCaseFactory).createUpdateCustomEmailFolderUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.customFolderName shouldBe mockUpdatedCustomFolderName
+                    useCaseInput.emailAddressId shouldBe mockEmailAddressId
+                    useCaseInput.emailFolderId shouldBe mockCustomFolderId
+                },
             )
-            verify(mockServiceKeyManager).decryptWithSymmetricKeyId(anyString(), any<ByteArray>())
+        }
+
+    @Test
+    fun `updateCustomEmailFolder() should throw an error if symmetricKeyId is not found`() =
+        runTest {
+            mockUseCase.stub {
+                onBlocking {
+                    execute(any())
+                } doThrow SudoEmailClient.EmailFolderException.FailedException("Mock Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
+                        client.updateCustomEmailFolder(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockUseCaseFactory).createUpdateCustomEmailFolderUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.customFolderName shouldBe mockUpdatedCustomFolderName
+                    useCaseInput.emailAddressId shouldBe mockEmailAddressId
+                    useCaseInput.emailFolderId shouldBe mockCustomFolderId
+                },
+            )
         }
 }

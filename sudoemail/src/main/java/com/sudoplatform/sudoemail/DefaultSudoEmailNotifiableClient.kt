@@ -7,12 +7,12 @@
 package com.sudoplatform.sudoemail
 
 import com.google.firebase.messaging.RemoteMessage
+import com.sudoplatform.sudoemail.internal.data.common.mechanisms.NotificationUnsealer
+import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageReceivedNotificationTransformer
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.notifications.MessageReceivedNotification
 import com.sudoplatform.sudoemail.notifications.SealedNotification
-import com.sudoplatform.sudoemail.types.transformers.EmailMessageReceivedNotificationTransformer
-import com.sudoplatform.sudoemail.types.transformers.NotificationUnsealer
 import com.sudoplatform.sudoemail.util.Constants
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel

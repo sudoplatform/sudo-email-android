@@ -40,7 +40,7 @@ class ServiceKeyManagerRoboTest : BaseTests() {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    private val mockUserClient by before {
+    override val mockUserClient by before {
         mock<SudoUserClient>().stub {
             on { getSubject() } doReturn "mockSubject"
         }

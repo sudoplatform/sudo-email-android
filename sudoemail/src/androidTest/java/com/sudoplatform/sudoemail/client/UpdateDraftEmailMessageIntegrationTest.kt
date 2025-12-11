@@ -9,11 +9,11 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.TestData
+import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
@@ -58,7 +58,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             emailAddressList.add(emailAddress)
 
             val rfc822Data =
-                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
                     to = listOf(successSimulatorAddress),
                     subject = "Test Draft",
@@ -76,14 +76,14 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val draftEmailMessage = emailClient.getDraftEmailMessage(input)
 
             draftEmailMessage.id shouldBe draftId
-            val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
+            val parsedMessage = DefaultEmailMessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
 
             parsedMessage.to shouldContain successSimulatorAddress
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldBe "Test Draft"
 
             val updatedRfc822Data =
-                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
                     from = parsedMessage.from[0],
                     to = listOf(parsedMessage.to[0]),
                     subject = "Test Draft updated",
@@ -105,7 +105,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             updatedDraftMessage.updatedAt.time shouldBeGreaterThan draftEmailMessage.updatedAt.time
 
             val parsedUpdatedDraftEmailMessage =
-                Rfc822MessageDataProcessor(
+                DefaultEmailMessageDataProcessor(
                     context,
                 ).parseInternetMessageData(updatedDraftMessage.rfc822Data)
 
@@ -131,7 +131,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             emailAddressList.add(recipientAddress)
 
             val rfc822Data =
-                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
                     to = listOf(recipientAddress.emailAddress),
                     subject = "Test Draft",
@@ -149,14 +149,14 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val draftEmailMessage = emailClient.getDraftEmailMessage(input)
 
             draftEmailMessage.id shouldBe draftId
-            val parsedMessage = Rfc822MessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
+            val parsedMessage = DefaultEmailMessageDataProcessor(context).parseInternetMessageData(draftEmailMessage.rfc822Data)
 
             parsedMessage.to shouldContain recipientAddress.emailAddress
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldBe "Test Draft"
 
             val updatedRfc822Data =
-                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
                     from = parsedMessage.from[0],
                     to = listOf(parsedMessage.to[0]),
                     subject = "Test Draft updated",
@@ -178,7 +178,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             updatedDraftMessage.updatedAt.time shouldBeGreaterThan draftEmailMessage.updatedAt.time
 
             val parsedUpdatedDraftEmailMessage =
-                Rfc822MessageDataProcessor(
+                DefaultEmailMessageDataProcessor(
                     context,
                 ).parseInternetMessageData(updatedDraftMessage.rfc822Data)
 

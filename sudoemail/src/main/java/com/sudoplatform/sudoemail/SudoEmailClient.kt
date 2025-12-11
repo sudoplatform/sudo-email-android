@@ -67,7 +67,6 @@ import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -94,6 +93,7 @@ interface SudoEmailClient : AutoCloseable {
         const val DEFAULT_EMAIL_MESSAGE_LIMIT = 10
 
         const val DEFAULT_KEY_NAMESPACE = "eml"
+        const val DEFAULT_KEYRING_SERVICE_NAME = "sudo-email"
 
         private const val CONFIG_EMAIL_SERVICE = "emService"
         private const val CONFIG_REGION = "region"
@@ -266,7 +266,7 @@ interface SudoEmailClient : AutoCloseable {
 
             val serviceKeyManager =
                 DefaultServiceKeyManager(
-                    keyRingServiceName = "sudo-email",
+                    keyRingServiceName = DEFAULT_KEYRING_SERVICE_NAME,
                     userClient = sudoUserClient!!,
                     keyManager =
                         keyManager ?: KeyManagerFactory(context!!).createAndroidKeyManager(
@@ -274,8 +274,6 @@ interface SudoEmailClient : AutoCloseable {
                             this.databaseName,
                         ),
                 )
-
-            val emailMessageDataProcessor = Rfc822MessageDataProcessor(context!!)
 
             val sealingService =
                 DefaultSealingService(
@@ -300,7 +298,6 @@ interface SudoEmailClient : AutoCloseable {
                 region = region,
                 emailBucket = emailBucket,
                 transientBucket = transientBucket,
-                emailMessageDataProcessor = emailMessageDataProcessor,
                 sealingService = sealingService,
                 emailCryptoService = emailCryptoService,
                 notificationHandler = notificationHandler,
@@ -1095,6 +1092,10 @@ interface SudoEmailClient : AutoCloseable {
      * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
      *  of email addresses that succeeded or failed to be unblocked.
      */
+    @Deprecated(
+        "Use unblockEmailAddressesByHashedValue instead",
+        ReplaceWith("unblockEmailAddressesByHashedValue"),
+    )
     suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String>
 
     /**

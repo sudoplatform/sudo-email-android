@@ -6,27 +6,12 @@
 
 package com.sudoplatform.sudoemail
 
-import androidx.test.platform.app.InstrumentationRegistry
-import com.amazonaws.services.s3.model.AmazonS3Exception
-import com.amazonaws.services.s3.model.ObjectMetadata
-import com.amazonaws.util.Base64
-import com.apollographql.apollo.api.Optional
-import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.internal.data.draftMessage.transformers.DraftEmailMessageTransformer
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ListDraftEmailMessagesUseCase
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.secure.SealingService
-import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
-import com.sudoplatform.sudoemail.types.EmailAttachment
-import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudoemail.util.SimplifiedEmailMessage
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
-import io.kotlintest.matchers.maps.shouldContain
-import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -34,22 +19,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.kotlin.any
-import org.mockito.kotlin.check
-import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import java.util.Date
 
 /**
  * Test the correct operation of [SudoEmailClient.listDraftEmailMessages]
@@ -57,515 +34,171 @@ import java.util.Date
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailListDraftEmailMessagesTest : BaseTests() {
-    private val mockUserMetadata =
-        listOf(
-            "key-id" to "keyId",
-            "algorithm" to "algorithm",
-        ).toMap()
+    private val emailAddressId = mockEmailAddressId
+    private val emailAddressId2 = "emailAddressId2"
+    private val draftId1 = "draftId1"
+    private val draftId2 = "draftId2"
+    private val draftId3 = "draftId3"
+    private val unsealedDraftString = DataFactory.unsealedHeaderDetailsString
 
-    private val mockUserMetadataWithLegacyKeyId =
-        listOf(
-            "keyId" to "keyId",
-            "algorithm" to "algorithm",
-        ).toMap()
-
-    private val mockS3ObjectMetadata = ObjectMetadata()
-
-    private val secureKeyAttachment =
-        EmailAttachment(
-            SecureEmailAttachmentType.KEY_EXCHANGE.fileName,
-            SecureEmailAttachmentType.KEY_EXCHANGE.contentId,
-            SecureEmailAttachmentType.KEY_EXCHANGE.mimeType,
-            true,
-            ByteArray(1),
-        )
-
-    private val secureBodyAttachment =
-        EmailAttachment(
-            SecureEmailAttachmentType.BODY.fileName,
-            SecureEmailAttachmentType.BODY.contentId,
-            SecureEmailAttachmentType.BODY.mimeType,
-            true,
-            ByteArray(1),
-        )
-
-    private val outNetworkEmailMessage =
-        SimplifiedEmailMessage(
-            listOf("from@internal.com"),
-            listOf("to@external.com"),
-            listOf("cc@external.com"),
-            listOf("bcc@external.com"),
-            "email message subject",
-            "email message body",
-            false,
-        )
-
-    private val inNetworkEmailMessage =
-        SimplifiedEmailMessage(
-            listOf("from@internal.com"),
-            listOf("to@internal.com"),
-            emptyList(),
-            emptyList(),
-            "email message subject",
-            "email message body",
-            false,
-            listOf(secureBodyAttachment, secureKeyAttachment),
-        )
-
-    private val listEmailAddressesQueryResponse by before {
-        DataFactory.listEmailAddressesQueryResponse(
-            listOf(
-                DataFactory.EmailAddressQueryResponseData(
-                    emailAddressWithoutFolders = DataFactory.getEmailAddressWithoutFolder(),
-                ),
-            ),
+    private val draftMessage1 by before {
+        EntityDataFactory.getDraftEmailMessageWithContentEntity(
+            id = draftId1,
+            emailAddressId = emailAddressId,
+            rfc822Data = unsealedDraftString.toByteArray(),
         )
     }
 
-    private val listEmailAddressesQueryResponseWithEmptyList by before {
-        DataFactory.listEmailAddressesQueryResponse(emptyList())
+    private val draftMessage2 by before {
+        EntityDataFactory.getDraftEmailMessageWithContentEntity(
+            id = draftId2,
+            emailAddressId = emailAddressId,
+            rfc822Data = unsealedDraftString.toByteArray(),
+        )
     }
 
-    private val context by before {
-        InstrumentationRegistry.getInstrumentation().targetContext
+    private val draftMessage3 by before {
+        EntityDataFactory.getDraftEmailMessageWithContentEntity(
+            id = draftId3,
+            emailAddressId = emailAddressId2,
+            rfc822Data = unsealedDraftString.toByteArray(),
+        )
     }
 
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
+    private val allDraftMessages by before {
+        listOf(draftMessage1, draftMessage2, draftMessage3)
     }
 
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>().stub {
-            on { decryptWithPrivateKey(anyString(), any(), any()) } doReturn ByteArray(42)
-            on {
-                decryptWithSymmetricKey(
-                    any<ByteArray>(),
-                    any<ByteArray>(),
-                )
-            } doReturn DataFactory.unsealedHeaderDetailsString.toByteArray()
+    private val mockListDraftEmailMessagesUseCase by before {
+        mock<ListDraftEmailMessagesUseCase>().stub {
+            onBlocking {
+                execute()
+            } doReturn allDraftMessages
+        }
+    }
+
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createListDraftEmailMessagesUseCase() } doReturn mockListDraftEmailMessagesUseCase
         }
     }
 
     private val mockServiceKeyManager by before {
-        DefaultServiceKeyManager("keyRingServiceName", mockUserClient, mockKeyManager, mockLogger)
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
-                )
-            } doAnswer {
-                DataFactory.getEmailAddressQueryResponse()
-            }
-            onBlocking {
-                listEmailAddressesQuery(
-                    any(),
-                )
-            } doAnswer {
-                listEmailAddressesQueryResponse
-            }
-        }
-    }
-
-    private val timestamp by before {
-        Date()
-    }
-
-    private val mockDownloadResponse by before {
-        mockSeal("42").toByteArray(Charsets.UTF_8)
-    }
-
-    private val mockListObjectsResponse: List<S3ClientListOutput> by before {
-        listOf(S3ClientListOutput("id1", Date()), S3ClientListOutput("id2", Date()))
-    }
-
-    private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking {
-                download(any())
-            } doReturn mockDownloadResponse
-            onBlocking {
-                getObjectMetadata(any())
-            } doReturn mockS3ObjectMetadata
-            onBlocking {
-                list(any())
-            } doReturn mockListObjectsResponse
-        }
-    }
-
-    private val mockS3TransientClient by before {
-        mock<S3Client>().stub {
-            onBlocking {
-                list(
-                    any(),
-                )
-            } doReturn emptyList()
-        }
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>().stub {
-            on { parseInternetMessageData(any()) } doReturn outNetworkEmailMessage
-        }
-    }
-
-    private val mockSealingService by before {
-        mock<SealingService>().stub {
-            on { unsealString(any(), any()) } doReturn Base64.encode(ByteArray(256))
-        }
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>().stub {
-            onBlocking { decrypt(any()) } doReturn ByteArray(42)
-        }
-    }
-
-    private val mockNotificationHandler by before {
-        mock<SudoEmailNotificationHandler>()
+        DefaultServiceKeyManager(
+            "keyRingService",
+            mockUserClient,
+            mockKeyManager,
+            mockLogger,
+        )
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            context,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            mockNotificationHandler,
-            mockS3TransientClient,
-            mockS3Client,
+            context = mockContext,
+            serviceKeyManager = mockServiceKeyManager,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
-    }
-
-    @Before
-    fun init() {
-        mockS3ObjectMetadata.lastModified = timestamp
-        mockS3ObjectMetadata.userMetadata = mockUserMetadata
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
-            mockUserClient,
-            mockKeyManager,
-            mockApiClient,
-            mockS3Client,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            mockNotificationHandler,
+            mockUseCaseFactory,
+            mockListDraftEmailMessagesUseCase,
         )
     }
 
     @Test
-    fun `listDraftEmailMessages() should return results when no error present`() =
+    fun `listDraftEmailMessages() should return all draft messages when no errors present`() =
         runTest {
-            val emailAddressId = "emailAddressId"
-
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     client.listDraftEmailMessages()
                 }
+
             deferredResult.start()
             val result = deferredResult.await()
 
-            result.size shouldBe 2
-            result[0].id shouldBe "id1"
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].updatedAt.time shouldBe timestamp.time
-            result[0].rfc822Data shouldNotBe null
-            result[1].id shouldBe "id2"
-            result[1].emailAddressId shouldBe emailAddressId
-            result[1].updatedAt.time shouldBe timestamp.time
-            result[1].rfc822Data shouldNotBe null
+            result shouldNotBe null
+            result.size shouldBe 3
+            result[0].id shouldBe draftId1
+            result[1].id shouldBe draftId2
+            result[2].id shouldBe draftId3
 
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockS3Client, times(2)).getObjectMetadata(anyString())
-            verify(mockS3Client, times(2)).download(anyString())
-            verify(mockS3Client).list(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockSealingService, times(2)).unsealString(anyString(), any())
-            verify(mockEmailMessageProcessor, times(2)).parseInternetMessageData(any())
+            verify(mockUseCaseFactory).createListDraftEmailMessagesUseCase()
+            verify(mockListDraftEmailMessagesUseCase).execute()
         }
 
     @Test
-    fun `listDraftEmailMessages() should throw an error if an unknown error occurs`() =
+    fun `listDraftEmailMessages() should return empty list when no drafts exist`() =
         runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    listEmailAddressesQuery(
-                        any(),
-                    )
-                } doThrow
-                    RuntimeException("Mock Runtime Exception")
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                        client.listDraftEmailMessages()
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-        }
-
-    @Test
-    fun `listDraftEmailMessages() should return an empty list if no addresses found for user`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    listEmailAddressesQuery(
-                        any(),
-                    )
-                } doAnswer {
-                    listEmailAddressesQueryResponseWithEmptyList
-                }
+            mockListDraftEmailMessagesUseCase.stub {
+                onBlocking { execute() } doReturn emptyList()
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     client.listDraftEmailMessages()
                 }
+
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
             result.size shouldBe 0
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
+            verify(mockUseCaseFactory).createListDraftEmailMessagesUseCase()
+            verify(mockListDraftEmailMessagesUseCase).execute()
         }
 
     @Test
-    fun `listDraftEmailMessages() should return an empty list if no drafts found`() =
+    fun `listDraftEmailMessages() should return single draft message`() =
         runTest {
-            val emailAddressId = "emailAddressId"
-
-            mockS3Client.stub {
-                onBlocking {
-                    list(anyString())
-                } doReturn emptyList()
-            }
-
-            mockS3TransientClient.stub {
-                onBlocking {
-                    list(anyString())
-                } doReturn emptyList()
+            mockListDraftEmailMessagesUseCase.stub {
+                onBlocking { execute() } doReturn listOf(draftMessage1)
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     client.listDraftEmailMessages()
                 }
+
             deferredResult.start()
             val result = deferredResult.await()
 
-            result.size shouldBe 0
+            result shouldNotBe null
+            result.size shouldBe 1
+            result[0].id shouldBe draftId1
+            result[0].emailAddressId shouldBe emailAddressId
 
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockS3Client).list(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
+            verify(mockUseCaseFactory).createListDraftEmailMessagesUseCase()
+            verify(mockListDraftEmailMessagesUseCase).execute()
         }
 
     @Test
-    fun `listDraftEmailMessages() should throw an error if draft message is not found`() =
+    fun `listDraftEmailMessages() should handle large number of drafts`() =
         runTest {
-            val emailAddressId = "emailAddressId"
-
-            val error = AmazonS3Exception("Not found")
-            error.errorCode = "404 Not Found"
-            mockS3Client.stub {
-                onBlocking {
-                    download(anyString())
-                } doThrow error
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
-                        client.listDraftEmailMessages()
-                    }
-                }
-
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockS3Client).getObjectMetadata(anyString())
-            verify(mockS3Client).download(anyString())
-            verify(mockS3Client).list(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-        }
-
-    @Test
-    fun `listDraftEmailMessages() should migrate any messages found in transient bucket`() =
-        runTest {
-            val emailAddressId = "emailAddressId"
-
-            mockS3Client.stub {
-                onBlocking {
-                    list(anyString())
-                } doReturn emptyList()
-                onBlocking {
-                    upload(any<ByteArray>(), anyString(), any())
-                } doReturn mockListObjectsResponse[0].key
-            }
-
-            mockS3TransientClient.stub {
-                onBlocking {
-                    list(
-                        any(),
+            val largeDraftList =
+                (1..50).map { index ->
+                    EntityDataFactory.getDraftEmailMessageWithContentEntity(
+                        id = "draft-$index",
+                        emailAddressId = emailAddressId,
+                        rfc822Data = unsealedDraftString.toByteArray(),
                     )
-                } doReturn mockListObjectsResponse
-            }
-
-            val timestamp = Date()
-            val mockObjectMetadata = ObjectMetadata()
-            mockObjectMetadata.userMetadata =
-                mapOf(
-                    "keyId" to "mockKeyId",
-                    "algorithm" to SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                )
-            mockObjectMetadata.lastModified = timestamp
-            mockS3TransientClient.stub {
-                onBlocking {
-                    getObjectMetadata(anyString())
-                } doReturn mockObjectMetadata
-                onBlocking {
-                    download(anyString())
-                } doReturn mockDownloadResponse
-                onBlocking {
-                    delete(anyString())
-                } doReturn Unit
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessages()
                 }
-            deferredResult.start()
-            val result = deferredResult.await()
 
-            result.size shouldBe 2
-            result[0].id shouldBe "id1"
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].updatedAt.time shouldBe timestamp.time
-            result[0].rfc822Data shouldNotBe null
-            result[1].id shouldBe "id2"
-            result[1].emailAddressId shouldBe emailAddressId
-            result[1].updatedAt.time shouldBe timestamp.time
-            result[1].rfc822Data shouldNotBe null
-
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockS3Client).list(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockS3TransientClient, times(mockListObjectsResponse.size)).getObjectMetadata(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockS3TransientClient, times(mockListObjectsResponse.size)).download(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockS3Client, times(mockListObjectsResponse.size)).upload(
-                check {
-                    it shouldBe mockDownloadResponse
-                },
-                check {
-                    it shouldContain emailAddressId
-                },
-                check {
-                    it shouldContain Pair("key-id", "mockKeyId")
-                    it shouldContain Pair("algorithm", SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString())
-                },
-            )
-            verify(mockS3TransientClient, times(mockListObjectsResponse.size)).delete(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockSealingService, times(2)).unsealString(anyString(), any())
-        }
-
-    @Test
-    fun `listDraftEmailMessages() should migrate messages with legacy key id metadata key`() =
-        runTest {
-            val emailAddressId = "emailAddressId"
-            mockS3ObjectMetadata.userMetadata = mockUserMetadataWithLegacyKeyId
-            mockS3Client.stub {
-                onBlocking {
-                    getObjectMetadata(anyString())
-                } doReturn mockS3ObjectMetadata
-                onBlocking {
-                    updateObjectMetadata(anyString(), any())
-                } doReturn Unit
+            mockListDraftEmailMessagesUseCase.stub {
+                onBlocking { execute() } doReturn largeDraftList
             }
 
             val deferredResult =
@@ -576,70 +209,20 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
             deferredResult.start()
             val result = deferredResult.await()
 
-            result.size shouldBe 2
-            result[0].id shouldBe "id1"
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].updatedAt.time shouldBe timestamp.time
-            result[0].rfc822Data shouldNotBe null
-            result[1].id shouldBe "id2"
-            result[1].emailAddressId shouldBe emailAddressId
-            result[1].updatedAt.time shouldBe timestamp.time
-            result[1].rfc822Data shouldNotBe null
+            result shouldNotBe null
+            result.size shouldBe 50
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockS3Client).list(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockS3Client, times(mockListObjectsResponse.size)).getObjectMetadata(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockS3Client, times(mockListObjectsResponse.size)).download(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockS3Client, times(mockListObjectsResponse.size)).updateObjectMetadata(
-                check {
-                    it shouldContain emailAddressId
-                },
-                check {
-                    it["key-id"] shouldBe "keyId"
-                },
-            )
-            verify(mockSealingService, times(2)).unsealString(anyString(), any())
-            verify(mockEmailMessageProcessor, times(2)).parseInternetMessageData(any())
+            verify(mockUseCaseFactory).createListDraftEmailMessagesUseCase()
+            verify(mockListDraftEmailMessagesUseCase).execute()
         }
 
-    // E2EE path
     @Test
-    fun `listDraftEmailMessages() should throw FailedException if message has keyAttachments but no bodyAttachment`() =
+    fun `listDraftEmailMessages() should throw when use case throws`() =
         runTest {
-            val emailAddressId = "emailAddressId"
-            val inNetworkEmailMessage =
-                SimplifiedEmailMessage(
-                    listOf("from@internal.com"),
-                    listOf("to@internal.com"),
-                    emptyList(),
-                    emptyList(),
-                    "email message subject",
-                    "email message body",
-                    false,
-                    listOf(secureKeyAttachment),
-                )
-            mockEmailMessageProcessor.stub {
-                on { parseInternetMessageData(any()) } doReturn inNetworkEmailMessage
+            mockListDraftEmailMessagesUseCase.stub {
+                onBlocking { execute() }.thenAnswer {
+                    throw SudoEmailClient.EmailMessageException.FailedException("Mock error")
+                }
             }
 
             val deferredResult =
@@ -652,34 +235,13 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockS3Client, times(1)).getObjectMetadata(anyString())
-            verify(mockS3Client, times(1)).download(anyString())
-            verify(mockS3Client).list(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockSealingService, times(1)).unsealString(anyString(), any())
-            verify(mockEmailMessageProcessor, times(1)).parseInternetMessageData(any())
+            verify(mockUseCaseFactory).createListDraftEmailMessagesUseCase()
+            verify(mockListDraftEmailMessagesUseCase).execute()
         }
 
     @Test
-    fun `listDraftEmailMessages() should return proper data for E2EE message if no errors`() =
+    fun `listDraftEmailMessages() should properly transform entities to API types`() =
         runTest {
-            val emailAddressId = "emailAddressId"
-            mockEmailMessageProcessor.stub {
-                on { parseInternetMessageData(any()) } doReturn inNetworkEmailMessage
-            }
-
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     client.listDraftEmailMessages()
@@ -688,34 +250,11 @@ class SudoEmailListDraftEmailMessagesTest : BaseTests() {
             deferredResult.start()
             val result = deferredResult.await()
 
-            result.size shouldBe 2
-            result[0].id shouldBe "id1"
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].updatedAt.time shouldBe timestamp.time
-            result[0].rfc822Data shouldNotBe null
-            result[1].id shouldBe "id2"
-            result[1].emailAddressId shouldBe emailAddressId
-            result[1].updatedAt.time shouldBe timestamp.time
-            result[1].rfc822Data shouldNotBe null
+            result shouldNotBe null
+            result.size shouldBe 3
+            result shouldBe allDraftMessages.map { DraftEmailMessageTransformer.entityWithContentToApi(it) }
 
-            verify(mockApiClient).listEmailAddressesQuery(
-                check { input ->
-                    input.limit shouldBe Optional.present(10)
-                    input.nextToken shouldBe Optional.absent()
-                },
-            )
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockS3Client, times(2)).getObjectMetadata(anyString())
-            verify(mockS3Client, times(2)).download(anyString())
-            verify(mockS3Client).list(
-                check {
-                    it shouldContain emailAddressId
-                },
-            )
-            verify(mockSealingService, times(2)).unsealString(anyString(), any())
-            verify(mockEmailMessageProcessor, times(2)).parseInternetMessageData(any())
-            verify(mockEmailCryptoService, times(2)).decrypt(any())
+            verify(mockUseCaseFactory).createListDraftEmailMessagesUseCase()
+            verify(mockListDraftEmailMessagesUseCase).execute()
         }
 }

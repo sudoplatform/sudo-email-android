@@ -6,18 +6,11 @@
 
 package com.sudoplatform.sudoemail
 
-import androidx.test.platform.app.InstrumentationRegistry
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.DeleteCustomEmailFolderUseCase
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -27,10 +20,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
@@ -43,9 +37,7 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailDeleteCustomEmailFolderTest : BaseTests() {
-    private val mockCustomFolderName = "mockCustomFolderName"
-    private val mockCustomFolderId = "mockCustomFolderId"
-    private val mockEmailAddressId = "mockEmailAddressId"
+    private val unsealedEmailFolder = EntityDataFactory.getUnsealedEmailFolderEntity(customFolderName = mockCustomFolderName)
     private val input by before {
         DeleteCustomEmailFolderInput(
             mockCustomFolderId,
@@ -53,68 +45,36 @@ class SudoEmailDeleteCustomEmailFolderTest : BaseTests() {
         )
     }
 
-    private val context by before {
-        InstrumentationRegistry.getInstrumentation().targetContext
+    private val mockUseCase by before {
+        mock<DeleteCustomEmailFolderUseCase>().stub {
+            onBlocking { execute(any()) } doReturn unsealedEmailFolder
+        }
     }
 
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
-    }
-
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createDeleteCustomEmailFolderUseCase() } doReturn mockUseCase
+        }
     }
 
     private val mockServiceKeyManager by before {
-        mock<ServiceKeyManager>().stub {
-            on { decryptWithSymmetricKeyId(anyString(), any()) } doReturn mockCustomFolderName.toByteArray()
-        }
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
-            onBlocking {
-                deleteCustomEmailFolderMutation(
-                    any(),
-                )
-            } doAnswer {
-                DataFactory.deleteCustomEmailFolderMutationResponse(mockSeal(mockCustomFolderName))
-            }
-        }
-    }
-
-    private val mockS3Client by before {
-        mock<S3Client>()
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        mock<SealingService>()
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
+        mock<ServiceKeyManager>()
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            context,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            serviceKeyManager = mockServiceKeyManager,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
@@ -126,34 +86,35 @@ class SudoEmailDeleteCustomEmailFolderTest : BaseTests() {
             mockServiceKeyManager,
             mockApiClient,
             mockS3Client,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
+            mockUseCaseFactory,
+            mockUseCase,
         )
     }
 
     @Test
     fun `deleteCustomEmailFolder() should throw an error if graphQl mutation fails`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    deleteCustomEmailFolderMutation(
-                        any(),
-                    )
-                }.thenThrow(UnknownError("ERROR"))
+                    execute(any())
+                } doThrow SudoEmailClient.EmailFolderException.FailedException("Mock Exception")
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailFolderException.UnknownException> {
+                    shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
                         client.deleteCustomEmailFolder(input)
                     }
                 }
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).deleteCustomEmailFolderMutation(
-                any(),
+            verify(mockUseCaseFactory).createDeleteCustomEmailFolderUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.emailFolderId shouldBe mockCustomFolderId
+                    useCaseInput.emailAddressId shouldBe mockEmailAddressId
+                },
             )
         }
 
@@ -168,25 +129,26 @@ class SudoEmailDeleteCustomEmailFolderTest : BaseTests() {
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result!!.id shouldBe "folderId"
+            result!!.id shouldBe mockFolderId
             result.customFolderName shouldBe mockCustomFolderName
 
-            verify(mockApiClient).deleteCustomEmailFolderMutation(
-                any(),
+            verify(mockUseCaseFactory).createDeleteCustomEmailFolderUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.emailFolderId shouldBe mockCustomFolderId
+                    useCaseInput.emailAddressId shouldBe mockEmailAddressId
+                },
             )
-            verify(mockServiceKeyManager).decryptWithSymmetricKeyId(anyString(), any<ByteArray>())
         }
 
     @Test
     fun `deleteCustomEmailFolder() should return null if folder not found`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    deleteCustomEmailFolderMutation(
-                        any(),
-                    )
+                    execute(any())
                 } doAnswer {
-                    GraphQLResponse(null, null)
+                    null
                 }
             }
 
@@ -199,8 +161,12 @@ class SudoEmailDeleteCustomEmailFolderTest : BaseTests() {
 
             result shouldBe null
 
-            verify(mockApiClient).deleteCustomEmailFolderMutation(
-                any(),
+            verify(mockUseCaseFactory).createDeleteCustomEmailFolderUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.emailFolderId shouldBe mockCustomFolderId
+                    useCaseInput.emailAddressId shouldBe mockEmailAddressId
+                },
             )
         }
 }

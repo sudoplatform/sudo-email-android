@@ -58,7 +58,7 @@ class ListScheduledDraftMessagesForEmailAddressIdIntegrationTest : BaseIntegrati
                     emailAddressId = "dummyEmailAddressId",
                 )
 
-            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+            shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 emailClient.listScheduledDraftMessagesForEmailAddressId(input)
             }
         }

@@ -15,7 +15,6 @@ import com.sudoplatform.sudoemail.types.EmailAttachment
 import jakarta.mail.Message
 import jakarta.mail.Part
 import jakarta.mail.internet.MimeMessage
-import java.lang.Exception
 
 /**
  * An object containing the email body and a flag indicating whether it is

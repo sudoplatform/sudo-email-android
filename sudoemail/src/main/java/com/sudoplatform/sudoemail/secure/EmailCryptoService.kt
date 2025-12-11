@@ -6,8 +6,8 @@
 
 package com.sudoplatform.sudoemail.secure
 
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressPublicInfoEntity
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
-import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 
 /**
  * Encrypts and decrypts email messages within the email service.
@@ -65,7 +65,7 @@ internal interface EmailCryptoService {
     @Throws(EmailCryptoServiceException::class)
     suspend fun encrypt(
         data: ByteArray,
-        emailAddressPublicInfo: List<EmailAddressPublicInfo>,
+        emailAddressPublicInfo: List<EmailAddressPublicInfoEntity>,
     ): SecurePackage
 
     /**

@@ -7,7 +7,7 @@
 package com.sudoplatform.sudoemail.util
 
 import android.net.Uri
-import com.sudoplatform.sudoemail.types.EmailAttachment
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
 
 /**
  * Contains a series of extensions to support operations on email data
@@ -30,7 +30,7 @@ private val IMAGE_PARAMETERS_REGEX = "(src|alt)=\"([^\"\\s]*)\"".toRegex()
  */
 internal fun replaceInlinePathsWithCids(
     htmlBody: String,
-    inlineAttachments: List<EmailAttachment>,
+    inlineAttachments: List<EmailAttachmentEntity>,
 ): String? {
     if (htmlBody.isBlank()) return null
 
@@ -93,7 +93,7 @@ private fun replaceUriForCid(
 
 private fun resolveCidForImage(
     path: String,
-    inlineAttachment: EmailAttachment,
+    inlineAttachment: EmailAttachmentEntity,
 ): String {
     var cid = path.hashCode().toString()
     inlineAttachment.contentId.let { cid = it }

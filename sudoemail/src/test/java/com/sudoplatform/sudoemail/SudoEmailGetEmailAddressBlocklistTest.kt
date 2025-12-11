@@ -6,22 +6,12 @@
 
 package com.sudoplatform.sudoemail
 
-import android.content.Context
-import com.amazonaws.util.Base64
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
-import com.sudoplatform.sudoemail.graphql.type.BlockedAddressAction
-import com.sudoplatform.sudoemail.keys.ServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.GetEmailAddressBlocklistUseCase
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
+import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
+import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddressStatus
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
-import io.kotlintest.matchers.beInstanceOf
-import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -31,15 +21,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.check
-import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doReturnConsecutively
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
@@ -50,180 +35,116 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
-    private val owner = "mockOwner"
-    private val mockEmailAddressId = "mockEmailAddressId"
-    private val mockData =
-        listOf(
-            DataFactory.GetEmailAddressBlocklistQueryDataValues(
-                sealedData = String(Base64.encode("dummySealedData1".toByteArray())),
-                unsealedData = "dummyUnsealedData1".toByteArray(),
-                hashedValue = "hashedValue1",
-                action = BlockedAddressAction.DROP,
-                emailAddressId = mockEmailAddressId,
-            ),
-            DataFactory.GetEmailAddressBlocklistQueryDataValues(
-                sealedData = String(Base64.encode("dummySealedData2".toByteArray())),
-                unsealedData = "dummyUnsealedData2".toByteArray(),
-                hashedValue = "hashedValue2",
-                action = BlockedAddressAction.SPAM,
-            ),
+    private val emailAddressId = mockEmailAddressId
+    private val address1 = "spammer@example.com"
+    private val address2 = "phisher@example.com"
+    private val hashedValue1 = "hashedValue1"
+    private val hashedValue2 = "hashedValue2"
+
+    private val unsealedBlockedAddress1 =
+        UnsealedBlockedAddress(
+            address = address1,
+            hashedBlockedValue = hashedValue1,
+            action = BlockedEmailAddressAction.DROP,
+            status = UnsealedBlockedAddressStatus.Completed,
+            emailAddressId = emailAddressId,
         )
 
-    private val queryResponse by before {
-        DataFactory.getEmailAddressBlocklistQueryResponse(
-            mockData,
+    private val unsealedBlockedAddress2 =
+        UnsealedBlockedAddress(
+            address = address2,
+            hashedBlockedValue = hashedValue2,
+            action = BlockedEmailAddressAction.SPAM,
+            status = UnsealedBlockedAddressStatus.Completed,
+            emailAddressId = null,
         )
+
+    private val successResult by before {
+        listOf(unsealedBlockedAddress1, unsealedBlockedAddress2)
     }
 
-    private val queryResponseWithEmptyList by before {
-        DataFactory.getEmailAddressBlocklistQueryResponse(
-            emptyList(),
-        )
-    }
-
-    private val mockContext by before {
-        mock<Context>()
-    }
-
-    private val mockUserClient by before {
-        mock<SudoUserClient>().stub {
-            on { getSubject() } doReturn owner
-        }
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
+    private val mockUseCase by before {
+        mock<GetEmailAddressBlocklistUseCase>().stub {
             onBlocking {
-                getEmailAddressBlocklistQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponse
-            }
+                execute()
+            } doReturn successResult
         }
     }
 
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createGetEmailAddressBlocklistUseCase() } doReturn mockUseCase
+        }
     }
 
     private val mockServiceKeyManager by before {
-        mock<ServiceKeyManager>().stub {
-            on { symmetricKeyExists(any<String>()) } doReturn true
-        }
-    }
-
-    private val mockS3Client by before {
-        mock<S3Client>()
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        mock<SealingService>().stub {
-            on {
-                unsealString(
-                    any(),
-                    any(),
-                )
-            } doReturnConsecutively
-                listOf(
-                    mockData[0].unsealedData,
-                    mockData[1].unsealedData,
-                )
-        }
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
+        DefaultServiceKeyManager(
+            "keyRingService",
+            mockUserClient,
+            mockKeyManager,
+            mockLogger,
+        )
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            mockContext,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            serviceKeyManager = mockServiceKeyManager,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
-            mockContext,
-            mockUserClient,
-            mockKeyManager,
-            mockServiceKeyManager,
-            mockApiClient,
-            mockS3Client,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
+            mockUseCase,
+            mockUseCaseFactory,
         )
     }
 
     @Test
-    fun `getEmailAddressBlocklist() should throw an error if response contains errors`() =
+    fun `getEmailAddressBlocklist() should return blocked addresses when no errors present`() =
         runTest {
-            val error =
-                GraphQLResponse.Error(
-                    "mock",
-                    null,
-                    null,
-                    mapOf("errorType" to "SystemError"),
-                )
-            mockApiClient.stub {
-                onBlocking {
-                    getEmailAddressBlocklistQuery(
-                        any(),
-                    )
-                } doAnswer {
-                    GraphQLResponse(null, listOf(error))
-                }
-            }
-
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
-                        client.getEmailAddressBlocklist()
-                    }
+                    client.getEmailAddressBlocklist()
                 }
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
+            result.size shouldBe 2
+            result[0].address shouldBe address1
+            result[0].hashedBlockedValue shouldBe hashedValue1
+            result[0].action shouldBe BlockedEmailAddressAction.DROP
+            result[0].status shouldBe UnsealedBlockedAddressStatus.Completed
+            result[0].emailAddressId shouldBe emailAddressId
 
-            verify(mockApiClient).getEmailAddressBlocklistQuery(
-                check { input ->
-                    input.owner shouldBe owner
-                },
-            )
-            verify(mockUserClient).getSubject()
+            result[1].address shouldBe address2
+            result[1].hashedBlockedValue shouldBe hashedValue2
+            result[1].action shouldBe BlockedEmailAddressAction.SPAM
+            result[1].status shouldBe UnsealedBlockedAddressStatus.Completed
+            result[1].emailAddressId shouldBe null
+
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
         }
 
     @Test
-    fun `getEmailAddressBlocklist() should return an empty list if no addresses are returned`() =
+    fun `getEmailAddressBlocklist() should return empty list when no blocked addresses`() =
         runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    getEmailAddressBlocklistQuery(
-                        any(),
-                    )
-                } doAnswer {
-                    queryResponseWithEmptyList
-                }
+            mockUseCase.stub {
+                onBlocking { execute() } doReturn emptyList()
             }
 
             val deferredResult =
@@ -236,17 +157,17 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             result shouldNotBe null
             result.size shouldBe 0
 
-            verify(mockApiClient).getEmailAddressBlocklistQuery(
-                check { input ->
-                    input.owner shouldBe owner
-                },
-            )
-            verify(mockUserClient).getSubject()
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
         }
 
     @Test
-    fun `getEmailAddressBlocklist() returns array of unsealed values on success`() =
+    fun `getEmailAddressBlocklist() should return single blocked address`() =
         runTest {
+            mockUseCase.stub {
+                onBlocking { execute() } doReturn listOf(unsealedBlockedAddress1)
+            }
+
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     client.getEmailAddressBlocklist()
@@ -255,45 +176,150 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result.mapIndexed { index, unsealedBlockedAddress ->
-                unsealedBlockedAddress.hashedBlockedValue shouldBe mockData[index].hashedValue
-                unsealedBlockedAddress.address shouldBe (mockData[index].unsealedData).decodeToString()
-                unsealedBlockedAddress.status shouldBe UnsealedBlockedAddressStatus.Completed
-                unsealedBlockedAddress.action.toString() shouldBe mockData[index].action.toString()
-                unsealedBlockedAddress.emailAddressId shouldBe mockData[index].emailAddressId
-            }
+            result.size shouldBe 1
+            result[0].address shouldBe address1
 
-            verify(mockApiClient).getEmailAddressBlocklistQuery(
-                check { input ->
-                    input.owner shouldBe owner
-                },
-            )
-            val argumentCaptor = argumentCaptor<ByteArray>()
-            verify(mockSealingService, times(2)).unsealString(
-                check {
-                    it shouldBe "keyId"
-                },
-                argumentCaptor.capture(),
-            )
-            argumentCaptor.firstValue shouldBe Base64.decode(mockData[0].sealedData)
-            argumentCaptor.secondValue shouldBe Base64.decode(mockData[1].sealedData)
-            verify(mockUserClient).getSubject()
-            verify(mockServiceKeyManager, times(2)).symmetricKeyExists(any<String>())
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
         }
 
     @Test
-    fun `getEmailAddressBlocklist() returns with failed status and error type when necessary`() =
+    fun `getEmailAddressBlocklist() should handle addresses with different actions`() =
         runTest {
-            mockServiceKeyManager.stub {
-                on { symmetricKeyExists(any<String>()) } doReturnConsecutively listOf(false, true)
+            val dropAddress =
+                UnsealedBlockedAddress(
+                    address = "drop@example.com",
+                    hashedBlockedValue = "hashedDrop",
+                    action = BlockedEmailAddressAction.DROP,
+                    status = UnsealedBlockedAddressStatus.Completed,
+                    emailAddressId = null,
+                )
+            val spamAddress =
+                UnsealedBlockedAddress(
+                    address = "spam@example.com",
+                    hashedBlockedValue = "hashedSpam",
+                    action = BlockedEmailAddressAction.SPAM,
+                    status = UnsealedBlockedAddressStatus.Completed,
+                    emailAddressId = emailAddressId,
+                )
+
+            mockUseCase.stub {
+                onBlocking { execute() } doReturn listOf(dropAddress, spamAddress)
             }
-            mockSealingService.stub {
-                on {
-                    unsealString(
-                        any<String>(),
-                        any<ByteArray>(),
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddressBlocklist()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.size shouldBe 2
+            result[0].action shouldBe BlockedEmailAddressAction.DROP
+            result[1].action shouldBe BlockedEmailAddressAction.SPAM
+
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
+        }
+
+    @Test
+    fun `getEmailAddressBlocklist() should handle addresses with and without emailAddressId`() =
+        runTest {
+            val withEmailAddressId =
+                UnsealedBlockedAddress(
+                    address = "with@example.com",
+                    hashedBlockedValue = "hashedWith",
+                    action = BlockedEmailAddressAction.DROP,
+                    status = UnsealedBlockedAddressStatus.Completed,
+                    emailAddressId = emailAddressId,
+                )
+            val withoutEmailAddressId =
+                UnsealedBlockedAddress(
+                    address = "without@example.com",
+                    hashedBlockedValue = "hashedWithout",
+                    action = BlockedEmailAddressAction.DROP,
+                    status = UnsealedBlockedAddressStatus.Completed,
+                    emailAddressId = null,
+                )
+
+            mockUseCase.stub {
+                onBlocking { execute() } doReturn listOf(withEmailAddressId, withoutEmailAddressId)
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddressBlocklist()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.size shouldBe 2
+            result[0].emailAddressId shouldBe emailAddressId
+            result[1].emailAddressId shouldBe null
+
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
+        }
+
+    @Test
+    fun `getEmailAddressBlocklist() should include addresses with Failed status`() =
+        runTest {
+            val failedException = SudoEmailClient.EmailBlocklistException.FailedException("Unsealing failed")
+            val completedAddress =
+                UnsealedBlockedAddress(
+                    address = address1,
+                    hashedBlockedValue = hashedValue1,
+                    action = BlockedEmailAddressAction.DROP,
+                    status = UnsealedBlockedAddressStatus.Completed,
+                    emailAddressId = null,
+                )
+            val failedAddress =
+                UnsealedBlockedAddress(
+                    address = "",
+                    hashedBlockedValue = hashedValue2,
+                    action = BlockedEmailAddressAction.SPAM,
+                    status = UnsealedBlockedAddressStatus.Failed(failedException),
+                    emailAddressId = emailAddressId,
+                )
+
+            mockUseCase.stub {
+                onBlocking { execute() } doReturn listOf(completedAddress, failedAddress)
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddressBlocklist()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.size shouldBe 2
+            result[0].status shouldBe UnsealedBlockedAddressStatus.Completed
+            (result[1].status is UnsealedBlockedAddressStatus.Failed) shouldBe true
+
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
+        }
+
+    @Test
+    fun `getEmailAddressBlocklist() should handle multiple blocked addresses`() =
+        runTest {
+            val addresses =
+                (1..5).map { index ->
+                    UnsealedBlockedAddress(
+                        address = "address$index@example.com",
+                        hashedBlockedValue = "hashedValue$index",
+                        action = BlockedEmailAddressAction.DROP,
+                        status = UnsealedBlockedAddressStatus.Completed,
+                        emailAddressId = if (index % 2 == 0) emailAddressId else null,
                     )
-                } doReturn mockData[1].unsealedData
+                }
+
+            mockUseCase.stub {
+                onBlocking { execute() } doReturn addresses
             }
 
             val deferredResult =
@@ -302,32 +328,86 @@ class SudoEmailGetEmailAddressBlocklistTest : BaseTests() {
                 }
             deferredResult.start()
             val result = deferredResult.await()
+
             result shouldNotBe null
+            result.size shouldBe 5
+            result.forEachIndexed { index, unsealedAddress ->
+                unsealedAddress.address shouldBe "address${index + 1}@example.com"
+            }
 
-            result[0].address shouldBe ""
-            result[0].hashedBlockedValue shouldBe mockData[0].hashedValue
-            result[0].status should beInstanceOf<UnsealedBlockedAddressStatus.Failed>()
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
+        }
 
-            result[1].address shouldBe (mockData[1].unsealedData).decodeToString()
-            result[1].hashedBlockedValue shouldBe mockData[1].hashedValue
-            result[1].action.toString() shouldBe mockData[1].action.toString()
-            result[1].status shouldBe UnsealedBlockedAddressStatus.Completed
+    @Test
+    fun `getEmailAddressBlocklist() should throw when use case throws`() =
+        runTest {
+            mockUseCase.stub {
+                onBlocking { execute() } doThrow SudoEmailClient.EmailBlocklistException.FailedException("Failed")
+            }
 
-            verify(mockApiClient).getEmailAddressBlocklistQuery(
-                check { input ->
-                    input.owner shouldBe owner
-                },
-            )
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailBlocklistException.FailedException> {
+                        client.getEmailAddressBlocklist()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
 
-            val argumentCaptor = argumentCaptor<ByteArray>()
-            verify(mockSealingService).unsealString(
-                check {
-                    it shouldBe "keyId"
-                },
-                argumentCaptor.capture(),
-            )
-            argumentCaptor.firstValue shouldBe Base64.decode(mockData[1].sealedData)
-            verify(mockUserClient).getSubject()
-            verify(mockServiceKeyManager, times(2)).symmetricKeyExists(any<String>())
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
+        }
+
+    @Test
+    fun `getEmailAddressBlocklist() should handle mixed Completed and Failed statuses`() =
+        runTest {
+            val addresses =
+                listOf(
+                    UnsealedBlockedAddress(
+                        address = address1,
+                        hashedBlockedValue = hashedValue1,
+                        action = BlockedEmailAddressAction.DROP,
+                        status = UnsealedBlockedAddressStatus.Completed,
+                        emailAddressId = null,
+                    ),
+                    UnsealedBlockedAddress(
+                        address = "",
+                        hashedBlockedValue = hashedValue2,
+                        action = BlockedEmailAddressAction.SPAM,
+                        status =
+                            UnsealedBlockedAddressStatus.Failed(
+                                SudoEmailClient.EmailBlocklistException.FailedException("Failed"),
+                            ),
+                        emailAddressId = emailAddressId,
+                    ),
+                    UnsealedBlockedAddress(
+                        address = "another@example.com",
+                        hashedBlockedValue = "hashedValue3",
+                        action = BlockedEmailAddressAction.DROP,
+                        status = UnsealedBlockedAddressStatus.Completed,
+                        emailAddressId = null,
+                    ),
+                )
+
+            mockUseCase.stub {
+                onBlocking { execute() } doReturn addresses
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getEmailAddressBlocklist()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.size shouldBe 3
+            result[0].status shouldBe UnsealedBlockedAddressStatus.Completed
+            (result[1].status is UnsealedBlockedAddressStatus.Failed) shouldBe true
+            result[2].status shouldBe UnsealedBlockedAddressStatus.Completed
+
+            verify(mockUseCaseFactory).createGetEmailAddressBlocklistUseCase()
+            verify(mockUseCase).execute()
         }
 }

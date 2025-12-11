@@ -6,16 +6,15 @@
 
 package com.sudoplatform.sudoemail.keys
 
-import android.content.Context
 import android.util.Base64
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.DefaultSudoEmailClient
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManager
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
@@ -41,19 +40,15 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailImportExportKeysTest : BaseTests() {
-    private val mockContext by before {
-        mock<Context>()
-    }
-
-    private val mockUserClient by before {
+    override val mockUserClient by before {
         mock<SudoUserClient>()
     }
 
-    private val mockApiClient by before {
+    override val mockApiClient by before {
         mock<ApiClient>()
     }
 
-    private val mockKeyManager by before {
+    override val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
         }
     }
@@ -66,12 +61,8 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         }
     }
 
-    private val mockS3Client by before {
+    override val mockS3Client by before {
         mock<S3Client>()
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
     }
 
     private val mockSealingService by before {
@@ -85,6 +76,10 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         mock<EmailCryptoService>()
     }
 
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>()
+    }
+
     private val client by before {
         DefaultSudoEmailClient(
             mockContext,
@@ -92,7 +87,6 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockUserClient,
             mockLogger,
             mockServiceKeyManager,
-            mockEmailMessageProcessor,
             mockSealingService,
             mockEmailCryptoService,
             "region",
@@ -101,6 +95,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             null,
             mockS3Client,
             mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
@@ -113,7 +108,6 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockServiceKeyManager,
             mockApiClient,
             mockS3Client,
-            mockEmailMessageProcessor,
             mockEmailCryptoService,
         )
     }
@@ -139,32 +133,15 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     @Test
     fun `importKeys(archiveData) should throw when deviceKeyManager throws`() =
         runTest {
-            val mockServiceKeyManager by before {
-                mock<ServiceKeyManager>().stub {
-                    on { importKeys(any<ByteArray>()) } doThrow
-                        DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Mock exception")
-                }
+            mockServiceKeyManager.stub {
+                on { importKeys(any<ByteArray>()) } doThrow
+                    DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Mock exception")
             }
-            val errorClient =
-                DefaultSudoEmailClient(
-                    mockContext,
-                    mockApiClient,
-                    mockUserClient,
-                    mockLogger,
-                    mockServiceKeyManager,
-                    mockEmailMessageProcessor,
-                    mockSealingService,
-                    mockEmailCryptoService,
-                    "region",
-                    "identityBucket",
-                    "transientBucket",
-                    null,
-                    mockS3Client,
-                    mockS3Client,
-                )
+
             shouldThrow<SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException> {
-                errorClient.importKeys(dummyKeyString.toByteArray(Charsets.UTF_8))
+                client.importKeys(dummyKeyString.toByteArray(Charsets.UTF_8))
             }
+            verify(mockServiceKeyManager).importKeys(any())
         }
 
     @Test
@@ -179,34 +156,15 @@ class SudoEmailImportExportKeysTest : BaseTests() {
     @Test
     fun `exportKeys() should throw when deviceKeyManager throws`() =
         runTest {
-            val mockServiceKeyManager by before {
-                mock<ServiceKeyManager>().stub {
-                    on { exportKeys() } doThrow
-                        DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Mock exception")
-                }
+            mockServiceKeyManager.stub {
+                on { exportKeys() } doThrow
+                    DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException("Mock exception")
             }
-
-            val errorClient =
-                DefaultSudoEmailClient(
-                    mockContext,
-                    mockApiClient,
-                    mockUserClient,
-                    mockLogger,
-                    mockServiceKeyManager,
-                    mockEmailMessageProcessor,
-                    mockSealingService,
-                    mockEmailCryptoService,
-                    "region",
-                    "identityBucket",
-                    "transientBucket",
-                    null,
-                    mockS3Client,
-                    mockS3Client,
-                )
 
             shouldThrow<SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException> {
-                errorClient.exportKeys()
+                client.exportKeys()
             }
+            verify(mockServiceKeyManager).exportKeys()
         }
 
     @Test
@@ -231,20 +189,18 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             val serviceKeyManager = DefaultServiceKeyManager(keyNameSpace, mockUserClient, keyManager, mockLogger)
             val emailClient =
                 DefaultSudoEmailClient(
-                    mockContext,
-                    mockApiClient,
-                    mockUserClient,
-                    mockLogger,
-                    serviceKeyManager,
-                    mockEmailMessageProcessor,
-                    mockSealingService,
-                    mockEmailCryptoService,
-                    "region",
-                    "identityBucket",
-                    "transientBucket",
-                    null,
-                    mockS3Client,
-                    mockS3Client,
+                    context = mockContext,
+                    serviceKeyManager = serviceKeyManager,
+                    apiClient = mockApiClient,
+                    sudoUserClient = mockUserClient,
+                    logger = mockLogger,
+                    region = "region",
+                    emailBucket = "identityBucket",
+                    transientBucket = "transientBucket",
+                    notificationHandler = null,
+                    s3TransientClient = mockS3Client,
+                    s3EmailClient = mockS3Client,
+                    useCaseFactory = mockUseCaseFactory,
                 )
 
             val archiveData = Base64.decode(exportedKeys, Base64.NO_WRAP)

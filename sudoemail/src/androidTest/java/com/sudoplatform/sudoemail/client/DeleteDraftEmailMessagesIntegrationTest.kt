@@ -10,11 +10,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
+import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -25,6 +25,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
+import kotlin.time.Duration
 
 /**
  * Test the operation of [SudoEmailClient.deleteDraftEmailMessages].
@@ -103,7 +104,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
             emailAddressList.add(emailAddress)
 
             val rfc822Data =
-                Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
                     from = emailAddress.emailAddress,
                     to = listOf(emailAddress.emailAddress),
                     subject = "Test Draft",
@@ -132,7 +133,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun deleteDraftEmailMessagesShouldDeleteMultipleMessagesAtOnce() =
-        runTest {
+        runTest(timeout = Duration.parse("2m")) {
             val sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -147,7 +148,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
             (0..(10)).forEach { _ ->
                 val rfc822Data =
-                    Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+                    DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
                         from = emailAddress.emailAddress,
                         to = listOf(emailAddress.emailAddress),
                         subject = "Test Draft",

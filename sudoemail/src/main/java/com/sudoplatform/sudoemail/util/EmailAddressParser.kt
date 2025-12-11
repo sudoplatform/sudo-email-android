@@ -6,6 +6,9 @@
 
 package com.sudoplatform.sudoemail.util
 
+import android.text.util.Rfc822Tokenizer
+import com.sudoplatform.sudoemail.types.EmailMessage
+
 object EmailAddressParser {
     fun normalize(email: String): String {
         val (localPart, domain) = email.lowercase().split('@', limit = 2)
@@ -38,5 +41,29 @@ object EmailAddressParser {
             ?.get(2)
             ?.value
             ?.trim() ?: email.trim()
+    }
+
+    /**
+     * Transform a string that might contain an RFC822 email address and display
+     * name into an [EmailMessage.EmailAddress].
+     */
+    fun toEmailAddress(value: String): EmailMessage.EmailAddress? {
+        Rfc822Tokenizer.tokenize(value).firstOrNull {
+            val address = it.address
+            return when {
+                address.isNullOrBlank() -> {
+                    null
+                }
+
+                it.name.isNullOrBlank() -> {
+                    EmailMessage.EmailAddress(address)
+                }
+
+                else -> {
+                    EmailMessage.EmailAddress(address, it.name)
+                }
+            }
+        }
+        return null
     }
 }

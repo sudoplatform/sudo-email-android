@@ -10,10 +10,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
+import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -77,7 +77,7 @@ class GetEmailMessageRfc822DataIntegrationTest : BaseIntegrationTest() {
             result.id shouldBe sendResult.id
 
             val simplifiedMessage =
-                Rfc822MessageDataProcessor(context).parseInternetMessageData(result.rfc822Data)
+                DefaultEmailMessageDataProcessor(context).parseInternetMessageData(result.rfc822Data)
             with(simplifiedMessage) {
                 to.shouldContainExactlyInAnyOrder(emailMessage.to.map { it.emailAddress })
                 from.shouldContainExactlyInAnyOrder(emailMessage.from.map { it.emailAddress })

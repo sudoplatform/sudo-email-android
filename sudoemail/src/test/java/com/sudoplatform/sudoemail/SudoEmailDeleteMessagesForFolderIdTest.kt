@@ -6,19 +6,10 @@
 
 package com.sudoplatform.sudoemail
 
-import androidx.test.platform.app.InstrumentationRegistry
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.apollographql.apollo.api.Optional
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.internal.data.emailMessage.GraphQLEmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.DefaultSealingService
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -30,7 +21,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
-import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
@@ -43,34 +35,19 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailDeleteMessagesForFolderIdTest : BaseTests() {
-    private val mockFolderId = "mockFolderId"
-    private val mockEmailAddressId = "mockEmailAddressId"
-    private val mutationResponse by before {
-        DataFactory.deleteEmailMessagesForFolderIdMutationResponse(mockFolderId)
-    }
+    private val folderId = "folder-id-123"
+    private val emailAddressId = "email-address-id-456"
 
-    private val context by before {
-        InstrumentationRegistry.getInstrumentation().targetContext
-    }
-
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
+    private val mockEmailMessageService by before {
+        mock<GraphQLEmailMessageService>().stub {
             onBlocking {
-                deleteEmailMessagesByFolderIdMutation(
-                    any(),
-                )
-            } doAnswer {
-                mutationResponse
-            }
+                deleteForFolderId(any())
+            } doReturn folderId
         }
     }
 
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>()
     }
 
     private val mockServiceKeyManager by before {
@@ -82,150 +59,195 @@ class SudoEmailDeleteMessagesForFolderIdTest : BaseTests() {
         )
     }
 
-    private val mockS3Client by before {
-        mock<S3Client>()
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        DefaultSealingService(
-            mockServiceKeyManager,
-            mockLogger,
-        )
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
-    }
-
     private val client by before {
         DefaultSudoEmailClient(
-            context,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            serviceKeyManager = mockServiceKeyManager,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
+            emailMessageService = mockEmailMessageService,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
-            mockUserClient,
-            mockKeyManager,
-            mockApiClient,
-            mockS3Client,
-            mockEmailMessageProcessor,
-            mockEmailCryptoService,
+            mockEmailMessageService,
+            mockUseCaseFactory,
         )
     }
 
     @Test
-    fun `deleteMessagesForFolderId() should return folder id on success`() =
+    fun `deleteMessagesForFolderId() should return folder ID when deletion is successful`() =
         runTest {
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    client.deleteMessagesForFolderId(
-                        DeleteMessagesForFolderIdInput(
-                            emailAddressId = mockEmailAddressId,
-                            emailFolderId = mockFolderId,
-                        ),
-                    )
-                }
-            deferredResult.start()
-            val result = deferredResult.await()
-
-            result shouldNotBe null
-            result shouldBe mockFolderId
-
-            verify(mockApiClient).deleteEmailMessagesByFolderIdMutation(
-                check { input ->
-                    input.folderId shouldBe mockFolderId
-                    input.emailAddressId shouldBe mockEmailAddressId
-                    input.hardDelete shouldBe Optional.absent()
-                },
-            )
-        }
-
-    @Test
-    fun `deleteMessagesForFolderId() should pass hardDelete parameter properly`() =
-        runTest {
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    client.deleteMessagesForFolderId(
-                        DeleteMessagesForFolderIdInput(
-                            emailAddressId = mockEmailAddressId,
-                            emailFolderId = mockFolderId,
-                            hardDelete = false,
-                        ),
-                    )
-                }
-            deferredResult.start()
-            val result = deferredResult.await()
-
-            result shouldNotBe null
-            result shouldBe mockFolderId
-
-            verify(mockApiClient).deleteEmailMessagesByFolderIdMutation(
-                check { input ->
-                    input.folderId shouldBe mockFolderId
-                    input.emailAddressId shouldBe mockEmailAddressId
-                    input.hardDelete shouldBe Optional.present(false)
-                },
-            )
-        }
-
-    @Test
-    fun `deleteMessagesForFolderId() should throw when response has errors`() =
-        runTest {
-            val testError =
-                GraphQLResponse.Error(
-                    "Test generated error",
-                    emptyList(),
-                    emptyList(),
-                    mapOf("errorType" to "EmailAddressNotFound"),
+            val input =
+                DeleteMessagesForFolderIdInput(
+                    emailAddressId = emailAddressId,
+                    emailFolderId = folderId,
                 )
-            mockApiClient.stub {
-                onBlocking {
-                    deleteEmailMessagesByFolderIdMutation(
-                        any(),
-                    )
-                }.thenAnswer {
-                    GraphQLResponse(null, listOf(testError))
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteMessagesForFolderId(input)
                 }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result shouldBe folderId
+
+            verify(mockEmailMessageService).deleteForFolderId(
+                check { request ->
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailFolderId shouldBe folderId
+                    request.hardDelete shouldBe null
+                },
+            )
+        }
+
+    @Test
+    fun `deleteMessagesForFolderId() should pass hardDelete as true when specified`() =
+        runTest {
+            val input =
+                DeleteMessagesForFolderIdInput(
+                    emailAddressId = emailAddressId,
+                    emailFolderId = folderId,
+                    hardDelete = true,
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteMessagesForFolderId(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result shouldBe folderId
+
+            verify(mockEmailMessageService).deleteForFolderId(
+                check { request ->
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailFolderId shouldBe folderId
+                    request.hardDelete shouldBe true
+                },
+            )
+        }
+
+    @Test
+    fun `deleteMessagesForFolderId() should pass hardDelete as false when specified`() =
+        runTest {
+            val input =
+                DeleteMessagesForFolderIdInput(
+                    emailAddressId = emailAddressId,
+                    emailFolderId = folderId,
+                    hardDelete = false,
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteMessagesForFolderId(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result shouldBe folderId
+
+            verify(mockEmailMessageService).deleteForFolderId(
+                check { request ->
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailFolderId shouldBe folderId
+                    request.hardDelete shouldBe false
+                },
+            )
+        }
+
+    @Test
+    fun `deleteMessagesForFolderId() should throw when service throws EmailFolderException`() =
+        runTest {
+            mockEmailMessageService.stub {
+                onBlocking {
+                    deleteForFolderId(any())
+                } doThrow SudoEmailClient.EmailFolderException.FailedException("Failed to delete messages")
             }
+
+            val input =
+                DeleteMessagesForFolderIdInput(
+                    emailAddressId = emailAddressId,
+                    emailFolderId = folderId,
+                )
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     shouldThrow<SudoEmailClient.EmailFolderException.FailedException> {
-                        client.deleteMessagesForFolderId(
-                            DeleteMessagesForFolderIdInput(
-                                emailAddressId = mockEmailAddressId,
-                                emailFolderId = mockFolderId,
-                            ),
-                        )
+                        client.deleteMessagesForFolderId(input)
                     }
                 }
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).deleteEmailMessagesByFolderIdMutation(
-                check { input ->
-                    input.folderId shouldBe mockFolderId
-                    input.emailAddressId shouldBe mockEmailAddressId
-                    input.hardDelete shouldBe Optional.absent()
+            verify(mockEmailMessageService).deleteForFolderId(any())
+        }
+
+    @Test
+    fun `deleteMessagesForFolderId() should throw when service throws AuthenticationException`() =
+        runTest {
+            mockEmailMessageService.stub {
+                onBlocking {
+                    deleteForFolderId(any())
+                } doThrow SudoEmailClient.EmailFolderException.AuthenticationException("Not authenticated")
+            }
+
+            val input =
+                DeleteMessagesForFolderIdInput(
+                    emailAddressId = emailAddressId,
+                    emailFolderId = folderId,
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailFolderException.AuthenticationException> {
+                        client.deleteMessagesForFolderId(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockEmailMessageService).deleteForFolderId(any())
+        }
+
+    @Test
+    fun `deleteMessagesForFolderId() should handle null hardDelete parameter`() =
+        runTest {
+            val input =
+                DeleteMessagesForFolderIdInput(
+                    emailAddressId = emailAddressId,
+                    emailFolderId = folderId,
+                    hardDelete = null,
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteMessagesForFolderId(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldBe folderId
+
+            verify(mockEmailMessageService).deleteForFolderId(
+                check { request ->
+                    request.hardDelete shouldBe null
                 },
             )
         }

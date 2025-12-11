@@ -1,0 +1,44 @@
+/*
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package com.sudoplatform.sudoemail.internal.domain.entities.emailAddress
+
+import android.os.Parcelable
+import com.sudoplatform.sudoemail.internal.domain.entities.common.OwnerEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.PartialEmailFolderEntity
+import kotlinx.parcelize.Parcelize
+import java.util.Date
+
+/**
+ * Core entity representation of an email address without its unsealed attributes used in the Sudo Platform Email SDK.
+ * This is used when unsealing fails partially.
+ *
+ * @property id [String] Unique identifier of the email address.
+ * @property owner [String] Identifier of the user that owns the email address.
+ * @property owners [List<OwnerEntity>] List of identifiers of the user/sudo associated with this email address.
+ * @property emailAddress [String] Address in format 'local-part@domain' of the email.
+ * @property size [Double] The total size of all email messages assigned to the email address in bytes.
+ * @property numberOfEmailMessages [Int] The total number of email messages assigned to the email address.
+ * @property version [Int] Current version of the email address.
+ * @property createdAt [Date] When the email address was created.
+ * @property updatedAt [Date] When the email address was last updated.
+ * @property lastReceivedAt [Date] When the email address last received an email message.
+ * @property folders [List<PartialEmailFolderEntity>] List of folders associated with this email address.
+ */
+@Parcelize
+internal data class PartialEmailAddressEntity(
+    val id: String,
+    val owner: String,
+    val owners: List<OwnerEntity>,
+    val emailAddress: String,
+    val size: Double,
+    val numberOfEmailMessages: Int,
+    val version: Int,
+    val createdAt: Date,
+    val updatedAt: Date,
+    val lastReceivedAt: Date? = null,
+    val folders: List<PartialEmailFolderEntity>,
+) : Parcelable

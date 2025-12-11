@@ -10,17 +10,18 @@ import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo.PublicKeyDetails
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicKey
 import com.sudoplatform.sudoemail.graphql.type.KeyFormat
-import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
-import com.sudoplatform.sudoemail.types.PublicKeyFormat
+import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressPublicInfoTransformer
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressPublicInfoEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressPublicKeyEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyFormatEntity
 import io.kotlintest.shouldBe
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo as EmailAddressPublicInfoFragment
-import com.sudoplatform.sudoemail.types.EmailAddressPublicKey as EmailAddressPublicKeyEntity
 
 /**
- * Test that the [EmailAddressPublicInfoTransformer] converts graphql to entity type correctly.
+ * Test that the [com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressPublicInfoTransformer] converts graphql to entity type correctly.
  */
 @RunWith(RobolectricTestRunner::class)
 class EmailAddressPublicInfoTransformerTest : BaseTests() {
@@ -41,12 +42,12 @@ class EmailAddressPublicInfoTransformerTest : BaseTests() {
     }
 
     private val entity by before {
-        EmailAddressPublicInfo(
+        EmailAddressPublicInfoEntity(
             "emailAddress",
             "keyId",
             EmailAddressPublicKeyEntity(
                 "publicKey",
-                PublicKeyFormat.RSA_PUBLIC_KEY,
+                PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                 "algorithm",
             ),
         )
@@ -54,6 +55,6 @@ class EmailAddressPublicInfoTransformerTest : BaseTests() {
 
     @Test
     fun testEmailAddressPublicInfoParsing() {
-        EmailAddressPublicInfoTransformer.toEntity(fragment) shouldBe entity
+        EmailAddressPublicInfoTransformer.graphQLToEntity(fragment) shouldBe entity
     }
 }

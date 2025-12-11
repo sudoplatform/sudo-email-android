@@ -6,18 +6,11 @@
 
 package com.sudoplatform.sudoemail
 
-import android.content.Context
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.DefaultSealingService
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -31,7 +24,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -40,7 +32,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import java.net.HttpURLConnection
 import java.util.concurrent.CancellationException
 
 /**
@@ -60,27 +51,19 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         )
     }
 
-    private val mockContext by before {
-        mock<Context>()
-    }
-
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
+    private val mockEmailAddressService by before {
+        mock<EmailAddressService>().stub {
             onBlocking {
-                checkEmailAddressAvailabilityQuery(
+                checkAvailability(
                     any(),
                 )
             } doAnswer {
-                DataFactory.checkEmailAddressAvailabilityQueryResponse(addresses)
+                addresses
             }
         }
     }
 
-    private val mockKeyManager by before {
+    override val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
             on { getPassword(anyString()) } doReturn ByteArray(42)
         }
@@ -95,40 +78,25 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
         )
     }
 
-    private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
-        }
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        DefaultSealingService(mockServiceKeyManager, mockLogger)
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>()
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            mockContext,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            serviceKeyManager = mockServiceKeyManager,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            emailAddressService = mockEmailAddressService,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
@@ -138,10 +106,8 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             mockContext,
             mockUserClient,
             mockKeyManager,
-            mockApiClient,
+            mockEmailAddressService,
             mockS3Client,
-            mockEmailMessageProcessor,
-            mockEmailCryptoService,
         )
     }
 
@@ -160,7 +126,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             result.size shouldBe 2
             result shouldContainExactlyInAnyOrder addresses
 
-            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+            verify(mockEmailAddressService).checkAvailability(
                 any(),
             )
         }
@@ -168,13 +134,13 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     @Test
     fun `checkEmailAddressAvailability() should return empty list output when query result data is empty`() =
         runTest {
-            mockApiClient.stub {
+            mockEmailAddressService.stub {
                 onBlocking {
-                    checkEmailAddressAvailabilityQuery(
+                    checkAvailability(
                         any(),
                     )
                 } doAnswer {
-                    DataFactory.checkEmailAddressAvailabilityQueryResponse()
+                    emptyList<String>()
                 }
             }
 
@@ -189,7 +155,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             result.isEmpty() shouldBe true
             result.size shouldBe 0
 
-            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+            verify(mockEmailAddressService).checkAvailability(
                 any(),
             )
         }
@@ -197,13 +163,13 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     @Test
     fun `checkEmailAddressAvailability() should return empty list output when query response is null`() =
         runTest {
-            mockApiClient.stub {
+            mockEmailAddressService.stub {
                 onBlocking {
-                    checkEmailAddressAvailabilityQuery(
+                    checkAvailability(
                         any(),
                     )
                 } doAnswer {
-                    GraphQLResponse(null, null)
+                    emptyList<String>()
                 }
             }
 
@@ -218,7 +184,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             result.isEmpty() shouldBe true
             result.size shouldBe 0
 
-            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+            verify(mockEmailAddressService).checkAvailability(
                 any(),
             )
         }
@@ -226,21 +192,12 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     @Test
     fun `checkEmailAddressAvailability() should throw when response has error`() =
         runTest {
-            val testError =
-                GraphQLResponse.Error(
-                    "Test generated error",
-                    emptyList(),
-                    emptyList(),
-                    mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
-                )
-            mockApiClient.stub {
+            mockEmailAddressService.stub {
                 onBlocking {
-                    checkEmailAddressAvailabilityQuery(
+                    checkAvailability(
                         any(),
                     )
-                } doAnswer {
-                    GraphQLResponse(null, listOf(testError))
-                }
+                } doThrow SudoEmailClient.EmailAddressException.FailedException("Test generated error")
             }
 
             val deferredResult =
@@ -252,7 +209,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+            verify(mockEmailAddressService).checkAvailability(
                 any(),
             )
         }
@@ -260,21 +217,12 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     @Test
     fun `checkEmailAddressAvailability() should throw when http error occurs`() =
         runTest {
-            val testError =
-                GraphQLResponse.Error(
-                    "mock",
-                    null,
-                    null,
-                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-                )
-            mockApiClient.stub {
+            mockEmailAddressService.stub {
                 onBlocking {
-                    checkEmailAddressAvailabilityQuery(
+                    checkAvailability(
                         any(),
                     )
-                } doAnswer {
-                    GraphQLResponse(null, listOf(testError))
-                }
+                } doThrow SudoEmailClient.EmailAddressException.FailedException("HTTP Error")
             }
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
@@ -285,32 +233,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
-                any(),
-            )
-        }
-
-    @Test
-    fun `checkEmailAddressAvailability() should throw when unknown error occurs`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    checkEmailAddressAvailabilityQuery(
-                        any(),
-                    )
-                } doThrow RuntimeException("Mock Runtime Exception")
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                        client.checkEmailAddressAvailability(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+            verify(mockEmailAddressService).checkAvailability(
                 any(),
             )
         }
@@ -318,9 +241,9 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
     @Test
     fun `checkEmailAddressAvailability() should not block coroutine cancellation exception`() =
         runBlocking<Unit> {
-            mockApiClient.stub {
+            mockEmailAddressService.stub {
                 onBlocking {
-                    checkEmailAddressAvailabilityQuery(
+                    checkAvailability(
                         any(),
                     )
                 } doThrow CancellationException("Mock Cancellation Exception")
@@ -330,7 +253,7 @@ class SudoEmailCheckEmailAddressAvailabilityTest : BaseTests() {
                 client.checkEmailAddressAvailability(input)
             }
 
-            verify(mockApiClient).checkEmailAddressAvailabilityQuery(
+            verify(mockEmailAddressService).checkAvailability(
                 any(),
             )
         }

@@ -31,13 +31,13 @@ import org.robolectric.annotation.Config
 class DeviceKeyManagerExceptionTest : BaseTests() {
     private val keyRingServiceName = "sudo-email"
 
-    private val mockUserClient by before {
+    override val mockUserClient by before {
         mock<SudoUserClient>().stub {
             on { getSubject() } doReturn "mockSubject"
         }
     }
 
-    private val mockKeyManager by before {
+    override val mockKeyManager by before {
         mock<KeyManagerInterface>()
     }
 

@@ -63,12 +63,12 @@ import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 
 object DataFactory {
     fun getEmailAddressWithoutFolder(
-        id: String = "emailAddressId",
-        owner: String = "owner",
+        id: String = "mockEmailAddressId",
+        owner: String = "mockOwner",
         owners: List<EmailAddressWithoutFolders.Owner> =
             listOf(
                 EmailAddressWithoutFolders.Owner(
-                    id = "ownerId",
+                    id = "mockOwner",
                     issuer = "issuer",
                 ),
             ),
@@ -79,7 +79,7 @@ object DataFactory {
         createdAtEpochMs: Double = 1.0,
         updatedAtEpochMs: Double = 1.0,
         lastReceivedAtEpochMs: Double = 1.0,
-        emailAddress: String = "example@sudoplatform.com",
+        emailAddress: String = "example@internal.sudoplatform.com",
         size: Double = 0.0,
         numberOfEmailMessages: Int = 0,
         alias: EmailAddressWithoutFolders.Alias? = null,
@@ -101,19 +101,19 @@ object DataFactory {
     )
 
     fun getEmailFolder(
-        id: String = "folderId",
-        owner: String = "owner",
+        id: String = "mockFolderId",
+        owner: String = "mockOwner",
         owners: List<EmailFolder.Owner> =
             listOf(
                 EmailFolder.Owner(
-                    id = "ownerId",
+                    id = "mockOwner",
                     issuer = "issuer",
                 ),
             ),
         version: Int = 1,
         createdAtEpochMs: Double = 1.0,
         updatedAtEpochMs: Double = 1.0,
-        emailAddressId: String = "emailAddressId",
+        emailAddressId: String = "mockEmailAddressId",
         folderName: String = "folderName",
         size: Double = 0.0,
         unseenCount: Double = 0.0,
@@ -136,20 +136,20 @@ object DataFactory {
 
     fun getSealedEmailMessage(
         id: String = "id",
-        owner: String = "owner",
+        owner: String = "mockOwner",
         owners: List<SealedEmailMessage.Owner> =
             listOf(
                 SealedEmailMessage.Owner(
-                    "owner",
+                    "mockOwner",
                     "issuer",
                 ),
             ),
-        emailAddressId: String = "emailAddressId",
+        emailAddressId: String = "mockEmailAddressId",
         version: Int = 1,
         createdAtEpochMs: Double = 1.0,
         updatedAtEpochMs: Double = 1.0,
         sortDateEpochMs: Double = 1.0,
-        folderId: String = "folderId",
+        folderId: String = "mockFolderId",
         previousFolderId: String = "previousFolderId",
         direction: EmailMessageDirection = EmailMessageDirection.INBOUND,
         seen: Boolean = false,
@@ -180,7 +180,7 @@ object DataFactory {
         rfc822Header =
             SealedEmailMessage.Rfc822Header(
                 algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                keyId = "keyId",
+                keyId = "mockKeyId",
                 plainTextType = "plainText",
                 base64EncodedSealedData = sealedData,
             ),
@@ -190,12 +190,12 @@ object DataFactory {
 
     fun getScheduledDraftMessage(
         draftMessageKey: String,
-        emailAddressId: String = "emailAddressId",
-        owner: String = "ownerId",
+        emailAddressId: String = "mockEmailAddressId",
+        owner: String = "mockOwner",
         owners: List<ScheduledDraftMessage.Owner> =
             listOf(
                 ScheduledDraftMessage.Owner(
-                    "ownerId",
+                    "mockOwner",
                     "issuer",
                 ),
             ),
@@ -216,7 +216,7 @@ object DataFactory {
 
     fun getEmailAddressPublicInfo(
         emailAddress: String = "emailAddress",
-        keyId: String = "keyId",
+        keyId: String = "mockKeyId",
         publicKey: String = "publicKey",
         publicKeyDetails: EmailAddressPublicInfo.PublicKeyDetails =
             EmailAddressPublicInfo.PublicKeyDetails(
@@ -316,19 +316,19 @@ object DataFactory {
                 CreateCustomEmailFolderMutation.CreateCustomEmailFolder(
                     "CreateCustomEmailFolder",
                     EmailFolder(
-                        id = "folderId",
-                        owner = "owner",
+                        id = "mockFolderId",
+                        owner = "mockOwner",
                         owners =
                             listOf(
                                 EmailFolder.Owner(
-                                    id = "ownerId",
+                                    id = "mockOwner",
                                     issuer = "issue",
                                 ),
                             ),
                         version = 1,
                         createdAtEpochMs = 1.0,
                         updatedAtEpochMs = 1.0,
-                        emailAddressId = "emailAddressId",
+                        emailAddressId = "mockEmailAddressId",
                         folderName = "folderName",
                         size = 0.0,
                         unseenCount = 0.0,
@@ -338,7 +338,7 @@ object DataFactory {
                                 "SealedAttribute",
                                 SealedAttribute(
                                     algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                    keyId = "keyId",
+                                    keyId = "mockKeyId",
                                     plainTextType = "plainText",
                                     base64EncodedSealedData = sealedFolderName,
                                 ),
@@ -355,19 +355,19 @@ object DataFactory {
                 DeleteCustomEmailFolderMutation.DeleteCustomEmailFolder(
                     "DeleteCustomEmailFolder",
                     EmailFolder(
-                        id = "folderId",
-                        owner = "owner",
+                        id = "mockFolderId",
+                        owner = "mockOwner",
                         owners =
                             listOf(
                                 EmailFolder.Owner(
-                                    id = "ownerId",
+                                    id = "mockOwner",
                                     issuer = "issue",
                                 ),
                             ),
                         version = 1,
                         createdAtEpochMs = 1.0,
                         updatedAtEpochMs = 1.0,
-                        emailAddressId = "emailAddressId",
+                        emailAddressId = "mockEmailAddressId",
                         folderName = "folderName",
                         size = 0.0,
                         unseenCount = 0.0,
@@ -377,7 +377,7 @@ object DataFactory {
                                 "SealedAttribute",
                                 SealedAttribute(
                                     algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                    keyId = "keyId",
+                                    keyId = "mockKeyId",
                                     plainTextType = "plainText",
                                     base64EncodedSealedData = sealedFolderName,
                                 ),
@@ -454,10 +454,8 @@ object DataFactory {
 
     data class GetEmailAddressBlocklistQueryDataValues(
         val sealedData: String,
-        val unsealedData: ByteArray,
         val hashedValue: String,
         val action: BlockedAddressAction,
-        val keyId: String = "keyId",
         val emailAddressId: String? = null,
     )
 
@@ -477,7 +475,7 @@ object DataFactory {
                                         sealedAttribute =
                                             SealedAttribute(
                                                 algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                                keyId = "keyId",
+                                                keyId = "mockKeyId",
                                                 plainTextType = "plainText",
                                                 base64EncodedSealedData = it.sealedData,
                                             ),
@@ -500,20 +498,20 @@ object DataFactory {
                     "GetEmailMessage",
                     SealedEmailMessage(
                         id = "id",
-                        owner = "owner",
+                        owner = "mockOwner",
                         owners =
                             listOf(
                                 SealedEmailMessage.Owner(
-                                    "owner",
+                                    "mockOwner",
                                     "issuer",
                                 ),
                             ),
-                        emailAddressId = "emailAddressId",
+                        emailAddressId = "mockEmailAddressId",
                         version = 1,
                         createdAtEpochMs = 1.0,
                         updatedAtEpochMs = 1.0,
                         sortDateEpochMs = 1.0,
-                        folderId = "folderId",
+                        folderId = "mockFolderId",
                         previousFolderId = "previousFolderId",
                         direction = EmailMessageDirection.INBOUND,
                         seen = false,
@@ -526,7 +524,7 @@ object DataFactory {
                         rfc822Header =
                             SealedEmailMessage.Rfc822Header(
                                 algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                                keyId = "keyId",
+                                keyId = "mockKeyId",
                                 plainTextType = "plainText",
                                 base64EncodedSealedData = sealedData,
                             ),

@@ -6,8 +6,6 @@
 
 package com.sudoplatform.sudoemail.types
 
-import com.sudoplatform.sudoemail.graphql.type.SortOrder as SortOrderInput
-
 /**
  * An enumeration depicting sort order in the Sudo Platform Email SDK.
  *
@@ -23,16 +21,4 @@ enum class SortOrder {
      * Sort the list of results in descending order.
      */
     DESC,
-
-    ;
-
-    fun toSortOrderInput(sortOrder: SortOrder): SortOrderInput =
-        when (sortOrder) {
-            ASC -> {
-                SortOrderInput.ASC
-            }
-            DESC -> {
-                SortOrderInput.DESC
-            }
-        }
 }

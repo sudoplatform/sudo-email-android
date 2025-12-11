@@ -6,7 +6,7 @@
 
 package com.sudoplatform.sudoemail.notifications
 
-import com.sudoplatform.sudoemail.types.transformers.NotificationUnsealer
+import com.sudoplatform.sudoemail.internal.data.common.mechanisms.NotificationUnsealer
 import kotlinx.serialization.Serializable
 
 /**

@@ -7,7 +7,6 @@
 package com.sudoplatform.sudoemail
 
 import android.content.Context
-import com.sudoplatform.sudoemail.SudoEmailClient.Builder
 import com.sudoplatform.sudoemail.keys.DefaultDeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore

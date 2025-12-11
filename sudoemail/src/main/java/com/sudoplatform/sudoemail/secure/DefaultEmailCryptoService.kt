@@ -7,6 +7,9 @@
 package com.sudoplatform.sudoemail.secure
 
 import com.amazonaws.util.Base64
+import com.sudoplatform.sudoemail.internal.data.common.transformers.PublicKeyFormatTransformer
+import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailAttachmentTransformer
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressPublicInfoEntity
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
 import com.sudoplatform.sudoemail.secure.EmailCryptoService.Companion.IV_SIZE
@@ -16,9 +19,7 @@ import com.sudoplatform.sudoemail.secure.types.SealedKeyComponents
 import com.sudoplatform.sudoemail.secure.types.SecureData
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
-import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailAttachment
-import com.sudoplatform.sudoemail.types.transformers.PublicKeyFormatTransformer
 import com.sudoplatform.sudokeymanager.KeyManagerInterface.PublicKeyEncryptionAlgorithm
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
@@ -45,7 +46,7 @@ internal class DefaultEmailCryptoService(
     @Throws(EmailCryptoServiceException::class)
     override suspend fun encrypt(
         data: ByteArray,
-        emailAddressPublicInfo: List<EmailAddressPublicInfo>,
+        emailAddressPublicInfo: List<EmailAddressPublicInfoEntity>,
     ): SecurePackage {
         if (data.isEmpty() || emailAddressPublicInfo.isEmpty()) {
             throw EmailCryptoServiceException.InvalidArgumentException()
@@ -101,7 +102,13 @@ internal class DefaultEmailCryptoService(
                 }
 
             // Return a secure package with the secure key attachments and the secure body attachment
-            return SecurePackage(secureKeyAttachments.toMutableSet(), secureBodyAttachment)
+            return SecurePackage(
+                secureKeyAttachments
+                    .map {
+                        EmailAttachmentTransformer.apiToEntity(it)
+                    }.toMutableSet(),
+                EmailAttachmentTransformer.apiToEntity(secureBodyAttachment),
+            )
         } catch (e: DeviceKeyManager.DeviceKeyManagerException) {
             logger.error("error $e")
             throw EmailCryptoServiceException.SecureDataEncryptionException(ENCRYPTION_ERROR_MSG, e)

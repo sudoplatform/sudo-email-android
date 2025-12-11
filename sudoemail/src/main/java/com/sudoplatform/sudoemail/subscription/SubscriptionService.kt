@@ -13,9 +13,9 @@ import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageCreatedSubscription
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageDeletedSubscription
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageUpdatedSubscription
+import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
-import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
@@ -123,7 +123,7 @@ internal class SubscriptionService(
                 scope.launch {
                     val createEmailMessage = it.data?.onEmailMessageCreated ?: return@launch
                     createSubscriptionManager.emailMessageChanged(
-                        EmailMessageTransformer.toEntity(
+                        EmailMessageTransformer.graphQLToApi(
                             deviceKeyManager,
                             createEmailMessage.sealedEmailMessage,
                         ),
@@ -151,7 +151,7 @@ internal class SubscriptionService(
                 scope.launch {
                     val deleteEmailMessage = it.data?.onEmailMessageDeleted ?: return@launch
                     deleteSubscriptionManager.emailMessageChanged(
-                        EmailMessageTransformer.toEntity(
+                        EmailMessageTransformer.graphQLToApi(
                             deviceKeyManager,
                             deleteEmailMessage.sealedEmailMessage,
                         ),
@@ -179,7 +179,7 @@ internal class SubscriptionService(
                 scope.launch {
                     val updateEmailMessage = it.data?.onEmailMessageUpdated ?: return@launch
                     updateSubscriptionManager.emailMessageChanged(
-                        EmailMessageTransformer.toEntity(
+                        EmailMessageTransformer.graphQLToApi(
                             deviceKeyManager,
                             updateEmailMessage.sealedEmailMessage,
                         ),

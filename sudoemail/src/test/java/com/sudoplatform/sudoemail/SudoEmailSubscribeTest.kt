@@ -6,15 +6,9 @@
 
 package com.sudoplatform.sudoemail
 
-import android.content.Context
-import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.DefaultSealingService
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
@@ -34,22 +28,14 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailSubscribeTest : BaseTests() {
-    private val mockContext by before {
-        mock<Context>()
-    }
-
-    private val mockUserClient by before {
+    override val mockUserClient by before {
         mock<SudoUserClient>().stub {
             on { getSubject() } doReturn "subject"
         }
     }
 
-    private val mockApiClient by before {
-        mock<ApiClient>()
-    }
-
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
+    private val mockEmailMessageSubscriber by before {
+        mock<EmailMessageSubscriber>()
     }
 
     private val mockServiceKeyManager by before {
@@ -61,45 +47,24 @@ class SudoEmailSubscribeTest : BaseTests() {
         )
     }
 
-    private val mockS3Client by before {
-        mock<S3Client>()
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        DefaultSealingService(
-            mockServiceKeyManager,
-            mockLogger,
-        )
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
-    }
-
-    private val mockEmailMessageSubscriber by before {
-        mock<EmailMessageSubscriber>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>()
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            mockContext,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            serviceKeyManager = mockServiceKeyManager,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
@@ -110,8 +75,6 @@ class SudoEmailSubscribeTest : BaseTests() {
             mockKeyManager,
             mockApiClient,
             mockS3Client,
-            mockEmailMessageProcessor,
-            mockEmailCryptoService,
         )
     }
 

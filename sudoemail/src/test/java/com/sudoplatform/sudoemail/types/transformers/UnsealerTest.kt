@@ -13,6 +13,9 @@ import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.graphql.fragment.BlockedAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
+import com.sudoplatform.sudoemail.internal.data.common.mechanisms.Unsealer
+import com.sudoplatform.sudoemail.internal.domain.entities.common.KeyInfo
+import com.sudoplatform.sudoemail.internal.domain.entities.common.KeyType
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.util.Constants.DEFAULT_PUBLIC_KEY_ALGORITHM
@@ -45,7 +48,7 @@ class UnsealerTest : BaseTests() {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    private val mockUserClient by before {
+    override val mockUserClient by before {
         mock<SudoUserClient>().stub {
             on { getSubject() } doReturn "mockSubject"
         }

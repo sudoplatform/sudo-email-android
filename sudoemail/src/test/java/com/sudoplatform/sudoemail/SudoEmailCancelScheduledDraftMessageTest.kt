@@ -6,19 +6,10 @@
 
 package com.sudoplatform.sudoemail
 
-import androidx.test.platform.app.InstrumentationRegistry
-import com.amazonaws.auth.CognitoCredentialsProvider
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
-import com.sudoplatform.sudoemail.keys.ServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.secure.SealingService
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.CancelScheduledDraftMessageUseCase
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.types.inputs.CancelScheduledDraftMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
@@ -28,11 +19,10 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
@@ -52,165 +42,53 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
         )
     }
 
-    private val context by before {
-        InstrumentationRegistry.getInstrumentation().targetContext
-    }
-
-    private val mockCognitoCredentialsProvider by before {
-        mock<CognitoCredentialsProvider>().stub {
-            on {
-                identityId
-            } doReturn "dummyIdentityId"
+    private val mockUseCase by before {
+        mock<CancelScheduledDraftMessageUseCase>().stub {
+            onBlocking {
+                execute(any())
+            } doReturn dummyDraftId
         }
     }
 
-    private val mockUserClient by before {
-        mock<SudoUserClient>().stub {
-            on {
-                getCredentialsProvider()
-            } doReturn mockCognitoCredentialsProvider
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createCancelScheduledDraftMessageUseCase() } doReturn mockUseCase
         }
     }
-
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
-    }
-
     private val mockServiceKeyManager by before {
-        mock<ServiceKeyManager>()
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
-            onBlocking {
-                getEmailAddressQuery(
-                    any(),
-                )
-            } doAnswer {
-                DataFactory.getEmailAddressQueryResponse()
-            }
-            onBlocking {
-                cancelScheduledDraftMessageMutation(
-                    any(),
-                )
-            } doAnswer {
-                DataFactory.cancelScheduledDraftMessageResponse(dummyDraftId)
-            }
-        }
-    }
-
-    private val mockS3Client by before {
-        mock<S3Client>()
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        mock<SealingService>()
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
+        DefaultServiceKeyManager(
+            "keyRingService",
+            mockUserClient,
+            mockKeyManager,
+            mockLogger,
+        )
     }
 
     private val client by before {
         DefaultSudoEmailClient(
-            context,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            serviceKeyManager = mockServiceKeyManager,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
-            mockUserClient,
-            mockKeyManager,
-            mockServiceKeyManager,
-            mockApiClient,
-            mockS3Client,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
+            mockUseCaseFactory,
+            mockUseCase,
         )
     }
-
-    @Test
-    fun `cancelScheduledDraftMessage() should throw EmailAddressNotFoundException if no address found`() =
-        runTest {
-            val error =
-                GraphQLResponse.Error(
-                    "mock",
-                    null,
-                    null,
-                    mapOf("errorType" to "AddressNotFound"),
-                )
-
-            mockApiClient.stub {
-                onBlocking {
-                    getEmailAddressQuery(
-                        any(),
-                    )
-                } doAnswer {
-                    GraphQLResponse(null, listOf(error))
-                }
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                        client.cancelScheduledDraftMessage(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-        }
-
-    @Test
-    fun `cancelScheduledDraftMessage() should throw an error if graphQl mutation fails`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    cancelScheduledDraftMessageMutation(
-                        any(),
-                    )
-                }.thenThrow(UnknownError("ERROR"))
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailMessageException.UnknownException> {
-                        client.cancelScheduledDraftMessage(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
-            )
-            verify(mockUserClient, times(1)).getCredentialsProvider()
-            verify(mockApiClient).cancelScheduledDraftMessageMutation(
-                any(),
-            )
-        }
 
     @Test
     fun `cancelScheduledDraftMessage() should return draft id on success`() =
@@ -224,12 +102,41 @@ class SudoEmailCancelScheduledDraftMessageTest : BaseTests() {
 
             result shouldBe dummyDraftId
 
-            verify(mockApiClient).getEmailAddressQuery(
-                any(),
+            verify(mockUseCaseFactory).createCancelScheduledDraftMessageUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.draftId shouldBe dummyDraftId
+                    useCaseInput.emailAddressId shouldBe dummyEmailAddressId
+                },
             )
-            verify(mockUserClient, times(1)).getCredentialsProvider()
-            verify(mockApiClient).cancelScheduledDraftMessageMutation(
-                any(),
+        }
+
+    @Test
+    fun `cancelScheduledDraftMessage() should throw when use case throws`() =
+        runTest {
+            mockUseCase.stub {
+                onBlocking {
+                    execute(any())
+                }.thenAnswer {
+                    throw SudoEmailClient.EmailMessageException.EmailMessageNotFoundException("Mock")
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
+                        client.cancelScheduledDraftMessage(input)
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockUseCaseFactory).createCancelScheduledDraftMessageUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.draftId shouldBe dummyDraftId
+                    useCaseInput.emailAddressId shouldBe dummyEmailAddressId
+                },
             )
         }
 }

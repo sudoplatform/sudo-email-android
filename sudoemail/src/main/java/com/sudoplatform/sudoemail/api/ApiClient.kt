@@ -69,8 +69,6 @@ import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput
-import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
-import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.amplify.GraphQLClient
 
@@ -111,10 +109,10 @@ open class ApiClient(
             mapOf("input" to input),
         )
 
-    open suspend fun getEmailAddressQuery(input: GetEmailAddressInput): GraphQLResponse<GetEmailAddressQuery.Data> =
+    open suspend fun getEmailAddressQuery(id: String): GraphQLResponse<GetEmailAddressQuery.Data> =
         this.graphQLClient.query<GetEmailAddressQuery, GetEmailAddressQuery.Data>(
             GetEmailAddressQuery.OPERATION_DOCUMENT,
-            mapOf("id" to input.id),
+            mapOf("id" to id),
         )
 
     open suspend fun listEmailAddressesQuery(input: ListEmailAddressesInput): GraphQLResponse<ListEmailAddressesQuery.Data> =
@@ -147,10 +145,10 @@ open class ApiClient(
             mapOf("input" to input),
         )
 
-    open suspend fun getEmailMessageQuery(input: GetEmailMessageInput): GraphQLResponse<GetEmailMessageQuery.Data> =
+    open suspend fun getEmailMessageQuery(id: String): GraphQLResponse<GetEmailMessageQuery.Data> =
         graphQLClient.query<GetEmailMessageQuery, GetEmailMessageQuery.Data>(
             GetEmailMessageQuery.OPERATION_DOCUMENT,
-            mapOf("id" to input.id),
+            mapOf("id" to id),
         )
 
     open suspend fun listEmailMessagesQuery(input: ListEmailMessagesInput): GraphQLResponse<ListEmailMessagesQuery.Data> =

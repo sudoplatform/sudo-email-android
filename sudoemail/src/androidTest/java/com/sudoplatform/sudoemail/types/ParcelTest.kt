@@ -8,7 +8,7 @@ package com.sudoplatform.sudoemail.types
 
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.sudoplatform.sudoemail.types.transformers.EmailMessageTransformer
+import com.sudoplatform.sudoemail.util.EmailAddressParser
 import io.kotlintest.shouldBe
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +23,7 @@ class ParcelTest {
     fun parcellableClassesCanBeParcelledAndUnparcelled() {
         val rfc822Address = "example@sudoplatform.com"
         val emailAddress =
-            EmailMessageTransformer.toEmailAddress(rfc822Address)
+            EmailAddressParser.toEmailAddress(rfc822Address)
                 ?: throw AssertionError("Parsing should not fail")
         val owner = Owner("id", "issuer")
         val emailFolder =

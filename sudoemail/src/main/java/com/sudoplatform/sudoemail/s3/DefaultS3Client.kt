@@ -57,6 +57,28 @@ class DefaultS3Client(
                 .build()
     }
 
+    companion object {
+        fun constructS3PrefixForEmailAddress(emailAddressId: String): String = "email/$emailAddressId"
+
+        fun constructS3KeyForEmailMessage(
+            emailAddressId: String,
+            emailMessageId: String,
+            keyId: String,
+        ): String {
+            val keyPrefix = constructS3PrefixForEmailAddress(emailAddressId)
+            return "$keyPrefix/$emailMessageId-$keyId"
+        }
+
+        fun constructS3KeyForDraftEmailMessage(
+            emailAddressId: String,
+            draftEmailMessageId: String = "",
+        ): String {
+            val keyPrefix = constructS3PrefixForEmailAddress(emailAddressId)
+            val keySuffix = if (draftEmailMessageId.isNotEmpty()) "/$draftEmailMessageId" else ""
+            return "$keyPrefix/draft$keySuffix"
+        }
+    }
+
     override suspend fun upload(
         data: ByteArray,
         objectId: String,

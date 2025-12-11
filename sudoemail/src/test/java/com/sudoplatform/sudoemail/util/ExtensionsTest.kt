@@ -7,7 +7,7 @@
 package com.sudoplatform.sudoemail.util
 
 import com.sudoplatform.sudoemail.BaseTests
-import com.sudoplatform.sudoemail.types.EmailAttachment
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +28,7 @@ class ExtensionsTest : BaseTests() {
                 "<br>\n" +
                 "Cras eu velit ac purus feugiat impe<br>Best regards<br></div>"
         val inlineAttachment =
-            EmailAttachment(
+            EmailAttachmentEntity(
                 "image.png",
                 "ii_ia6yo3z92_14d962f8450cc6f1",
                 "image/png",
@@ -49,7 +49,7 @@ class ExtensionsTest : BaseTests() {
                 "<br>\n" +
                 "Cras eu velit ac purus feugiat impe<br>Best regards<br></div>"
         val inlineAttachment =
-            EmailAttachment(
+            EmailAttachmentEntity(
                 "image.png",
                 "ii_ia6yo3z92_14d962f8450cc6f1",
                 "image/png",
@@ -74,7 +74,7 @@ class ExtensionsTest : BaseTests() {
                 "src=\"file:///path/to/my/important/other_image.png\" height=\"156\">\n" +
                 "Cras eu velit ac purus feugiat impe<br>Best regards<br></div>"
         val inlineAttachmentOne =
-            EmailAttachment(
+            EmailAttachmentEntity(
                 "image.png",
                 cidFirstImage,
                 "image/png",
@@ -82,7 +82,7 @@ class ExtensionsTest : BaseTests() {
                 "This is an important image".toByteArray(),
             )
         val inlineAttachmentTwo =
-            EmailAttachment(
+            EmailAttachmentEntity(
                 "other_image.png",
                 cidSecondImage,
                 "image/png",
@@ -104,7 +104,7 @@ class ExtensionsTest : BaseTests() {
                 "<br>\n" +
                 "Cras eu velit ac purus feugiat impe<br>Best regards<br></div>"
         val inlineAttachment =
-            EmailAttachment(
+            EmailAttachmentEntity(
                 "image.png",
                 "",
                 "image/png",

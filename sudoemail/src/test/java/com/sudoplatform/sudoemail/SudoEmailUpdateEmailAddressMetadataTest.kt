@@ -6,19 +6,11 @@
 
 package com.sudoplatform.sudoemail
 
-import android.content.Context
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
-import com.sudoplatform.sudoemail.keys.ServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.DefaultSealingService
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
+import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.UpdateEmailAddressMetadataUseCase
+import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
-import com.sudoplatform.sudoemail.types.transformers.Unsealer
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
@@ -27,21 +19,14 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
-import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import java.net.HttpURLConnection
-import java.util.concurrent.CancellationException
 
 /**
  * Test the correct operation of [SudoEmailClient.updateEmailAddressMetadata]
@@ -49,91 +34,68 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
+    private val unsealedEmailAddress by before {
+        EntityDataFactory.getUnsealedEmailAddressEntity()
+    }
+
     private val input by before {
         UpdateEmailAddressMetadataInput(
-            "emailAddressId",
+            unsealedEmailAddress.id,
             "John Doe",
         )
     }
 
-    private val mutationResponse by before {
-        DataFactory.updateEmailAddressMetadataMutationResponse("emailAddressId")
-    }
-
-    private val mockContext by before {
-        mock<Context>()
-    }
-
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
+    private val mockUseCase by before {
+        mock<UpdateEmailAddressMetadataUseCase>().stub {
             onBlocking {
-                updateEmailAddressMetadataMutation(
-                    any(),
-                )
-            } doAnswer {
-                mutationResponse
-            }
+                execute(any())
+            } doReturn unsealedEmailAddress.id
         }
     }
 
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createUpdateEmailAddressMetadataUseCase() } doReturn mockUseCase
+        }
     }
 
     private val mockServiceKeyManager by before {
-        mock<ServiceKeyManager>().stub {
-            on { getCurrentSymmetricKeyId() } doReturn "symmetricKeyId"
-            on { encryptWithSymmetricKeyId(anyString(), any(), eq(null)) } doReturn ByteArray(42)
-        }
-    }
-
-    private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
-        }
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        DefaultSealingService(
-            mockServiceKeyManager,
+        DefaultServiceKeyManager(
+            "keyRingService",
+            mockUserClient,
+            mockKeyManager,
             mockLogger,
         )
     }
 
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
-    }
-
     private val client by before {
         DefaultSudoEmailClient(
-            mockContext,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            serviceKeyManager = mockServiceKeyManager,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
     @After
     fun fini() {
-        verifyNoMoreInteractions(mockContext, mockUserClient, mockKeyManager, mockApiClient, mockS3Client)
+        verifyNoMoreInteractions(
+            mockContext,
+            mockUserClient,
+            mockKeyManager,
+            mockApiClient,
+            mockS3Client,
+            mockUseCaseFactory,
+            mockUseCase,
+        )
     }
 
     @Test
@@ -146,25 +108,26 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             deferredResult.start()
             val result = deferredResult.await()
 
-            result shouldBe "emailAddressId"
-            verify(mockApiClient).updateEmailAddressMetadataMutation(
-                check { input ->
-                    input.id shouldBe "emailAddressId"
+            result shouldBe unsealedEmailAddress.id
+            verify(mockUseCaseFactory).createUpdateEmailAddressMetadataUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.emailAddressId shouldBe unsealedEmailAddress.id
+                    useCaseInput.alias shouldBe input.alias
                 },
             )
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         }
 
     @Test
-    fun `updateEmailAddressMetadata() should throw when response is null`() =
+    fun `updateEmailAddressMetadata() should throw when use case throws`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    updateEmailAddressMetadataMutation(
+                    execute(
                         any(),
                     )
                 }.thenAnswer {
-                    GraphQLResponse(null, null)
+                    throw SudoEmailClient.EmailAddressException.UpdateFailedException("Mock")
                 }
             }
 
@@ -177,126 +140,12 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).updateEmailAddressMetadataMutation(
-                check { input ->
-                    input.id shouldBe "emailAddressId"
+            verify(mockUseCaseFactory).createUpdateEmailAddressMetadataUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.emailAddressId shouldBe unsealedEmailAddress.id
+                    useCaseInput.alias shouldBe input.alias
                 },
             )
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        }
-
-    @Test
-    fun `updateEmailAddressMetadata() should throw when unsealing fails`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    updateEmailAddressMetadataMutation(
-                        any(),
-                    )
-                } doThrow
-                    Unsealer.UnsealerException.UnsupportedAlgorithmException(
-                        "Mock Unsealer Exception",
-                    )
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailAddressException.UnsealingException> {
-                        client.updateEmailAddressMetadata(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).updateEmailAddressMetadataMutation(
-                check { input ->
-                    input.id shouldBe "emailAddressId"
-                },
-            )
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        }
-
-    @Test
-    fun `updateEmailAddressMetadata() should throw when http error occurs`() =
-        runTest {
-            val testError =
-                GraphQLResponse.Error(
-                    "mock",
-                    null,
-                    null,
-                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-                )
-            mockApiClient.stub {
-                onBlocking {
-                    updateEmailAddressMetadataMutation(
-                        any(),
-                    )
-                }.thenAnswer {
-                    GraphQLResponse(null, listOf(testError))
-                }
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
-                        client.updateEmailAddressMetadata(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).updateEmailAddressMetadataMutation(
-                check { input ->
-                    input.id shouldBe "emailAddressId"
-                },
-            )
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        }
-
-    @Test
-    fun `updateEmailAddressMetadata() should throw when unknown error occurs()`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    updateEmailAddressMetadataMutation(
-                        any(),
-                    )
-                } doThrow RuntimeException("Mock Runtime Exception")
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                        client.updateEmailAddressMetadata(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).updateEmailAddressMetadataMutation(
-                check { input ->
-                    input.id shouldBe "emailAddressId"
-                },
-            )
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-        }
-
-    @Test
-    fun `updateEmailAddressMetadata() should not block coroutine cancellation exception`() =
-        runTest {
-            mockServiceKeyManager.stub {
-                on { getCurrentSymmetricKeyId() } doThrow CancellationException("mock")
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<CancellationException> {
-                        client.updateEmailAddressMetadata(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
         }
 }

@@ -7,16 +7,16 @@
 package com.sudoplatform.sudoemail.secure
 
 import com.sudoplatform.sudoemail.BaseTests
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressPublicInfoEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressPublicKeyEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyFormatEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.secure.types.ALGORITHM_JSON
 import com.sudoplatform.sudoemail.secure.types.ENCRYPTED_KEY_JSON
 import com.sudoplatform.sudoemail.secure.types.PUBLIC_KEY_ID_JSON
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
-import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
-import com.sudoplatform.sudoemail.types.EmailAddressPublicKey
-import com.sudoplatform.sudoemail.types.EmailAttachment
-import com.sudoplatform.sudoemail.types.PublicKeyFormat
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -36,7 +36,6 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import java.util.Base64
@@ -47,21 +46,21 @@ import java.util.Base64
 class EmailCryptoServiceTest : BaseTests() {
     private val stubPublicInfo =
         listOf(
-            EmailAddressPublicInfo(
+            EmailAddressPublicInfoEntity(
                 "foo@bar.com",
                 "keyId1",
-                EmailAddressPublicKey(
+                EmailAddressPublicKeyEntity(
                     "publicKey1",
-                    PublicKeyFormat.RSA_PUBLIC_KEY,
+                    PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                     "algorithm",
                 ),
             ),
-            EmailAddressPublicInfo(
+            EmailAddressPublicInfoEntity(
                 "foo@bar.com",
                 "keyId2",
-                EmailAddressPublicKey(
+                EmailAddressPublicKeyEntity(
                     "publicKey2",
-                    PublicKeyFormat.RSA_PUBLIC_KEY,
+                    PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                     "algorithm",
                 ),
             ),
@@ -82,7 +81,7 @@ class EmailCryptoServiceTest : BaseTests() {
         }"""
 
     private val bodyAttachment =
-        EmailAttachment(
+        EmailAttachmentEntity(
             fileName = SecureEmailAttachmentType.BODY.fileName,
             contentId = SecureEmailAttachmentType.BODY.contentId,
             mimeType = SecureEmailAttachmentType.BODY.mimeType,
@@ -90,7 +89,7 @@ class EmailCryptoServiceTest : BaseTests() {
             data = stubData.toByteArray(),
         )
     private val keyAttachment =
-        EmailAttachment(
+        EmailAttachmentEntity(
             fileName = SecureEmailAttachmentType.KEY_EXCHANGE.fileName,
             contentId = SecureEmailAttachmentType.KEY_EXCHANGE.contentId,
             mimeType = SecureEmailAttachmentType.KEY_EXCHANGE.mimeType,
@@ -128,21 +127,21 @@ class EmailCryptoServiceTest : BaseTests() {
         runTest {
             val stubPublicInfo =
                 listOf(
-                    EmailAddressPublicInfo(
+                    EmailAddressPublicInfoEntity(
                         "foo@bar.com",
                         "keyId1",
-                        EmailAddressPublicKey(
+                        EmailAddressPublicKeyEntity(
                             encryptedData,
-                            PublicKeyFormat.RSA_PUBLIC_KEY,
+                            PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                             "algorithm",
                         ),
                     ),
-                    EmailAddressPublicInfo(
+                    EmailAddressPublicInfoEntity(
                         "foo@bar.com",
                         "keyId2",
-                        EmailAddressPublicKey(
+                        EmailAddressPublicKeyEntity(
                             encryptedData,
-                            PublicKeyFormat.SPKI,
+                            PublicKeyFormatEntity.SPKI,
                             "algorithm",
                         ),
                     ),
@@ -272,7 +271,7 @@ class EmailCryptoServiceTest : BaseTests() {
     fun `decrypt() should throw error for empty body attachment on secure package`() =
         runTest {
             val bodyAttachment =
-                EmailAttachment(
+                EmailAttachmentEntity(
                     fileName = SecureEmailAttachmentType.BODY.fileName,
                     contentId = SecureEmailAttachmentType.BODY.contentId,
                     mimeType = SecureEmailAttachmentType.BODY.mimeType,

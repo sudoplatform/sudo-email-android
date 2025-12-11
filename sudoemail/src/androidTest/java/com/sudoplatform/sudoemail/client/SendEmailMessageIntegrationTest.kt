@@ -176,14 +176,6 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 }
             }
 
-            val attachment =
-                EmailAttachment(
-                    fileName = "goodExtension.pdf",
-                    contentId = UUID.randomUUID().toString(),
-                    mimeType = "application/pdf",
-                    inlineAttachment = false,
-                    data = "This file has a valid file extension".toByteArray(),
-                )
             val inlineAttachment =
                 EmailAttachment(
                     fileName = "goodImage.png",
@@ -565,7 +557,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                     inlineAttachment = false,
                     data = "This file has an invalid file extension".toByteArray(),
                 )
-            val inNetworkDestinationAddress = EmailMessage.EmailAddress(emailAddress.emailAddress)
+
             shouldThrow<SudoEmailClient.EmailMessageException.InvalidMessageContentException> {
                 sendEmailMessage(emailClient, emailAddress, attachments = listOf(jsAttachment))
             }

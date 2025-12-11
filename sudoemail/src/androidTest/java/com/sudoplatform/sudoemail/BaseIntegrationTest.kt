@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.StrictMode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailFolder
@@ -29,7 +30,6 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
 import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
 import com.sudoplatform.sudoentitlementsadmin.SudoEntitlementsAdminClient
 import com.sudoplatform.sudoentitlementsadmin.types.Entitlement
@@ -629,7 +629,7 @@ abstract class BaseIntegrationTest {
             ),
     ): String {
         val rfc822Data =
-            Rfc822MessageDataProcessor(context).encodeToInternetMessageData(
+            DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
                 from = senderAddress.emailAddress,
                 to = to ?: listOf(senderAddress.emailAddress),
             )

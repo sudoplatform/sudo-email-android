@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>StringConstants</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    sudoemail
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":sudoemail:dokkaHtml/release">androidJvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":sudoemail:dokkaHtml/release"
+                                       data-filter=":sudoemail:dokkaHtml/release"/>
+                                <span class="checkbox--icon"></span>
+                                androidJvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    sudoemail
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="sudoemail::com.sudoplatform.sudoemail.internal.data.common/StringConstants///PointingToDeclaration//2021949935">
+  <div class="breadcrumbs"><a href="../../../index.html">sudoemail</a><span class="delimiter">/</span><a href="../index.html">com.sudoplatform.sudoemail.internal.data.common</a><span class="delimiter">/</span><span class="current">StringConstants</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>String</span><wbr></wbr><span><span>Constants</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">object </span><a href="index.html">StringConstants</a></div><p class="paragraph">Collection of string constants used throughout the Email SDK for error messages, content encoding values, metadata keys, and error type identifiers.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="-1352452047%2FProperties%2F2021949935" anchor-label="ADDRESS_BLOCKLIST_DUPLICATE_MSG" id="-1352452047%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-a-d-d-r-e-s-s_-b-l-o-c-k-l-i-s-t_-d-u-p-l-i-c-a-t-e_-m-s-g.html"><span>ADDRESS_</span><wbr></wbr><span>BLOCKLIST_</span><wbr></wbr><span>DUPLICATE_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1352452047%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-a-d-d-r-e-s-s_-b-l-o-c-k-l-i-s-t_-d-u-p-l-i-c-a-t-e_-m-s-g.html">ADDRESS_BLOCKLIST_DUPLICATE_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-260743249%2FProperties%2F2021949935" anchor-label="ADDRESS_BLOCKLIST_EMPTY_MSG" id="-260743249%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-a-d-d-r-e-s-s_-b-l-o-c-k-l-i-s-t_-e-m-p-t-y_-m-s-g.html"><span>ADDRESS_</span><wbr></wbr><span>BLOCKLIST_</span><wbr></wbr><span>EMPTY_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-260743249%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-a-d-d-r-e-s-s_-b-l-o-c-k-l-i-s-t_-e-m-p-t-y_-m-s-g.html">ADDRESS_BLOCKLIST_EMPTY_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-459965525%2FProperties%2F2021949935" anchor-label="BINARY_DATA_CONTENT_ENCODING" id="-459965525%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-b-i-n-a-r-y_-d-a-t-a_-c-o-n-t-e-n-t_-e-n-c-o-d-i-n-g.html"><span>BINARY_</span><wbr></wbr><span>DATA_</span><wbr></wbr><span>CONTENT_</span><wbr></wbr><span>ENCODING</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-459965525%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-b-i-n-a-r-y_-d-a-t-a_-c-o-n-t-e-n-t_-e-n-c-o-d-i-n-g.html">BINARY_DATA_CONTENT_ENCODING</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-997235171%2FProperties%2F2021949935" anchor-label="BODY_ATTACHMENT_NOT_FOUND_ERROR_MSG" id="-997235171%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-b-o-d-y_-a-t-t-a-c-h-m-e-n-t_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html"><span>BODY_</span><wbr></wbr><span>ATTACHMENT_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-997235171%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-b-o-d-y_-a-t-t-a-c-h-m-e-n-t_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html">BODY_ATTACHMENT_NOT_FOUND_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-310973879%2FProperties%2F2021949935" anchor-label="COMPRESSION_CONTENT_ENCODING" id="-310973879%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-c-o-m-p-r-e-s-s-i-o-n_-c-o-n-t-e-n-t_-e-n-c-o-d-i-n-g.html"><span>COMPRESSION_</span><wbr></wbr><span>CONTENT_</span><wbr></wbr><span>ENCODING</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-310973879%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-c-o-m-p-r-e-s-s-i-o-n_-c-o-n-t-e-n-t_-e-n-c-o-d-i-n-g.html">COMPRESSION_CONTENT_ENCODING</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1104361464%2FProperties%2F2021949935" anchor-label="CRYPTO_CONTENT_ENCODING" id="-1104361464%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-c-r-y-p-t-o_-c-o-n-t-e-n-t_-e-n-c-o-d-i-n-g.html"><span>CRYPTO_</span><wbr></wbr><span>CONTENT_</span><wbr></wbr><span>ENCODING</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1104361464%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-c-r-y-p-t-o_-c-o-n-t-e-n-t_-e-n-c-o-d-i-n-g.html">CRYPTO_CONTENT_ENCODING</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Content encoding values for email message data.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1838070244%2FProperties%2F2021949935" anchor-label="DECODE_ERROR" id="1838070244%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-e-c-o-d-e_-e-r-r-o-r.html"><span>DECODE_</span><wbr></wbr><span>ERROR</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1838070244%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-d-e-c-o-d-e_-e-r-r-o-r.html">DECODE_ERROR</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1958452558%2FProperties%2F2021949935" anchor-label="DRAFT_METADATA_ALGORITHM_NAME" id="-1958452558%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-r-a-f-t_-m-e-t-a-d-a-t-a_-a-l-g-o-r-i-t-h-m_-n-a-m-e.html"><span>DRAFT_</span><wbr></wbr><span>METADATA_</span><wbr></wbr><span>ALGORITHM_</span><wbr></wbr><span>NAME</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1958452558%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-d-r-a-f-t_-m-e-t-a-d-a-t-a_-a-l-g-o-r-i-t-h-m_-n-a-m-e.html">DRAFT_METADATA_ALGORITHM_NAME</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2119507038%2FProperties%2F2021949935" anchor-label="DRAFT_METADATA_KEY_ID_NAME" id="2119507038%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-r-a-f-t_-m-e-t-a-d-a-t-a_-k-e-y_-i-d_-n-a-m-e.html"><span>DRAFT_</span><wbr></wbr><span>METADATA_</span><wbr></wbr><span>KEY_</span><wbr></wbr><span>ID_</span><wbr></wbr><span>NAME</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2119507038%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-d-r-a-f-t_-m-e-t-a-d-a-t-a_-k-e-y_-i-d_-n-a-m-e.html">DRAFT_METADATA_KEY_ID_NAME</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Key names used for storing metadata with draft messages in S3</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1565243596%2FProperties%2F2021949935" anchor-label="DRAFT_METADATA_LEGACY_KEY_ID_NAME" id="-1565243596%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-d-r-a-f-t_-m-e-t-a-d-a-t-a_-l-e-g-a-c-y_-k-e-y_-i-d_-n-a-m-e.html"><span>DRAFT_</span><wbr></wbr><span>METADATA_</span><wbr></wbr><span>LEGACY_</span><wbr></wbr><span>KEY_</span><wbr></wbr><span>ID_</span><wbr></wbr><span>NAME</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1565243596%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-d-r-a-f-t_-m-e-t-a-d-a-t-a_-l-e-g-a-c-y_-k-e-y_-i-d_-n-a-m-e.html">DRAFT_METADATA_LEGACY_KEY_ID_NAME</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-345925675%2FProperties%2F2021949935" anchor-label="EMAIL_ADDRESS_NOT_FOUND_MSG" id="-345925675%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-m-a-i-l_-a-d-d-r-e-s-s_-n-o-t_-f-o-u-n-d_-m-s-g.html"><span>EMAIL_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-345925675%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-m-a-i-l_-a-d-d-r-e-s-s_-n-o-t_-f-o-u-n-d_-m-s-g.html">EMAIL_ADDRESS_NOT_FOUND_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1438338729%2FProperties%2F2021949935" anchor-label="EMAIL_ADDRESS_UNAUTHORIZED_MSG" id="-1438338729%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-m-a-i-l_-a-d-d-r-e-s-s_-u-n-a-u-t-h-o-r-i-z-e-d_-m-s-g.html"><span>EMAIL_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span>UNAUTHORIZED_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1438338729%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-m-a-i-l_-a-d-d-r-e-s-s_-u-n-a-u-t-h-o-r-i-z-e-d_-m-s-g.html">EMAIL_ADDRESS_UNAUTHORIZED_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="826350779%2FProperties%2F2021949935" anchor-label="EMAIL_ADDRESS_UNAVAILABLE_MSG" id="826350779%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-m-a-i-l_-a-d-d-r-e-s-s_-u-n-a-v-a-i-l-a-b-l-e_-m-s-g.html"><span>EMAIL_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span>UNAVAILABLE_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="826350779%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-m-a-i-l_-a-d-d-r-e-s-s_-u-n-a-v-a-i-l-a-b-l-e_-m-s-g.html">EMAIL_ADDRESS_UNAVAILABLE_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="376530636%2FProperties%2F2021949935" anchor-label="EMAIL_CRYPTO_ERROR_MSG" id="376530636%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-m-a-i-l_-c-r-y-p-t-o_-e-r-r-o-r_-m-s-g.html"><span>EMAIL_</span><wbr></wbr><span>CRYPTO_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="376530636%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-m-a-i-l_-c-r-y-p-t-o_-e-r-r-o-r_-m-s-g.html">EMAIL_CRYPTO_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="268342370%2FProperties%2F2021949935" anchor-label="EMAIL_MESSAGE_NOT_FOUND_MSG" id="268342370%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-m-a-i-l_-m-e-s-s-a-g-e_-n-o-t_-f-o-u-n-d_-m-s-g.html"><span>EMAIL_</span><wbr></wbr><span>MESSAGE_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="268342370%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-m-a-i-l_-m-e-s-s-a-g-e_-n-o-t_-f-o-u-n-d_-m-s-g.html">EMAIL_MESSAGE_NOT_FOUND_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-771648693%2FProperties%2F2021949935" anchor-label="ERROR_ADDRESS_NOT_FOUND" id="-771648693%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-a-d-d-r-e-s-s_-n-o-t_-f-o-u-n-d.html"><span>ERROR_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-771648693%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-a-d-d-r-e-s-s_-n-o-t_-f-o-u-n-d.html">ERROR_ADDRESS_NOT_FOUND</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1666169295%2FProperties%2F2021949935" anchor-label="ERROR_ADDRESS_UNAVAILABLE" id="-1666169295%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-a-d-d-r-e-s-s_-u-n-a-v-a-i-l-a-b-l-e.html"><span>ERROR_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span><span>UNAVAILABLE</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1666169295%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-a-d-d-r-e-s-s_-u-n-a-v-a-i-l-a-b-l-e.html">ERROR_ADDRESS_UNAVAILABLE</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2012145996%2FProperties%2F2021949935" anchor-label="ERROR_INSUFFICIENT_ENTITLEMENTS" id="-2012145996%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-i-n-s-u-f-f-i-c-i-e-n-t_-e-n-t-i-t-l-e-m-e-n-t-s.html"><span>ERROR_</span><wbr></wbr><span>INSUFFICIENT_</span><wbr></wbr><span><span>ENTITLEMENTS</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2012145996%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-i-n-s-u-f-f-i-c-i-e-n-t_-e-n-t-i-t-l-e-m-e-n-t-s.html">ERROR_INSUFFICIENT_ENTITLEMENTS</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1549005503%2FProperties%2F2021949935" anchor-label="ERROR_INVALID_ARGUMENT" id="1549005503%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-a-r-g-u-m-e-n-t.html"><span>ERROR_</span><wbr></wbr><span>INVALID_</span><wbr></wbr><span>ARGUMENT</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1549005503%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-a-r-g-u-m-e-n-t.html">ERROR_INVALID_ARGUMENT</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1310997080%2FProperties%2F2021949935" anchor-label="ERROR_INVALID_DOMAIN" id="1310997080%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-d-o-m-a-i-n.html"><span>ERROR_</span><wbr></wbr><span>INVALID_</span><wbr></wbr><span>DOMAIN</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1310997080%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-d-o-m-a-i-n.html">ERROR_INVALID_DOMAIN</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-63053566%2FProperties%2F2021949935" anchor-label="ERROR_INVALID_EMAIL" id="-63053566%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-e-m-a-i-l.html"><span>ERROR_</span><wbr></wbr><span>INVALID_</span><wbr></wbr><span>EMAIL</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-63053566%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-e-m-a-i-l.html">ERROR_INVALID_EMAIL</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1728917057%2FProperties%2F2021949935" anchor-label="ERROR_INVALID_EMAIL_CONTENTS" id="-1728917057%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-e-m-a-i-l_-c-o-n-t-e-n-t-s.html"><span>ERROR_</span><wbr></wbr><span>INVALID_</span><wbr></wbr><span>EMAIL_</span><wbr></wbr><span>CONTENTS</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1728917057%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-e-m-a-i-l_-c-o-n-t-e-n-t-s.html">ERROR_INVALID_EMAIL_CONTENTS</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="822350511%2FProperties%2F2021949935" anchor-label="ERROR_INVALID_KEYRING" id="822350511%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-k-e-y-r-i-n-g.html"><span>ERROR_</span><wbr></wbr><span>INVALID_</span><wbr></wbr><span>KEYRING</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="822350511%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-i-n-v-a-l-i-d_-k-e-y-r-i-n-g.html">ERROR_INVALID_KEYRING</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-830153128%2FProperties%2F2021949935" anchor-label="ERROR_MESSAGE_NOT_FOUND" id="-830153128%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-m-e-s-s-a-g-e_-n-o-t_-f-o-u-n-d.html"><span>ERROR_</span><wbr></wbr><span>MESSAGE_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-830153128%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-m-e-s-s-a-g-e_-n-o-t_-f-o-u-n-d.html">ERROR_MESSAGE_NOT_FOUND</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="740885740%2FProperties%2F2021949935" anchor-label="ERROR_POLICY_FAILED" id="740885740%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-p-o-l-i-c-y_-f-a-i-l-e-d.html"><span>ERROR_</span><wbr></wbr><span>POLICY_</span><wbr></wbr><span>FAILED</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="740885740%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-p-o-l-i-c-y_-f-a-i-l-e-d.html">ERROR_POLICY_FAILED</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1077293092%2FProperties%2F2021949935" anchor-label="ERROR_RECORD_NOT_FOUND" id="-1077293092%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-r-e-c-o-r-d_-n-o-t_-f-o-u-n-d.html"><span>ERROR_</span><wbr></wbr><span>RECORD_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1077293092%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-r-e-c-o-r-d_-n-o-t_-f-o-u-n-d.html">ERROR_RECORD_NOT_FOUND</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="11843136%2FProperties%2F2021949935" anchor-label="ERROR_SERVICE_QUOTA_EXCEEDED" id="11843136%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-s-e-r-v-i-c-e_-q-u-o-t-a_-e-x-c-e-e-d-e-d.html"><span>ERROR_</span><wbr></wbr><span>SERVICE_</span><wbr></wbr><span>QUOTA_</span><wbr></wbr><span>EXCEEDED</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="11843136%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-s-e-r-v-i-c-e_-q-u-o-t-a_-e-x-c-e-e-d-e-d.html">ERROR_SERVICE_QUOTA_EXCEEDED</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="806163402%2FProperties%2F2021949935" anchor-label="ERROR_TYPE" id="806163402%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-t-y-p-e.html"><span>ERROR_</span><wbr></wbr><span>TYPE</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="806163402%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-t-y-p-e.html">ERROR_TYPE</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Errors returned from the service</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1847523419%2FProperties%2F2021949935" anchor-label="ERROR_UNAUTHORIZED_ADDRESS" id="1847523419%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-e-r-r-o-r_-u-n-a-u-t-h-o-r-i-z-e-d_-a-d-d-r-e-s-s.html"><span>ERROR_</span><wbr></wbr><span>UNAUTHORIZED_</span><wbr></wbr><span>ADDRESS</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1847523419%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-e-r-r-o-r_-u-n-a-u-t-h-o-r-i-z-e-d_-a-d-d-r-e-s-s.html">ERROR_UNAUTHORIZED_ADDRESS</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2063227975%2FProperties%2F2021949935" anchor-label="ID_LIMIT_EXCEEDED_ERROR_MSG" id="-2063227975%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-i-d_-l-i-m-i-t_-e-x-c-e-e-d-e-d_-e-r-r-o-r_-m-s-g.html"><span>ID_</span><wbr></wbr><span>LIMIT_</span><wbr></wbr><span>EXCEEDED_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2063227975%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-i-d_-l-i-m-i-t_-e-x-c-e-e-d-e-d_-e-r-r-o-r_-m-s-g.html">ID_LIMIT_EXCEEDED_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="442661061%2FProperties%2F2021949935" anchor-label="IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG" id="442661061%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-i-n_-n-e-t-w-o-r-k_-e-m-a-i-l_-a-d-d-r-e-s-s-e-s_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html"><span>IN_</span><wbr></wbr><span>NETWORK_</span><wbr></wbr><span>EMAIL_</span><wbr></wbr><span>ADDRESSES_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="442661061%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-i-n_-n-e-t-w-o-r-k_-e-m-a-i-l_-a-d-d-r-e-s-s-e-s_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html">IN_NETWORK_EMAIL_ADDRESSES_NOT_FOUND_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1130799077%2FProperties%2F2021949935" anchor-label="INSUFFICIENT_ENTITLEMENTS_MSG" id="-1130799077%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-i-n-s-u-f-f-i-c-i-e-n-t_-e-n-t-i-t-l-e-m-e-n-t-s_-m-s-g.html"><span>INSUFFICIENT_</span><wbr></wbr><span>ENTITLEMENTS_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1130799077%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-i-n-s-u-f-f-i-c-i-e-n-t_-e-n-t-i-t-l-e-m-e-n-t-s_-m-s-g.html">INSUFFICIENT_ENTITLEMENTS_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1381982485%2FProperties%2F2021949935" anchor-label="INVALID_ARGUMENT_ERROR_MSG" id="-1381982485%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-i-n-v-a-l-i-d_-a-r-g-u-m-e-n-t_-e-r-r-o-r_-m-s-g.html"><span>INVALID_</span><wbr></wbr><span>ARGUMENT_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1381982485%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-i-n-v-a-l-i-d_-a-r-g-u-m-e-n-t_-e-r-r-o-r_-m-s-g.html">INVALID_ARGUMENT_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2124914804%2FProperties%2F2021949935" anchor-label="INVALID_EMAIL_ADDRESS_MSG" id="2124914804%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-i-n-v-a-l-i-d_-e-m-a-i-l_-a-d-d-r-e-s-s_-m-s-g.html"><span>INVALID_</span><wbr></wbr><span>EMAIL_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2124914804%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-i-n-v-a-l-i-d_-e-m-a-i-l_-a-d-d-r-e-s-s_-m-s-g.html">INVALID_EMAIL_ADDRESS_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-964346410%2FProperties%2F2021949935" anchor-label="INVALID_KEYRING_MSG" id="-964346410%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-i-n-v-a-l-i-d_-k-e-y-r-i-n-g_-m-s-g.html"><span>INVALID_</span><wbr></wbr><span>KEYRING_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-964346410%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-i-n-v-a-l-i-d_-k-e-y-r-i-n-g_-m-s-g.html">INVALID_KEYRING_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1408185860%2FProperties%2F2021949935" anchor-label="INVALID_MESSAGE_CONTENT_MSG" id="1408185860%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-i-n-v-a-l-i-d_-m-e-s-s-a-g-e_-c-o-n-t-e-n-t_-m-s-g.html"><span>INVALID_</span><wbr></wbr><span>MESSAGE_</span><wbr></wbr><span>CONTENT_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1408185860%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-i-n-v-a-l-i-d_-m-e-s-s-a-g-e_-c-o-n-t-e-n-t_-m-s-g.html">INVALID_MESSAGE_CONTENT_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1545755566%2FProperties%2F2021949935" anchor-label="KEY_ARCHIVE_ERROR_MSG" id="-1545755566%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-e-y_-a-r-c-h-i-v-e_-e-r-r-o-r_-m-s-g.html"><span>KEY_</span><wbr></wbr><span>ARCHIVE_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1545755566%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-k-e-y_-a-r-c-h-i-v-e_-e-r-r-o-r_-m-s-g.html">KEY_ARCHIVE_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1359127955%2FProperties%2F2021949935" anchor-label="KEY_ATTACHMENTS_NOT_FOUND_ERROR_MSG" id="-1359127955%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-e-y_-a-t-t-a-c-h-m-e-n-t-s_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html"><span>KEY_</span><wbr></wbr><span>ATTACHMENTS_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1359127955%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-k-e-y_-a-t-t-a-c-h-m-e-n-t-s_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html">KEY_ATTACHMENTS_NOT_FOUND_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1127433576%2FProperties%2F2021949935" anchor-label="KEY_GENERATION_ERROR_MSG" id="-1127433576%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-e-y_-g-e-n-e-r-a-t-i-o-n_-e-r-r-o-r_-m-s-g.html"><span>KEY_</span><wbr></wbr><span>GENERATION_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1127433576%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-k-e-y_-g-e-n-e-r-a-t-i-o-n_-e-r-r-o-r_-m-s-g.html">KEY_GENERATION_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1642971392%2FProperties%2F2021949935" anchor-label="KEY_NOT_FOUND_ERROR" id="-1642971392%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-k-e-y_-n-o-t_-f-o-u-n-d_-e-r-r-o-r.html"><span>KEY_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1642971392%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-k-e-y_-n-o-t_-f-o-u-n-d_-e-r-r-o-r.html">KEY_NOT_FOUND_ERROR</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-679858115%2FProperties%2F2021949935" anchor-label="NO_EMAIL_ADDRESS_ERROR_MSG" id="-679858115%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-n-o_-e-m-a-i-l_-a-d-d-r-e-s-s_-e-r-r-o-r_-m-s-g.html"><span>NO_</span><wbr></wbr><span>EMAIL_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-679858115%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-n-o_-e-m-a-i-l_-a-d-d-r-e-s-s_-e-r-r-o-r_-m-s-g.html">NO_EMAIL_ADDRESS_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1033421624%2FProperties%2F2021949935" anchor-label="NO_EMAIL_ID_ERROR_MSG" id="1033421624%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-n-o_-e-m-a-i-l_-i-d_-e-r-r-o-r_-m-s-g.html"><span>NO_</span><wbr></wbr><span>EMAIL_</span><wbr></wbr><span>ID_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1033421624%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-n-o_-e-m-a-i-l_-i-d_-e-r-r-o-r_-m-s-g.html">NO_EMAIL_ID_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="34941104%2FProperties%2F2021949935" anchor-label="PUBLIC_KEY_NOT_FOUND_ERROR_MSG" id="34941104%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-p-u-b-l-i-c_-k-e-y_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html"><span>PUBLIC_</span><wbr></wbr><span>KEY_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="34941104%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-p-u-b-l-i-c_-k-e-y_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html">PUBLIC_KEY_NOT_FOUND_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-932205677%2FProperties%2F2021949935" anchor-label="RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG" id="-932205677%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-r-e-c-i-p-i-e-n-t_-l-i-m-i-t_-e-x-c-e-e-d-e-d_-e-r-r-o-r_-m-s-g.html"><span>RECIPIENT_</span><wbr></wbr><span>LIMIT_</span><wbr></wbr><span>EXCEEDED_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-932205677%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-r-e-c-i-p-i-e-n-t_-l-i-m-i-t_-e-x-c-e-e-d-e-d_-e-r-r-o-r_-m-s-g.html">RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1326349256%2FProperties%2F2021949935" anchor-label="RECORD_NOT_FOUND_ERROR_MSG" id="1326349256%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-r-e-c-o-r-d_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html"><span>RECORD_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1326349256%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-r-e-c-o-r-d_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html">RECORD_NOT_FOUND_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1152235232%2FProperties%2F2021949935" anchor-label="S3_ALGORITHM_ERROR_MSG" id="-1152235232%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s3_-a-l-g-o-r-i-t-h-m_-e-r-r-o-r_-m-s-g.html"><span>S3_</span><wbr></wbr><span>ALGORITHM_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1152235232%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-s3_-a-l-g-o-r-i-t-h-m_-e-r-r-o-r_-m-s-g.html">S3_ALGORITHM_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="470250106%2FProperties%2F2021949935" anchor-label="S3_KEY_ID_ERROR_MSG" id="470250106%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s3_-k-e-y_-i-d_-e-r-r-o-r_-m-s-g.html"><span>S3_</span><wbr></wbr><span>KEY_</span><wbr></wbr><span>ID_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="470250106%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-s3_-k-e-y_-i-d_-e-r-r-o-r_-m-s-g.html">S3_KEY_ID_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1145063341%2FProperties%2F2021949935" anchor-label="S3_NOT_FOUND_ERROR_CODE" id="-1145063341%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s3_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-c-o-d-e.html"><span>S3_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>CODE</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1145063341%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-s3_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-c-o-d-e.html">S3_NOT_FOUND_ERROR_CODE</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1910597652%2FProperties%2F2021949935" anchor-label="SERVICE_QUOTA_EXCEEDED_ERROR_MSG" id="-1910597652%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-e-r-v-i-c-e_-q-u-o-t-a_-e-x-c-e-e-d-e-d_-e-r-r-o-r_-m-s-g.html"><span>SERVICE_</span><wbr></wbr><span>QUOTA_</span><wbr></wbr><span>EXCEEDED_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1910597652%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-s-e-r-v-i-c-e_-q-u-o-t-a_-e-x-c-e-e-d-e-d_-e-r-r-o-r_-m-s-g.html">SERVICE_QUOTA_EXCEEDED_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1357914822%2FProperties%2F2021949935" anchor-label="SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG" id="1357914822%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-s-y-m-m-e-t-r-i-c_-k-e-y_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html"><span>SYMMETRIC_</span><wbr></wbr><span>KEY_</span><wbr></wbr><span>NOT_</span><wbr></wbr><span>FOUND_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1357914822%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-s-y-m-m-e-t-r-i-c_-k-e-y_-n-o-t_-f-o-u-n-d_-e-r-r-o-r_-m-s-g.html">SYMMETRIC_KEY_NOT_FOUND_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-642111798%2FProperties%2F2021949935" anchor-label="UNKNOWN_ERROR_MSG" id="-642111798%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-u-n-k-n-o-w-n_-e-r-r-o-r_-m-s-g.html"><span>UNKNOWN_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-642111798%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-u-n-k-n-o-w-n_-e-r-r-o-r_-m-s-g.html">UNKNOWN_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1997309832%2FProperties%2F2021949935" anchor-label="UNSEAL_EMAIL_ADDRESS_ERROR_MSG" id="1997309832%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-u-n-s-e-a-l_-e-m-a-i-l_-a-d-d-r-e-s-s_-e-r-r-o-r_-m-s-g.html"><span>UNSEAL_</span><wbr></wbr><span>EMAIL_</span><wbr></wbr><span>ADDRESS_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1997309832%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-u-n-s-e-a-l_-e-m-a-i-l_-a-d-d-r-e-s-s_-e-r-r-o-r_-m-s-g.html">UNSEAL_EMAIL_ADDRESS_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Exception messages</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1443866075%2FProperties%2F2021949935" anchor-label="UNSEAL_EMAIL_MSG_ERROR_MSG" id="1443866075%2FProperties%2F2021949935" data-filterable-set=":sudoemail:dokkaHtml/release"></a>
+          <div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-u-n-s-e-a-l_-e-m-a-i-l_-m-s-g_-e-r-r-o-r_-m-s-g.html"><span>UNSEAL_</span><wbr></wbr><span>EMAIL_</span><wbr></wbr><span>MSG_</span><wbr></wbr><span>ERROR_</span><wbr></wbr><span>MSG</span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1443866075%2FProperties%2F2021949935"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">const </span><span class="token keyword">val </span><a href="-u-n-s-e-a-l_-e-m-a-i-l_-m-s-g_-e-r-r-o-r_-m-s-g.html">UNSEAL_EMAIL_MSG_ERROR_MSG</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

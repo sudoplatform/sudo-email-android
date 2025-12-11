@@ -6,19 +6,12 @@
 
 package com.sudoplatform.sudoemail
 
-import android.content.Context
-import com.amplifyframework.api.graphql.GraphQLResponse
-import com.sudoplatform.sudoemail.api.ApiClient
-import com.sudoplatform.sudoemail.data.DataFactory
+import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressPublicInfoTransformer
+import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCase
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.S3Client
-import com.sudoplatform.sudoemail.secure.DefaultSealingService
-import com.sudoplatform.sudoemail.secure.EmailCryptoService
-import com.sudoplatform.sudoemail.types.PublicKeyFormat
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
-import com.sudoplatform.sudoemail.util.Rfc822MessageDataProcessor
-import com.sudoplatform.sudokeymanager.KeyManagerInterface
-import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -28,9 +21,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -40,7 +31,6 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
-import java.net.HttpURLConnection
 import java.util.concurrent.CancellationException
 
 /**
@@ -49,42 +39,27 @@ import java.util.concurrent.CancellationException
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
+    private val emailAddressPublicInfoEntity = EntityDataFactory.getEmailAddressPublicInfoEntity()
     private val input by before {
         LookupEmailAddressesPublicInfoInput(
             listOf("emailAddress"),
         )
     }
 
-    private val queryResponse by before {
-        DataFactory.lookupEmailAddressPublicInfoQueryResponse()
+    private val publicInfoEntities by before {
+        listOf(emailAddressPublicInfoEntity)
     }
 
-    private val queryResponseWithEmptyList by before {
-        DataFactory.lookupEmailAddressPublicInfoQueryResponse(emptyList())
-    }
-
-    private val mockContext by before {
-        mock<Context>()
-    }
-
-    private val mockUserClient by before {
-        mock<SudoUserClient>()
-    }
-
-    private val mockApiClient by before {
-        mock<ApiClient>().stub {
-            onBlocking {
-                lookupEmailAddressesPublicInfoQuery(
-                    any(),
-                )
-            } doAnswer {
-                queryResponse
-            }
+    private val mockUseCase by before {
+        mock<LookupEmailAddressesPublicInfoUseCase>().stub {
+            onBlocking { execute(any()) } doReturn publicInfoEntities
         }
     }
 
-    private val mockKeyManager by before {
-        mock<KeyManagerInterface>()
+    private val mockUseCaseFactory by before {
+        mock<UseCaseFactory>().stub {
+            on { createLookupEmailAddressesPublicInfoUseCase() } doReturn mockUseCase
+        }
     }
 
     private val mockServiceKeyManager by before {
@@ -96,56 +71,29 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
         )
     }
 
-    private val mockS3Client by before {
-        mock<S3Client>().stub {
-            onBlocking { upload(any(), anyString(), anyOrNull()) } doReturn "42"
-        }
-    }
-
-    private val mockEmailMessageProcessor by before {
-        mock<Rfc822MessageDataProcessor>()
-    }
-
-    private val mockSealingService by before {
-        DefaultSealingService(
-            mockServiceKeyManager,
-            mockLogger,
-        )
-    }
-
-    private val mockEmailCryptoService by before {
-        mock<EmailCryptoService>()
-    }
-
     private val client by before {
         DefaultSudoEmailClient(
-            mockContext,
-            mockApiClient,
-            mockUserClient,
-            mockLogger,
-            mockServiceKeyManager,
-            mockEmailMessageProcessor,
-            mockSealingService,
-            mockEmailCryptoService,
-            "region",
-            "identityBucket",
-            "transientBucket",
-            null,
-            mockS3Client,
-            mockS3Client,
+            context = mockContext,
+            serviceKeyManager = mockServiceKeyManager,
+            apiClient = mockApiClient,
+            sudoUserClient = mockUserClient,
+            logger = mockLogger,
+            region = "region",
+            emailBucket = "identityBucket",
+            transientBucket = "transientBucket",
+            notificationHandler = null,
+            s3TransientClient = mockS3Client,
+            s3EmailClient = mockS3Client,
+            useCaseFactory = mockUseCaseFactory,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
-            mockContext,
-            mockUserClient,
-            mockKeyManager,
-            mockApiClient,
-            mockS3Client,
-            mockEmailMessageProcessor,
-            mockEmailCryptoService,
+            mockUseCaseFactory,
+            mockUseCase,
         )
     }
 
@@ -161,18 +109,13 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
 
             result shouldNotBe null
             result.count() shouldBe 1
-            with(result[0]) {
-                emailAddress shouldBe "emailAddress"
-                keyId shouldBe "keyId"
-                publicKey shouldBe "publicKey"
-                publicKeyDetails.publicKey shouldBe "publicKey"
-                publicKeyDetails.keyFormat shouldBe PublicKeyFormat.RSA_PUBLIC_KEY
-                publicKeyDetails.algorithm shouldBe "algorithm"
-            }
+            result[0] shouldBe EmailAddressPublicInfoTransformer.entityToApi(emailAddressPublicInfoEntity)
 
-            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+            verify(mockUseCaseFactory).createLookupEmailAddressesPublicInfoUseCase()
+            verify(mockUseCase).execute(
                 check { input ->
-                    input.emailAddresses shouldBe listOf("emailAddress")
+                    input.addresses shouldBe listOf("emailAddress")
+                    input.throwIfNotAllInternal shouldBe false
                 },
             )
         }
@@ -180,17 +123,16 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     @Test
     fun `lookupEmailAddressesPublicInfo() should return empty result when query result data is empty`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    lookupEmailAddressesPublicInfoQuery(
+                    execute(
                         any(),
                     )
                 } doAnswer {
-                    queryResponseWithEmptyList
+                    emptyList()
                 }
             }
 
-            val input = LookupEmailAddressesPublicInfoInput(emptyList())
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     client.lookupEmailAddressesPublicInfo(input)
@@ -200,9 +142,11 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
 
             result shouldBe emptyList()
 
-            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+            verify(mockUseCaseFactory).createLookupEmailAddressesPublicInfoUseCase()
+            verify(mockUseCase).execute(
                 check { input ->
-                    input.emailAddresses shouldBe emptyList()
+                    input.addresses shouldBe listOf("emailAddress")
+                    input.throwIfNotAllInternal shouldBe false
                 },
             )
         }
@@ -210,21 +154,12 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     @Test
     fun `lookupEmailAddressesPublicInfo() should throw when http error occurs`() =
         runTest {
-            val testError =
-                GraphQLResponse.Error(
-                    "mock",
-                    null,
-                    null,
-                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
-                )
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    lookupEmailAddressesPublicInfoQuery(
+                    execute(
                         any(),
                     )
-                }.thenAnswer {
-                    GraphQLResponse(null, listOf(testError))
-                }
+                } doThrow SudoEmailClient.EmailAddressException.FailedException("HTTP Error")
             }
 
             val deferredResult =
@@ -236,39 +171,11 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
             deferredResult.start()
             deferredResult.await()
 
-            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+            verify(mockUseCaseFactory).createLookupEmailAddressesPublicInfoUseCase()
+            verify(mockUseCase).execute(
                 check { input ->
-                    input.emailAddresses shouldBe listOf("emailAddress")
-                    input.emailAddresses shouldBe listOf("emailAddress")
-                },
-            )
-        }
-
-    @Test
-    fun `lookupEmailAddressesPublicInfo() should throw when unknown error occurs`() =
-        runTest {
-            mockApiClient.stub {
-                onBlocking {
-                    lookupEmailAddressesPublicInfoQuery(
-                        any(),
-                    )
-                } doThrow
-                    RuntimeException("Mock Runtime Exception")
-            }
-
-            val deferredResult =
-                async(StandardTestDispatcher(testScheduler)) {
-                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
-                        client.lookupEmailAddressesPublicInfo(input)
-                    }
-                }
-            deferredResult.start()
-            deferredResult.await()
-
-            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
-                check { input ->
-                    input.emailAddresses shouldBe listOf("emailAddress")
-                    input.emailAddresses shouldBe listOf("emailAddress")
+                    input.addresses shouldBe listOf("emailAddress")
+                    input.throwIfNotAllInternal shouldBe false
                 },
             )
         }
@@ -276,23 +183,23 @@ class SudoEmailLookupEmailAddressesPublicInfoTest : BaseTests() {
     @Test
     fun `lookupEmailAddressesPublicInfo() should not block coroutine cancellation exception`() =
         runTest {
-            mockApiClient.stub {
+            mockUseCase.stub {
                 onBlocking {
-                    lookupEmailAddressesPublicInfoQuery(
+                    execute(
                         any(),
                     )
-                } doThrow
-                    CancellationException("Mock Cancellation Exception")
+                } doThrow CancellationException("Mock Cancellation Exception")
             }
 
             shouldThrow<CancellationException> {
                 client.lookupEmailAddressesPublicInfo(input)
             }
 
-            verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(
+            verify(mockUseCaseFactory).createLookupEmailAddressesPublicInfoUseCase()
+            verify(mockUseCase).execute(
                 check { input ->
-                    input.emailAddresses shouldBe listOf("emailAddress")
-                    input.emailAddresses shouldBe listOf("emailAddress")
+                    input.addresses shouldBe listOf("emailAddress")
+                    input.throwIfNotAllInternal shouldBe false
                 },
             )
         }
