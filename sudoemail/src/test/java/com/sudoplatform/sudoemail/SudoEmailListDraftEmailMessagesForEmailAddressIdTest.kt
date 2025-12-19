@@ -9,9 +9,11 @@ package com.sudoplatform.sudoemail
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.data.draftMessage.transformers.DraftEmailMessageTransformer
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessagesOutput
 import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ListDraftEmailMessagesForEmailAddressIdUseCase
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
+import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAddressIdInput
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -22,6 +24,7 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -74,8 +77,8 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
     private val mockListDraftEmailMessagesForEmailAddressIdUseCase by before {
         mock<ListDraftEmailMessagesForEmailAddressIdUseCase>().stub {
             onBlocking {
-                execute(any())
-            } doReturn emailAddressIdDrafts
+                execute(any(), anyOrNull(), anyOrNull())
+            } doReturn ListDraftEmailMessagesOutput(emailAddressIdDrafts, null)
         }
     }
 
@@ -125,24 +128,26 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
         runTest {
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+                    client.listDraftEmailMessagesForEmailAddressId(ListDraftEmailMessagesForEmailAddressIdInput(emailAddressId))
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result.size shouldBe 2
-            result[0].id shouldBe draftId1
-            result[0].emailAddressId shouldBe emailAddressId
-            result[1].id shouldBe draftId2
-            result[1].emailAddressId shouldBe emailAddressId
+            result.items.size shouldBe 2
+            result.items[0].id shouldBe draftId1
+            result.items[0].emailAddressId shouldBe emailAddressId
+            result.items[1].id shouldBe draftId2
+            result.items[1].emailAddressId shouldBe emailAddressId
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
             verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(
                 check { emailAddressIdArg ->
                     emailAddressIdArg shouldBe emailAddressId
                 },
+                anyOrNull(),
+                anyOrNull(),
             )
         }
 
@@ -150,69 +155,71 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
     fun `listDraftEmailMessagesForEmailAddressId() should return empty list when no drafts for address`() =
         runTest {
             mockListDraftEmailMessagesForEmailAddressIdUseCase.stub {
-                onBlocking { execute(any()) } doReturn emptyList()
+                onBlocking { execute(any(), anyOrNull(), anyOrNull()) } doReturn ListDraftEmailMessagesOutput(emptyList(), null)
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+                    client.listDraftEmailMessagesForEmailAddressId(ListDraftEmailMessagesForEmailAddressIdInput(emailAddressId))
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result.size shouldBe 0
+            result.items.size shouldBe 0
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
-            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId)
+            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId, null, null)
         }
 
     @Test
     fun `listDraftEmailMessagesForEmailAddressId() should return single draft for address`() =
         runTest {
             mockListDraftEmailMessagesForEmailAddressIdUseCase.stub {
-                onBlocking { execute(any()) } doReturn listOf(draftMessage1)
+                onBlocking { execute(any(), anyOrNull(), anyOrNull()) } doReturn ListDraftEmailMessagesOutput(listOf(draftMessage1), null)
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+                    client.listDraftEmailMessagesForEmailAddressId(ListDraftEmailMessagesForEmailAddressIdInput(emailAddressId))
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result.size shouldBe 1
-            result[0].id shouldBe draftId1
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe draftId1
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
-            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId)
+            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId, null, null)
         }
 
     @Test
     fun `listDraftEmailMessagesForEmailAddressId() should handle different email address IDs`() =
         runTest {
             mockListDraftEmailMessagesForEmailAddressIdUseCase.stub {
-                onBlocking { execute(emailAddressId2) } doReturn listOf(draftMessage3)
+                onBlocking { execute(emailAddressId2, null, null) } doReturn ListDraftEmailMessagesOutput(listOf(draftMessage3), null)
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessagesForEmailAddressId(emailAddressId2)
+                    client.listDraftEmailMessagesForEmailAddressId(
+                        ListDraftEmailMessagesForEmailAddressIdInput(emailAddressId2, null, null),
+                    )
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result.size shouldBe 1
-            result[0].id shouldBe draftId3
-            result[0].emailAddressId shouldBe emailAddressId2
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe draftId3
+            result.items[0].emailAddressId shouldBe emailAddressId2
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
-            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId2)
+            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId2, null, null)
         }
 
     @Test
@@ -228,29 +235,29 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
                 }
 
             mockListDraftEmailMessagesForEmailAddressIdUseCase.stub {
-                onBlocking { execute(emailAddressId) } doReturn largeDraftList
+                onBlocking { execute(emailAddressId, 30, null) } doReturn ListDraftEmailMessagesOutput(largeDraftList, null)
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+                    client.listDraftEmailMessagesForEmailAddressId(ListDraftEmailMessagesForEmailAddressIdInput(emailAddressId, 30))
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result.size shouldBe 30
+            result.items.size shouldBe 30
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
-            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId)
+            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId, 30, null)
         }
 
     @Test
     fun `listDraftEmailMessagesForEmailAddressId() should throw when use case throws`() =
         runTest {
             mockListDraftEmailMessagesForEmailAddressIdUseCase.stub {
-                onBlocking { execute(any()) }.thenAnswer {
+                onBlocking { execute(any(), anyOrNull(), anyOrNull()) }.thenAnswer {
                     throw SudoEmailClient.EmailMessageException.FailedException("Mock error")
                 }
             }
@@ -258,7 +265,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                        client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+                        client.listDraftEmailMessagesForEmailAddressId(ListDraftEmailMessagesForEmailAddressIdInput(emailAddressId))
                     }
                 }
 
@@ -266,7 +273,7 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             deferredResult.await()
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
-            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId)
+            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId, null, null)
         }
 
     @Test
@@ -274,17 +281,17 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
         runTest {
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessagesForEmailAddressId(emailAddressId)
+                    client.listDraftEmailMessagesForEmailAddressId(ListDraftEmailMessagesForEmailAddressIdInput(emailAddressId))
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
             result shouldNotBe null
-            result shouldBe emailAddressIdDrafts.map { DraftEmailMessageTransformer.entityWithContentToApi(it) }
+            result.items shouldBe emailAddressIdDrafts.map { DraftEmailMessageTransformer.entityWithContentToApi(it) }
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
-            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId)
+            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(emailAddressId, null, null)
         }
 
     @Test
@@ -292,12 +299,14 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
         runTest {
             val specialEmailAddressId = "email-id-with-special-chars-!@#"
             mockListDraftEmailMessagesForEmailAddressIdUseCase.stub {
-                onBlocking { execute(specialEmailAddressId) } doReturn listOf(draftMessage1)
+                onBlocking { execute(specialEmailAddressId, null, null) } doReturn ListDraftEmailMessagesOutput(listOf(draftMessage1), null)
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessagesForEmailAddressId(specialEmailAddressId)
+                    client.listDraftEmailMessagesForEmailAddressId(
+                        ListDraftEmailMessagesForEmailAddressIdInput(specialEmailAddressId, null, null),
+                    )
                 }
 
             deferredResult.start()
@@ -306,6 +315,6 @@ class SudoEmailListDraftEmailMessagesForEmailAddressIdTest : BaseTests() {
             result shouldNotBe null
 
             verify(mockUseCaseFactory).createListDraftEmailMessagesForEmailAddressIdUseCase()
-            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(specialEmailAddressId)
+            verify(mockListDraftEmailMessagesForEmailAddressIdUseCase).execute(specialEmailAddressId, null, null)
         }
 }

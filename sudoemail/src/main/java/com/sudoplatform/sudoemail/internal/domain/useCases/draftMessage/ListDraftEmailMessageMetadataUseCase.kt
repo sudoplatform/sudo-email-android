@@ -52,7 +52,7 @@ internal class ListDraftEmailMessageMetadataUseCase(
         val allDrafts = mutableListOf<DraftEmailMessageMetadataEntity>()
         for (emailAddressId in emailAddressIds) {
             val drafts = draftEmailMessageService.listMetadataForEmailAddressId(emailAddressId)
-            allDrafts.addAll(drafts)
+            allDrafts.addAll(drafts.items)
         }
         return allDrafts
     }

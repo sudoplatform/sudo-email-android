@@ -10,6 +10,7 @@ import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessageMetadataOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmailAddressesOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmailAddressesRequest
@@ -23,6 +24,7 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -85,9 +87,12 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
 
     private val mockDraftEmailMessageService by before {
         mock<DraftEmailMessageService>().stub {
-            onBlocking { listMetadataForEmailAddressId(emailAddressId1) } doReturn draftsForAddress1
-            onBlocking { listMetadataForEmailAddressId(emailAddressId2) } doReturn draftsForAddress2
-            onBlocking { listMetadataForEmailAddressId(emailAddressId3) } doReturn emptyList()
+            onBlocking { listMetadataForEmailAddressId(emailAddressId1, 1000, null) } doReturn
+                ListDraftEmailMessageMetadataOutput(draftsForAddress1, null)
+            onBlocking { listMetadataForEmailAddressId(emailAddressId2, 1000, null) } doReturn
+                ListDraftEmailMessageMetadataOutput(draftsForAddress2, null)
+            onBlocking { listMetadataForEmailAddressId(emailAddressId3, 1000, null) } doReturn
+                ListDraftEmailMessageMetadataOutput(emptyList(), null)
         }
     }
 
@@ -170,9 +175,9 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
                     it.limit shouldBe 10
                 },
             )
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3, 1000, null)
             verify(mockGetDraftEmailMessageUseCase).execute(
                 check {
                     it.draftId shouldBe draftId1
@@ -215,7 +220,8 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
     fun `execute() should return empty list when no drafts exist for any email address`() =
         runTest {
             mockDraftEmailMessageService.stub {
-                onBlocking { listMetadataForEmailAddressId(any()) } doReturn emptyList()
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(emptyList(), null)
             }
 
             val result = useCase.execute()
@@ -223,7 +229,7 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
             result shouldBe emptyList()
 
             verify(mockEmailAddressService).list(any())
-            verify(mockDraftEmailMessageService, times(3)).listMetadataForEmailAddressId(any())
+            verify(mockDraftEmailMessageService, times(3)).listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull())
         }
 
     @Test
@@ -252,9 +258,9 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
             result.size shouldBe 3
 
             verify(mockEmailAddressService, times(3)).list(any())
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3, 1000, null)
             verify(mockGetDraftEmailMessageUseCase).execute(
                 check {
                     it.draftId shouldBe draftId1
@@ -293,7 +299,7 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
             result[1].id shouldBe draftId2
 
             verify(mockEmailAddressService).list(any())
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1, 1000, null)
             verify(mockGetDraftEmailMessageUseCase).execute(
                 check {
                     it.draftId shouldBe draftId1
@@ -320,9 +326,9 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
             )
 
             verify(mockEmailAddressService, times(1)).list(any())
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3, 1000, null)
             verify(mockGetDraftEmailMessageUseCase).execute(
                 check {
                     it.draftId shouldBe draftId1
@@ -355,9 +361,9 @@ class ListDraftEmailMessagesUseCaseTest : BaseTests() {
             }
 
             verify(mockEmailAddressService).list(any())
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2)
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2, 1000, null)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3, 1000, null)
             verify(mockGetDraftEmailMessageUseCase).execute(
                 check {
                     it.draftId shouldBe draftId1

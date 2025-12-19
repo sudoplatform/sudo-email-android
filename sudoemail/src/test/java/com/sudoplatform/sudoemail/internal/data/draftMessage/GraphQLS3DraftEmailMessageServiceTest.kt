@@ -35,6 +35,7 @@ import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.S3Exception
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
+import com.sudoplatform.sudoemail.s3.types.S3ClientListResult
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
@@ -47,6 +48,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
@@ -758,23 +760,28 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doReturn s3Objects
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = s3Objects,
+                        nextToken = null,
+                    )
             }
 
             val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
 
-            result.size shouldBe 3
-            result[0].id shouldBe draftId1
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].updatedAt shouldBe date1
-            result[1].id shouldBe draftId2
-            result[1].emailAddressId shouldBe emailAddressId
-            result[1].updatedAt shouldBe date2
-            result[2].id shouldBe draftId3
-            result[2].emailAddressId shouldBe emailAddressId
-            result[2].updatedAt shouldBe date3
+            result.items.size shouldBe 3
+            result.items[0].id shouldBe draftId1
+            result.items[0].emailAddressId shouldBe emailAddressId
+            result.items[0].updatedAt shouldBe date1
+            result.items[1].id shouldBe draftId2
+            result.items[1].emailAddressId shouldBe emailAddressId
+            result.items[1].updatedAt shouldBe date2
+            result.items[2].id shouldBe draftId3
+            result.items[2].emailAddressId shouldBe emailAddressId
+            result.items[2].updatedAt shouldBe date3
+            result.nextToken shouldBe null
 
-            verify(mockS3Client).list(any())
+            verify(mockS3Client).list(any(), isNull(), isNull())
         }
 
     @Test
@@ -783,14 +790,19 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val emailAddressId = mockEmailAddressId
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doReturn emptyList()
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = emptyList(),
+                        nextToken = null,
+                    )
             }
 
             val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
 
-            result.size shouldBe 0
+            result.items.size shouldBe 0
+            result.nextToken shouldBe null
 
-            verify(mockS3Client).list(any())
+            verify(mockS3Client).list(any(), isNull(), isNull())
         }
 
     @Test
@@ -810,15 +822,19 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doReturn s3Objects
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = s3Objects,
+                        nextToken = null,
+                    )
             }
 
             val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
 
-            result.size shouldBe 1
-            result[0].id shouldBe draftId
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe draftId
 
-            verify(mockS3Client).list(any())
+            verify(mockS3Client).list(any(), isNull(), isNull())
         }
 
     @Test
@@ -838,17 +854,21 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doReturn s3Objects
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = s3Objects,
+                        nextToken = null,
+                    )
             }
 
             val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
 
-            result.size shouldBe 1
-            result[0].id shouldBe draftId
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].updatedAt shouldBe updatedAt
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe draftId
+            result.items[0].emailAddressId shouldBe emailAddressId
+            result.items[0].updatedAt shouldBe updatedAt
 
-            verify(mockS3Client).list(any())
+            verify(mockS3Client).list(any(), isNull(), isNull())
         }
 
     @Test
@@ -857,14 +877,15 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val emailAddressId = mockEmailAddressId
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doThrow S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doThrow
+                    S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
             }
 
             shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
                 instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
             }
 
-            verify(mockS3Client).list(any())
+            verify(mockS3Client).list(any(), isNull(), isNull())
         }
 
     @Test
@@ -873,14 +894,14 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val emailAddressId = mockEmailAddressId
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doThrow RuntimeException("Unexpected error")
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doThrow RuntimeException("Unexpected error")
             }
 
             shouldThrow<RuntimeException> {
                 instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
             }
 
-            verify(mockS3Client).list(any())
+            verify(mockS3Client).list(any(), isNull(), isNull())
         }
 
     @Test
@@ -910,21 +931,25 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doReturn s3Objects
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = s3Objects,
+                        nextToken = null,
+                    )
             }
 
             val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
 
-            result.size shouldBe 3
+            result.items.size shouldBe 3
             // Order should be preserved from S3
-            result[0].id shouldBe "draft3"
-            result[0].updatedAt shouldBe date3
-            result[1].id shouldBe "draft1"
-            result[1].updatedAt shouldBe date1
-            result[2].id shouldBe "draft2"
-            result[2].updatedAt shouldBe date2
+            result.items[0].id shouldBe "draft3"
+            result.items[0].updatedAt shouldBe date3
+            result.items[1].id shouldBe "draft1"
+            result.items[1].updatedAt shouldBe date1
+            result.items[2].id shouldBe "draft2"
+            result.items[2].updatedAt shouldBe date2
 
-            verify(mockS3Client).list(any())
+            verify(mockS3Client).list(any(), isNull(), isNull())
         }
 
     @Test
@@ -934,7 +959,11 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val expectedPrefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
 
             mockS3Client.stub {
-                onBlocking { list(any()) } doReturn emptyList()
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = emptyList(),
+                        nextToken = null,
+                    )
             }
 
             instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
@@ -943,6 +972,207 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check {
                     it shouldBe expectedPrefix
                 },
+                anyOrNull(),
+                anyOrNull(),
+            )
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should pass limit parameter to S3 client`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val limit = 5
+            val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
+
+            mockS3Client.stub {
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = emptyList(),
+                        nextToken = null,
+                    )
+            }
+
+            instanceUnderTest.listMetadataForEmailAddressId(emailAddressId, limit, null)
+
+            verify(mockS3Client).list(
+                check { it shouldBe s3Prefix },
+                check { it shouldBe limit },
+                isNull(),
+            )
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should pass nextToken parameter to S3 client`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val nextToken = "token123"
+            val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
+
+            mockS3Client.stub {
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = emptyList(),
+                        nextToken = null,
+                    )
+            }
+
+            instanceUnderTest.listMetadataForEmailAddressId(emailAddressId, null, nextToken)
+
+            verify(mockS3Client).list(
+                check { it shouldBe s3Prefix },
+                isNull(),
+                check { it shouldBe nextToken },
+            )
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should pass both limit and nextToken to S3 client`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val limit = 10
+            val nextToken = "token456"
+            val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
+
+            mockS3Client.stub {
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = emptyList(),
+                        nextToken = null,
+                    )
+            }
+
+            instanceUnderTest.listMetadataForEmailAddressId(emailAddressId, limit, nextToken)
+
+            verify(mockS3Client).list(
+                check { it shouldBe s3Prefix },
+                check { it shouldBe limit },
+                check { it shouldBe nextToken },
+            )
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should pass null for limit and nextToken when not provided`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
+
+            mockS3Client.stub {
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = emptyList(),
+                        nextToken = null,
+                    )
+            }
+
+            instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
+
+            verify(mockS3Client).list(
+                check { it shouldBe s3Prefix },
+                isNull(),
+                isNull(),
+            )
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should return nextToken from S3 client`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val expectedNextToken = "nextToken789"
+            val s3Objects = emptyList<S3ClientListOutput>()
+
+            mockS3Client.stub {
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = s3Objects,
+                        nextToken = expectedNextToken,
+                    )
+            }
+
+            val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
+
+            result.items.size shouldBe 0
+            result.nextToken shouldBe expectedNextToken
+
+            verify(mockS3Client).list(any(), isNull(), isNull())
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should handle pagination with limit returning nextToken`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val limit = 2
+            val expectedNextToken = "paginationToken"
+            val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
+            val date1 = Date(1000L)
+            val date2 = Date(2000L)
+
+            val s3Objects =
+                listOf(
+                    S3ClientListOutput(
+                        key = "$s3Prefix/draft1",
+                        lastModified = date1,
+                    ),
+                    S3ClientListOutput(
+                        key = "$s3Prefix/draft2",
+                        lastModified = date2,
+                    ),
+                )
+
+            mockS3Client.stub {
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = s3Objects,
+                        nextToken = expectedNextToken,
+                    )
+            }
+
+            val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId, limit)
+
+            result.items.size shouldBe 2
+            result.nextToken shouldBe expectedNextToken
+
+            verify(mockS3Client).list(
+                check { it shouldBe s3Prefix },
+                check { it shouldBe limit },
+                isNull(),
+            )
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should handle pagination with nextToken for subsequent page`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val limit = 2
+            val nextToken = "existingToken"
+            val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
+            val date3 = Date(3000L)
+
+            val s3Objects =
+                listOf(
+                    S3ClientListOutput(
+                        key = "$s3Prefix/draft3",
+                        lastModified = date3,
+                    ),
+                )
+
+            mockS3Client.stub {
+                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                    S3ClientListResult(
+                        items = s3Objects,
+                        nextToken = null,
+                    )
+            }
+
+            val result = instanceUnderTest.listMetadataForEmailAddressId(emailAddressId, limit, nextToken)
+
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe "draft3"
+            result.nextToken shouldBe null
+
+            verify(mockS3Client).list(
+                check { it shouldBe s3Prefix },
+                check { it shouldBe limit },
+                check { it shouldBe nextToken },
             )
         }
 

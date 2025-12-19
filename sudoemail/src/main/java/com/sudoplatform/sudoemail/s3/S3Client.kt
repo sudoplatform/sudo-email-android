@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail.s3
 
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
+import com.sudoplatform.sudoemail.s3.types.S3ClientListResult
 
 /**
  * S3 client wrapper protocol mainly used for providing an abstraction layer on top of
@@ -60,10 +61,16 @@ interface S3Client {
      * Returns a list of objects from AWS S3
      *
      * @param prefix [String] The path in S3 to list objects from.
-     * @return List of [S3ClientListOutput] objects that match the key.
+     * @param limit [Int] Optional maximum number of objects to return. Defaults to 10 when null.
+     * @param nextToken [String] Optional token for pagination.
+     * @return [S3ClientListResult] containing the list of objects and next token. When the next token is not null, more records are available
      */
     @Throws(S3Exception::class)
-    suspend fun list(prefix: String): List<S3ClientListOutput>
+    suspend fun list(
+        prefix: String,
+        limit: Int? = null,
+        nextToken: String? = null,
+    ): S3ClientListResult
 
     /**
      * Returns the metadata associated with the object with the given key.

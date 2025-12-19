@@ -12,6 +12,7 @@ import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessageMetadataOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -23,10 +24,12 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
@@ -71,7 +74,8 @@ class ListDraftEmailMessagesForEmailAddressIdUseCaseTest : BaseTests() {
 
     private val mockDraftEmailMessageService by before {
         mock<DraftEmailMessageService>().stub {
-            onBlocking { listMetadataForEmailAddressId(any()) } doReturn draftMessagesMetadata
+            onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                ListDraftEmailMessageMetadataOutput(draftMessagesMetadata, null)
         }
     }
 
@@ -136,23 +140,24 @@ class ListDraftEmailMessagesForEmailAddressIdUseCaseTest : BaseTests() {
         runTest {
             val result = useCase.execute(emailAddressId)
 
-            result.size shouldBe 3
-            result[0].id shouldBe draftId1
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].rfc822Data shouldBe unsealedRfc822Data
-            result[1].id shouldBe draftId2
-            result[1].emailAddressId shouldBe emailAddressId
-            result[1].rfc822Data shouldBe unsealedRfc822Data
-            result[2].id shouldBe draftId3
-            result[2].emailAddressId shouldBe emailAddressId
-            result[2].rfc822Data shouldBe unsealedRfc822Data
+            result.items.size shouldBe 3
+            result.items[0].id shouldBe draftId1
+            result.items[0].emailAddressId shouldBe emailAddressId
+            result.items[0].rfc822Data shouldBe unsealedRfc822Data
+            result.items[1].id shouldBe draftId2
+            result.items[1].emailAddressId shouldBe emailAddressId
+            result.items[1].rfc822Data shouldBe unsealedRfc822Data
+            result.items[2].id shouldBe draftId3
+            result.items[2].emailAddressId shouldBe emailAddressId
+            result.items[2].rfc822Data shouldBe unsealedRfc822Data
+            result.nextToken shouldBe null
 
             verify(mockEmailAddressService).get(
                 check {
                     it.id shouldBe emailAddressId
                 },
             )
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId, null, null)
             verify(mockGetDraftEmailMessageUseCase).execute(
                 check {
                     it.draftId shouldBe draftId1
@@ -177,15 +182,17 @@ class ListDraftEmailMessagesForEmailAddressIdUseCaseTest : BaseTests() {
     fun `execute() should return empty list when no drafts exist`() =
         runTest {
             mockDraftEmailMessageService.stub {
-                onBlocking { listMetadataForEmailAddressId(any()) } doReturn emptyList()
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(emptyList(), null)
             }
 
             val result = useCase.execute(emailAddressId)
 
-            result shouldBe emptyList()
+            result.items shouldBe emptyList()
+            result.nextToken shouldBe null
 
             verify(mockEmailAddressService).get(any())
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId, null, null)
         }
 
     @Test
@@ -221,18 +228,20 @@ class ListDraftEmailMessagesForEmailAddressIdUseCaseTest : BaseTests() {
                 )
 
             mockDraftEmailMessageService.stub {
-                onBlocking { listMetadataForEmailAddressId(any()) } doReturn singleDraft
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(singleDraft, null)
             }
 
             val result = useCase.execute(emailAddressId)
 
-            result.size shouldBe 1
-            result[0].id shouldBe draftId1
-            result[0].emailAddressId shouldBe emailAddressId
-            result[0].rfc822Data shouldBe unsealedRfc822Data
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe draftId1
+            result.items[0].emailAddressId shouldBe emailAddressId
+            result.items[0].rfc822Data shouldBe unsealedRfc822Data
+            result.nextToken shouldBe null
 
             verify(mockEmailAddressService).get(any())
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId, null, null)
             verify(mockGetDraftEmailMessageUseCase, times(singleDraft.size)).execute(
                 check {
                     it.draftId shouldBe draftId1
@@ -253,12 +262,152 @@ class ListDraftEmailMessagesForEmailAddressIdUseCaseTest : BaseTests() {
             }
 
             verify(mockEmailAddressService).get(any())
-            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId)
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId, null, null)
             verify(mockGetDraftEmailMessageUseCase).execute(
                 check {
                     it.draftId shouldBe draftId1
                     it.emailAddressId shouldBe emailAddressId
                 },
             )
+        }
+
+    @Test
+    fun `execute() should pass limit parameter to draft service`() =
+        runTest {
+            val limit = 5
+
+            val result = useCase.execute(emailAddressId, limit = limit)
+
+            result.items.size shouldBe 3
+            result.nextToken shouldBe null
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(
+                check { it shouldBe emailAddressId },
+                check { it shouldBe limit },
+                isNull(),
+            )
+            verify(mockGetDraftEmailMessageUseCase, times(3)).execute(any())
+        }
+
+    @Test
+    fun `execute() should pass nextToken parameter to draft service`() =
+        runTest {
+            val nextToken = "token123"
+
+            val result = useCase.execute(emailAddressId, nextToken = nextToken)
+
+            result.items.size shouldBe 3
+            result.nextToken shouldBe null
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(
+                check { it shouldBe emailAddressId },
+                isNull(),
+                check { it shouldBe nextToken },
+            )
+            verify(mockGetDraftEmailMessageUseCase, times(3)).execute(any())
+        }
+
+    @Test
+    fun `execute() should pass both limit and nextToken to draft service`() =
+        runTest {
+            val limit = 10
+            val nextToken = "token456"
+
+            val result = useCase.execute(emailAddressId, limit = limit, nextToken = nextToken)
+
+            result.items.size shouldBe 3
+            result.nextToken shouldBe null
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(
+                check { it shouldBe emailAddressId },
+                check { it shouldBe limit },
+                check { it shouldBe nextToken },
+            )
+            verify(mockGetDraftEmailMessageUseCase, times(3)).execute(any())
+        }
+
+    @Test
+    fun `execute() should pass null for limit and nextToken when not provided`() =
+        runTest {
+            val result = useCase.execute(emailAddressId)
+
+            result.items.size shouldBe 3
+            result.nextToken shouldBe null
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(
+                check { it shouldBe emailAddressId },
+                isNull(),
+                isNull(),
+            )
+            verify(mockGetDraftEmailMessageUseCase, times(3)).execute(any())
+        }
+
+    @Test
+    fun `execute() should return nextToken from service`() =
+        runTest {
+            val expectedNextToken = "nextToken789"
+
+            mockDraftEmailMessageService.stub {
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(draftMessagesMetadata, expectedNextToken)
+            }
+
+            val result = useCase.execute(emailAddressId)
+
+            result.items.size shouldBe 3
+            result.nextToken shouldBe expectedNextToken
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId, null, null)
+            verify(mockGetDraftEmailMessageUseCase, times(3)).execute(any())
+        }
+
+    @Test
+    fun `execute() should handle pagination with limit returning nextToken`() =
+        runTest {
+            val limit = 2
+            val expectedNextToken = "paginationToken"
+            val limitedMetadata = draftMessagesMetadata.take(2)
+
+            mockDraftEmailMessageService.stub {
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(limitedMetadata, expectedNextToken)
+            }
+
+            val result = useCase.execute(emailAddressId, limit = limit)
+
+            result.items.size shouldBe 2
+            result.nextToken shouldBe expectedNextToken
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId, limit, null)
+            verify(mockGetDraftEmailMessageUseCase, times(2)).execute(any())
+        }
+
+    @Test
+    fun `execute() should handle pagination with nextToken for subsequent page`() =
+        runTest {
+            val limit = 2
+            val nextToken = "existingToken"
+            val subsequentMetadata = listOf(draftMessagesMetadata[2])
+
+            mockDraftEmailMessageService.stub {
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(subsequentMetadata, null)
+            }
+
+            val result = useCase.execute(emailAddressId, limit = limit, nextToken = nextToken)
+
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe draftId3
+            result.nextToken shouldBe null
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId, limit, nextToken)
+            verify(mockGetDraftEmailMessageUseCase, times(1)).execute(any())
         }
 }

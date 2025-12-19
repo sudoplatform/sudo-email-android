@@ -15,6 +15,7 @@ import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -127,8 +128,10 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
             result.status shouldBe BatchOperationStatus.SUCCESS
 
             val listDraftEmailMessagesResult =
-                emailClient.listDraftEmailMessageMetadataForEmailAddressId(emailAddress.id)
-            listDraftEmailMessagesResult.find { it.id == draftId } shouldBe null
+                emailClient.listDraftEmailMessageMetadataForEmailAddressId(
+                    ListDraftEmailMessageMetadataForEmailAddressIdInput(emailAddress.id, 1000),
+                )
+            listDraftEmailMessagesResult.items.find { it.id == draftId } shouldBe null
         }
 
     @Test

@@ -27,6 +27,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEma
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftMessageObjectMetadata
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.GetDraftEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.GetDraftEmailMessageResponse
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessageMetadataOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessagesWithContentItem
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListScheduledDraftMessagesForEmailAddressIdInputRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListScheduledDraftMessagesOutput
@@ -125,60 +126,32 @@ internal class GraphQLS3DraftEmailMessageService(
         )
     }
 
-    override suspend fun listMetadataForEmailAddressId(emailAddressId: String): List<DraftEmailMessageMetadataEntity> {
-        logger.debug("GraphQLS3DraftEmailMessageService: listDraftEmailMessageMetadataForEmailAddressId $emailAddressId")
+    override suspend fun listMetadataForEmailAddressId(
+        emailAddressId: String,
+        limit: Int?,
+        nextToken: String?,
+    ): ListDraftEmailMessageMetadataOutput {
+        logger.debug(
+            "GraphQLS3DraftEmailMessageService: listDraftEmailMessageMetadataForEmailAddressId $emailAddressId, limit: $limit, nextToken: $nextToken",
+        )
 
         try {
             val s3Key = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
-            val result = mutableListOf<DraftEmailMessageMetadataEntity>()
-            val objects = s3EmailClient.list(s3Key)
-            result.addAll(
-                objects.map {
+            val result = s3EmailClient.list(s3Key, limit, nextToken)
+
+            val items =
+                result.items.map {
                     DraftEmailMessageMetadataEntity(
                         it.key.substringAfterLast("/"),
                         emailAddressId,
                         it.lastModified,
                     )
-                },
+                }
+
+            return ListDraftEmailMessageMetadataOutput(
+                items = items,
+                nextToken = result.nextToken,
             )
-            return result
-        } catch (e: Throwable) {
-            logger.error(e.message)
-            throw ErrorTransformer.interpretEmailMessageException(e)
-        }
-    }
-
-    override suspend fun listForEmailAddressId(emailAddressId: String): List<ListDraftEmailMessagesWithContentItem> {
-        logger.debug("GraphQLS3DraftEmailMessageService: listDraftEmailMessagesForEmailAddressId $emailAddressId")
-
-        try {
-            val s3ListKey = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
-            val objects = s3EmailClient.list(s3ListKey)
-
-            return coroutineScope {
-                objects
-                    .map { obj ->
-                        async {
-                            val id = obj.key.substringAfterLast("/")
-                            val s3ItemKey = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, id)
-
-                            // Fetch metadata and data in parallel
-                            val metadataDeferred = async { getObjectMetadata(s3ItemKey) }
-                            val dataDeferred = async { s3EmailClient.download(s3ItemKey) }
-
-                            val objectMetadata = metadataDeferred.await()
-                            val sealedRfc822Data = dataDeferred.await()
-
-                            ListDraftEmailMessagesWithContentItem(
-                                id = id,
-                                emailAddressId = emailAddressId,
-                                rfc822Data = sealedRfc822Data,
-                                keyId = objectMetadata.keyId,
-                                updatedAt = objectMetadata.updatedAt,
-                            )
-                        }
-                    }.awaitAll()
-            }
         } catch (e: Throwable) {
             logger.error(e.message)
             throw ErrorTransformer.interpretEmailMessageException(e)

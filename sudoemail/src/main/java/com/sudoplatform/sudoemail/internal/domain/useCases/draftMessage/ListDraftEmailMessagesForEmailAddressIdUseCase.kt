@@ -9,7 +9,7 @@ package com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
-import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageWithContentEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessagesOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.GetEmailAddressRequest
 import com.sudoplatform.sudoemail.internal.util.EmailMessageDataProcessor
@@ -54,11 +54,19 @@ internal class ListDraftEmailMessagesForEmailAddressIdUseCase(
      * Executes the list draft email messages for email address ID use case.
      *
      * @param emailAddressId [String] The email address ID to list draft messages for.
-     * @return [List] of [DraftEmailMessageWithContentEntity] containing all draft messages.
+     * @param limit [Int] Optional maximum number of draft messages to return.
+     * @param nextToken [String] Optional token for pagination.
+     * @return [ListDraftEmailMessagesOutput] containing draft messages and optional next token.
      * @throws SudoEmailClient.EmailAddressException.EmailAddressNotFoundException if the email address is not found.
      */
-    suspend fun execute(emailAddressId: String): List<DraftEmailMessageWithContentEntity> {
-        logger.debug("ListDraftEmailMessagesForEmailAddressIdUseCase: Executing with emailAddressId: $emailAddressId")
+    suspend fun execute(
+        emailAddressId: String,
+        limit: Int? = null,
+        nextToken: String? = null,
+    ): ListDraftEmailMessagesOutput {
+        logger.debug(
+            "ListDraftEmailMessagesForEmailAddressIdUseCase: Executing with emailAddressId=$emailAddressId, limit=$limit, nextToken=$nextToken",
+        )
 
         if (emailAddressService.get(GetEmailAddressRequest(emailAddressId)) == null) {
             throw SudoEmailClient.EmailAddressException.EmailAddressNotFoundException(
@@ -66,19 +74,30 @@ internal class ListDraftEmailMessagesForEmailAddressIdUseCase(
             )
         }
 
-        val draftMessagesMetadata = draftEmailMessageService.listMetadataForEmailAddressId(emailAddressId)
+        val draftMessagesMetadata =
+            draftEmailMessageService.listMetadataForEmailAddressId(
+                emailAddressId = emailAddressId,
+                limit = limit,
+                nextToken = nextToken,
+            )
 
-        return coroutineScope {
-            draftMessagesMetadata.map { metadata ->
-                async {
-                    getDraftEmailMessageUseCase.execute(
-                        GetDraftEmailMessageUseCaseInput(
-                            draftId = metadata.id,
-                            emailAddressId = emailAddressId,
-                        ),
-                    )
+        val draftMessages =
+            coroutineScope {
+                draftMessagesMetadata.items.map { metadata ->
+                    async {
+                        getDraftEmailMessageUseCase.execute(
+                            GetDraftEmailMessageUseCaseInput(
+                                draftId = metadata.id,
+                                emailAddressId = emailAddressId,
+                            ),
+                        )
+                    }
                 }
-            }
-        }.awaitAll()
+            }.awaitAll()
+
+        return ListDraftEmailMessagesOutput(
+            items = draftMessages,
+            nextToken = draftMessagesMetadata.nextToken,
+        )
     }
 }

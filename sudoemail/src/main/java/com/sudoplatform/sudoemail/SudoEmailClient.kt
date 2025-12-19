@@ -52,6 +52,8 @@ import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageWithBodyInput
+import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
@@ -1001,19 +1003,25 @@ interface SudoEmailClient : AutoCloseable {
      *
      * @throws [EmailMessageException].
      */
+    @Deprecated(
+        "Use listDraftEmailMessagesForEmailAddressId instead to retrieve draft email messages",
+        ReplaceWith("listDraftEmailMessagesForEmailAddressId(input)"),
+    )
     @Throws(EmailMessageException::class)
     suspend fun listDraftEmailMessages(): List<DraftEmailMessageWithContent>
 
     /**
-     * Lists the metadata and content of all draft messages for the specified email address identifier.
+     * Lists the metadata and content of draft messages for the specified email address identifier with pagination support.
      *
-     * @param emailAddressId [String] The identifier of the email address associated with the draft email messages.
-     * @return List of [DraftEmailMessageWithContent].
+     * @param input [ListDraftEmailMessagesForEmailAddressIdInput] The input object containing the email address ID and pagination parameters.
+     * @return [ListOutput] containing the list of [DraftEmailMessageWithContent] and optional next token.
      *
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun listDraftEmailMessagesForEmailAddressId(emailAddressId: String): List<DraftEmailMessageWithContent>
+    suspend fun listDraftEmailMessagesForEmailAddressId(
+        input: ListDraftEmailMessagesForEmailAddressIdInput,
+    ): ListOutput<DraftEmailMessageWithContent>
 
     /**
      * Lists the metadata of all draft messages for the user.
@@ -1022,19 +1030,24 @@ interface SudoEmailClient : AutoCloseable {
      *
      * @throws [EmailMessageException].
      */
+    @Deprecated(
+        "Use listDraftEmailMessagesMetadataFormEmailAddressId instead to retrieve draft email messages",
+        ReplaceWith("listDraftEmailMessageMetadataForEmailAddressId(input)"),
+    )
     @Throws(EmailMessageException::class)
     suspend fun listDraftEmailMessageMetadata(): List<DraftEmailMessageMetadata>
 
     /**
-     * Lists the metadata of all draft messages for the specified email address identifier.
+     * Lists the metadata of all draft messages for the specified email address identifier with pagination support.
      *
-     * @param emailAddressId [String] The identifier of the email address associated with the draft email messages.
-     * @return List of [DraftEmailMessageMetadata].
-     *
+     * @param input [ListDraftEmailMessageMetadataForEmailAddressIdInput] The input containing email address ID and pagination parameters.
+     * @return [ListOutput] The list of draft email message metadata with optional next token for pagination.
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun listDraftEmailMessageMetadataForEmailAddressId(emailAddressId: String): List<DraftEmailMessageMetadata>
+    suspend fun listDraftEmailMessageMetadataForEmailAddressId(
+        input: ListDraftEmailMessageMetadataForEmailAddressIdInput,
+    ): ListOutput<DraftEmailMessageMetadata>
 
     /**
      * Schedule a draft message to be sent at a specified time in the future.

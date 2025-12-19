@@ -7,9 +7,11 @@
 package com.sudoplatform.sudoemail
 
 import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessageMetadataOutput
 import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ListDraftEmailMessageMetadataForEmailAddressIdUseCase
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
+import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.async
@@ -19,8 +21,10 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
@@ -48,8 +52,12 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     private val mockUseCase by before {
         mock<ListDraftEmailMessageMetadataForEmailAddressIdUseCase>().stub {
             onBlocking {
-                execute(any())
-            } doReturn listOf(draftEmailMessageMetadataEntity1, draftEmailMessageMetadataEntity2)
+                execute(any(), anyOrNull(), anyOrNull())
+            } doReturn
+                ListDraftEmailMessageMetadataOutput(
+                    items = listOf(draftEmailMessageMetadataEntity1, draftEmailMessageMetadataEntity2),
+                    nextToken = null,
+                )
         }
     }
 
@@ -97,26 +105,32 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     fun `listDraftEmailMessageMetadataForEmailAddressId() should return a list of metadata for the email address`() =
         runTest {
             val emailAddressId = mockEmailAddressId
+            val input = ListDraftEmailMessageMetadataForEmailAddressIdInput(emailAddressId)
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessageMetadataForEmailAddressId(emailAddressId)
+                    client.listDraftEmailMessageMetadataForEmailAddressId(input)
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
-            result.size shouldBe 2
-            result[0].id shouldBe draftEmailMessageMetadataEntity1.id
-            result[0].emailAddressId shouldBe emailAddressId
-            result[1].id shouldBe draftEmailMessageMetadataEntity2.id
-            result[1].emailAddressId shouldBe emailAddressId
+            result.items.size shouldBe 2
+            result.items[0].id shouldBe draftEmailMessageMetadataEntity1.id
+            result.items[0].emailAddressId shouldBe emailAddressId
+            result.items[1].id shouldBe draftEmailMessageMetadataEntity2.id
+            result.items[1].emailAddressId shouldBe emailAddressId
+            result.nextToken shouldBe null
 
             verify(mockUseCaseFactory).createListDraftEmailMessageMetadataForEmailAddressIdUseCase()
             verify(mockUseCase).execute(
-                check { useCaseInput ->
-                    useCaseInput shouldBe emailAddressId
+                check { emailAddressIdArg ->
+                    emailAddressIdArg shouldBe emailAddressId
                 },
+                check { limitArg ->
+                    limitArg shouldBe 10
+                },
+                isNull(),
             )
         }
 
@@ -124,37 +138,49 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
     fun `listDraftEmailMessageMetadataForEmailAddressId() should return an empty list if no drafts found`() =
         runTest {
             val emailAddressId = mockEmailAddressId
+            val input = ListDraftEmailMessageMetadataForEmailAddressIdInput(emailAddressId)
 
             mockUseCase.stub {
                 onBlocking {
-                    execute(any())
-                } doReturn emptyList()
+                    execute(any(), anyOrNull(), anyOrNull())
+                } doReturn
+                    ListDraftEmailMessageMetadataOutput(
+                        items = emptyList(),
+                        nextToken = null,
+                    )
             }
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.listDraftEmailMessageMetadataForEmailAddressId(emailAddressId)
+                    client.listDraftEmailMessageMetadataForEmailAddressId(input)
                 }
 
             deferredResult.start()
             val result = deferredResult.await()
 
-            result.size shouldBe 0
+            result.items.size shouldBe 0
+            result.nextToken shouldBe null
 
             verify(mockUseCaseFactory).createListDraftEmailMessageMetadataForEmailAddressIdUseCase()
             verify(mockUseCase).execute(
-                check { useCaseInput ->
-                    useCaseInput shouldBe emailAddressId
+                check { emailAddressIdArg ->
+                    emailAddressIdArg shouldBe emailAddressId
                 },
+                check { limitArg ->
+                    limitArg shouldBe 10
+                },
+                isNull(),
             )
         }
 
     @Test
     fun `listDraftEmailMessageMetadataForEmailAddressId() should throw when use case throws`() =
         runTest {
+            val input = ListDraftEmailMessageMetadataForEmailAddressIdInput(emailAddressId)
+
             mockUseCase.stub {
                 onBlocking {
-                    execute(any())
+                    execute(any(), anyOrNull(), anyOrNull())
                 }.thenAnswer {
                     throw SudoEmailClient.EmailAddressException.EmailAddressNotFoundException("Mock")
                 }
@@ -163,7 +189,7 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
                     shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
-                        client.listDraftEmailMessageMetadataForEmailAddressId(emailAddressId)
+                        client.listDraftEmailMessageMetadataForEmailAddressId(input)
                     }
                 }
             deferredResult.start()
@@ -171,8 +197,61 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
 
             verify(mockUseCaseFactory).createListDraftEmailMessageMetadataForEmailAddressIdUseCase()
             verify(mockUseCase).execute(
-                check { useCaseInput ->
-                    useCaseInput shouldBe emailAddressId
+                check { emailAddressIdArg ->
+                    emailAddressIdArg shouldBe emailAddressId
+                },
+                check { limitArg ->
+                    limitArg shouldBe 10
+                },
+                isNull(),
+            )
+        }
+
+    @Test
+    fun `listDraftEmailMessageMetadataForEmailAddressId() should support pagination with limit and nextToken`() =
+        runTest {
+            val emailAddressId = mockEmailAddressId
+            val limit = 1
+            val nextToken = "token123"
+            val input =
+                ListDraftEmailMessageMetadataForEmailAddressIdInput(
+                    emailAddressId = emailAddressId,
+                    limit = limit,
+                    nextToken = nextToken,
+                )
+
+            mockUseCase.stub {
+                onBlocking {
+                    execute(any(), anyOrNull(), anyOrNull())
+                } doReturn
+                    ListDraftEmailMessageMetadataOutput(
+                        items = listOf(draftEmailMessageMetadataEntity1),
+                        nextToken = "nextToken456",
+                    )
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listDraftEmailMessageMetadataForEmailAddressId(input)
+                }
+
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result.items.size shouldBe 1
+            result.items[0].id shouldBe draftEmailMessageMetadataEntity1.id
+            result.nextToken shouldBe "nextToken456"
+
+            verify(mockUseCaseFactory).createListDraftEmailMessageMetadataForEmailAddressIdUseCase()
+            verify(mockUseCase).execute(
+                check { emailAddressIdArg ->
+                    emailAddressIdArg shouldBe emailAddressId
+                },
+                check { limitArg ->
+                    limitArg shouldBe limit
+                },
+                check { nextTokenArg ->
+                    nextTokenArg shouldBe nextToken
                 },
             )
         }

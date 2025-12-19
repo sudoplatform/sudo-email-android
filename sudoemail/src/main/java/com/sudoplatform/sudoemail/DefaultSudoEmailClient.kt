@@ -114,6 +114,8 @@ import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageWithBodyInput
+import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
@@ -738,6 +740,10 @@ internal class DefaultSudoEmailClient(
         return DraftEmailMessageTransformer.entityWithContentToApi(result)
     }
 
+    @Deprecated(
+        "Use listDraftEmailMessagesForEmailAddressId instead to retrieve draft email messages",
+        ReplaceWith("listDraftEmailMessagesForEmailAddressId(input)"),
+    )
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun listDraftEmailMessages(): List<DraftEmailMessageWithContent> {
         logger.debug("listDraftEmailMessages")
@@ -750,16 +756,30 @@ internal class DefaultSudoEmailClient(
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun listDraftEmailMessagesForEmailAddressId(emailAddressId: String): List<DraftEmailMessageWithContent> {
-        logger.debug("listDraftEmailMessagesForEmailAddressId for emailAddressId: $emailAddressId")
+    override suspend fun listDraftEmailMessagesForEmailAddressId(
+        input: ListDraftEmailMessagesForEmailAddressIdInput,
+    ): ListOutput<DraftEmailMessageWithContent> {
+        logger.debug("listDraftEmailMessagesForEmailAddressId input: $input")
 
         val useCase = useCaseFactory.createListDraftEmailMessagesForEmailAddressIdUseCase()
 
-        val result = useCase.execute(emailAddressId = emailAddressId)
+        val result =
+            useCase.execute(
+                emailAddressId = input.emailAddressId,
+                limit = input.limit,
+                nextToken = input.nextToken,
+            )
 
-        return result.map { DraftEmailMessageTransformer.entityWithContentToApi(it) }
+        return ListOutput(
+            items = result.items.map { DraftEmailMessageTransformer.entityWithContentToApi(it) },
+            nextToken = result.nextToken,
+        )
     }
 
+    @Deprecated(
+        "Use listDraftEmailMessagesMetadataFormEmailAddressId instead to retrieve draft email messages",
+        ReplaceWith("listDraftEmailMessageMetadataForEmailAddressId(input)"),
+    )
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun listDraftEmailMessageMetadata(): List<DraftEmailMessageMetadata> {
         logger.debug("listDraftEmailMessageMetadata")
@@ -772,14 +792,24 @@ internal class DefaultSudoEmailClient(
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun listDraftEmailMessageMetadataForEmailAddressId(emailAddressId: String): List<DraftEmailMessageMetadata> {
-        logger.debug("listDraftEmailMessageMetadataForEmailAddressId for emailAddressId: $emailAddressId")
+    override suspend fun listDraftEmailMessageMetadataForEmailAddressId(
+        input: ListDraftEmailMessageMetadataForEmailAddressIdInput,
+    ): ListOutput<DraftEmailMessageMetadata> {
+        logger.debug("listDraftEmailMessageMetadataForEmailAddressId input: $input")
 
         val useCase = useCaseFactory.createListDraftEmailMessageMetadataForEmailAddressIdUseCase()
 
-        val result = useCase.execute(emailAddressId)
+        val result =
+            useCase.execute(
+                emailAddressId = input.emailAddressId,
+                limit = input.limit,
+                nextToken = input.nextToken,
+            )
 
-        return result.map { DraftEmailMessageTransformer.draftMetadataEntityToApi(it) }
+        return ListOutput(
+            items = result.items.map { DraftEmailMessageTransformer.draftMetadataEntityToApi(it) },
+            nextToken = result.nextToken,
+        )
     }
 
     override suspend fun scheduleSendDraftMessage(input: ScheduleSendDraftMessageInput): ScheduledDraftMessage {
@@ -861,6 +891,10 @@ internal class DefaultSudoEmailClient(
         )
     }
 
+    @Deprecated(
+        "Use unblockEmailAddressesByHashedValue instead",
+        ReplaceWith("unblockEmailAddressesByHashedValue"),
+    )
     override suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String> {
         logger.debug("unblockEmailAddresses addresses: $addresses")
 

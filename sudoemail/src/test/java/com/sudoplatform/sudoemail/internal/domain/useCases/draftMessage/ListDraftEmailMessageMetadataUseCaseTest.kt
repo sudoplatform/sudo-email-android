@@ -10,6 +10,7 @@ import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageMetadataEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessageMetadataOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmailAddressesOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmailAddressesRequest
@@ -19,6 +20,7 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -82,9 +84,12 @@ class ListDraftEmailMessageMetadataUseCaseTest : BaseTests() {
 
     private val mockDraftEmailMessageService by before {
         mock<DraftEmailMessageService>().stub {
-            onBlocking { listMetadataForEmailAddressId(emailAddressId1) } doReturn draftMetadata1
-            onBlocking { listMetadataForEmailAddressId(emailAddressId2) } doReturn draftMetadata2
-            onBlocking { listMetadataForEmailAddressId(emailAddressId3) } doReturn draftMetadata3
+            onBlocking { listMetadataForEmailAddressId(emailAddressId1) } doReturn
+                ListDraftEmailMessageMetadataOutput(draftMetadata1, nextToken = null)
+            onBlocking { listMetadataForEmailAddressId(emailAddressId2) } doReturn
+                ListDraftEmailMessageMetadataOutput(draftMetadata2, nextToken = null)
+            onBlocking { listMetadataForEmailAddressId(emailAddressId3) } doReturn
+                ListDraftEmailMessageMetadataOutput(draftMetadata3, nextToken = null)
         }
     }
 
@@ -162,7 +167,8 @@ class ListDraftEmailMessageMetadataUseCaseTest : BaseTests() {
     fun `execute() should return empty list when no drafts exist for any email address`() =
         runTest {
             mockDraftEmailMessageService.stub {
-                onBlocking { listMetadataForEmailAddressId(any()) } doReturn emptyList()
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(emptyList(), null)
             }
 
             val result = useCase.execute()
@@ -170,24 +176,24 @@ class ListDraftEmailMessageMetadataUseCaseTest : BaseTests() {
             result shouldBe emptyList()
 
             verify(mockEmailAddressService).list(any())
-            verify(mockDraftEmailMessageService, times(3)).listMetadataForEmailAddressId(any())
+            verify(mockDraftEmailMessageService, times(3)).listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull())
         }
 
     @Test
     fun `execute() should handle pagination of email addresses`() =
         runTest {
             mockEmailAddressService.stub {
-                onBlocking { list(ListEmailAddressesRequest(nextToken = null, limit = 10)) } doReturn
+                onBlocking { list(ListEmailAddressesRequest(nextToken = null, limit = null)) } doReturn
                     ListEmailAddressesOutput(
                         items = listOf(mockEmailAddress1),
                         nextToken = "token1",
                     )
-                onBlocking { list(ListEmailAddressesRequest(nextToken = "token1", limit = 10)) } doReturn
+                onBlocking { list(ListEmailAddressesRequest(nextToken = "token1", limit = null)) } doReturn
                     ListEmailAddressesOutput(
                         items = listOf(mockEmailAddress2),
                         nextToken = "token2",
                     )
-                onBlocking { list(ListEmailAddressesRequest(nextToken = "token2", limit = 10)) } doReturn
+                onBlocking { list(ListEmailAddressesRequest(nextToken = "token2", limit = null)) } doReturn
                     ListEmailAddressesOutput(
                         items = listOf(mockEmailAddress3),
                         nextToken = null,
@@ -199,7 +205,7 @@ class ListDraftEmailMessageMetadataUseCaseTest : BaseTests() {
             result.size shouldBe 3
             result shouldBe draftMetadata1 + draftMetadata2 + draftMetadata3
 
-            verify(mockEmailAddressService, times(3)).list(any())
+            verify(mockEmailAddressService, times(1)).list(any())
             verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1)
             verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId2)
             verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId3)
@@ -268,17 +274,22 @@ class ListDraftEmailMessageMetadataUseCaseTest : BaseTests() {
             }
 
             mockDraftEmailMessageService.stub {
-                onBlocking { listMetadataForEmailAddressId(emailAddressId1) } doReturn draftMetadata1
-                onBlocking { listMetadataForEmailAddressId(emailAddressId2) } doReturn draftMetadata2
-                onBlocking { listMetadataForEmailAddressId(emailAddressId3) } doReturn draftMetadata3
-                onBlocking { listMetadataForEmailAddressId("emailAddressId4") } doReturn draftMetadata4
-                onBlocking { listMetadataForEmailAddressId("emailAddressId5") } doReturn draftMetadata5
+                onBlocking { listMetadataForEmailAddressId(emailAddressId1) } doReturn
+                    ListDraftEmailMessageMetadataOutput(draftMetadata1, nextToken = null)
+                onBlocking { listMetadataForEmailAddressId(emailAddressId2) } doReturn
+                    ListDraftEmailMessageMetadataOutput(draftMetadata2, nextToken = null)
+                onBlocking { listMetadataForEmailAddressId(emailAddressId3) } doReturn
+                    ListDraftEmailMessageMetadataOutput(draftMetadata3, nextToken = null)
+                onBlocking { listMetadataForEmailAddressId("emailAddressId4") } doReturn
+                    ListDraftEmailMessageMetadataOutput(draftMetadata4, nextToken = null)
+                onBlocking { listMetadataForEmailAddressId("emailAddressId5") } doReturn
+                    ListDraftEmailMessageMetadataOutput(draftMetadata5, nextToken = null)
             }
 
             val result = useCase.execute()
 
-            result.size shouldBe 6
             result shouldBe draftMetadata1 + draftMetadata2 + draftMetadata3 + draftMetadata4 + draftMetadata5
+            result.size shouldBe 6
 
             verify(mockEmailAddressService, times(2)).list(any())
             verify(mockDraftEmailMessageService).listMetadataForEmailAddressId(emailAddressId1)
@@ -336,7 +347,8 @@ class ListDraftEmailMessageMetadataUseCaseTest : BaseTests() {
             }
 
             mockDraftEmailMessageService.stub {
-                onBlocking { listMetadataForEmailAddressId(any()) } doReturn emptyList()
+                onBlocking { listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull()) } doReturn
+                    ListDraftEmailMessageMetadataOutput(emptyList(), null)
             }
 
             val result = useCase.execute()
@@ -344,7 +356,7 @@ class ListDraftEmailMessageMetadataUseCaseTest : BaseTests() {
             result shouldBe emptyList()
 
             verify(mockEmailAddressService).list(any())
-            verify(mockDraftEmailMessageService, times(50)).listMetadataForEmailAddressId(any())
+            verify(mockDraftEmailMessageService, times(50)).listMetadataForEmailAddressId(any(), anyOrNull(), anyOrNull())
         }
 
     @Test

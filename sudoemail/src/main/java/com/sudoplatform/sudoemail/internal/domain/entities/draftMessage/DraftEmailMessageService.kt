@@ -189,6 +189,28 @@ internal data class ListScheduledDraftMessagesOutput(
 )
 
 /**
+ * Output from listing draft email message metadata.
+ *
+ * @property items [List] The list of [DraftEmailMessageMetadataEntity]s.
+ * @property nextToken [String] Optional token for retrieving the next page of results.
+ */
+internal data class ListDraftEmailMessageMetadataOutput(
+    val items: List<DraftEmailMessageMetadataEntity>,
+    val nextToken: String?,
+)
+
+/**
+ * Output object containing the result of listing draft email messages with content.
+ *
+ * @property items [List] List of draft email messages with content.
+ * @property nextToken [String] Token to retrieve the next page of results, or null if no more pages.
+ */
+internal data class ListDraftEmailMessagesOutput(
+    val items: List<DraftEmailMessageWithContentEntity>,
+    val nextToken: String?,
+)
+
+/**
  * Service interface for managing draft email messages.
  *
  * Provides operations to save, retrieve, delete, schedule, and list draft email messages.
@@ -223,17 +245,15 @@ internal interface DraftEmailMessageService {
      * Lists draft email message metadata for a given email address ID.
      *
      * @param emailAddressId [String] The email address ID to list draft email message metadata.
-     * @return A [List] of [DraftEmailMessageMetadataEntity] for the specified email address ID.
+     * @param limit [Int] Optional limit for the number of results to return.
+     * @param nextToken [String] Optional token for pagination.
+     * @return [ListDraftEmailMessageMetadataOutput] The result containing the list of draft metadata and next token. When next token is not null additional records are available.
      */
-    suspend fun listMetadataForEmailAddressId(emailAddressId: String): List<DraftEmailMessageMetadataEntity>
-
-    /**
-     * Lists draft email messages with content for a given email address ID.
-     *
-     * @param emailAddressId [String] The email address ID to list draft email messages with content.
-     * @return A [List] of [ListDraftEmailMessagesWithContentItem] for the specified email address ID.
-     */
-    suspend fun listForEmailAddressId(emailAddressId: String): List<ListDraftEmailMessagesWithContentItem>
+    suspend fun listMetadataForEmailAddressId(
+        emailAddressId: String,
+        limit: Int? = null,
+        nextToken: String? = null,
+    ): ListDraftEmailMessageMetadataOutput
 
     /**
      * Retrieves draft message object metadata for a given S3 key.

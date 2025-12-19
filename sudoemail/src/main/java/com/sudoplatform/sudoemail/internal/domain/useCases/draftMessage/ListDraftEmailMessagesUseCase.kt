@@ -71,7 +71,7 @@ internal class ListDraftEmailMessagesUseCase(
         return coroutineScope {
             emailAddressIds
                 .map { emailAddressId ->
-                    draftEmailMessageService.listMetadataForEmailAddressId(emailAddressId)
+                    draftEmailMessageService.listMetadataForEmailAddressId(emailAddressId, 1000).items
                 }.flatten()
                 .map { metadata ->
                     getDraftEmailMessageUseCase.execute(

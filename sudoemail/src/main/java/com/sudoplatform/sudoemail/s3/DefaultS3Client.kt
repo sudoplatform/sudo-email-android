@@ -17,6 +17,7 @@ import com.amazonaws.services.s3.model.DeleteObjectRequest
 import com.amazonaws.services.s3.model.ListObjectsV2Request
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
+import com.sudoplatform.sudoemail.s3.types.S3ClientListResult
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -226,16 +227,28 @@ class DefaultS3Client(
         }
     }
 
-    override suspend fun list(prefix: String): List<S3ClientListOutput> {
+    override suspend fun list(
+        prefix: String,
+        limit: Int?,
+        nextToken: String?,
+    ): S3ClientListResult {
         val request = ListObjectsV2Request()
         val s3Key = this.constructS3KeyWithCredentials(prefix)
         request.bucketName = this.bucket
         request.prefix = s3Key
+        request.continuationToken = nextToken
+        request.maxKeys = limit ?: 10
         val response = this.amazonS3Client.listObjectsV2(request)
 
-        return response.objectSummaries.map {
-            S3ClientListOutput(it.key, it.lastModified)
-        }
+        val items =
+            response.objectSummaries.map {
+                S3ClientListOutput(it.key, it.lastModified)
+            }
+
+        return S3ClientListResult(
+            items = items,
+            nextToken = response.nextContinuationToken,
+        )
     }
 
     override suspend fun getObjectMetadata(key: String): ObjectMetadata {
