@@ -111,7 +111,7 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof, mixedCaseEmail = true)
             recipientAddress shouldNotBe null
             emailAddressList.add(recipientAddress)
             // Make sure display name has special characters that require encoding

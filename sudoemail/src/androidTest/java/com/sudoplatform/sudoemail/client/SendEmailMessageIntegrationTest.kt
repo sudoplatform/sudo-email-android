@@ -630,7 +630,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, mixedCaseEmail = true)
             receiverEmailAddress shouldNotBe null
             emailAddressList.add(receiverEmailAddress)
 
@@ -1244,7 +1244,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, mixedCaseEmail = true)
             receiverEmailAddress shouldNotBe null
             emailAddressList.add(receiverEmailAddress)
 

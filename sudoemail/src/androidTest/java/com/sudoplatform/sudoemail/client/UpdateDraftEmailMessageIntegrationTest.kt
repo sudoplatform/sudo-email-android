@@ -126,7 +126,7 @@ class UpdateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
-            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof, mixedCaseEmail = true)
             recipientAddress shouldNotBe null
             emailAddressList.add(recipientAddress)
 

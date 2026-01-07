@@ -99,8 +99,10 @@ abstract class BaseTests : PropertyResetter by ActualPropertyResetter() {
 
     // Common test email domains
     protected val mockInternalDomain = "internal.sudoplatform.com"
+    protected val mockMixedCaseInternalDomain = "InTeRnAl.SuDoPlAtFoRm.CoM"
     protected val mockExternalDomain = "sudoplatform.com"
     protected val mockSenderAddress = "sender@$mockInternalDomain"
     protected val mockExternalRecipientAddress = "recipient@$mockExternalDomain"
     protected val mockInternalRecipientAddress = "recipient@$mockInternalDomain"
+    protected val mockMixedCaseInternalRecipientAddress = "rEcIpIeNt@$mockMixedCaseInternalDomain"
 }

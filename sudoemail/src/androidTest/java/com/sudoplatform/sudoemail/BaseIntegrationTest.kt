@@ -295,6 +295,7 @@ abstract class BaseIntegrationTest {
         alias: String? = null,
         keyId: String? = null,
         prefix: String? = null,
+        mixedCaseEmail: Boolean? = false,
     ): EmailAddress {
         val emailDomains = client.getSupportedEmailDomains()
         emailDomains.size shouldBeGreaterThanOrEqual 1
@@ -308,7 +309,24 @@ abstract class BaseIntegrationTest {
                 alias = alias,
                 keyId = keyId,
             )
-        return client.provisionEmailAddress(provisionInput)
+        val provisionedEmailAddress = client.provisionEmailAddress(provisionInput)
+        if (mixedCaseEmail != true) {
+            return provisionedEmailAddress
+        }
+        return EmailAddress(
+            provisionedEmailAddress.id,
+            provisionedEmailAddress.owner,
+            provisionedEmailAddress.owners,
+            everySecondCharToUpper(provisionedEmailAddress.emailAddress),
+            provisionedEmailAddress.size,
+            provisionedEmailAddress.numberOfEmailMessages,
+            provisionedEmailAddress.version,
+            provisionedEmailAddress.createdAt,
+            provisionedEmailAddress.updatedAt,
+            provisionedEmailAddress.lastReceivedAt,
+            provisionedEmailAddress.alias,
+            provisionedEmailAddress.folders,
+        )
     }
 
     protected suspend fun sendEmailMessage(
@@ -650,4 +668,7 @@ abstract class BaseIntegrationTest {
         response.id shouldBe draftId
         return draftId
     }
+
+    protected fun everySecondCharToUpper(s: String): String =
+        s.mapIndexed { i, c -> if (i % 2 == 1) c.uppercaseChar() else c }.joinToString("")
 }

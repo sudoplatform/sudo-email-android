@@ -118,7 +118,7 @@ internal class SaveDraftEmailMessageUseCase(
                 allRecipients.isNotEmpty() &&
                     allRecipients.all { recipient ->
                         domains.any { domain ->
-                            recipient.contains(domain)
+                            recipient.lowercase().contains(domain)
                         }
                     }
 

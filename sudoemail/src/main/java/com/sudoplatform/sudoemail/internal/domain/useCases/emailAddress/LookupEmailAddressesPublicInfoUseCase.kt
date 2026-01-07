@@ -24,14 +24,19 @@ internal class LookupEmailAddressesPublicInfoUseCase(
 ) {
     suspend fun execute(input: LookupEmailAddressesPublicInfoUseCaseInput): List<EmailAddressPublicInfoEntity> {
         logger.debug("LookupEmailAddressesPublicInfoUseCase: executing with input: $input")
+        val safeInput =
+            LookupEmailAddressesPublicInfoUseCaseInput(
+                input.addresses.map { it.lowercase() },
+                input.throwIfNotAllInternal,
+            )
         val lookupPublicInfoRequest =
             LookupEmailAddressesPublicInfoRequest(
-                emailAddresses = input.addresses,
+                emailAddresses = safeInput.addresses,
             )
         val emailAddressesPublicInfo = emailAddressService.lookupPublicInfo(lookupPublicInfoRequest)
 
-        if (input.throwIfNotAllInternal &&
-            !input.addresses.all { recipient ->
+        if (safeInput.throwIfNotAllInternal &&
+            !safeInput.addresses.all { recipient ->
                 emailAddressesPublicInfo.any { info -> info.emailAddress == recipient }
             }
         ) {

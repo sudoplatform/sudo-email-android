@@ -51,6 +51,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             mockEmailMessageId,
         )
     private val internalDomain = "internal.example.com"
+    private val mixedCaseInternalDomain = "InTeRnAl.ExAmPlE.CoM"
     private val externalDomain = "external.com"
     private val region = "us-east-1"
     private val transientBucket = "transient-bucket"
@@ -208,6 +209,57 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                 InternetMessageFormatHeaderEntity(
                     from = EmailMessageAddressEntity("sender@$internalDomain"),
                     to = listOf(EmailMessageAddressEntity("recipient@$internalDomain")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val input =
+                SendEmailMessageUseCaseInput(
+                    senderEmailAddressId = mockEmailAddressId,
+                    emailMessageHeader = header,
+                    body = "Test body",
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldNotBe null
+            result.id shouldBe sendResult.id
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockEmailAddressService).lookupPublicInfo(any())
+            verify(mockEmailMessageDataProcessor).processMessageData(
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockEmailMessageService).sendEncrypted(
+                check { serviceInput ->
+                    serviceInput.emailAddressId shouldBe mockEmailAddressId
+                    serviceInput.s3ObjectKey shouldBe mockS3Key
+                    serviceInput.region shouldBe region
+                    serviceInput.transientBucket shouldBe transientBucket
+                    serviceInput.emailMessageHeader shouldBe header
+                    serviceInput.inlineAttachments shouldBe emptyList()
+                    serviceInput.attachments shouldBe emptyList()
+                    serviceInput.forwardingMessageId shouldBe null
+                    serviceInput.replyingMessageId shouldBe null
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should identify mixed-cased internal recipients as internal and send in-network email`() =
+        runTest {
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("sender@$internalDomain"),
+                    to = listOf(EmailMessageAddressEntity("rEcIpIeNt@$mixedCaseInternalDomain")),
                     cc = emptyList(),
                     bcc = emptyList(),
                     replyTo = emptyList(),

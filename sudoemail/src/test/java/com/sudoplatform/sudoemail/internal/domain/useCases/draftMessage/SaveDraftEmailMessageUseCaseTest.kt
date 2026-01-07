@@ -90,6 +90,19 @@ class SaveDraftEmailMessageUseCaseTest : BaseTests() {
             inlineAttachments = emptyList(),
         )
     }
+    private val mockInternalMixedCaseEmailMessage by before {
+        SimplifiedEmailMessageEntity(
+            from = listOf(mockSenderAddress),
+            to = listOf(mockMixedCaseInternalRecipientAddress),
+            cc = emptyList(),
+            bcc = emptyList(),
+            subject = "Test Subject",
+            body = "Test Body",
+            isHtml = false,
+            attachments = emptyList(),
+            inlineAttachments = emptyList(),
+        )
+    }
 
     private val publicInfoEntities by before {
         listOf(
@@ -276,6 +289,46 @@ class SaveDraftEmailMessageUseCaseTest : BaseTests() {
         }
 
     @Test
+    fun `execute() should treat mixed-case internal recipients as internal and save internal draft with encryption and return s3Key`() =
+        runTest {
+            mockEmailMessageDataProcessor.stub {
+                on { parseInternetMessageData(any()) } doReturn mockInternalMixedCaseEmailMessage
+                onBlocking {
+                    processMessageData(
+                        any(),
+                        any(),
+                        any(),
+                    )
+                } doReturn rfc822Data
+            }
+
+            val input =
+                SaveDraftEmailMessageUseCaseInput(
+                    rfc822Data = rfc822Data,
+                    symmetricKeyId = mockSymmetricKeyId,
+                    s3Key = "s3Key",
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe "s3Key"
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockEmailMessageDataProcessor).parseInternetMessageData(rfc822Data)
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockLookupEmailAddressesPublicInfoUseCase).execute(any())
+            verify(mockEmailMessageDataProcessor).processMessageData(any(), any(), any())
+            verify(mockSealingService).sealString(any(), any())
+            verify(mockDraftEmailMessageService).save(
+                check {
+                    it.uploadData shouldBe Base64.encodeBase64(mockSealedData)
+                    it.s3Key shouldBe "s3Key"
+                    it.metadataObject[StringConstants.DRAFT_METADATA_KEY_ID_NAME] shouldBe mockSymmetricKeyId
+                },
+            )
+        }
+
+    @Test
     fun `execute() should throw when internal recipient limit exceeded`() =
         runTest {
             val tooManyRecipients =
@@ -363,6 +416,68 @@ class SaveDraftEmailMessageUseCaseTest : BaseTests() {
                     to = listOf(mockInternalRecipientAddress),
                     cc = listOf("cc@$mockInternalDomain"),
                     bcc = listOf("bcc@$mockInternalDomain"),
+                    subject = "Test Subject",
+                    body = "Test Body",
+                    isHtml = false,
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                )
+
+            mockEmailMessageDataProcessor.stub {
+                on { parseInternetMessageData(any()) } doReturn mockInternalMixedMessage
+                onBlocking {
+                    processMessageData(
+                        any(),
+                        any(),
+                        any(),
+                    )
+                } doReturn rfc822Data
+            }
+
+            mockLookupEmailAddressesPublicInfoUseCase.stub {
+                onBlocking {
+                    execute(
+                        any(),
+                    )
+                } doAnswer {
+                    listOf(
+                        EntityDataFactory.getEmailAddressPublicInfoEntity(emailAddress = mockSenderAddress),
+                        EntityDataFactory.getEmailAddressPublicInfoEntity(emailAddress = mockInternalRecipientAddress),
+                        EntityDataFactory.getEmailAddressPublicInfoEntity(emailAddress = "cc@$mockInternalDomain"),
+                        EntityDataFactory.getEmailAddressPublicInfoEntity(emailAddress = "bcc@$mockInternalDomain"),
+                    )
+                }
+            }
+
+            val input =
+                SaveDraftEmailMessageUseCaseInput(
+                    rfc822Data = rfc822Data,
+                    symmetricKeyId = mockSymmetricKeyId,
+                    s3Key = "s3Key",
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe "s3Key"
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockEmailMessageDataProcessor).parseInternetMessageData(rfc822Data)
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockLookupEmailAddressesPublicInfoUseCase).execute(any())
+            verify(mockEmailMessageDataProcessor).processMessageData(any(), any(), any())
+            verify(mockSealingService).sealString(any(), any())
+            verify(mockDraftEmailMessageService).save(any())
+        }
+
+    @Test
+    fun `execute() should handle mixed-case internal recipients with cc and bcc`() =
+        runTest {
+            val mockInternalMixedMessage =
+                SimplifiedEmailMessageEntity(
+                    from = listOf(mockSenderAddress),
+                    to = listOf(mockInternalRecipientAddress),
+                    cc = listOf("cC@$mockMixedCaseInternalDomain"),
+                    bcc = listOf("Bcc@$mockMixedCaseInternalDomain"),
                     subject = "Test Subject",
                     body = "Test Body",
                     isHtml = false,
