@@ -1,4 +1,5 @@
 
+
 query GetKeyRingForEmail($keyRingId: String!, $limit: Int, $nextToken: String) {
   getKeyRingForEmail(
     keyRingId: $keyRingId
@@ -37,6 +38,12 @@ query GetConfiguredEmailDomains {
   getConfiguredEmailDomains {
     domains
   }
+}
+
+query GetEmailMaskDomains {
+    getEmailMaskDomains {
+        domains
+    }
 }
 
 query CheckEmailAddressAvailability(
@@ -127,6 +134,16 @@ query ListEmailMessagesForEmailFolderId(
     }
     nextToken
   }
+}
+
+
+query ListEmailMasksForOwner($input: ListEmailMasksForOwnerInput!) {
+    listEmailMasksForOwner(input: $input) {
+        items {
+            ...EmailMask
+        }
+        nextToken
+    }
 }
 
 query GetEmailAddressBlocklist($input: GetEmailAddressBlocklistInput!) {

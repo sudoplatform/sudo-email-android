@@ -28,7 +28,6 @@ import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftMes
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.GetDraftEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.GetDraftEmailMessageResponse
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessageMetadataOutput
-import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessagesWithContentItem
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListScheduledDraftMessagesForEmailAddressIdInputRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListScheduledDraftMessagesOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.SaveDraftEmailMessageRequest
@@ -38,9 +37,6 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteEm
 import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudologging.Logger
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 
 /**
  * Implementation of [DraftEmailMessageService] that uses S3 for storage and GraphQL API for scheduling.

@@ -27,6 +27,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmai
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmailAddressesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ProvisionEmailAddressRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyFormatEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UpdateEmailAddressMetadataRequest
 import com.sudoplatform.sudoemail.keys.KeyPair
 import io.kotlintest.shouldBe
@@ -64,12 +65,15 @@ class GraphQLEmailAddressServiceTest : BaseTests() {
     }
 
     private val keyPair by before {
-        KeyPair(
-            keyId = mockKeyId,
-            publicKey = "publicKey".toByteArray(),
-            keyRingId = "keyRingId",
-            privateKey = "privateKey".toByteArray(),
-        )
+        val mockKeyPair = mock<KeyPair>()
+        mockKeyPair.stub {
+            on { keyId } doReturn mockKeyId
+            on { keyRingId } doReturn "keyRingId"
+            on { publicKey } doReturn "publicKey".toByteArray()
+            on { privateKey } doReturn "privateKey".toByteArray()
+            on { getKeyFormat() } doReturn PublicKeyFormatEntity.RSA_PUBLIC_KEY
+        }
+        mockKeyPair
     }
 
     @After
@@ -799,7 +803,7 @@ class GraphQLEmailAddressServiceTest : BaseTests() {
         }
 
     @Test
-    fun `updateEmailAddressMetadata() should handle null alias`() =
+    fun `updateEmailAddressMetadata() should handle clearing alias`() =
         runTest {
             val emailAddressId = mockEmailAddressId
             val mutationResponse = DataFactory.updateEmailAddressMetadataMutationResponse(emailAddressId)
@@ -813,6 +817,7 @@ class GraphQLEmailAddressServiceTest : BaseTests() {
                 UpdateEmailAddressMetadataRequest(
                     id = emailAddressId,
                     alias = null,
+                    clearAlias = true,
                 )
 
             val result = instanceUnderTest.updateMetadata(request)
@@ -822,7 +827,7 @@ class GraphQLEmailAddressServiceTest : BaseTests() {
             verify(mockApiClient).updateEmailAddressMetadataMutation(
                 check { input ->
                     input.id shouldBe emailAddressId
-                    input.values.alias shouldBe Optional.absent()
+                    input.values.alias shouldBe Optional.present(null)
                 },
             )
         }

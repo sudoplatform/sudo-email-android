@@ -20,7 +20,7 @@ import com.sudoplatform.sudologging.Logger
  * Input for the update email address metadata use case.
  *
  * @property emailAddressId [String] The ID of the email address to update.
- * @property alias [String] Optional new alias for the email address (null to remove).
+ * @property alias [String] Optional new alias for the email address (empty string to remove).
  */
 internal data class UpdateEmailAddressMetadataUseCaseInput(
     val emailAddressId: String,
@@ -53,21 +53,26 @@ internal class UpdateEmailAddressMetadataUseCase(
     suspend fun execute(input: UpdateEmailAddressMetadataUseCaseInput): String {
         logger.debug("UpdateEmailAddressMetadataUseCase execute input: $input")
         try {
-            // Ensure symmetric key has been generated
-            val symmetricKeyId =
-                this.serviceKeyManager.getCurrentSymmetricKeyId()
-                    ?: throw KeyNotFoundException("Symmetric key not found")
-
+            var clearAlias = false
             val alias =
                 if (input.alias !== null) {
-                    val sealedAliasBytes = sealingService.sealString(symmetricKeyId, input.alias.toByteArray())
-                    val base64EncodedSealedData = String(Base64.encode(sealedAliasBytes), Charsets.UTF_8)
-                    SealedAttributeInput(
-                        algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                        keyId = symmetricKeyId,
-                        plainTextType = "string",
-                        base64EncodedSealedData = base64EncodedSealedData,
-                    )
+                    if (input.alias.isEmpty()) {
+                        clearAlias = true
+                        null
+                    } else {
+                        // Ensure symmetric key has been generated
+                        val symmetricKeyId =
+                            this.serviceKeyManager.getCurrentSymmetricKeyId()
+                                ?: throw KeyNotFoundException("Symmetric key not found")
+                        val sealedAliasBytes = sealingService.sealString(symmetricKeyId, input.alias.toByteArray())
+                        val base64EncodedSealedData = String(Base64.encode(sealedAliasBytes), Charsets.UTF_8)
+                        SealedAttributeInput(
+                            algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
+                            keyId = symmetricKeyId,
+                            plainTextType = "string",
+                            base64EncodedSealedData = base64EncodedSealedData,
+                        )
+                    }
                 } else {
                     null
                 }
@@ -76,6 +81,7 @@ internal class UpdateEmailAddressMetadataUseCase(
                 UpdateEmailAddressMetadataRequest(
                     id = input.emailAddressId,
                     alias = alias,
+                    clearAlias = clearAlias,
                 )
 
             return emailAddressService.updateMetadata(updateEmailAddressMetadataRequest)

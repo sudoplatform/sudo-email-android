@@ -12,6 +12,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
+import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -51,6 +52,8 @@ class GetConfigurationDataIntegrationTest : BaseIntegrationTest() {
                 emailMessageMaxOutboundMessageSize shouldBeGreaterThanOrEqual 1
                 emailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
                 encryptedEmailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
+                externalEmailMasksEnabled shouldNotBe null
+                emailMasksEnabled shouldNotBe null
             }
         }
 }

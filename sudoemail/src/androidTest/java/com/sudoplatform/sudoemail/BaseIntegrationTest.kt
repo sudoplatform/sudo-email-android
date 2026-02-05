@@ -15,6 +15,7 @@ import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailFolder
+import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.ListAPIResult
@@ -28,6 +29,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressI
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
@@ -99,6 +101,8 @@ abstract class BaseIntegrationTest {
                 Entitlement("sudoplatform.email.emailMessageSendUserEntitled", "test", 1),
                 Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
                 Entitlement("sudoplatform.email.emailAddressMaxProvisionsExpendable", "test", 60),
+                Entitlement("sudoplatform.email.emailMaskUserEntitled", "test", 1),
+                Entitlement("sudoplatform.email.emailMaskMaxPerUser", "test", 100),
             )
 
         @JvmStatic
@@ -257,6 +261,8 @@ abstract class BaseIntegrationTest {
 
     protected suspend fun getEmailDomains(client: SudoEmailClient): List<String> = client.getSupportedEmailDomains()
 
+    protected suspend fun getMaskDomains(client: SudoEmailClient): List<String> = client.getEmailMaskDomains()
+
     protected fun generateSafeLocalPart(prefix: String? = null): String {
         val safePrefix = prefix ?: "safe-"
         val safeMap =
@@ -327,6 +333,27 @@ abstract class BaseIntegrationTest {
             provisionedEmailAddress.alias,
             provisionedEmailAddress.folders,
         )
+    }
+
+    // Helper method to provision an email mask
+    protected suspend fun provisionEmailMask(
+        maskAddress: String,
+        realAddress: String,
+        ownershipProofToken: String,
+        metadata: Map<String, String>? = null,
+        expiresAt: Date? = null,
+        keyId: String? = null,
+    ): EmailMask {
+        val provisionInput =
+            ProvisionEmailMaskInput(
+                maskAddress = maskAddress,
+                realAddress = realAddress,
+                ownershipProofToken = ownershipProofToken,
+                metadata = metadata,
+                expiresAt = expiresAt,
+                keyId = keyId,
+            )
+        return emailClient.provisionEmailMask(provisionInput)
     }
 
     protected suspend fun sendEmailMessage(

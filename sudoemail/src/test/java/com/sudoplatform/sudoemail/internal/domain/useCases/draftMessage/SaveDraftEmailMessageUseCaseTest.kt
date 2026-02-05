@@ -60,6 +60,8 @@ class SaveDraftEmailMessageUseCaseTest : BaseTests() {
             emailMessageRecipientsLimit = 10,
             encryptedEmailMessageRecipientsLimit = 10,
             prohibitedFileExtensions = emptyList(),
+            emailMasksEnabled = true,
+            externalEmailMasksEnabled = true,
         )
     }
 

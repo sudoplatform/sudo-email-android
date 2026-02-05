@@ -11,6 +11,7 @@ package com.sudoplatform.sudoemail.types.inputs
  *
  * @property id [String] The identifier of the email address to update.
  * @property alias [String] An optional user defined alias name for the the email address.
+ *  Pass the empty string to clear this property.
  */
 data class UpdateEmailAddressMetadataInput(
     val id: String,

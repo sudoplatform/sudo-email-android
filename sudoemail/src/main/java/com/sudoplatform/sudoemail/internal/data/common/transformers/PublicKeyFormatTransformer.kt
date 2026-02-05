@@ -39,4 +39,17 @@ internal object PublicKeyFormatTransformer {
             PublicKeyFormatEntity.RSA_PUBLIC_KEY -> KeyManagerInterface.PublicKeyFormat.RSA_PUBLIC_KEY
             PublicKeyFormatEntity.SPKI -> KeyManagerInterface.PublicKeyFormat.SPKI
         }
+
+    /**
+     * Transform the public [PublicKeyFormatEntity] entity type to the equivalent graphQL type
+     * suitable for transmission.
+     *
+     * @param format [PublicKeyFormatEntity] The public key format type.
+     * @return The [com.sudoplatform.sudoemail.graphql.type.KeyFormat] type.
+     */
+    fun toGraphQLType(format: PublicKeyFormatEntity): KeyFormat =
+        when (format) {
+            PublicKeyFormatEntity.RSA_PUBLIC_KEY -> KeyFormat.RSA_PUBLIC_KEY
+            PublicKeyFormatEntity.SPKI -> KeyFormat.SPKI
+        }
 }

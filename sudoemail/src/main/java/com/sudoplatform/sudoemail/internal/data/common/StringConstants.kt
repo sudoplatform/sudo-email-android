@@ -24,6 +24,7 @@ object StringConstants {
     /** Exception messages */
     const val UNSEAL_EMAIL_ADDRESS_ERROR_MSG = "Unable to unseal email address data"
     const val UNSEAL_EMAIL_MSG_ERROR_MSG = "Unable to unseal email message data"
+    const val UNSEAL_EMAIL_MASK_ERROR_MSG = "Unable to unseal email mask data"
     const val KEY_GENERATION_ERROR_MSG = "Failed to generate a public key pair"
     const val KEY_ARCHIVE_ERROR_MSG = "Unable to perform key archive operation"
     const val NO_EMAIL_ADDRESS_ERROR_MSG = "No email address returned"
@@ -57,6 +58,10 @@ object StringConstants {
     const val SERVICE_QUOTA_EXCEEDED_ERROR_MSG = "Daily message quota limit exceeded"
     const val RECORD_NOT_FOUND_ERROR_MSG = "Record not found"
 
+    const val EMAIL_MASK_NOT_FOUND_MSG = "Email mask not found"
+    const val EMAIL_MASK_ALREADY_EXISTS_MSG = "Email mask already exists"
+    const val EMAIL_MASK_LOCKED_MSG = "Email mask locked"
+
     const val KEY_NOT_FOUND_ERROR = "Key not found"
     const val DECODE_ERROR = "Could not decode"
 
@@ -75,6 +80,10 @@ object StringConstants {
     const val ERROR_INSUFFICIENT_ENTITLEMENTS = "InsufficientEntitlementsError"
     const val ERROR_SERVICE_QUOTA_EXCEEDED = "ServiceQuotaExceededError"
     const val ERROR_RECORD_NOT_FOUND = "RecordNotFound"
+
+    const val ERROR_EMAIL_MASK_NOT_FOUND = "EmailMaskNotFound"
+    const val ERROR_EMAIL_MASK_ALREADY_EXISTS = "EmailMaskAlreadyExists"
+    const val ERROR_EMAIL_MASK_LOCKED = "EmailMaskLocked"
 
     const val UNKNOWN_ERROR_MSG = "An unknown error occurred"
 }

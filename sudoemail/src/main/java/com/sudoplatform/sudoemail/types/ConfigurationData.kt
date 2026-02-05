@@ -21,6 +21,8 @@ import kotlinx.parcelize.Parcelize
  *  email message.
  * @property prohibitedFileExtensions [List<String>] The set of file extensions which are not permitted to be sent
  *  as attachments.
+ * @property emailMasksEnabled [Boolean] Whether email masks are enabled.
+ * @property externalEmailMasksEnabled [Boolean] Whether external email masks are enabled.
  */
 @Parcelize
 data class ConfigurationData(
@@ -31,4 +33,6 @@ data class ConfigurationData(
     val emailMessageRecipientsLimit: Int,
     val encryptedEmailMessageRecipientsLimit: Int,
     val prohibitedFileExtensions: List<String>,
+    val emailMasksEnabled: Boolean,
+    val externalEmailMasksEnabled: Boolean,
 ) : Parcelable

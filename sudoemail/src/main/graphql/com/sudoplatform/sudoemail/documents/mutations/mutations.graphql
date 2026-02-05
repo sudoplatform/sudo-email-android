@@ -91,3 +91,34 @@ mutation CancelScheduledDraftMessage(
 ) {
   cancelScheduledDraftMessage(input: $input)
 }
+
+
+mutation ProvisionEmailMask($input: ProvisionEmailMaskInput!) {
+    provisionEmailMask(input: $input) {
+        ...EmailMask
+    }
+}
+
+mutation DeprovisionEmailMask($input: DeprovisionEmailMaskInput!) {
+    deprovisionEmailMask(input: $input) {
+        ...EmailMask
+    }
+}
+
+mutation UpdateEmailMask($input: UpdateEmailMaskInput!) {
+    updateEmailMask(input: $input) {
+        ...EmailMask
+    }
+}
+
+mutation EnableEmailMask($input: EnableEmailMaskInput!) {
+    enableEmailMask(input: $input) {
+        ...EmailMask
+    }
+}
+
+mutation DisableEmailMask($input: DisableEmailMaskInput!) {
+    disableEmailMask(input: $input) {
+        ...EmailMask
+    }
+}

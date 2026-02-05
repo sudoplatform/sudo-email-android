@@ -19,15 +19,20 @@ import com.sudoplatform.sudoemail.graphql.DeleteCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.DeleteMessagesByFolderIdMutation
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
+import com.sudoplatform.sudoemail.graphql.DeprovisionEmailMaskMutation
+import com.sudoplatform.sudoemail.graphql.DisableEmailMaskMutation
+import com.sudoplatform.sudoemail.graphql.EnableEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
+import com.sudoplatform.sudoemail.graphql.GetEmailMaskDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailMasksForOwnerQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
@@ -37,12 +42,14 @@ import com.sudoplatform.sudoemail.graphql.OnEmailMessageCreatedSubscription
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageDeletedSubscription
 import com.sudoplatform.sudoemail.graphql.OnEmailMessageUpdatedSubscription
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
+import com.sudoplatform.sudoemail.graphql.ProvisionEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.ScheduleSendDraftMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
+import com.sudoplatform.sudoemail.graphql.UpdateEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.CancelScheduledDraftMessageInput
@@ -52,22 +59,28 @@ import com.sudoplatform.sudoemail.graphql.type.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.graphql.type.DeleteEmailMessagesInput
 import com.sudoplatform.sudoemail.graphql.type.DeleteMessagesByFolderIdInput
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailAddressInput
+import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailMaskInput
+import com.sudoplatform.sudoemail.graphql.type.DisableEmailMaskInput
+import com.sudoplatform.sudoemail.graphql.type.EnableEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.GetEmailAddressBlocklistInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.graphql.type.ListEmailMasksForOwnerInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.graphql.type.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.graphql.type.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput
 import com.sudoplatform.sudoemail.graphql.type.SendEncryptedEmailMessageInput
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput
+import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.amplify.GraphQLClient
@@ -98,6 +111,12 @@ open class ApiClient(
     open suspend fun getConfiguredEmailDomainsQuery(): GraphQLResponse<GetConfiguredEmailDomainsQuery.Data> =
         this.graphQLClient.query<GetConfiguredEmailDomainsQuery, GetConfiguredEmailDomainsQuery.Data>(
             GetConfiguredEmailDomainsQuery.OPERATION_DOCUMENT,
+            emptyMap(),
+        )
+
+    open suspend fun getEmailMaskDomainsQuery(): GraphQLResponse<GetEmailMaskDomainsQuery.Data> =
+        this.graphQLClient.query<GetEmailMaskDomainsQuery, GetEmailMaskDomainsQuery.Data>(
+            GetEmailMaskDomainsQuery.OPERATION_DOCUMENT,
             emptyMap(),
         )
 
@@ -305,6 +324,43 @@ open class ApiClient(
             DeleteMessagesByFolderIdMutation.Data,
         >(
             DeleteMessagesByFolderIdMutation.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    // Email masks
+    open suspend fun provisionEmailMaskMutation(input: ProvisionEmailMaskInput): GraphQLResponse<ProvisionEmailMaskMutation.Data> =
+        graphQLClient.mutate<ProvisionEmailMaskMutation, ProvisionEmailMaskMutation.Data>(
+            ProvisionEmailMaskMutation.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun deprovisionEmailMaskMutation(input: DeprovisionEmailMaskInput): GraphQLResponse<DeprovisionEmailMaskMutation.Data> =
+        graphQLClient.mutate<DeprovisionEmailMaskMutation, DeprovisionEmailMaskMutation.Data>(
+            DeprovisionEmailMaskMutation.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun updateEmailMaskMutation(input: UpdateEmailMaskInput): GraphQLResponse<UpdateEmailMaskMutation.Data> =
+        graphQLClient.mutate<UpdateEmailMaskMutation, UpdateEmailMaskMutation.Data>(
+            UpdateEmailMaskMutation.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun enableEmailMaskMutation(input: EnableEmailMaskInput): GraphQLResponse<EnableEmailMaskMutation.Data> =
+        graphQLClient.mutate<EnableEmailMaskMutation, EnableEmailMaskMutation.Data>(
+            EnableEmailMaskMutation.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun disableEmailMaskMutation(input: DisableEmailMaskInput): GraphQLResponse<DisableEmailMaskMutation.Data> =
+        graphQLClient.mutate<DisableEmailMaskMutation, DisableEmailMaskMutation.Data>(
+            DisableEmailMaskMutation.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun listEmailMasksForOwnerQuery(input: ListEmailMasksForOwnerInput): GraphQLResponse<ListEmailMasksForOwnerQuery.Data> =
+        graphQLClient.query<ListEmailMasksForOwnerQuery, ListEmailMasksForOwnerQuery.Data>(
+            ListEmailMasksForOwnerQuery.OPERATION_DOCUMENT,
             mapOf("input" to input),
         )
 

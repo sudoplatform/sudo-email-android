@@ -15,6 +15,9 @@ import com.sudoplatform.sudoemail.graphql.DeleteCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.DeleteEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.DeleteMessagesByFolderIdMutation
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailAddressMutation
+import com.sudoplatform.sudoemail.graphql.DeprovisionEmailMaskMutation
+import com.sudoplatform.sudoemail.graphql.DisableEmailMaskMutation
+import com.sudoplatform.sudoemail.graphql.EnableEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.GetConfiguredEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
@@ -24,18 +27,21 @@ import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailMasksForOwnerQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
 import com.sudoplatform.sudoemail.graphql.ListScheduledDraftMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.LookupEmailAddressesPublicInfoQuery
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailAddressMutation
+import com.sudoplatform.sudoemail.graphql.ProvisionEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.ScheduleSendDraftMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
+import com.sudoplatform.sudoemail.graphql.UpdateEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
 import com.sudoplatform.sudoemail.graphql.fragment.BlockAddressesResult
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddress
@@ -44,6 +50,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicKey
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailConfigurationData
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
+import com.sudoplatform.sudoemail.graphql.fragment.EmailMask
 import com.sudoplatform.sudoemail.graphql.fragment.GetEmailAddressBlocklistResponse
 import com.sudoplatform.sudoemail.graphql.fragment.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
@@ -53,6 +60,8 @@ import com.sudoplatform.sudoemail.graphql.fragment.UnblockAddressesResult
 import com.sudoplatform.sudoemail.graphql.fragment.UpdateEmailMessagesResult
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesBulkUpdateStatus
 import com.sudoplatform.sudoemail.graphql.type.BlockedAddressAction
+import com.sudoplatform.sudoemail.graphql.type.EmailMaskRealAddressType
+import com.sudoplatform.sudoemail.graphql.type.EmailMaskStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
@@ -404,6 +413,8 @@ object DataFactory {
         emailMessageRecipientsLimit: Int = 5,
         encryptedEmailMessageRecipientsLimit: Int = 10,
         prohibitedFileExtensions: List<String> = listOf(".js", ".exe", ".lib"),
+        emailMasksEnabled: Boolean = true,
+        externalEmailMasksEnabled: Boolean = true,
     ): GraphQLResponse<GetEmailConfigQuery.Data> =
         GraphQLResponse<GetEmailConfigQuery.Data>(
             GetEmailConfigQuery.Data(
@@ -417,6 +428,8 @@ object DataFactory {
                         emailMessageRecipientsLimit,
                         encryptedEmailMessageRecipientsLimit,
                         prohibitedFileExtensions,
+                        emailMasksEnabled,
+                        externalEmailMasksEnabled,
                     ),
                 ),
             ),
@@ -737,6 +750,91 @@ object DataFactory {
             null,
         )
 
+    fun provisionEmailMaskMutationResponse(emailMask: EmailMask = getEmailMask()): GraphQLResponse<ProvisionEmailMaskMutation.Data> =
+        GraphQLResponse<ProvisionEmailMaskMutation.Data>(
+            ProvisionEmailMaskMutation.Data(
+                provisionEmailMask =
+                    ProvisionEmailMaskMutation.ProvisionEmailMask(
+                        __typename = "EmailMask",
+                        emailMask = emailMask,
+                    ),
+            ),
+            null,
+        )
+
+    fun deprovisionEmailMaskMutationResponse(emailMask: EmailMask = getEmailMask()): GraphQLResponse<DeprovisionEmailMaskMutation.Data> =
+        GraphQLResponse<DeprovisionEmailMaskMutation.Data>(
+            DeprovisionEmailMaskMutation.Data(
+                deprovisionEmailMask =
+                    DeprovisionEmailMaskMutation.DeprovisionEmailMask(
+                        __typename = "EmailMask",
+                        emailMask = emailMask,
+                    ),
+            ),
+            null,
+        )
+
+    fun updateEmailMaskMutationResponse(emailMask: EmailMask = getEmailMask()): GraphQLResponse<UpdateEmailMaskMutation.Data> =
+        GraphQLResponse<UpdateEmailMaskMutation.Data>(
+            UpdateEmailMaskMutation.Data(
+                updateEmailMask =
+                    UpdateEmailMaskMutation.UpdateEmailMask(
+                        __typename = "EmailMask",
+                        emailMask = emailMask,
+                    ),
+            ),
+            null,
+        )
+
+    fun enableEmailMaskMutationResponse(
+        emailMask: EmailMask = getEmailMask(status = EmailMaskStatus.ENABLED),
+    ): GraphQLResponse<EnableEmailMaskMutation.Data> =
+        GraphQLResponse<EnableEmailMaskMutation.Data>(
+            EnableEmailMaskMutation.Data(
+                enableEmailMask =
+                    EnableEmailMaskMutation.EnableEmailMask(
+                        __typename = "EmailMask",
+                        emailMask = emailMask,
+                    ),
+            ),
+            null,
+        )
+
+    fun disableEmailMaskMutationResponse(
+        emailMask: EmailMask = getEmailMask(status = EmailMaskStatus.DISABLED),
+    ): GraphQLResponse<DisableEmailMaskMutation.Data> =
+        GraphQLResponse<DisableEmailMaskMutation.Data>(
+            DisableEmailMaskMutation.Data(
+                disableEmailMask =
+                    DisableEmailMaskMutation.DisableEmailMask(
+                        __typename = "EmailMask",
+                        emailMask = emailMask,
+                    ),
+            ),
+            null,
+        )
+
+    fun listEmailMasksForOwnerQueryResponse(
+        emailMasks: List<EmailMask> = listOf(getEmailMask()),
+        nextToken: String? = null,
+    ): GraphQLResponse<ListEmailMasksForOwnerQuery.Data> =
+        GraphQLResponse<ListEmailMasksForOwnerQuery.Data>(
+            ListEmailMasksForOwnerQuery.Data(
+                listEmailMasksForOwner =
+                    ListEmailMasksForOwnerQuery.ListEmailMasksForOwner(
+                        items =
+                            emailMasks.map {
+                                ListEmailMasksForOwnerQuery.Item(
+                                    __typename = "EmailMask",
+                                    emailMask = it,
+                                )
+                            },
+                        nextToken = nextToken,
+                    ),
+            ),
+            null,
+        )
+
     fun scheduleSendDraftMessageMutationResponse(
         scheduledDraftMessage: ScheduledDraftMessage,
     ): GraphQLResponse<ScheduleSendDraftMessageMutation.Data> =
@@ -842,4 +940,42 @@ object DataFactory {
             ),
             null,
         )
+
+    fun getEmailMask(
+        id: String = "mockEmailMaskId",
+        owner: String = "mockOwner",
+        identityId: String = "mockIdentityId",
+        maskAddress: String = "mask@example.com",
+        realAddress: String = "real@example.com",
+        status: EmailMaskStatus = EmailMaskStatus.ENABLED,
+        realAddressType: EmailMaskRealAddressType = EmailMaskRealAddressType.EXTERNAL,
+        metadata: EmailMask.Metadata? = null,
+        expiresAtEpochSec: Int? = null,
+    ) = EmailMask(
+        id = id,
+        owner = owner,
+        owners =
+            listOf(
+                EmailMask.Owner(
+                    id = owner,
+                    issuer = "issuer",
+                ),
+            ),
+        identityId = identityId,
+        maskAddress = maskAddress,
+        realAddress = realAddress,
+        realAddressType = realAddressType,
+        status = status,
+        inboundReceived = 0,
+        inboundDelivered = 0,
+        outboundReceived = 0,
+        outboundDelivered = 0,
+        spamCount = 0,
+        virusCount = 0,
+        metadata = metadata,
+        expiresAtEpochSec = expiresAtEpochSec,
+        createdAtEpochMs = 1.0,
+        updatedAtEpochMs = 2.0,
+        version = 1,
+    )
 }

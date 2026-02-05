@@ -7,7 +7,6 @@
 package com.sudoplatform.sudoemail.s3
 
 import com.amazonaws.services.s3.model.ObjectMetadata
-import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudoemail.s3.types.S3ClientListResult
 
 /**

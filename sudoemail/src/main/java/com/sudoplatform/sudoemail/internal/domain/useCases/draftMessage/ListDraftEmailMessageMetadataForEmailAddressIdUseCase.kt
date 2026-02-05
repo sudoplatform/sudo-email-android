@@ -8,7 +8,6 @@ package com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage
 
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
-import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageMetadataEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.ListDraftEmailMessageMetadataOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService

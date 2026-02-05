@@ -17,10 +17,13 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.SealedEm
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UnsealedEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.SealedEmailFolderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.UnsealedEmailFolderEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.SealedEmailMaskEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.UnsealedEmailMaskEntity
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.util.Constants
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
+import org.json.JSONObject
 
 /**
  * Base class for unsealing (decrypting) entity types with sealed (encrypted) attributes.
@@ -150,5 +153,59 @@ internal class EmailAddressUnsealer(
         val folders = sealedEntity.folders.map { folderUnsealer.unseal(it) }
 
         return EmailAddressTransformer.toUnsealedEntity(sealedEntity, folders, alias)
+    }
+}
+
+internal class EmailMaskUnsealer(
+    override val deviceKeyManager: DeviceKeyManager,
+) : EntityUnsealer<SealedEmailMaskEntity, UnsealedEmailMaskEntity>() {
+    /**
+     * Unseals an email mask.
+     *
+     * @param sealedEntity [SealedEmailMaskEntity] The sealed email mask to unseal.
+     * @return [UnsealedEmailMaskEntity] The unsealed email mask.
+     */
+    override suspend fun unseal(sealedEntity: SealedEmailMaskEntity): UnsealedEmailMaskEntity {
+        val metadata =
+            sealedEntity.sealedMetadata?.let { sealedAttribute ->
+                val unsealed = unseal(sealedEntity.sealedMetadata)
+                val jsonObject = JSONObject(unsealed)
+
+                // Convert JSONObject to Map<String, String>
+                val metadata = mutableMapOf<String, String>()
+                val keys = jsonObject.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    val value =
+                        when (val obj = jsonObject.get(key)) {
+                            is String -> obj
+                            else -> obj.toString()
+                        }
+                    metadata[key] = value
+                }
+                metadata
+            }
+
+        return UnsealedEmailMaskEntity(
+            id = sealedEntity.id,
+            owner = sealedEntity.owner,
+            owners = sealedEntity.owners,
+            identityId = sealedEntity.identityId,
+            maskAddress = sealedEntity.maskAddress,
+            realAddress = sealedEntity.realAddress,
+            realAddressType = sealedEntity.realAddressType,
+            status = sealedEntity.status,
+            inboundReceived = sealedEntity.inboundReceived,
+            inboundDelivered = sealedEntity.inboundDelivered,
+            outboundReceived = sealedEntity.outboundReceived,
+            outboundDelivered = sealedEntity.outboundDelivered,
+            spamCount = sealedEntity.spamCount,
+            virusCount = sealedEntity.virusCount,
+            expiresAt = sealedEntity.expiresAt,
+            version = sealedEntity.version,
+            createdAt = sealedEntity.createdAt,
+            updatedAt = sealedEntity.updatedAt,
+            metadata = metadata,
+        )
     }
 }

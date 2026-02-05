@@ -53,6 +53,7 @@ internal data class CheckEmailAddressAvailabilityRequest(
 internal data class UpdateEmailAddressMetadataRequest(
     val id: String,
     val alias: SealedAttributeInput?,
+    val clearAlias: Boolean = false,
 )
 
 /**

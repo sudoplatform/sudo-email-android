@@ -44,6 +44,8 @@ internal object EntityDataFactory {
         emailMessageRecipientsLimit: Int = 5,
         encryptedEmailMessageRecipientsLimit: Int = 10,
         prohibitedFileExtensions: List<String> = listOf(".js", ".exe", ".lib"),
+        emailMasksEnabled: Boolean = true,
+        externalEmailMasksEnabled: Boolean = true,
     ) = ConfigurationDataEntity(
         deleteEmailMessagesLimit = deleteEmailMessagesLimit,
         updateEmailMessagesLimit = updateEmailMessagesLimit,
@@ -52,6 +54,8 @@ internal object EntityDataFactory {
         emailMessageRecipientsLimit = emailMessageRecipientsLimit,
         encryptedEmailMessageRecipientsLimit = encryptedEmailMessageRecipientsLimit,
         prohibitedFileExtensions = prohibitedFileExtensions,
+        emailMasksEnabled = emailMasksEnabled,
+        externalEmailMasksEnabled = externalEmailMasksEnabled,
     )
 
     fun getOwnerEntity(

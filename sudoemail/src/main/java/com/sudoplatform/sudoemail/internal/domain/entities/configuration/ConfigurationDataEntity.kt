@@ -24,6 +24,8 @@ import java.io.File
  *  email message.
  * @property prohibitedFileExtensions [List] The set of file extensions [String] which are not permitted to be sent
  *  as attachments.
+ * @property emailMasksEnabled [Boolean] Whether email masks are enabled.
+ * @property externalEmailMasksEnabled [Boolean] Whether external email masks are enabled.
  */
 @Parcelize
 internal data class ConfigurationDataEntity(
@@ -34,6 +36,8 @@ internal data class ConfigurationDataEntity(
     val emailMessageRecipientsLimit: Int,
     val encryptedEmailMessageRecipientsLimit: Int,
     val prohibitedFileExtensions: List<String>,
+    val emailMasksEnabled: Boolean,
+    val externalEmailMasksEnabled: Boolean,
 ) : Parcelable {
     fun verifyAttachmentValidity(
         attachments: List<EmailAttachmentEntity>,

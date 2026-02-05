@@ -86,4 +86,46 @@ class UpdateEmailAddressMetadataIntegrationTest : BaseIntegrationTest() {
             val updatedEmailAddress = emailClient.getEmailAddress(getAddressInput)
             updatedEmailAddress?.alias shouldBe "Alice Smith"
         }
+
+    @Test
+    fun updateEmailAddressMetadataShouldClearAlias() =
+        runTest {
+            val emailDomains = getEmailDomains(emailClient)
+            emailDomains.size shouldBeGreaterThanOrEqual 1
+
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val localPart = generateSafeLocalPart()
+            val emailAddress = localPart + "@" + emailDomains.first()
+            val aliasInput = "Original Alias"
+            val provisionInput =
+                ProvisionEmailAddressInput(
+                    emailAddress = emailAddress,
+                    ownershipProofToken = ownershipProof,
+                    alias = aliasInput,
+                )
+            val provisionedAddress = emailClient.provisionEmailAddress(provisionInput)
+            provisionedAddress shouldNotBe null
+            emailAddressList.add(provisionedAddress)
+            provisionedAddress.alias shouldBe aliasInput
+
+            // Clear the alias by setting it to the empty string
+            val updateInput =
+                UpdateEmailAddressMetadataInput(
+                    provisionedAddress.id,
+                    "",
+                )
+            val updatedAddressId = emailClient.updateEmailAddressMetadata(updateInput)
+
+            updatedAddressId shouldBe provisionedAddress.id
+
+            val getAddressInput = GetEmailAddressInput(updatedAddressId)
+            val updatedEmailAddress = emailClient.getEmailAddress(getAddressInput)
+            updatedEmailAddress?.alias shouldBe null
+        }
 }

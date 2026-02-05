@@ -151,6 +151,8 @@ fragment EmailConfigurationData on EmailConfigurationData {
     emailMessageRecipientsLimit
     encryptedEmailMessageRecipientsLimit
     prohibitedFileExtensions
+    emailMasksEnabled
+    externalEmailMasksEnabled
 }
 
 fragment BlockedAddress on BlockedEmailAddress {
@@ -206,4 +208,31 @@ fragment ScheduledDraftMessage on ScheduledDraftMessage {
     id
     issuer
   }
+}
+
+fragment EmailMask on EmailMask {
+    id
+    owner
+    owners {
+        id
+        issuer
+    }
+    identityId
+    maskAddress
+    realAddress
+    realAddressType
+    status
+    inboundReceived
+    inboundDelivered
+    outboundReceived
+    outboundDelivered
+    spamCount
+    virusCount
+    metadata {
+        ...SealedAttribute
+    }
+    expiresAtEpochSec
+    version
+    createdAtEpochMs
+    updatedAtEpochMs
 }

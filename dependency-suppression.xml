@@ -108,4 +108,25 @@
        <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
        <cve>CVE-2025-67735</cve>
    </suppress>
+   <suppress until="2026-06-30">
+      <notes><![CDATA[
+   file name: kotlin-android-extensions-runtime-2.2.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-android-extensions-runtime@.*$</packageUrl>
+      <cve>CVE-2025-29903</cve>
+   </suppress>
+   <suppress until="2026-06-30">
+      <notes><![CDATA[
+   file name: kotlin-parcelize-runtime-2.2.0.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-parcelize-runtime@.*$</packageUrl>
+      <cve>CVE-2025-29903</cve>
+   </suppress>
+   <suppress until="2026-06-30">
+      <notes><![CDATA[
+   file name: jakarta.mail-2.0.2.jar
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.sun\.mail/jakarta\.mail@.*$</packageUrl>
+      <cve>CVE-2025-7962</cve>
+   </suppress>
 </suppressions>

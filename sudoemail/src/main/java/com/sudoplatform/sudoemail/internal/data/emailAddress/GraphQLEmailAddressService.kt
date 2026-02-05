@@ -22,6 +22,7 @@ import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailAddressPublicKeyInp
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransformer
+import com.sudoplatform.sudoemail.internal.data.common.transformers.PublicKeyFormatTransformer
 import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressPublicInfoTransformer
 import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressTransformer
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.CheckEmailAddressAvailabilityRequest
@@ -87,6 +88,7 @@ internal class GraphQLEmailAddressService(
                 keyId = input.keyPair.keyId,
                 publicKey = Base64.encodeAsString(*input.keyPair.publicKey),
                 algorithm = "RSAEncryptionOAEPAESCBC",
+                keyFormat = Optional.presentIfNotNull(PublicKeyFormatTransformer.toGraphQLType(input.keyPair.getKeyFormat())),
             )
         val mutationInput =
             ProvisionEmailAddressInput(
@@ -161,9 +163,15 @@ internal class GraphQLEmailAddressService(
 
     override suspend fun updateMetadata(input: UpdateEmailAddressMetadataRequest): String {
         try {
+            val alias =
+                if (input.alias === null && input.clearAlias) {
+                    Optional.Present(null)
+                } else {
+                    Optional.presentIfNotNull(input.alias)
+                }
             val updateValuesInput =
                 EmailAddressMetadataUpdateValuesInput(
-                    alias = Optional.presentIfNotNull(input.alias),
+                    alias = alias,
                 )
             val mutationInput =
                 UpdateEmailAddressMetadataInput(

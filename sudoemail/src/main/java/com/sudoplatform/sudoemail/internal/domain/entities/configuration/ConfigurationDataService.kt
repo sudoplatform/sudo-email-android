@@ -32,4 +32,11 @@ internal interface ConfigurationDataService {
      * @return A [List] of email domain [String]s that have been configured.
      */
     suspend fun getConfiguredEmailDomains(): List<String>
+
+    /**
+     * Retrieves the list of email mask domains.
+     *
+     * @return a [List] of email mask domains that have been configured.
+     */
+    suspend fun getEmailMaskDomains(): List<String>
 }

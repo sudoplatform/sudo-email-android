@@ -85,4 +85,24 @@ internal class GraphQLConfigurationDataService(
             }
         }
     }
+
+    override suspend fun getEmailMaskDomains(): List<String> {
+        try {
+            val queryResponse = apiClient.getEmailMaskDomainsQuery()
+
+            if (queryResponse.hasErrors()) {
+                logger.error("error = ${queryResponse.errors}")
+                throw ErrorTransformer.interpretEmailDomainError(queryResponse.errors.first())
+            }
+            return queryResponse.data?.getEmailMaskDomains?.domains ?: emptyList()
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw ErrorTransformer.interpretEmailAddressException(e)
+            }
+        }
+    }
 }

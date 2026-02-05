@@ -11,6 +11,7 @@ import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.DefaultSudoEmailClient
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.api.ApiClient
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.EmailMaskService
 import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
@@ -76,6 +77,10 @@ class SudoEmailImportExportKeysTest : BaseTests() {
         mock<EmailCryptoService>()
     }
 
+    private val mockEmailMaskService by before {
+        mock<EmailMaskService>()
+    }
+
     private val mockUseCaseFactory by before {
         mock<UseCaseFactory>()
     }
@@ -89,6 +94,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             mockServiceKeyManager,
             mockSealingService,
             mockEmailCryptoService,
+            mockEmailMaskService,
             "region",
             "identityBucket",
             "transientBucket",

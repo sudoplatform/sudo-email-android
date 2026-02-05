@@ -28,6 +28,7 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailFolder
+import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
@@ -35,6 +36,7 @@ import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
+import com.sudoplatform.sudoemail.types.PartialEmailMask
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
@@ -47,6 +49,9 @@ import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.DisableEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.EnableEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
@@ -57,17 +62,20 @@ import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAdd
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailMasksForOwnerInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
+import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
@@ -444,6 +452,91 @@ interface SudoEmailClient : AutoCloseable {
     }
 
     /**
+     * Defines the exceptions for the email mask based methods.
+     *
+     * @property message [String] Accompanying message for the exception.
+     * @property cause [Throwable] The cause for the exception.
+     */
+    sealed class EmailMaskException(
+        message: String? = null,
+        cause: Throwable? = null,
+    ) : RuntimeException(message, cause) {
+        class FailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class InvalidArgumentException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class ProvisionFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class DeprovisionFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class UpdateFailedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class InvalidEmailAddressException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message, cause)
+
+        class UnavailableEmailAddressException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class EmailMaskAlreadyExistsException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class EmailMaskLockedException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class UnsealingException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class EmailMaskNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class PublicKeyException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class InsufficientEntitlementsException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class AuthenticationException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailMaskException(message = message, cause = cause)
+
+        class UnknownException(
+            cause: Throwable,
+        ) : EmailMaskException(cause = cause)
+    }
+
+    /**
      * Defines the exceptions for the email message based methods.
      *
      * @property message [String] Accompanying message for the exception.
@@ -586,6 +679,15 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailAddressException::class)
     suspend fun getConfiguredEmailDomains(): List<String>
+
+    /**
+     * Get a list of all of the email domains on which email masks may be provisioned.
+     *
+     * @return A list of all configured domains.
+     *
+     * @throws [EmailAddressException]
+     */
+    suspend fun getEmailMaskDomains(): List<String>
 
     /**
      * Check if an email address is available to be provisioned within a domain.
@@ -1156,6 +1258,54 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailCryptographicKeysException::class)
     suspend fun exportKeys(): ByteArray
+
+    /**
+     * Provisions a new email mask with the specified configuration.
+     *
+     * @param {ProvisionEmailMaskInput} input The input parameters for provisioning the email mask
+     * @returns {EmailMask} The newly created email mask
+     */
+    suspend fun provisionEmailMask(input: ProvisionEmailMaskInput): EmailMask
+
+    /**
+     * Deprovisions an existing email mask, permanently removing it from the system.
+     *
+     * @param {DeprovisionEmailMaskInput} input The input parameters for deprovisioning the email mask
+     * @returns {EmailMask} The deprovisioned email mask
+     */
+    suspend fun deprovisionEmailMask(input: DeprovisionEmailMaskInput): PartialEmailMask
+
+    /**
+     * Updates or clears the metadata or expiration date of an existing email mask.
+     *
+     * @param {UpdateEmailMaskInput} input The input parameters for updating the email mask
+     * @returns {EmailMask} A promise that resolves to the updated email mask
+     */
+    suspend fun updateEmailMask(input: UpdateEmailMaskInput): EmailMask
+
+    /**
+     * Enables a previously disabled email mask, allowing it to forward emails again.
+     *
+     * @param {EnableEmailMaskInput} input The input parameters for enabling the email mask
+     * @returns {EmailMask} A promise that resolves to the enabled email mask
+     */
+    suspend fun enableEmailMask(input: EnableEmailMaskInput): EmailMask
+
+    /**
+     * Disables an active email mask, preventing it from forwarding emails.
+     *
+     * @param {DisableEmailMaskInput} input The input parameters for disabling the email mask
+     * @returns {EmailMask} A promise that resolves to the disabled email mask
+     */
+    suspend fun disableEmailMask(input: DisableEmailMaskInput): EmailMask
+
+    /**
+     * Lists email masks owned by the current user, with optional filtering and pagination.
+     *
+     * @param {ListEmailMasksForOwnerInput} input The input parameters for filtering and pagination
+     * @returns {ListOutput<EmailMask>} A promise that resolves to a list of email masks and pagination info
+     */
+    suspend fun listEmailMasksForOwner(input: ListEmailMasksForOwnerInput): ListAPIResult<EmailMask, PartialEmailMask>
 
     /**
      * Subscribes to be notified of new and deleted [EmailMessage]s. Subscribing multiple

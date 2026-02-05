@@ -113,7 +113,7 @@ dependencies {
     implementation 'com.sudoplatform:sudokeymanager:9.0.0'
     implementation "com.sudoplatform:sudologging:6.0.0"
     implementation "com.sudoplatform:sudoconfigmanager:9.0.0"
-    implementation 'com.sudoplatform:sudouser:21.0.0'
+    implementation 'com.sudoplatform:sudouser:21.0.1'
     implementation 'com.sudoplatform:sudoapiclient:12.0.0'
     implementation 'com.sudoplatform:sudonotification:5.0.1'
 

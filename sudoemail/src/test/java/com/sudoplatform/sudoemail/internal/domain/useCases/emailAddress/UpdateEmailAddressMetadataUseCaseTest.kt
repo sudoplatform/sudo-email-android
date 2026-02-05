@@ -26,6 +26,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
@@ -118,7 +119,7 @@ class UpdateEmailAddressMetadataUseCaseTest : BaseTests() {
 
             result shouldBe emailAddressId
 
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockServiceKeyManager, times(0)).getCurrentSymmetricKeyId()
             verify(mockEmailAddressService).updateMetadata(
                 check { request ->
                     request.id shouldBe emailAddressId
@@ -203,18 +204,13 @@ class UpdateEmailAddressMetadataUseCaseTest : BaseTests() {
 
             result shouldBe emailAddressId
 
-            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
-            verify(mockSealingService).sealString(symmetricKeyId, "".toByteArray())
+            verify(mockServiceKeyManager, times(0)).getCurrentSymmetricKeyId()
+            verify(mockSealingService, times(0)).sealString(symmetricKeyId, "".toByteArray())
             verify(mockEmailAddressService).updateMetadata(
                 check { request ->
                     request.id shouldBe emailAddressId
-                    request.alias shouldBe
-                        SealedAttributeInput(
-                            algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
-                            keyId = symmetricKeyId,
-                            plainTextType = "string",
-                            base64EncodedSealedData = String(Base64.encode(sealedString), Charsets.UTF_8),
-                        )
+                    request.alias shouldBe null
+                    request.clearAlias shouldBe true
                 },
             )
         }
