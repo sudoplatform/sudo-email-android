@@ -18,6 +18,7 @@ import kotlinx.parcelize.Parcelize
  * @property publicKey [String] The raw value of the public key for the email address.
  * @property publicKeyDetails [EmailAddressPublicKey] The public key for the email address,
  * including format and algorithm details.
+ * @property enableEncryption [Boolean] Whether or not to enable encryption for the email address.
  */
 @Parcelize
 data class EmailAddressPublicInfo(
@@ -29,6 +30,7 @@ data class EmailAddressPublicInfo(
     )
     val publicKey: String,
     val publicKeyDetails: EmailAddressPublicKey,
+    val enableEncryption: Boolean,
 ) : Parcelable {
     /**
      * (Deprecated) Constructor for creating an instance of [EmailAddressPublicInfo].
@@ -51,6 +53,7 @@ data class EmailAddressPublicInfo(
         keyId = keyId,
         publicKey = publicKey,
         publicKeyDetails = EmailAddressPublicKey(publicKey, PublicKeyFormat.RSA_PUBLIC_KEY, DEFAULT_PUBLIC_KEY_ALGORITHM),
+        enableEncryption = true,
     )
 
     /**
@@ -60,15 +63,19 @@ data class EmailAddressPublicInfo(
      * @param keyId A unique identifier associated with the public key.
      * @param publicKeyDetails Detailed information about the public key, including its raw value, format,
      *                         and algorithm.
+     * @param enableEncryption Whether or not to enable encryption for the email address.
+     *
      */
     constructor(
         emailAddress: String,
         keyId: String,
         publicKeyDetails: EmailAddressPublicKey,
+        enableEncryption: Boolean,
     ) : this(
         emailAddress = emailAddress,
         keyId = keyId,
         publicKey = publicKeyDetails.publicKey,
         publicKeyDetails = publicKeyDetails,
+        enableEncryption = enableEncryption,
     )
 }

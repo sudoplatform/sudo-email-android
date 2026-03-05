@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,13 @@ internal object EmailMessageTransformer {
             displayName = this.displayName,
         )
 
+    fun EncryptionStatusEntity.toEmailMessageEncryptionStatus(): EmailMessageEncryptionStatus =
+        when (this) {
+            EncryptionStatusEntity.ENCRYPTED -> EmailMessageEncryptionStatus.ENCRYPTED
+            EncryptionStatusEntity.UNENCRYPTED -> EmailMessageEncryptionStatus.UNENCRYPTED
+            EncryptionStatusEntity.UNKNOWN -> EmailMessageEncryptionStatus.UNKNOWN__
+        }
+
     fun graphQLToSealedEntity(sealedEmailMessage: SealedEmailMessage): SealedEmailMessageEntity =
         SealedEmailMessageEntity(
             id = sealedEmailMessage.id,
@@ -75,6 +82,8 @@ internal object EmailMessageTransformer {
             updatedAtEpochMs = sealedEmailMessage.updatedAtEpochMs,
             sortDateEpochMs = sealedEmailMessage.sortDateEpochMs,
             rfc822Header = sealedEmailMessage.rfc822Header.toSealedAttributeEntity(),
+            emailMaskId = sealedEmailMessage.emailMaskId,
+            rfc822DataAttributes = sealedEmailMessage.rfc822DataAttributes.toRfc822DataAttributesEntity(),
         )
 
     fun sealedEntityToUnsealedEntity(
@@ -118,6 +127,7 @@ internal object EmailMessageTransformer {
             date = unsealedRfc822Header.date,
             keyId = sealedEmailMessage.rfc822Header.keyId,
             algorithm = sealedEmailMessage.rfc822Header.algorithm,
+            emailMaskId = sealedEmailMessage.emailMaskId,
         )
     }
 
@@ -149,6 +159,7 @@ internal object EmailMessageTransformer {
             hasAttachments = entity.hasAttachments,
             encryptionStatus = entity.encryptionStatus.toEncryptionStatus(),
             date = entity.date,
+            emailMaskId = entity.emailMaskId,
         )
 
     fun sealedEntityToPartialEntity(entity: SealedEmailMessageEntity): PartialEmailMessageEntity =
@@ -171,6 +182,7 @@ internal object EmailMessageTransformer {
             sortDate = entity.sortDateEpochMs.toDate(),
             createdAt = entity.createdAtEpochMs.toDate(),
             updatedAt = entity.updatedAtEpochMs.toDate(),
+            emailMaskId = entity.emailMaskId,
         )
 
     fun entityToPartialApi(entity: PartialEmailMessageEntity): PartialEmailMessage =
@@ -193,6 +205,7 @@ internal object EmailMessageTransformer {
             sortDate = entity.sortDate,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
+            emailMaskId = entity.emailMaskId,
         )
 
     fun graphQLToApi(
@@ -288,5 +301,11 @@ internal object EmailMessageTransformer {
             keyId = this.keyId,
             algorithm = this.algorithm,
             plainTextType = this.plainTextType,
+        )
+
+    private fun SealedEmailMessage.Rfc822DataAttributes.toRfc822DataAttributesEntity(): SealedEmailMessageEntity.Rfc822DataAttributes =
+        SealedEmailMessageEntity.Rfc822DataAttributes(
+            bucket = this.bucket,
+            key = this.key,
         )
 }

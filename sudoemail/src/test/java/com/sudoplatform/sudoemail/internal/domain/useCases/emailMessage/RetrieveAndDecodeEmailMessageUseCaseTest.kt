@@ -18,7 +18,6 @@ import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttributeEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.S3Exception
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -48,12 +47,6 @@ import java.util.zip.GZIPOutputStream
 class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
     private val rfc822Data = DataFactory.unsealedHeaderDetailsString.toByteArray()
     private val sealedRfc822Data = mockSeal("sealed RFC822 data")
-    private val mockS3Key =
-        DefaultS3Client.constructS3KeyForEmailMessage(
-            emailAddressId = mockEmailAddressId,
-            mockEmailMessageId,
-            keyId = mockKeyId,
-        )
     private val mockRfc822Metadata: ObjectMetadata = ObjectMetadata()
 
     private val emailMessageEntity by before {
@@ -94,8 +87,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
     private val mockS3EmailClient by before {
         mock<S3Client>().stub {
-            onBlocking { download(any()) } doReturn sealedRfc822Data.toByteArray()
-            onBlocking { getObjectMetadata(any()) } doReturn
+            onBlocking { download(any(), any()) } doReturn sealedRfc822Data.toByteArray()
+            onBlocking { getObjectMetadata(any(), any()) } doReturn
                 mockRfc822Metadata.apply {
                     contentEncoding = "${StringConstants.BINARY_DATA_CONTENT_ENCODING},${StringConstants.CRYPTO_CONTENT_ENCODING}"
                 }
@@ -125,8 +118,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -135,7 +128,7 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
     fun `execute() should retrieve and decode with explicit crypto and binary encoding`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = "${StringConstants.CRYPTO_CONTENT_ENCODING},${StringConstants.BINARY_DATA_CONTENT_ENCODING}"
                     }
@@ -145,8 +138,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -164,8 +157,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 }
 
             mockS3EmailClient.stub {
-                onBlocking { download(any()) } doReturn compressedData
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { download(any(), any()) } doReturn compressedData
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = StringConstants.COMPRESSION_CONTENT_ENCODING
                     }
@@ -175,8 +168,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
     @Test
@@ -189,12 +182,6 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 .use { it.write(DataFactory.unsealedHeaderDetailsString) }
             val compressedBytes = bos.toByteArray()
             val encodedBytes = Base64.encode(compressedBytes)
-//            val compressedData = ByteArrayOutputStream().use { byteStream ->
-//                GZIPOutputStream(byteStream).use { gzipStream ->
-//                    gzipStream.write(rfc822Data)
-//                }
-//                Base64.encode(byteStream.toByteArray())
-//            }
 
             // Mock decompression then decryption
             mockKeyManager.stub {
@@ -207,8 +194,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
             }
 
             mockS3EmailClient.stub {
-                onBlocking { download(any()) } doReturn sealedRfc822Data.toByteArray()
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { download(any(), any()) } doReturn sealedRfc822Data.toByteArray()
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = "${StringConstants.COMPRESSION_CONTENT_ENCODING},${StringConstants.CRYPTO_CONTENT_ENCODING}"
                     }
@@ -218,8 +205,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -228,8 +215,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
     fun `execute() should handle binary encoding as no-op`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { download(any()) } doReturn rfc822Data
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { download(any(), any()) } doReturn rfc822Data
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = StringConstants.BINARY_DATA_CONTENT_ENCODING
                     }
@@ -239,15 +226,15 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
     @Test
     fun `execute() should handle null content encoding with default values`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = null
                     }
@@ -257,8 +244,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -267,7 +254,7 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
     fun `execute() should throw UnsealingException for invalid content encoding`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = "invalid-encoding"
                     }
@@ -280,29 +267,29 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             exception.message shouldBe "Invalid Content-Encoding value invalid-encoding"
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
     @Test
     fun `execute() should throw AuthenticationException when NotAuthorizedException occurs`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { download(any()) } doThrow NotAuthorizedException("Not authorized")
+                onBlocking { download(any(), any()) } doThrow NotAuthorizedException("Not authorized")
             }
 
             shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
                 useCase.execute(emailMessageEntity)
             }
 
-            verify(mockS3EmailClient).download(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
     @Test
     fun `execute() should throw when S3 download fails`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { download(any()) } doThrow
+                onBlocking { download(any(), any()) } doThrow
                     S3Exception.DownloadException(
                         StringConstants.S3_NOT_FOUND_ERROR_CODE,
                         AmazonS3Exception(StringConstants.S3_NOT_FOUND_ERROR_CODE),
@@ -313,22 +300,22 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 useCase.execute(emailMessageEntity)
             }
 
-            verify(mockS3EmailClient).download(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
     @Test
     fun `execute() should throw when getObjectMetadata fails`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { getObjectMetadata(any()) } doThrow RuntimeException("Metadata retrieval failed")
+                onBlocking { getObjectMetadata(any(), any()) } doThrow RuntimeException("Metadata retrieval failed")
             }
 
             shouldThrow<RuntimeException> {
                 useCase.execute(emailMessageEntity)
             }
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
     @Test
@@ -342,8 +329,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 useCase.execute(emailMessageEntity)
             }
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
         }
 
@@ -368,17 +355,12 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                     encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
                 )
 
-            val expectedS3Key =
-                DefaultS3Client.constructS3KeyForEmailMessage(
-                    emailAddressId = customEmailAddressId,
-                    customEmailMessageId,
-                    keyId = customKeyId,
-                )
+            val expectedS3Key = customEmailMessage.rfc822DataAttributes.key
 
             useCase.execute(customEmailMessage)
 
-            verify(mockS3EmailClient).download(expectedS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(expectedS3Key)
+            verify(mockS3EmailClient).download(expectedS3Key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(expectedS3Key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }
@@ -396,8 +378,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 }
 
             mockS3EmailClient.stub {
-                onBlocking { download(any()) } doReturn compressedData
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { download(any(), any()) } doReturn compressedData
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = " ${StringConstants.COMPRESSION_CONTENT_ENCODING} "
                     }
@@ -407,15 +389,15 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
     @Test
     fun `execute() should handle uppercase content encoding values`() =
         runTest {
             mockS3EmailClient.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn
+                onBlocking { getObjectMetadata(any(), any()) } doReturn
                     mockRfc822Metadata.apply {
                         contentEncoding = "SUDOPLATFORM-CRYPTO,SUDOPLATFORM-BINARY-DATA"
                     }
@@ -425,8 +407,8 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
-            verify(mockS3EmailClient).download(mockS3Key)
-            verify(mockS3EmailClient).getObjectMetadata(mockS3Key)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }

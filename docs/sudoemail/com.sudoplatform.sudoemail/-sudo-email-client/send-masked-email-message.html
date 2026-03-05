@@ -2,9 +2,9 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>constructS3KeyForEmailMessage</title>
-    <link href="../../../../images/logo-icon.svg" rel="icon" type="image/svg">
-    <script>var pathToRoot = "../../../../";</script>
+    <title>sendMaskedEmailMessage</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
     <script>const storage = localStorage.getItem("dokka-dark-mode")
     if (storage == null) {
@@ -20,25 +20,25 @@
     }
     </script>
 <script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
-<script type="text/javascript" src="../../../../scripts/sourceset_dependencies.js" async="async"></script>
-<link href="../../../../styles/style.css" rel="Stylesheet">
-<link href="../../../../styles/main.css" rel="Stylesheet">
-<link href="../../../../styles/prism.css" rel="Stylesheet">
-<link href="../../../../styles/logo-styles.css" rel="Stylesheet">
-<link href="../../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
-<link href="../../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
-<script type="text/javascript" src="../../../../scripts/clipboard.js" async="async"></script>
-<script type="text/javascript" src="../../../../scripts/navigation-loader.js" async="async"></script>
-<script type="text/javascript" src="../../../../scripts/platform-content-handler.js" async="async"></script>
-<script type="text/javascript" src="../../../../scripts/main.js" defer="defer"></script>
-<script type="text/javascript" src="../../../../scripts/prism.js" async="async"></script>
-<script type="text/javascript" src="../../../../ui-kit/ui-kit.min.js" defer="defer"></script>
-<script type="text/javascript" src="../../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
 </head>
 <body>
     <div class="root">
     <nav class="navigation theme-dark" id="navigation-wrapper">
-            <a class="library-name--link" href="../../../../index.html">
+            <a class="library-name--link" href="../../../index.html">
                     sudoemail
             </a>
         <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
@@ -104,12 +104,12 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="member" id="content" pageIds="sudoemail::com.sudoplatform.sudoemail.s3/DefaultS3Client.Companion/constructS3KeyForEmailMessage/#kotlin.String#kotlin.String#kotlin.String/PointingToDeclaration//2021949935">
-  <div class="breadcrumbs"><a href="../../../../index.html">sudoemail</a><span class="delimiter">/</span><a href="../../index.html">com.sudoplatform.sudoemail.s3</a><span class="delimiter">/</span><a href="../index.html">DefaultS3Client</a><span class="delimiter">/</span><a href="index.html">Companion</a><span class="delimiter">/</span><span class="current">constructS3KeyForEmailMessage</span></div>
+<div class="main-content" data-page-type="member" id="content" pageIds="sudoemail::com.sudoplatform.sudoemail/SudoEmailClient/sendMaskedEmailMessage/#com.sudoplatform.sudoemail.types.inputs.SendMaskedEmailMessageInput/PointingToDeclaration//2021949935">
+  <div class="breadcrumbs"><a href="../../../index.html">sudoemail</a><span class="delimiter">/</span><a href="../index.html">com.sudoplatform.sudoemail</a><span class="delimiter">/</span><a href="index.html">SudoEmailClient</a><span class="delimiter">/</span><span class="current">sendMaskedEmailMessage</span></div>
   <div class="cover ">
-    <h1 class="cover"><span>construct</span><wbr></wbr><span>S3Key</span><wbr></wbr><span>For</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></h1>
+    <h1 class="cover"><span>send</span><wbr></wbr><span>Masked</span><wbr></wbr><span>Email</span><wbr></wbr><span><span>Message</span></span></h1>
   </div>
-  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">fun </span><a href="construct-s3-key-for-email-message.html"><span class="token function">constructS3KeyForEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">emailAddressId<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">emailMessageId<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span></span><span class="parameter ">keyId<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":sudoemail:dokkaHtml/release"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="send-masked-email-message.html"><span class="token function">sendMaskedEmailMessage</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">input<span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types.inputs/-send-masked-email-message-input/index.html">SendMaskedEmailMessageInput</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../com.sudoplatform.sudoemail.types/-send-email-message-result/index.html">SendEmailMessageResult</a></div><p class="paragraph">Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data and a masked email address.</p><p class="paragraph">Email messages sent to in-network recipients (i.e. email addresses that exist within the Sudo Platform) will be sent end-to-end encrypted.</p><span class="kdoc-tag"><h4 class="">Return</h4><p class="paragraph">The identifier of the <a href="../../com.sudoplatform.sudoemail.types/-email-message/index.html">EmailMessage</a> that is being sent.</p></span><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>input</span></span></u></div></span></div><div><div class="title"><p class="paragraph"><a href="../../com.sudoplatform.sudoemail.types.inputs/-send-masked-email-message-input/index.html">SendMaskedEmailMessageInput</a> Parameters used to send an email message with a masked email address.</p></div></div></div></div></div><h4 class="">Throws</h4><div class="table"><div class="table-row" data-filterable-current=":sudoemail:dokkaHtml/release" data-filterable-set=":sudoemail:dokkaHtml/release"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-email-message-exception/index.html"><span>Sudo</span><wbr></wbr><span>Email</span><wbr></wbr><span>Client.</span><wbr></wbr><span>Email</span><wbr></wbr><span>Message</span><wbr></wbr><span><span>Exception</span></span></a></div></span></div><div><div class="title"><p class="paragraph">.</p></div></div></div></div></div></div></div>
 </div>
     <div class="footer">
         <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>

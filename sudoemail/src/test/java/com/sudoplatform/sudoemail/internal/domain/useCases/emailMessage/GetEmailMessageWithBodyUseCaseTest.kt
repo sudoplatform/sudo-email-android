@@ -16,6 +16,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttribut
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SimplifiedEmailMessageEntity
 import com.sudoplatform.sudoemail.internal.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
@@ -274,6 +275,22 @@ class GetEmailMessageWithBodyUseCaseTest : BaseTests() {
             verify(mockEmailMessageService).get(any())
             verify(mockRetrieveAndDecodeEmailMessageUseCase).execute(sealedEmailMessageEntity)
             verify(mockEmailMessageDataProcessor).parseInternetMessageData(rfc822Data)
+        }
+
+    @Test
+    fun `execute() should return null when emailAddressId does not match returned message`() =
+        runTest {
+            val input =
+                GetEmailMessageWithBodyUseCaseInput(
+                    id = mockEmailMessageId,
+                    emailAddressId = "different-email-address-id",
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe null
+
+            verify(mockEmailMessageService).get(GetEmailMessageRequest(id = mockEmailMessageId))
         }
 
     @Test

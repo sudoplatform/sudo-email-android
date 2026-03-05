@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.Internet
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEncryptedEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendMaskedEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SimplifiedEmailMessageEntity
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCaseInput
@@ -33,7 +34,8 @@ import java.util.UUID
 /**
  * Input for the send email message use case.
  *
- * @property senderEmailAddressId [String] The email address ID from which to send the message.
+ * @property senderEmailAddressId [String] The email address ID from which to send the message. Required if not using mask id.
+ * @property senderMaskId [String] The mask ID from which to send the message. Required if not using email address id.
  * @property emailMessageHeader [InternetMessageFormatHeaderEntity] The email message header.
  * @property body [String] The body content of the email message.
  * @property attachments [List] of [EmailAttachmentEntity] file attachments.
@@ -42,7 +44,8 @@ import java.util.UUID
  * @property forwardingMessageId [String] Optional ID of the message being forwarded.
  */
 internal data class SendEmailMessageUseCaseInput(
-    val senderEmailAddressId: String,
+    val senderEmailAddressId: String?,
+    val senderMaskId: String?,
     val emailMessageHeader: InternetMessageFormatHeaderEntity,
     val body: String,
     val attachments: List<EmailAttachmentEntity> = emptyList(),
@@ -92,13 +95,24 @@ internal class SendEmailMessageUseCase(
      */
     suspend fun execute(input: SendEmailMessageUseCaseInput): SendEmailMessageResultEntity {
         logger.debug("SendEmailMessageUseCase execute input: $input")
-        val (senderEmailAddressId, emailMessageHeader, body, attachments, inlineAttachments, replyingMessageId, forwardingMessageId) = input
+        val (
+            senderEmailAddressId,
+            senderMaskId,
+            emailMessageHeader,
+            body,
+            attachments,
+            inlineAttachments,
+            replyingMessageId,
+            forwardingMessageId,
+        ) = input
         val configurationData = configurationDataService.getConfigurationData()
         val (
             _, _, _,
             emailMessageMaxOutboundMessageSize,
             emailMessageRecipientsLimit,
             encryptedEmailMessageRecipientsLimit,
+            _,
+            emailMasksEnabled,
         ) = configurationData
 
         try {
@@ -106,7 +120,13 @@ internal class SendEmailMessageUseCase(
                 attachments,
                 inlineAttachments,
             )
-            val domains = configurationDataService.getConfiguredEmailDomains()
+            val domains = mutableListOf<String>()
+            val domainsResult = configurationDataService.getConfiguredEmailDomains()
+            domains.addAll(domainsResult)
+            if (emailMasksEnabled) {
+                val maskDomains = configurationDataService.getEmailMaskDomains()
+                domains.addAll(maskDomains)
+            }
 
             val allRecipients =
                 mutableListOf<EmailMessageAddressEntity>()
@@ -116,7 +136,8 @@ internal class SendEmailMessageUseCase(
                         addAll(emailMessageHeader.bcc)
                     }.map { it.emailAddress }
 
-            // Check if all recipient domains are ours
+            // Check if all recipient domains are ours, and whether all the recipients
+            // support encryption
             val allRecipientsInternal =
                 allRecipients.isNotEmpty() &&
                     allRecipients.all { recipient ->
@@ -124,26 +145,30 @@ internal class SendEmailMessageUseCase(
                             recipient.lowercase().contains(domain)
                         }
                     }
-
+            var emailAddressesPublicInfo: List<EmailAddressPublicInfoEntity> = emptyList()
+            var canSendInNetworkEmailMessage = false
             if (allRecipientsInternal) {
-                if (allRecipients.size > encryptedEmailMessageRecipientsLimit) {
-                    throw SudoEmailClient.EmailMessageException.LimitExceededException(
-                        "${StringConstants.RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG}$encryptedEmailMessageRecipientsLimit",
-                    )
-                }
                 val allRecipientsAndSender = allRecipients.toMutableList()
                 allRecipientsAndSender.add(emailMessageHeader.from.emailAddress)
 
-                val emailAddressesPublicInfo =
+                emailAddressesPublicInfo =
                     lookupEmailAddressesPublicInfoUseCase.execute(
                         LookupEmailAddressesPublicInfoUseCaseInput(
                             addresses = allRecipientsAndSender,
                             throwIfNotAllInternal = true,
                         ),
                     )
-
+                canSendInNetworkEmailMessage = emailAddressesPublicInfo.all { it.enableEncryption }
+            }
+            if (canSendInNetworkEmailMessage) {
+                if (allRecipients.size > encryptedEmailMessageRecipientsLimit) {
+                    throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                        "${StringConstants.RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG}$encryptedEmailMessageRecipientsLimit",
+                    )
+                }
                 return sendInNetworkEmailMessage(
                     senderEmailAddressId,
+                    senderMaskId,
                     emailMessageHeader,
                     body,
                     attachments,
@@ -162,6 +187,7 @@ internal class SendEmailMessageUseCase(
 
             return sendOutOfNetworkEmailMessage(
                 senderEmailAddressId = senderEmailAddressId,
+                senderMaskId,
                 emailMessageHeader = emailMessageHeader,
                 body = body,
                 attachments = attachments,
@@ -177,7 +203,8 @@ internal class SendEmailMessageUseCase(
     }
 
     private suspend fun sendInNetworkEmailMessage(
-        senderEmailAddressId: String,
+        senderEmailAddressId: String?,
+        senderMaskId: String?,
         emailMessageHeader: InternetMessageFormatHeaderEntity,
         body: String,
         attachments: List<EmailAttachmentEntity>,
@@ -187,7 +214,10 @@ internal class SendEmailMessageUseCase(
         forwardingMessageId: String? = null,
         emailMessageMaxOutboundMessageSize: Int,
     ): SendEmailMessageResultEntity {
-        var s3ObjectKey = ""
+        val senderId =
+            senderEmailAddressId ?: senderMaskId ?: throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
+                "Either sender email address ID or sender mask ID must be provided",
+            )
 
         try {
             val messageData =
@@ -204,28 +234,45 @@ internal class SendEmailMessageUseCase(
                     replyingMessageId = replyingMessageId,
                     forwardingMessageId = forwardingMessageId,
                 )
-            s3ObjectKey =
+            val s3ObjectKey =
                 processAndUploadEmailMessage(
-                    senderEmailAddressId,
+                    senderId,
                     messageData,
                     EncryptionStatusEntity.ENCRYPTED,
                     emailAddressesPublicInfo,
                     emailMessageMaxOutboundMessageSize,
                 )
 
-            val sendEncryptedEmailMessageRequest =
-                SendEncryptedEmailMessageRequest(
-                    emailAddressId = senderEmailAddressId,
-                    s3ObjectKey = s3ObjectKey,
-                    region = region,
-                    transientBucket = transientBucket,
-                    emailMessageHeader = emailMessageHeader,
-                    attachments = attachments,
-                    inlineAttachments = inlineAttachments,
-                    replyingMessageId = replyingMessageId,
-                    forwardingMessageId = forwardingMessageId,
-                )
-            return emailMessageService.sendEncrypted(sendEncryptedEmailMessageRequest)
+            if (senderEmailAddressId != null) {
+                val sendEncryptedEmailMessageRequest =
+                    SendEncryptedEmailMessageRequest(
+                        emailAddressId = senderId,
+                        s3ObjectKey = s3ObjectKey,
+                        region = region,
+                        transientBucket = transientBucket,
+                        emailMessageHeader = emailMessageHeader,
+                        attachments = attachments,
+                        inlineAttachments = inlineAttachments,
+                        replyingMessageId = replyingMessageId,
+                        forwardingMessageId = forwardingMessageId,
+                    )
+                return emailMessageService.sendEncrypted(sendEncryptedEmailMessageRequest)
+            } else {
+                val sendMaskedEmailMessageRequest =
+                    SendMaskedEmailMessageRequest(
+                        emailMaskId = senderId,
+                        encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
+                        s3ObjectKey = s3ObjectKey,
+                        region = region,
+                        transientBucket = transientBucket,
+                        emailMessageHeader = emailMessageHeader,
+                        attachments = attachments,
+                        inlineAttachments = inlineAttachments,
+                        replyingMessageId = replyingMessageId,
+                        forwardingMessageId = forwardingMessageId,
+                    )
+                return emailMessageService.sendMasked(sendMaskedEmailMessageRequest)
+            }
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             throw ErrorTransformer.interpretEmailMessageException(e)
@@ -233,7 +280,8 @@ internal class SendEmailMessageUseCase(
     }
 
     private suspend fun sendOutOfNetworkEmailMessage(
-        senderEmailAddressId: String,
+        senderEmailAddressId: String?,
+        senderMaskId: String?,
         emailMessageHeader: InternetMessageFormatHeaderEntity,
         body: String,
         attachments: List<EmailAttachmentEntity>,
@@ -242,8 +290,10 @@ internal class SendEmailMessageUseCase(
         forwardingMessageId: String? = null,
         emailMessageMaxOutboundMessageSize: Int,
     ): SendEmailMessageResultEntity {
-        var s3ObjectKey = ""
-
+        val senderId =
+            senderEmailAddressId ?: senderMaskId ?: throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
+                "Either sender email address ID or sender mask ID must be provided",
+            )
         try {
             val messageData =
                 SimplifiedEmailMessageEntity(
@@ -259,22 +309,39 @@ internal class SendEmailMessageUseCase(
                     replyingMessageId = replyingMessageId,
                     forwardingMessageId = forwardingMessageId,
                 )
-            s3ObjectKey =
+            val s3ObjectKey =
                 processAndUploadEmailMessage(
-                    senderEmailAddressId,
+                    senderId,
                     messageData,
                     EncryptionStatusEntity.UNENCRYPTED,
                     emailMessageMaxOutboundMessageSize = emailMessageMaxOutboundMessageSize,
                 )
 
-            val sendEmailMessageRequest =
-                SendEmailMessageRequest(
-                    emailAddressId = senderEmailAddressId,
-                    s3ObjectKey = s3ObjectKey,
-                    region = region,
-                    transientBucket = transientBucket,
-                )
-            return emailMessageService.send(sendEmailMessageRequest)
+            if (senderEmailAddressId != null) {
+                val sendEmailMessageRequest =
+                    SendEmailMessageRequest(
+                        emailAddressId = senderEmailAddressId,
+                        s3ObjectKey = s3ObjectKey,
+                        region = region,
+                        transientBucket = transientBucket,
+                    )
+                return emailMessageService.send(sendEmailMessageRequest)
+            } else {
+                val sendMaskedEmailMessageRequest =
+                    SendMaskedEmailMessageRequest(
+                        emailMaskId = senderId,
+                        encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
+                        s3ObjectKey = s3ObjectKey,
+                        region = region,
+                        transientBucket = transientBucket,
+                        emailMessageHeader = emailMessageHeader,
+                        attachments = attachments,
+                        inlineAttachments = inlineAttachments,
+                        replyingMessageId = replyingMessageId,
+                        forwardingMessageId = forwardingMessageId,
+                    )
+                return emailMessageService.sendMasked(sendMaskedEmailMessageRequest)
+            }
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             throw ErrorTransformer.interpretEmailMessageException(e)

@@ -72,6 +72,7 @@ fragment EmailAddressPublicInfo on EmailAddressPublicInfo {
   publicKeyDetails  {
     ...EmailAddressPublicKey
   }
+  enableEncryption
 }
 
 fragment EmailFolder on EmailFolder {
@@ -120,8 +121,13 @@ fragment SealedEmailMessage on SealedEmailMessage {
         plainTextType
         base64EncodedSealedData
     }
+    rfc822DataAttributes {
+        bucket
+        key
+    }
     size
     encryptionStatus
+    emailMaskId
 }
 
 fragment UpdateEmailMessagesResult on UpdateEmailMessagesV2Result {
@@ -217,6 +223,7 @@ fragment EmailMask on EmailMask {
         id
         issuer
     }
+    keyRingId
     identityId
     maskAddress
     realAddress

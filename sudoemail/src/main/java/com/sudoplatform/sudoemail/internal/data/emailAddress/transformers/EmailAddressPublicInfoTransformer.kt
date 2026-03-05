@@ -40,6 +40,7 @@ internal object EmailAddressPublicInfoTransformer {
             emailAddress = emailAddressPublicInfoFragment.emailAddress,
             keyId = emailAddressPublicInfoFragment.keyId,
             publicKeyDetails = publicKeyDetails,
+            enableEncryption = emailAddressPublicInfoFragment.enableEncryption ?: true,
         )
     }
 
@@ -65,6 +66,7 @@ internal object EmailAddressPublicInfoTransformer {
             emailAddress = emailAddressPublicInfoEntity.emailAddress,
             keyId = emailAddressPublicInfoEntity.keyId,
             publicKeyDetails = publicKeyDetails,
+            enableEncryption = emailAddressPublicInfoEntity.enableEncryption,
         )
     }
 }

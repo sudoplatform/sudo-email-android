@@ -251,10 +251,12 @@ internal object EntityDataFactory {
                 publicKey = "publicKey",
                 algorithm = "algorithm",
             ),
+        enableEncryption: Boolean = true,
     ) = EmailAddressPublicInfoEntity(
         emailAddress = emailAddress,
         keyId = keyId,
         publicKeyDetails = publicKeyDetails,
+        enableEncryption = enableEncryption,
     )
 
     fun getSealedEmailMessageEntity(
@@ -278,6 +280,11 @@ internal object EntityDataFactory {
         createdAtEpochMs: Double = 1.0,
         updatedAtEpochMs: Double = 1.0,
         size: Double = 0.0,
+        rfc822DataAttributes: SealedEmailMessageEntity.Rfc822DataAttributes =
+            SealedEmailMessageEntity.Rfc822DataAttributes(
+                bucket = "bucket",
+                key = "testKey",
+            ),
         rfc822Header: SealedAttributeEntity =
             SealedAttributeEntity(
                 algorithm = "algorithm",
@@ -286,6 +293,7 @@ internal object EntityDataFactory {
                 base64EncodedSealedData = "mockSealedData",
             ),
         encryptionStatus: EncryptionStatusEntity = EncryptionStatusEntity.UNENCRYPTED,
+        emailMaskId: String? = null,
     ) = SealedEmailMessageEntity(
         id = id,
         clientRefId = clientRefId,
@@ -304,8 +312,10 @@ internal object EntityDataFactory {
         createdAtEpochMs = createdAtEpochMs,
         updatedAtEpochMs = updatedAtEpochMs,
         size = size,
+        rfc822DataAttributes = rfc822DataAttributes,
         rfc822Header = rfc822Header,
         encryptionStatus = encryptionStatus,
+        emailMaskId = emailMaskId,
     )
 
     fun getEmailMessageEntity(
@@ -350,6 +360,7 @@ internal object EntityDataFactory {
         date: Date? = Date(1L),
         keyId: String = "keyId",
         algorithm: String = "algorithm",
+        emailMaskId: String? = null,
     ) = EmailMessageEntity(
         id = id,
         clientRefId = clientRefId,
@@ -379,6 +390,7 @@ internal object EntityDataFactory {
         date = date,
         keyId = keyId,
         algorithm = algorithm,
+        emailMaskId = emailMaskId,
     )
 
     fun getPartialEmailMessageEntity(

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,7 @@ import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.SendMaskedEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
@@ -507,6 +508,33 @@ internal class DefaultSudoEmailClient(
             useCase.execute(
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId,
+                    null,
+                    InternetMessageFormatHeaderTransformer.apiToEntity(emailMessageHeader),
+                    body,
+                    attachments.map { EmailAttachmentTransformer.apiToEntity(it) },
+                    inlineAttachments.map { EmailAttachmentTransformer.apiToEntity(it) },
+                    replyingMessageId,
+                    forwardingMessageId,
+                ),
+            )
+        return SendEmailMessageResult(
+            result.id,
+            result.createdAt,
+        )
+    }
+
+    override suspend fun sendMaskedEmailMessage(input: SendMaskedEmailMessageInput): SendEmailMessageResult {
+        logger.debug("sendMaskedEmailMessage input: $input")
+
+        val useCase = useCaseFactory.createSendEmailMessageUseCase()
+
+        val (senderEmailMaskId, emailMessageHeader, body, attachments, inlineAttachments, replyingMessageId, forwardingMessageId) = input
+
+        val result =
+            useCase.execute(
+                SendEmailMessageUseCaseInput(
+                    null,
+                    senderEmailMaskId,
                     InternetMessageFormatHeaderTransformer.apiToEntity(emailMessageHeader),
                     body,
                     attachments.map { EmailAttachmentTransformer.apiToEntity(it) },

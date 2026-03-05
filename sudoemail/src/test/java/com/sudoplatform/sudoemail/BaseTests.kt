@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,7 @@ abstract class BaseTests : PropertyResetter by ActualPropertyResetter() {
     protected val mockMixedCaseInternalDomain = "InTeRnAl.SuDoPlAtFoRm.CoM"
     protected val mockExternalDomain = "sudoplatform.com"
     protected val mockSenderAddress = "sender@$mockInternalDomain"
+    protected val mockMaskDomain = "mask.sudoplatform.com"
     protected val mockExternalRecipientAddress = "recipient@$mockExternalDomain"
     protected val mockInternalRecipientAddress = "recipient@$mockInternalDomain"
     protected val mockMixedCaseInternalRecipientAddress = "rEcIpIeNt@$mockMixedCaseInternalDomain"

@@ -6,7 +6,6 @@
 
 package com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage
 
-import com.amazonaws.services.s3.model.ObjectMetadata
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.data.DataFactory
@@ -16,7 +15,6 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMes
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
-import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -42,13 +40,6 @@ import org.robolectric.RobolectricTestRunner
 class GetEmailMessageRfc822DataUseCaseTest : BaseTests() {
     private val rfc822Data = DataFactory.unsealedHeaderDetailsString.toByteArray()
     private val sealedRfc822Data = mockSeal("sealed RFC822 data")
-    private val mockS3Key =
-        DefaultS3Client.constructS3KeyForEmailMessage(
-            emailAddressId = mockEmailAddressId,
-            mockEmailMessageId,
-            keyId = mockKeyId,
-        )
-    private val mockRfc822Metadata: ObjectMetadata = ObjectMetadata()
 
     private val emailMessageEntity by before {
         EntityDataFactory.getSealedEmailMessageEntity(
@@ -131,6 +122,24 @@ class GetEmailMessageRfc822DataUseCaseTest : BaseTests() {
             )
             verify(mockRetrieveAndDecodeEmailMessageUseCase).execute(
                 emailMessageEntity,
+            )
+        }
+
+    @Test
+    fun `execute() should return null when emailAddressId does not match returned message`() =
+        runTest {
+            val input =
+                GetEmailMessageRfc822DataUseCaseInput(
+                    id = mockEmailMessageId,
+                    emailAddressId = "different-email-address-id",
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe null
+
+            verify(mockEmailMessageService).get(
+                GetEmailMessageRequest(id = mockEmailMessageId),
             )
         }
 

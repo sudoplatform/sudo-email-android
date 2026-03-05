@@ -62,9 +62,10 @@ internal class GetEmailMessageRfc822DataUseCase(
         logger.debug("Getting email message RFC822 data for email message ID: ${input.id}")
         try {
             val sealedEmailMessage =
-                emailMessageService.get(
-                    GetEmailMessageRequest(id = input.id),
-                ) ?: return null
+                emailMessageService
+                    .get(
+                        GetEmailMessageRequest(id = input.id),
+                    )?.takeIf { it.emailAddressId == input.emailAddressId } ?: return null
             val decodedBytes =
                 retrieveAndDecodeEmailMessageUseCase.execute(
                     sealedEmailMessage,

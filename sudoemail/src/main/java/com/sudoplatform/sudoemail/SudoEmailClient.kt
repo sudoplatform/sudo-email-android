@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,7 @@ import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.SendMaskedEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
@@ -870,6 +871,20 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailMessageException::class)
     suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult
+
+    /**
+     * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data and a masked email address.
+     *
+     * Email messages sent to in-network recipients (i.e. email addresses that exist within the Sudo Platform)
+     * will be sent end-to-end encrypted.
+     *
+     * @param input [SendMaskedEmailMessageInput] Parameters used to send an email message with a masked email address.
+     * @return The identifier of the [EmailMessage] that is being sent.
+     *
+     * @throws [EmailMessageException].
+     */
+    @Throws(EmailMessageException::class)
+    suspend fun sendMaskedEmailMessage(input: SendMaskedEmailMessageInput): SendEmailMessageResult
 
     /**
      * Update multiple [EmailMessage]s using a list of identifiers.

@@ -54,6 +54,7 @@ class EmailCryptoServiceTest : BaseTests() {
                     PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                     "algorithm",
                 ),
+                enableEncryption = true,
             ),
             EmailAddressPublicInfoEntity(
                 "foo@bar.com",
@@ -63,6 +64,7 @@ class EmailCryptoServiceTest : BaseTests() {
                     PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                     "algorithm",
                 ),
+                enableEncryption = true,
             ),
         )
 
@@ -135,6 +137,7 @@ class EmailCryptoServiceTest : BaseTests() {
                             PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                             "algorithm",
                         ),
+                        enableEncryption = true,
                     ),
                     EmailAddressPublicInfoEntity(
                         "foo@bar.com",
@@ -144,6 +147,7 @@ class EmailCryptoServiceTest : BaseTests() {
                             PublicKeyFormatEntity.SPKI,
                             "algorithm",
                         ),
+                        enableEncryption = true,
                     ),
                 )
             val deferredResult =

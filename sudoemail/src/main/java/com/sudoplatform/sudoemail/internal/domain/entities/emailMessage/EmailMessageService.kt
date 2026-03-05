@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,33 @@ internal data class SendEmailMessageRequest(
  */
 internal data class SendEncryptedEmailMessageRequest(
     val emailAddressId: String,
+    val s3ObjectKey: String,
+    val region: String,
+    val transientBucket: String,
+    val emailMessageHeader: InternetMessageFormatHeaderEntity,
+    val attachments: List<EmailAttachmentEntity>,
+    val inlineAttachments: List<EmailAttachmentEntity>,
+    val replyingMessageId: String?,
+    val forwardingMessageId: String?,
+)
+
+/**
+ * Request to send an email message using an email mask.
+ *
+ * @property emailMaskId [String] The ID of the email mask to use for sending the message.
+ * @property encryptionStatus [EncryptionStatusEntity] The encryption status of the email message.
+ * @property s3ObjectKey [String] The S3 object key where the message is stored.
+ * @property region [String] The AWS region where the S3 bucket is located.
+ * @property transientBucket [String] The transient S3 bucket name.
+ * @property emailMessageHeader [InternetMessageFormatHeaderEntity] The email message header in Internet Message Format.
+ * @property attachments [List] The list of file attachments.
+ * @property inlineAttachments [List] The list of inline attachments.
+ * @property replyingMessageId [String] Optional ID of the message being replied to.
+ * @property forwardingMessageId [String] Optional ID of the message being forwarded.
+ */
+internal data class SendMaskedEmailMessageRequest(
+    val emailMaskId: String,
+    val encryptionStatus: EncryptionStatusEntity,
     val s3ObjectKey: String,
     val region: String,
     val transientBucket: String,
@@ -181,6 +208,14 @@ internal interface EmailMessageService {
      * @return [SendEmailMessageResultEntity] The result of the send operation.
      */
     suspend fun sendEncrypted(input: SendEncryptedEmailMessageRequest): SendEmailMessageResultEntity
+
+    /**
+     * Sends an email message using an email mask.
+     *
+     * @param input [SendMaskedEmailMessageRequest] The details of the email message to send.
+     * @return [SendEmailMessageResultEntity] The result of the send operation.
+     */
+    suspend fun sendMasked(input: SendMaskedEmailMessageRequest): SendEmailMessageResultEntity
 
     /**
      * Updates one or more email messages.

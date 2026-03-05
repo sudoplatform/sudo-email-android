@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,6 +156,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             verify(mockUseCase).execute(
                 check { useCaseInput ->
                     useCaseInput.senderEmailAddressId shouldBe emailAddressId
+                    useCaseInput.senderMaskId shouldBe null
                     useCaseInput.emailMessageHeader.toString() shouldBe
                         InternetMessageFormatHeaderTransformer
                             .apiToEntity(
@@ -198,6 +199,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             verify(mockUseCase).execute(
                 check { useCaseInput ->
                     useCaseInput.senderEmailAddressId shouldBe emailAddressId
+                    useCaseInput.senderMaskId shouldBe null
                     useCaseInput.emailMessageHeader.toString() shouldBe
                         InternetMessageFormatHeaderTransformer
                             .apiToEntity(

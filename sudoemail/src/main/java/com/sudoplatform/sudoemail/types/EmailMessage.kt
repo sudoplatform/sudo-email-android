@@ -47,6 +47,7 @@ import java.util.Date
  * @property receivedAt [Date] When the email message was received.
  * @property hasAttachments [Boolean] Whether or not the message has attachments. False if message was
  *  sent prior to this property being added.
+ * @property emailMaskId [String] The identifier of the email mask used to send or receive this message, if any
  */
 @Parcelize
 data class EmailMessage(
@@ -78,6 +79,7 @@ data class EmailMessage(
     val hasAttachments: Boolean,
     val encryptionStatus: EncryptionStatus,
     val date: Date? = null,
+    val emailMaskId: String? = null,
 ) : Parcelable {
     /**
      * A representation of an email address as used in an [EmailMessage].
@@ -131,6 +133,7 @@ data class EmailMessage(
  * @property size [Double] The size of the encrypted RFC822 data stored in the backend in bytes. This value is used to
  *  calculate the total storage used by an email address or user and is used to enforce email storage
  *  related entitlements.
+ * @property emailMaskId [String] The identifier of the email mask used to send or receive this message, if any
  */
 @Parcelize
 data class PartialEmailMessage(
@@ -153,6 +156,7 @@ data class PartialEmailMessage(
     val size: Double,
     val encryptionStatus: EncryptionStatus,
     val date: Date? = null,
+    val emailMaskId: String? = null,
 ) : Parcelable {
     /**
      * A representation of an email address as used in a [PartialEmailMessage].

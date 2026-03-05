@@ -6,6 +6,7 @@
 
 package com.sudoplatform.sudoemail.internal.domain.entities.emailMessage
 
+import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.internal.domain.entities.common.OwnerEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttributeEntity
 
@@ -31,8 +32,11 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttribut
  * @property state [StateEntity] Current state of the email message.
  * @property clientRefId [String] Unique client reference identifier.
  * @property rfc822Header [SealedAttributeEntity] Sealed (encrypted) RFC822 header data.
+ * @property rfc822DataAttributes [SealedEmailMessage.Rfc822DataAttributes] S3 designation for retrieving RFC822 data attributes .
  * @property size [Double] The size of the encrypted RFC822 data stored in the backend in bytes.
  * @property encryptionStatus [EncryptionStatusEntity] Encryption status of the email message.
+ * @property emailMaskId [String] The identifier of the email mask used to send or receive this message, if any.
+ *
  */
 internal data class SealedEmailMessageEntity(
     val id: String,
@@ -52,6 +56,13 @@ internal data class SealedEmailMessageEntity(
     val state: StateEntity,
     val clientRefId: String?,
     val rfc822Header: SealedAttributeEntity,
+    val rfc822DataAttributes: Rfc822DataAttributes,
     val size: Double,
     val encryptionStatus: EncryptionStatusEntity?,
-)
+    val emailMaskId: String?,
+) {
+    data class Rfc822DataAttributes(
+        val bucket: String,
+        val key: String,
+    )
+}

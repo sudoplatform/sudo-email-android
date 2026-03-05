@@ -16,7 +16,6 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.KeyInfo
 import com.sudoplatform.sudoemail.internal.domain.entities.common.KeyType
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SealedEmailMessageEntity
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
-import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudologging.Logger
 import kotlinx.coroutines.Dispatchers
@@ -50,14 +49,9 @@ internal class RetrieveAndDecodeEmailMessageUseCase(
     suspend fun execute(emailMessage: SealedEmailMessageEntity): ByteArray {
         logger.debug("Retrieving and decoding email message: $emailMessage")
         try {
-            val s3Key =
-                DefaultS3Client.constructS3KeyForEmailMessage(
-                    emailAddressId = emailMessage.emailAddressId,
-                    emailMessageId = emailMessage.id,
-                    keyId = emailMessage.rfc822Header.keyId,
-                )
-            val sealedRfc822Data = s3EmailClient.download(s3Key)
-            val rfc822Metadata = s3EmailClient.getObjectMetadata(s3Key)
+            val s3Key = emailMessage.rfc822DataAttributes.key
+            val sealedRfc822Data = s3EmailClient.download(s3Key, S3Client.KeyOptions(isKeyCredentialled = true))
+            val rfc822Metadata = s3EmailClient.getObjectMetadata(s3Key, S3Client.KeyOptions(isKeyCredentialled = true))
             val contentEncodingValues =
                 (
                     if (rfc822Metadata.contentEncoding != null) {

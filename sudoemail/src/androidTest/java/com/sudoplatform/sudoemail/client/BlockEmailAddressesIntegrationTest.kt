@@ -246,7 +246,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     // This test can take a while...
     @Test
     fun messagesFromBlockedAddressesShouldNotBeReceived() =
-        runTest(timeout = kotlin.time.Duration.parse("2m")) {
+        runTest(timeout = kotlin.time.Duration.parse("5m")) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)

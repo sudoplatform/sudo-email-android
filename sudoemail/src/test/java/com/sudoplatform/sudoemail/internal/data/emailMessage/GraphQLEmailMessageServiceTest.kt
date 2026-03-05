@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@ import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuer
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
 import com.sudoplatform.sudoemail.graphql.fragment.UpdateEmailMessagesResult
+import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageState
 import com.sudoplatform.sudoemail.graphql.type.SortOrder
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesStatus
@@ -27,6 +28,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteMe
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageDateRangeEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.InternetMessageFormatHeaderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesForEmailAddressIdRequest
@@ -34,6 +36,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmai
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEncryptedEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendMaskedEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.UpdateEmailMessagesRequest
 import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -771,6 +774,198 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                     input.rfc822Header.replyTo[0] shouldBe "\"Reply \"Here\"\" <replyto@example.com>"
                 },
             )
+        }
+
+    /** Begin SendMaskedEmailMessageTests */
+
+    @Test
+    fun `sendMaskedEmailMessage() should return result when successful`() =
+        runTest {
+            val messageId = "masked-message-id-123"
+            val s3Key = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, messageId)
+            val createdAtEpochMs = 4000.0
+            val mutationResponse = DataFactory.sendMaskedEmailMessageMutationResponse(messageId, createdAtEpochMs)
+            mockApiClient.stub {
+                onBlocking {
+                    sendMaskedEmailMessageMutation(any())
+                } doReturn mutationResponse
+            }
+
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("mask@example.com", "Mask Sender"),
+                    to = listOf(EmailMessageAddressEntity("recipient@example.com", "Recipient")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val request =
+                SendMaskedEmailMessageRequest(
+                    emailMaskId = "mask-id-123",
+                    encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
+                    s3ObjectKey = s3Key,
+                    region = "us-east-1",
+                    transientBucket = "transient-bucket",
+                    emailMessageHeader = header,
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                    replyingMessageId = null,
+                    forwardingMessageId = null,
+                )
+
+            val result = instanceUnderTest.sendMasked(request)
+
+            result shouldNotBe null
+            result.id shouldBe messageId
+            result.createdAt shouldBe Date(4000)
+
+            verify(mockApiClient).sendMaskedEmailMessageMutation(
+                check { input ->
+                    input.emailMaskId shouldBe "mask-id-123"
+                    input.message.key shouldBe s3Key
+                    input.message.region shouldBe "us-east-1"
+                    input.message.bucket shouldBe "transient-bucket"
+                    input.rfc822Header.from shouldBe "\"Mask Sender\" <mask@example.com>"
+                    input.rfc822Header.to.size shouldBe 1
+                    input.rfc822Header.subject shouldBe Optional.present("Test Subject")
+                    input.encryptionStatus shouldBe EmailMessageEncryptionStatus.ENCRYPTED
+                },
+            )
+        }
+
+    @Test
+    fun `sendMaskedEmailMessage() should handle unencrypted messages`() =
+        runTest {
+            val mutationResponse = DataFactory.sendMaskedEmailMessageMutationResponse("messageId", 1000.0)
+            mockApiClient.stub {
+                onBlocking {
+                    sendMaskedEmailMessageMutation(any())
+                } doReturn mutationResponse
+            }
+
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("mask@example.com"),
+                    to = listOf(EmailMessageAddressEntity("recipient@example.com")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val request =
+                SendMaskedEmailMessageRequest(
+                    emailMaskId = "mask-id-456",
+                    encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
+                    s3ObjectKey = s3Key,
+                    region = "us-east-1",
+                    transientBucket = "bucket",
+                    emailMessageHeader = header,
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                    replyingMessageId = null,
+                    forwardingMessageId = null,
+                )
+
+            val result = instanceUnderTest.sendMasked(request)
+
+            result shouldNotBe null
+
+            verify(mockApiClient).sendMaskedEmailMessageMutation(
+                check { input ->
+                    input.emailMaskId shouldBe "mask-id-456"
+                    input.encryptionStatus shouldBe EmailMessageEncryptionStatus.UNENCRYPTED
+                },
+            )
+        }
+
+    @Test
+    fun `sendMaskedEmailMessage() should throw when response has errors`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to "ServiceError"),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    sendMaskedEmailMessageMutation(any())
+                } doReturn GraphQLResponse(null, listOf(testError))
+            }
+
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("mask@example.com"),
+                    to = listOf(EmailMessageAddressEntity("recipient@example.com")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val request =
+                SendMaskedEmailMessageRequest(
+                    emailMaskId = "mask-id-123",
+                    encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
+                    s3ObjectKey = s3Key,
+                    region = "us-east-1",
+                    transientBucket = "bucket",
+                    emailMessageHeader = header,
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                    replyingMessageId = null,
+                    forwardingMessageId = null,
+                )
+
+            shouldThrow<SudoEmailClient.EmailMessageException> {
+                instanceUnderTest.sendMasked(request)
+            }
+
+            verify(mockApiClient).sendMaskedEmailMessageMutation(any())
+        }
+
+    @Test
+    fun `sendMaskedEmailMessage() should throw when result is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    sendMaskedEmailMessageMutation(any())
+                } doReturn GraphQLResponse(null, null)
+            }
+
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("mask@example.com"),
+                    to = listOf(EmailMessageAddressEntity("recipient@example.com")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val request =
+                SendMaskedEmailMessageRequest(
+                    emailMaskId = "mask-id-123",
+                    encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
+                    s3ObjectKey = s3Key,
+                    region = "us-east-1",
+                    transientBucket = "bucket",
+                    emailMessageHeader = header,
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                    replyingMessageId = null,
+                    forwardingMessageId = null,
+                )
+
+            shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
+                instanceUnderTest.sendMasked(request)
+            }
+
+            verify(mockApiClient).sendMaskedEmailMessageMutation(any())
         }
 
     /** Begin UpdateEmailMessagesTests */

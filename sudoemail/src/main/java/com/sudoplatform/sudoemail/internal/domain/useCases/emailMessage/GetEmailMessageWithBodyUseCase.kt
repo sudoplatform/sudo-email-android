@@ -75,9 +75,10 @@ internal class GetEmailMessageWithBodyUseCase(
         logger.debug("Getting email message with body for email message ID: ${input.id}")
         try {
             val sealedEmailMessage =
-                emailMessageService.get(
-                    GetEmailMessageRequest(id = input.id),
-                ) ?: return null
+                emailMessageService
+                    .get(
+                        GetEmailMessageRequest(id = input.id),
+                    )?.takeIf { it.emailAddressId == input.emailAddressId } ?: return null
             val decodedBytes =
                 retrieveAndDecodeEmailMessageUseCase.execute(
                     sealedEmailMessage,

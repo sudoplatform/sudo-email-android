@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,7 @@ import com.sudoplatform.sudoemail.graphql.ProvisionEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.ScheduleSendDraftMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
+import com.sudoplatform.sudoemail.graphql.SendMaskedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
@@ -168,7 +169,13 @@ object DataFactory {
         clientRefId: String = "clientRefId",
         sealedData: String = "sealedData",
         encryptionStatus: EmailMessageEncryptionStatus = EmailMessageEncryptionStatus.UNENCRYPTED,
+        rfc822DataAttributes: SealedEmailMessage.Rfc822DataAttributes =
+            SealedEmailMessage.Rfc822DataAttributes(
+                bucket = "testBucket",
+                key = "testKey",
+            ),
         size: Double = 1.0,
+        emailMaskId: String? = null,
     ) = SealedEmailMessage(
         id = id,
         owner = owner,
@@ -193,8 +200,10 @@ object DataFactory {
                 plainTextType = "plainText",
                 base64EncodedSealedData = sealedData,
             ),
-        encryptionStatus = encryptionStatus,
+        rfc822DataAttributes = rfc822DataAttributes,
         size = size,
+        encryptionStatus = encryptionStatus,
+        emailMaskId = emailMaskId,
     )
 
     fun getScheduledDraftMessage(
@@ -236,11 +245,13 @@ object DataFactory {
                     algorithm = "algorithm",
                 ),
             ),
+        enableEncryption: Boolean = true,
     ) = EmailAddressPublicInfo(
         emailAddress,
         keyId,
         publicKey,
         publicKeyDetails,
+        enableEncryption,
     )
 
     val unsealedHeaderDetailsWithDateString =
@@ -532,8 +543,6 @@ object DataFactory {
                         forwarded = false,
                         state = EmailMessageState.DELIVERED,
                         clientRefId = "clientRefId",
-                        encryptionStatus = EmailMessageEncryptionStatus.UNENCRYPTED,
-                        size = 1.0,
                         rfc822Header =
                             SealedEmailMessage.Rfc822Header(
                                 algorithm = SymmetricKeyEncryptionAlgorithm.AES_CBC_PKCS7PADDING.toString(),
@@ -541,6 +550,14 @@ object DataFactory {
                                 plainTextType = "plainText",
                                 base64EncodedSealedData = sealedData,
                             ),
+                        rfc822DataAttributes =
+                            SealedEmailMessage.Rfc822DataAttributes(
+                                bucket = "testBucket",
+                                key = "testKey",
+                            ),
+                        size = 1.0,
+                        encryptionStatus = EmailMessageEncryptionStatus.UNENCRYPTED,
+                        emailMaskId = null,
                     ),
                 ),
             ),
@@ -882,6 +899,23 @@ object DataFactory {
             null,
         )
 
+    fun sendMaskedEmailMessageMutationResponse(
+        id: String,
+        createdAtEpochMs: Double,
+    ): GraphQLResponse<SendMaskedEmailMessageMutation.Data> =
+        GraphQLResponse<SendMaskedEmailMessageMutation.Data>(
+            SendMaskedEmailMessageMutation.Data(
+                SendMaskedEmailMessageMutation.SendMaskedEmailMessage(
+                    "sendMaskedEmailMessage",
+                    SendEmailMessageResult(
+                        id,
+                        createdAtEpochMs,
+                    ),
+                ),
+            ),
+            null,
+        )
+
     fun unblockEmailAddressesMutationResponse(
         status: BlockEmailAddressesBulkUpdateStatus = BlockEmailAddressesBulkUpdateStatus.SUCCESS,
         failedAddresses: List<String> = emptyList(),
@@ -944,6 +978,7 @@ object DataFactory {
     fun getEmailMask(
         id: String = "mockEmailMaskId",
         owner: String = "mockOwner",
+        keyRingId: String = "mockKeyRingId",
         identityId: String = "mockIdentityId",
         maskAddress: String = "mask@example.com",
         realAddress: String = "real@example.com",
@@ -961,6 +996,7 @@ object DataFactory {
                     issuer = "issuer",
                 ),
             ),
+        keyRingId = keyRingId,
         identityId = identityId,
         maskAddress = maskAddress,
         realAddress = realAddress,

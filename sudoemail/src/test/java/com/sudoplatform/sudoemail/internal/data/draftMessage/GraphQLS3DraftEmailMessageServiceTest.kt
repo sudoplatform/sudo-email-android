@@ -114,6 +114,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                         any(),
                         any(),
                         anyOrNull(),
+                        any(),
                     )
                 } doReturn mockUploadResponse
             }
@@ -141,6 +142,9 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check {
                     it shouldBe metadataObject
                 },
+                check {
+                    it shouldBe S3Client.KeyOptions(isKeyCredentialled = false)
+                },
             )
         }
 
@@ -153,6 +157,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                         any(),
                         any(),
                         anyOrNull(),
+                        any(),
                     )
                 } doThrow S3Exception.UploadException("Upload failed")
             }
@@ -179,6 +184,9 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check {
                     it shouldBe metadataObject
                 },
+                check {
+                    it shouldBe S3Client.KeyOptions(isKeyCredentialled = false)
+                },
             )
         }
 
@@ -191,6 +199,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                         any(),
                         any(),
                         anyOrNull(),
+                        any(),
                     )
                 } doThrow RuntimeException("Unexpected error")
             }
@@ -215,6 +224,9 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                     it shouldBe s3Key
                 },
                 anyOrNull(),
+                check {
+                    it shouldBe S3Client.KeyOptions(isKeyCredentialled = false)
+                },
             )
         }
 
@@ -227,6 +239,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                         any(),
                         any(),
                         anyOrNull(),
+                        any(),
                     )
                 } doReturn "uploadId"
             }
@@ -252,6 +265,9 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                     it shouldBe s3Key
                 },
                 anyOrNull(),
+                check {
+                    it shouldBe S3Client.KeyOptions(isKeyCredentialled = false)
+                },
             )
         }
 
@@ -274,8 +290,8 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
-                onBlocking { download(any()) } doReturn rfc822Data
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
+                onBlocking { download(any(), any()) } doReturn rfc822Data
             }
 
             val request =
@@ -307,7 +323,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
             }
 
             val request =
@@ -337,7 +353,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
             }
 
             val request =
@@ -359,7 +375,8 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
     fun `getDraftEmailMessage() should throw when S3 getObjectMetadata fails`() =
         runTest {
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doThrow S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
+                onBlocking { getObjectMetadata(any(), any()) } doThrow
+                    S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
             }
 
             val request =
@@ -390,8 +407,8 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
-                onBlocking { download(any()) } doThrow S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
+                onBlocking { download(any(), any()) } doThrow S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
             }
 
             val request =
@@ -416,7 +433,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doThrow s3Exception
+                onBlocking { getObjectMetadata(any(), any()) } doThrow s3Exception
             }
 
             val request =
@@ -453,7 +470,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { delete(any()) } doReturn Unit
+                onBlocking { delete(any(), any()) } doReturn Unit
             }
 
             val request =
@@ -472,16 +489,19 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check {
                     it shouldBe s3Keys[0]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[1]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[2]
                 },
+                any(),
             )
         }
 
@@ -520,7 +540,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { delete(any()) } doThrow S3Exception.DeleteException("Delete failed")
+                onBlocking { delete(any(), any()) } doThrow S3Exception.DeleteException("Delete failed")
             }
 
             val request =
@@ -540,16 +560,19 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check {
                     it shouldBe s3Keys[0]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[1]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[2]
                 },
+                any(),
             )
         }
 
@@ -599,16 +622,19 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check {
                     it shouldBe s3Keys[0]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[1]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[2]
                 },
+                any(),
             )
         }
 
@@ -655,16 +681,19 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check {
                     it shouldBe s3Keys[0]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[1]
                 },
+                any(),
             )
             verify(mockS3Client).delete(
                 check {
                     it shouldBe s3Keys[2]
                 },
+                any(),
             )
         }
 
@@ -680,7 +709,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { delete(any()) } doReturn Unit
+                onBlocking { delete(any(), any()) } doReturn Unit
             }
 
             val request =
@@ -710,7 +739,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { delete(any()) } doThrow RuntimeException(null as String?)
+                onBlocking { delete(any(), any()) } doThrow RuntimeException(null as String?)
             }
 
             val request =
@@ -760,7 +789,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = s3Objects,
                         nextToken = null,
@@ -781,7 +810,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             result.items[2].updatedAt shouldBe date3
             result.nextToken shouldBe null
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -790,7 +819,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val emailAddressId = mockEmailAddressId
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = emptyList(),
                         nextToken = null,
@@ -802,7 +831,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             result.items.size shouldBe 0
             result.nextToken shouldBe null
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -822,7 +851,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = s3Objects,
                         nextToken = null,
@@ -834,7 +863,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             result.items.size shouldBe 1
             result.items[0].id shouldBe draftId
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -854,7 +883,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = s3Objects,
                         nextToken = null,
@@ -868,7 +897,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             result.items[0].emailAddressId shouldBe emailAddressId
             result.items[0].updatedAt shouldBe updatedAt
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -877,7 +906,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val emailAddressId = mockEmailAddressId
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doThrow
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doThrow
                     S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
             }
 
@@ -885,7 +914,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
             }
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -894,14 +923,14 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val emailAddressId = mockEmailAddressId
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doThrow RuntimeException("Unexpected error")
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doThrow RuntimeException("Unexpected error")
             }
 
             shouldThrow<RuntimeException> {
                 instanceUnderTest.listMetadataForEmailAddressId(emailAddressId)
             }
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -931,7 +960,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = s3Objects,
                         nextToken = null,
@@ -949,7 +978,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             result.items[2].id shouldBe "draft2"
             result.items[2].updatedAt shouldBe date2
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -959,7 +988,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val expectedPrefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = emptyList(),
                         nextToken = null,
@@ -974,6 +1003,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 },
                 anyOrNull(),
                 anyOrNull(),
+                any(),
             )
         }
 
@@ -985,7 +1015,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = emptyList(),
                         nextToken = null,
@@ -998,6 +1028,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check { it shouldBe s3Prefix },
                 check { it shouldBe limit },
                 isNull(),
+                any(),
             )
         }
 
@@ -1009,7 +1040,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = emptyList(),
                         nextToken = null,
@@ -1022,6 +1053,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check { it shouldBe s3Prefix },
                 isNull(),
                 check { it shouldBe nextToken },
+                any(),
             )
         }
 
@@ -1034,7 +1066,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = emptyList(),
                         nextToken = null,
@@ -1047,6 +1079,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check { it shouldBe s3Prefix },
                 check { it shouldBe limit },
                 check { it shouldBe nextToken },
+                any(),
             )
         }
 
@@ -1057,7 +1090,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val s3Prefix = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId)
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = emptyList(),
                         nextToken = null,
@@ -1070,6 +1103,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check { it shouldBe s3Prefix },
                 isNull(),
                 isNull(),
+                any(),
             )
         }
 
@@ -1081,7 +1115,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val s3Objects = emptyList<S3ClientListOutput>()
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = s3Objects,
                         nextToken = expectedNextToken,
@@ -1093,7 +1127,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             result.items.size shouldBe 0
             result.nextToken shouldBe expectedNextToken
 
-            verify(mockS3Client).list(any(), isNull(), isNull())
+            verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
 
     @Test
@@ -1119,7 +1153,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = s3Objects,
                         nextToken = expectedNextToken,
@@ -1135,6 +1169,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check { it shouldBe s3Prefix },
                 check { it shouldBe limit },
                 isNull(),
+                any(),
             )
         }
 
@@ -1156,7 +1191,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 )
 
             mockS3Client.stub {
-                onBlocking { list(any(), anyOrNull(), anyOrNull()) } doReturn
+                onBlocking { list(any(), anyOrNull(), anyOrNull(), any()) } doReturn
                     S3ClientListResult(
                         items = s3Objects,
                         nextToken = null,
@@ -1173,6 +1208,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 check { it shouldBe s3Prefix },
                 check { it shouldBe limit },
                 check { it shouldBe nextToken },
+                any(),
             )
         }
 
@@ -1388,7 +1424,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
             }
 
             val result = instanceUnderTest.getObjectMetadata(s3Key)
@@ -1414,7 +1450,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
             }
 
             val exception =
@@ -1440,7 +1476,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
             }
 
             val exception =
@@ -1459,7 +1495,8 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val s3Key = "test-s3-key"
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doThrow S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
+                onBlocking { getObjectMetadata(any(), any()) } doThrow
+                    S3Exception.DownloadException(StringConstants.S3_NOT_FOUND_ERROR_CODE)
             }
 
             shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
@@ -1475,7 +1512,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
             val s3Key = "test-s3-key"
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doThrow RuntimeException("Unexpected error")
+                onBlocking { getObjectMetadata(any(), any()) } doThrow RuntimeException("Unexpected error")
             }
 
             shouldThrow<RuntimeException> {
@@ -1495,7 +1532,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
             }
 
             val exception =
@@ -1526,7 +1563,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 }
 
             mockS3Client.stub {
-                onBlocking { getObjectMetadata(any()) } doReturn metadata
+                onBlocking { getObjectMetadata(any(), any()) } doReturn metadata
             }
 
             val result = instanceUnderTest.getObjectMetadata(s3Key)

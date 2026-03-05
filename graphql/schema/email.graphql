@@ -366,6 +366,13 @@ input CancelScheduledDraftMessageInput {
   emailAddressId: ID!
 }
 
+input SendMaskedEmailMessageInput {
+  emailMaskId: ID!
+  message: S3EmailObjectInput!
+  encryptionStatus: EmailMessageEncryptionStatus!
+  rfc822Header: Rfc822HeaderInput!
+}
+
 type EmailConfigurationData {
   deleteEmailMessagesLimit: Int!
   updateEmailMessagesLimit: Int!
@@ -381,6 +388,11 @@ type EmailConfigurationData {
 type Owner {
   id: String!
   issuer: String!
+}
+
+type Rfc822DataAttributesType {
+    bucket: String!
+    key: String!
 }
 
 type EmailAddress {
@@ -434,9 +446,11 @@ type SealedEmailMessage {
   state: EmailMessageState!
   clientRefId: String
   rfc822Header: SealedAttribute!
+  rfc822DataAttributes: Rfc822DataAttributesType!
   size: Float!
   encryptionStatus: EmailMessageEncryptionStatus
   deletedAtEpochMs: Float
+  emailMaskId: ID
 }
 
 type UpdatedEmailMessageSuccess {
@@ -530,6 +544,7 @@ type EmailAddressPublicInfo {
   keyId: String!
   publicKey: String!
   publicKeyDetails: EmailAddressPublicKey!
+  enableEncryption: Boolean
 }
 
 type LookupEmailAddressesPublicInfoResponse {
@@ -586,6 +601,7 @@ type EmailMask {
     id: ID!
     owner: ID!
     owners: [Owner!]!
+    keyRingId: ID!
     identityId: ID!
     maskAddress: String!
     realAddress: String!
@@ -725,6 +741,9 @@ type Mutation {
 
   disableEmailMask(input: DisableEmailMaskInput!): EmailMask!
 
+  sendMaskedEmailMessage(
+    input: SendMaskedEmailMessageInput!
+  ): SendEmailMessageResult!
 }
 
 type Subscription {

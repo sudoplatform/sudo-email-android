@@ -25,6 +25,16 @@ interface S3Client {
     val bucket: String
 
     /**
+     * Options for key handling in AWS S3 operations.
+     *
+     * @property isKeyCredentialled [Boolean] Whether the key already includes the credentials prefix.
+     * Defaults to false.
+     */
+    data class KeyOptions(
+        val isKeyCredentialled: Boolean = false,
+    )
+
+    /**
      * Uploads a RFC822 data to AWS S3.
      *
      * @param data [ByteArray] RFC822 data to upload.
@@ -37,24 +47,33 @@ interface S3Client {
         data: ByteArray,
         objectId: String,
         metadata: Map<String, String>? = null,
+        options: KeyOptions = KeyOptions(),
     ): String
 
     /**
      * Downloads a RFC822 data from AWS S3.
      *
      * @param key [String] AWS S3 key representing the location of the RFC822 data.
+     * @param options [KeyOptions] Optional options to configure key handling behaviour.
      * @return The downloaded RFC822 data as a [ByteArray].
      */
     @Throws(S3Exception::class)
-    suspend fun download(key: String): ByteArray
+    suspend fun download(
+        key: String,
+        options: KeyOptions = KeyOptions(),
+    ): ByteArray
 
     /**
      * Deletes a RFC822 data from AWS S3.
      *
      * @param objectId [String] AWS S3 key representing the location of the RFC822 data.
+     * @param options [KeyOptions] Optional options to configure key handling behaviour.
      */
     @Throws(S3Exception::class)
-    suspend fun delete(objectId: String)
+    suspend fun delete(
+        objectId: String,
+        options: KeyOptions = KeyOptions(),
+    )
 
     /**
      * Returns a list of objects from AWS S3
@@ -69,26 +88,33 @@ interface S3Client {
         prefix: String,
         limit: Int? = null,
         nextToken: String? = null,
+        options: KeyOptions = KeyOptions(),
     ): S3ClientListResult
 
     /**
      * Returns the metadata associated with the object with the given key.
      *
      * @param key [String] The object's key.
+     * @param options [KeyOptions] Optional options to configure key handling behaviour.
      * @return The [ObjectMetadata].
      */
     @Throws(S3Exception::class)
-    suspend fun getObjectMetadata(key: String): ObjectMetadata
+    suspend fun getObjectMetadata(
+        key: String,
+        options: KeyOptions = KeyOptions(),
+    ): ObjectMetadata
 
     /**
      * Updates the metadata associated with the object with the given key.
      *
      * @param key [String] The object's key.
      * @param metadata [Map<String, String>] A map containing the new metadata.
+     * @param options [KeyOptions] Optional options to configure key handling behaviour.
      */
     @Throws(S3Exception::class)
     suspend fun updateObjectMetadata(
         key: String,
         metadata: Map<String, String>,
+        options: KeyOptions = KeyOptions(),
     )
 }

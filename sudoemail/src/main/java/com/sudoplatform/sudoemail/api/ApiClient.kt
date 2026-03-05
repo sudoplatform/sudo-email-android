@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,7 @@ import com.sudoplatform.sudoemail.graphql.ProvisionEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.ScheduleSendDraftMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.SendEncryptedEmailMessageMutation
+import com.sudoplatform.sudoemail.graphql.SendMaskedEmailMessageMutation
 import com.sudoplatform.sudoemail.graphql.UnblockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
@@ -77,6 +78,7 @@ import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput
 import com.sudoplatform.sudoemail.graphql.type.SendEncryptedEmailMessageInput
+import com.sudoplatform.sudoemail.graphql.type.SendMaskedEmailMessageInput
 import com.sudoplatform.sudoemail.graphql.type.UnblockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput
@@ -271,6 +273,14 @@ open class ApiClient(
     ): GraphQLResponse<SendEncryptedEmailMessageMutation.Data> =
         graphQLClient.mutate<SendEncryptedEmailMessageMutation, SendEncryptedEmailMessageMutation.Data>(
             SendEncryptedEmailMessageMutation.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun sendMaskedEmailMessageMutation(
+        input: SendMaskedEmailMessageInput,
+    ): GraphQLResponse<SendMaskedEmailMessageMutation.Data> =
+        graphQLClient.mutate<SendMaskedEmailMessageMutation, SendMaskedEmailMessageMutation.Data>(
+            SendMaskedEmailMessageMutation.OPERATION_DOCUMENT,
             mapOf("input" to input),
         )
 

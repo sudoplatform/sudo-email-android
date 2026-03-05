@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@ package com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage
 import com.sudoplatform.sudoemail.BaseTests
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.data.EntityDataFactory
+import com.sudoplatform.sudoemail.graphql.type.EmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
@@ -66,6 +67,9 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             EntityDataFactory.getEmailAddressPublicInfoEntity(
                 emailAddress = "recipient@$internalDomain",
             ),
+            EntityDataFactory.getEmailAddressPublicInfoEntity(
+                emailAddress = "mask@$mockMaskDomain",
+            ),
         )
     }
 
@@ -89,6 +93,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
         mock<EmailMessageService>().stub {
             onBlocking { send(any()) } doReturn sendResult
             onBlocking { sendEncrypted(any()) } doReturn sendResult
+            onBlocking { sendMasked(any()) } doReturn sendResult
         }
     }
 
@@ -98,6 +103,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                 getConfigurationData()
             } doReturn configurationDataEntity
             onBlocking { getConfiguredEmailDomains() } doReturn listOf(internalDomain)
+            onBlocking { getEmailMaskDomains() } doReturn listOf(mockMaskDomain)
         }
     }
 
@@ -127,7 +133,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
     private val mockS3TransientClient by before {
         mock<S3Client>().stub {
-            onBlocking { upload(any(), any(), anyOrNull()) } doReturn mockS3Key
+            onBlocking { upload(any(), any(), anyOrNull(), any()) } doReturn mockS3Key
         }
     }
 
@@ -173,6 +179,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     attachments = emptyList(),
                     inlineAttachments = emptyList(),
@@ -186,12 +193,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
@@ -218,6 +226,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = emptyList(),
@@ -231,13 +240,14 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailAddressService).lookupPublicInfo(any())
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).sendEncrypted(
                 check { serviceInput ->
                     serviceInput.emailAddressId shouldBe mockEmailAddressId
@@ -269,6 +279,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = emptyList(),
@@ -282,13 +293,14 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailAddressService).lookupPublicInfo(any())
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).sendEncrypted(
                 check { serviceInput ->
                     serviceInput.emailAddressId shouldBe mockEmailAddressId
@@ -333,6 +345,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -343,6 +356,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
         }
 
     @Test
@@ -355,7 +369,24 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             mockConfigurationDataService.stub {
                 onBlocking { getConfigurationData() } doReturn limitedConfig
             }
-
+            val publicManyInfoEntities =
+                listOf(
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "sender@$internalDomain",
+                    ),
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "recipient1@$internalDomain",
+                    ),
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "recipient2@$internalDomain",
+                    ),
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "recipient3@$internalDomain",
+                    ),
+                )
+            mockEmailAddressService.stub {
+                onBlocking { lookupPublicInfo(any()) } doReturn publicManyInfoEntities
+            }
             val header =
                 InternetMessageFormatHeaderEntity(
                     from = EmailMessageAddressEntity("sender@internal.example.com"),
@@ -374,6 +405,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -384,6 +416,8 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+            verify(mockEmailAddressService).lookupPublicInfo(any())
         }
 
     @Test
@@ -402,6 +436,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -413,12 +448,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
@@ -445,6 +481,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Reply body",
                     replyingMessageId = "original-message-id",
@@ -457,12 +494,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
@@ -489,6 +527,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Forward body",
                     forwardingMessageId = "forwarded-message-id",
@@ -501,12 +540,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
@@ -537,6 +577,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -547,12 +588,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(any())
         }
 
@@ -589,6 +631,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = listOf(badAttachment),
@@ -621,6 +664,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -632,12 +676,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
@@ -668,6 +713,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -679,12 +725,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
@@ -715,6 +762,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -726,12 +774,13 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
@@ -766,6 +815,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -777,18 +827,281 @@ class SendEmailMessageUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
             verify(mockEmailMessageDataProcessor).processMessageData(
                 any(),
                 any(),
                 any(),
             )
-            verify(mockS3TransientClient).upload(any(), any(), anyOrNull())
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
             verify(mockEmailMessageService).send(
                 check { serviceInput ->
                     serviceInput.transientBucket shouldBe transientBucket
                     serviceInput.region shouldBe region
                     serviceInput.emailAddressId shouldBe mockEmailAddressId
                     serviceInput.s3ObjectKey shouldBe mockS3Key
+                },
+            )
+        }
+
+    /** Begin SendMaskedEmailMessageTests */
+
+    @Test
+    fun `execute() should send masked email for out-of-network recipients`() =
+        runTest {
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("mask@$mockMaskDomain"),
+                    to = listOf(EmailMessageAddressEntity("external@$externalDomain")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val maskId = "test-mask-id"
+            val input =
+                SendEmailMessageUseCaseInput(
+                    senderEmailAddressId = null,
+                    senderMaskId = maskId,
+                    emailMessageHeader = header,
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                    body = "Test body",
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldNotBe null
+            result.id shouldBe sendResult.id
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+            verify(mockEmailMessageDataProcessor).processMessageData(
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
+            verify(mockEmailMessageService).sendMasked(
+                check { serviceInput ->
+                    serviceInput.emailMaskId shouldBe maskId
+                    serviceInput.transientBucket shouldBe transientBucket
+                    serviceInput.region shouldBe region
+                    serviceInput.encryptionStatus.toString() shouldBe EmailMessageEncryptionStatus.UNENCRYPTED.toString()
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should send masked email for in-network recipients`() =
+        runTest {
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("mask@$mockMaskDomain"),
+                    to = listOf(EmailMessageAddressEntity("recipient@$internalDomain")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val maskId = "test-mask-id"
+            val input =
+                SendEmailMessageUseCaseInput(
+                    senderEmailAddressId = null,
+                    senderMaskId = maskId,
+                    emailMessageHeader = header,
+                    body = "Test body",
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldNotBe null
+            result.id shouldBe sendResult.id
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+            verify(mockEmailAddressService).lookupPublicInfo(any())
+            verify(mockEmailMessageDataProcessor).processMessageData(
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
+            verify(mockEmailMessageService).sendMasked(
+                check { serviceInput ->
+                    serviceInput.emailMaskId shouldBe maskId
+                    serviceInput.transientBucket shouldBe transientBucket
+                    serviceInput.region shouldBe region
+                    serviceInput.encryptionStatus.toString() shouldBe EmailMessageEncryptionStatus.ENCRYPTED.toString()
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should throw InvalidArgumentException when neither senderEmailAddressId nor senderMaskId is provided`() =
+        runTest {
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("sender@$mockMaskDomain"),
+                    to = listOf(EmailMessageAddressEntity("external@$externalDomain")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val input =
+                SendEmailMessageUseCaseInput(
+                    senderEmailAddressId = null,
+                    senderMaskId = null,
+                    emailMessageHeader = header,
+                    body = "Test body",
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                )
+
+            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                useCase.execute(input)
+            }
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+        }
+
+    @Test
+    fun `execute() should not send encrypted if enableEncryption is missing from EmailAddressPublicInfo`() =
+        runTest {
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("sender@$internalDomain"),
+                    to = listOf(EmailMessageAddressEntity("recipient@$internalDomain")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            // Simulate EmailAddressPublicInfoEntity with enableEncryption missing (set to false)
+            val publicInfoEntitiesNoEncryption =
+                listOf(
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "sender@$internalDomain",
+                        enableEncryption = false,
+                    ),
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "recipient@$internalDomain",
+                        enableEncryption = false,
+                    ),
+                )
+
+            mockEmailAddressService.stub {
+                onBlocking { lookupPublicInfo(any()) } doReturn publicInfoEntitiesNoEncryption
+            }
+
+            val input =
+                SendEmailMessageUseCaseInput(
+                    senderEmailAddressId = mockEmailAddressId,
+                    senderMaskId = null,
+                    emailMessageHeader = header,
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                    body = "Test body",
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldNotBe null
+            result.id shouldBe sendResult.id
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+            verify(mockEmailAddressService).lookupPublicInfo(any())
+            verify(mockEmailMessageDataProcessor).processMessageData(
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
+            verify(mockEmailMessageService).send(
+                check { serviceInput ->
+                    serviceInput.emailAddressId shouldBe mockEmailAddressId
+                    serviceInput.transientBucket shouldBe transientBucket
+                    serviceInput.region shouldBe region
+                    // No encryptionStatus field for SendEmailMessageRequest
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should send masked email for non-encrypted recipients`() =
+        runTest {
+            val header =
+                InternetMessageFormatHeaderEntity(
+                    from = EmailMessageAddressEntity("mask@$mockMaskDomain"),
+                    to = listOf(EmailMessageAddressEntity("recipient@$internalDomain")),
+                    cc = emptyList(),
+                    bcc = emptyList(),
+                    replyTo = emptyList(),
+                    subject = "Test Subject",
+                )
+
+            val maskId = "test-mask-id"
+            val publicInfoEntitiesNoEncryption =
+                listOf(
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "recipient@$internalDomain",
+                        enableEncryption = false,
+                    ),
+                    EntityDataFactory.getEmailAddressPublicInfoEntity(
+                        emailAddress = "mask@$mockMaskDomain",
+                    ),
+                )
+
+            mockEmailAddressService.stub {
+                onBlocking { lookupPublicInfo(any()) } doReturn publicInfoEntitiesNoEncryption
+            }
+
+            val input =
+                SendEmailMessageUseCaseInput(
+                    senderEmailAddressId = null,
+                    senderMaskId = maskId,
+                    emailMessageHeader = header,
+                    body = "Test body",
+                    attachments = emptyList(),
+                    inlineAttachments = emptyList(),
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldNotBe null
+            result.id shouldBe sendResult.id
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+            verify(mockConfigurationDataService).getEmailMaskDomains()
+            verify(mockEmailAddressService).lookupPublicInfo(any())
+            verify(mockEmailMessageDataProcessor).processMessageData(
+                any(),
+                any(),
+                any(),
+            )
+            verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
+            verify(mockEmailMessageService).sendMasked(
+                check { serviceInput ->
+                    serviceInput.emailMaskId shouldBe maskId
+                    serviceInput.transientBucket shouldBe transientBucket
+                    serviceInput.region shouldBe region
+                    serviceInput.encryptionStatus.toString() shouldBe EmailMessageEncryptionStatus.UNENCRYPTED.toString()
                 },
             )
         }

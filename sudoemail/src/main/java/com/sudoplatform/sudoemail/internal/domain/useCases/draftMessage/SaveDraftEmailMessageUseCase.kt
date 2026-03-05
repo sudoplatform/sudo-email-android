@@ -13,6 +13,7 @@ import com.sudoplatform.sudoemail.internal.data.draftMessage.transformers.DraftE
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.SaveDraftEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressPublicInfoEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCase
@@ -122,26 +123,28 @@ internal class SaveDraftEmailMessageUseCase(
                         }
                     }
 
+            var emailAddressesPublicInfo: List<EmailAddressPublicInfoEntity> = emptyList()
+            var shouldEncrypt = false
             if (allRecipientsInternal) {
-                // It is, so let's encrypt it
-                if (allRecipients.size > configurationData.encryptedEmailMessageRecipientsLimit) {
-                    throw SudoEmailClient.EmailMessageException.LimitExceededException(
-                        "${StringConstants.RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG}${configurationData.encryptedEmailMessageRecipientsLimit}",
-                    )
-                }
                 val allRecipientsAndSender = allRecipients.toMutableList()
                 allRecipientsAndSender.add(
                     EmailAddressParser.removeDisplayName(messageData.from[0]),
                 )
-
-                val emailAddressesPublicInfo =
+                emailAddressesPublicInfo =
                     lookupEmailAddressesPublicInfoUseCase.execute(
                         LookupEmailAddressesPublicInfoUseCaseInput(
                             addresses = allRecipientsAndSender,
                             throwIfNotAllInternal = true,
                         ),
                     )
-
+                shouldEncrypt = emailAddressesPublicInfo.all { it.enableEncryption }
+            }
+            if (shouldEncrypt) {
+                if (allRecipients.size > configurationData.encryptedEmailMessageRecipientsLimit) {
+                    throw SudoEmailClient.EmailMessageException.LimitExceededException(
+                        "${StringConstants.RECIPIENT_LIMIT_EXCEEDED_ERROR_MSG}${configurationData.encryptedEmailMessageRecipientsLimit}",
+                    )
+                }
                 cleanRfc822Data =
                     emailMessageDataProcessor.processMessageData(
                         messageData,

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ import com.sudoplatform.sudoemail.graphql.type.Rfc822HeaderInput
 import com.sudoplatform.sudoemail.graphql.type.S3EmailObjectInput
 import com.sudoplatform.sudoemail.graphql.type.SendEmailMessageInput
 import com.sudoplatform.sudoemail.graphql.type.SendEncryptedEmailMessageInput
+import com.sudoplatform.sudoemail.graphql.type.SendMaskedEmailMessageInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.data.common.transformers.BatchOperationResultTransformer
@@ -27,12 +28,15 @@ import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransfo
 import com.sudoplatform.sudoemail.internal.data.common.transformers.SortOrderTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageDateRangeTransformer.toEmailMessageDateRangeInput
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageTransformer
+import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageTransformer.toEmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.internal.domain.entities.common.BatchOperationResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.EmailMessageOperationFailureResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteEmailMessagesResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteMessageForFolderIdRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.InternetMessageFormatHeaderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesForEmailFolderIdRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesOutput
@@ -41,6 +45,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SealedEm
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEncryptedEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendMaskedEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.UpdateEmailMessagesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.UpdatedEmailMessageResultEntity
 import com.sudoplatform.sudoemail.internal.util.toDate
@@ -118,30 +123,8 @@ internal class GraphQLEmailMessageService(
                     bucket = transientBucket,
                 )
 
-            val inReplyToHeaderValue =
-                if (replyingMessageId != null) {
-                    Optional.presentIfNotNull(replyingMessageId)
-                } else {
-                    Optional.Absent
-                }
-            val referencesHeaderValue =
-                if (forwardingMessageId != null) {
-                    Optional.presentIfNotNull(listOf(forwardingMessageId))
-                } else {
-                    Optional.Absent
-                }
             val rfc822HeaderInput =
-                Rfc822HeaderInput(
-                    from = emailMessageHeader.from.toString(),
-                    to = emailMessageHeader.to.map { it.toString() },
-                    cc = emailMessageHeader.cc.map { it.toString() },
-                    bcc = emailMessageHeader.bcc.map { it.toString() },
-                    replyTo = emailMessageHeader.replyTo.map { it.toString() },
-                    subject = Optional.presentIfNotNull(emailMessageHeader.subject),
-                    hasAttachments = Optional.presentIfNotNull(attachments.isNotEmpty() || inlineAttachments.isNotEmpty()),
-                    inReplyTo = inReplyToHeaderValue,
-                    references = referencesHeaderValue,
-                )
+                constructRfc822HeaderInput(replyingMessageId, forwardingMessageId, emailMessageHeader, attachments, inlineAttachments)
 
             val mutationInput =
                 SendEncryptedEmailMessageInput(
@@ -160,6 +143,63 @@ internal class GraphQLEmailMessageService(
             }
 
             val result = mutationResponse.data?.sendEncryptedEmailMessage
+            result?.let {
+                return SendEmailMessageResultEntity(
+                    it.sendEmailMessageResult.id,
+                    it.sendEmailMessageResult.createdAtEpochMs.toDate(),
+                )
+            }
+            throw SudoEmailClient.EmailMessageException.FailedException(StringConstants.NO_EMAIL_ID_ERROR_MSG)
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            throw ErrorTransformer.interpretEmailMessageException(e)
+        }
+    }
+
+    override suspend fun sendMasked(input: SendMaskedEmailMessageRequest): SendEmailMessageResultEntity {
+        logger.debug("Sending masked email message: $input")
+        val (
+            emailMaskId,
+            encryptionStatus,
+            s3ObjectKey,
+            region,
+            transientBucket,
+            emailMessageHeader,
+            attachments,
+            inlineAttachments,
+            replyingMessageId,
+            forwardingMessageId,
+        ) = input
+        try {
+            val s3EmailObject =
+                S3EmailObjectInput(
+                    key = s3ObjectKey,
+                    region = region,
+                    bucket = transientBucket,
+                )
+
+            val rfc822HeaderInput =
+                constructRfc822HeaderInput(replyingMessageId, forwardingMessageId, emailMessageHeader, attachments, inlineAttachments)
+
+            val mutationInput =
+                SendMaskedEmailMessageInput(
+                    emailMaskId = emailMaskId,
+                    message = s3EmailObject,
+                    rfc822Header = rfc822HeaderInput,
+                    encryptionStatus = encryptionStatus.toEmailMessageEncryptionStatus(),
+                )
+
+            val mutationResponse =
+                apiClient.sendMaskedEmailMessageMutation(
+                    mutationInput,
+                )
+
+            if (mutationResponse.hasErrors()) {
+                logger.error("errors = ${mutationResponse.errors}")
+                throw ErrorTransformer.interpretEmailMessageError(mutationResponse.errors.first())
+            }
+
+            val result = mutationResponse.data?.sendMaskedEmailMessage
             result?.let {
                 return SendEmailMessageResultEntity(
                     it.sendEmailMessageResult.id,
@@ -433,5 +473,39 @@ internal class GraphQLEmailMessageService(
             throw ErrorTransformer.interpretEmailFolderError(mutationResponse.errors.first())
         }
         return mutationResponse.data.deleteMessagesByFolderId
+    }
+
+    private fun constructRfc822HeaderInput(
+        replyingMessageId: String?,
+        forwardingMessageId: String?,
+        emailMessageHeader: InternetMessageFormatHeaderEntity,
+        attachments: List<EmailAttachmentEntity>,
+        inlineAttachments: List<EmailAttachmentEntity>,
+    ): Rfc822HeaderInput {
+        val inReplyToHeaderValue =
+            if (replyingMessageId != null) {
+                Optional.presentIfNotNull(replyingMessageId)
+            } else {
+                Optional.Absent
+            }
+        val referencesHeaderValue =
+            if (forwardingMessageId != null) {
+                Optional.presentIfNotNull(listOf(forwardingMessageId))
+            } else {
+                Optional.Absent
+            }
+        val rfc822HeaderInput =
+            Rfc822HeaderInput(
+                from = emailMessageHeader.from.toString(),
+                to = emailMessageHeader.to.map { it.toString() },
+                cc = emailMessageHeader.cc.map { it.toString() },
+                bcc = emailMessageHeader.bcc.map { it.toString() },
+                replyTo = emailMessageHeader.replyTo.map { it.toString() },
+                subject = Optional.presentIfNotNull(emailMessageHeader.subject),
+                hasAttachments = Optional.presentIfNotNull(attachments.isNotEmpty() || inlineAttachments.isNotEmpty()),
+                inReplyTo = inReplyToHeaderValue,
+                references = referencesHeaderValue,
+            )
+        return rfc822HeaderInput
     }
 }

@@ -92,6 +92,7 @@ class DefaultEmailMessageDataProcessorTest {
                         keyFormat = PublicKeyFormatEntity.SPKI,
                         algorithm = "algorithm",
                     ),
+                enableEncryption = true,
             ),
         )
 

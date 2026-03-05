@@ -15,10 +15,12 @@ import kotlinx.parcelize.Parcelize
  * @property emailAddress [String] The email address in format 'local-part@domain'.
  * @property keyId [String] Identifier associated with the public key.
  * @property publicKeyDetails [EmailAddressPublicKeyEntity] The public key for the email address,
+ * @property enableEncryption [Boolean] Whether or not to enable encryption for the email address.
  */
 @Parcelize
 internal data class EmailAddressPublicInfoEntity(
     val emailAddress: String,
     val keyId: String,
     val publicKeyDetails: EmailAddressPublicKeyEntity,
+    val enableEncryption: Boolean,
 ) : Parcelable

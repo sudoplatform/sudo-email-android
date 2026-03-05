@@ -38,6 +38,7 @@ class EmailAddressPublicInfoTransformerTest : BaseTests() {
                     "algorithm",
                 ),
             ),
+            true,
         )
     }
 
@@ -50,6 +51,7 @@ class EmailAddressPublicInfoTransformerTest : BaseTests() {
                 PublicKeyFormatEntity.RSA_PUBLIC_KEY,
                 "algorithm",
             ),
+            true,
         )
     }
 

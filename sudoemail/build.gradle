@@ -149,6 +149,8 @@ dependencies {
     androidTestImplementation 'com.sudoplatform:sudoentitlements:13.0.0'
     androidTestImplementation 'com.sudoplatform:sudoentitlementsadmin:11.0.0'
     androidTestImplementation 'com.sudoplatform:sudoprofiles:17.0.0'
+//
+//    androidTestImplementation 'org.simplejavamail:simple-java-mail:8.12.6'
 }
 
 // Returns a list of `configurations` which should not be scanned for vulnerabilities

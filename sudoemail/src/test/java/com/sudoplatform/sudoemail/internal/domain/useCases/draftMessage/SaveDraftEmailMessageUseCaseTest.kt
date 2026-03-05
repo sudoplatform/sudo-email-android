@@ -347,6 +347,16 @@ class SaveDraftEmailMessageUseCaseTest : BaseTests() {
                     attachments = emptyList(),
                     inlineAttachments = emptyList(),
                 )
+            val tooManyPublicInfo =
+                (1..11).map { EntityDataFactory.getEmailAddressPublicInfoEntity(emailAddress = "recipient$it@$mockInternalDomain") }
+
+            mockEmailAddressService.stub {
+                onBlocking {
+                    lookupPublicInfo(
+                        any(),
+                    )
+                } doReturn tooManyPublicInfo + EntityDataFactory.getEmailAddressPublicInfoEntity(emailAddress = mockSenderAddress)
+            }
 
             mockEmailMessageDataProcessor.stub {
                 on { parseInternetMessageData(any()) } doReturn mockMessageWithTooManyRecipients
@@ -369,6 +379,7 @@ class SaveDraftEmailMessageUseCaseTest : BaseTests() {
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockEmailMessageDataProcessor).parseInternetMessageData(rfc822Data)
             verify(mockConfigurationDataService).getConfiguredEmailDomains()
+            verify(mockLookupEmailAddressesPublicInfoUseCase).execute(any())
         }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@ import com.sudoplatform.sudoemail.s3.S3Exception
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudouser.exceptions.HTTP_STATUS_CODE_KEY
+import jakarta.mail.internet.AddressException
 import java.net.HttpURLConnection
 import java.util.concurrent.CancellationException
 
@@ -259,6 +260,12 @@ internal object ErrorTransformer {
             is CancellationException,
             is SudoEmailClient.EmailMessageException,
             -> e
+
+            is AddressException ->
+                SudoEmailClient.EmailMessageException.InvalidMessageContentException(
+                    StringConstants.INVALID_MESSAGE_CONTENT_MSG,
+                    e,
+                )
 
             is Unsealer.UnsealerException ->
                 SudoEmailClient.EmailMessageException.UnsealingException(

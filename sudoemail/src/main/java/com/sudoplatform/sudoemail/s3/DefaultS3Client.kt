@@ -61,15 +61,6 @@ class DefaultS3Client(
     companion object {
         fun constructS3PrefixForEmailAddress(emailAddressId: String): String = "email/$emailAddressId"
 
-        fun constructS3KeyForEmailMessage(
-            emailAddressId: String,
-            emailMessageId: String,
-            keyId: String,
-        ): String {
-            val keyPrefix = constructS3PrefixForEmailAddress(emailAddressId)
-            return "$keyPrefix/$emailMessageId-$keyId"
-        }
-
         fun constructS3KeyForDraftEmailMessage(
             emailAddressId: String,
             draftEmailMessageId: String = "",
@@ -84,11 +75,12 @@ class DefaultS3Client(
         data: ByteArray,
         objectId: String,
         metadata: Map<String, String>?,
+        options: S3Client.KeyOptions,
     ): String =
         suspendCancellableCoroutine { cont ->
             this.logger.debug("Uploading a RFC822 data to S3.")
 
-            val s3Key = this.constructS3KeyWithCredentials(objectId)
+            val s3Key = if (options.isKeyCredentialled) objectId else this.constructS3KeyWithCredentials(objectId)
 
             val objectMetadata = ObjectMetadata()
 
@@ -154,11 +146,14 @@ class DefaultS3Client(
             )
         }
 
-    override suspend fun download(key: String): ByteArray =
+    override suspend fun download(
+        key: String,
+        options: S3Client.KeyOptions,
+    ): ByteArray =
         suspendCancellableCoroutine { cont ->
             this.logger.debug("Downloading a RFC822 data from S3.")
 
-            val s3Key = this.constructS3KeyWithCredentials(key)
+            val s3Key = if (options.isKeyCredentialled) key else this.constructS3KeyWithCredentials(key)
 
             val id = UUID.randomUUID().toString().uppercase(Locale.ROOT)
             val tmpFile = File.createTempFile(id, ".tmp")
@@ -173,7 +168,14 @@ class DefaultS3Client(
                             TransferState.COMPLETED -> {
                                 this@DefaultS3Client.logger.info("S3 download completed successfully.")
                                 if (cont.isActive) {
-                                    cont.resume(tmpFile.readBytes())
+                                    try {
+                                        cont.resume(tmpFile.readBytes())
+                                    } catch (e: Exception) {
+                                        this@DefaultS3Client.logger.error("S3 download failed to read temp file: $e")
+                                        cont.resumeWithException(
+                                            S3Exception.DownloadException("Failed to read downloaded file.", cause = e),
+                                        )
+                                    }
                                 }
                             }
                             TransferState.CANCELED -> {
@@ -214,9 +216,12 @@ class DefaultS3Client(
             )
         }
 
-    override suspend fun delete(objectId: String) {
+    override suspend fun delete(
+        objectId: String,
+        options: S3Client.KeyOptions,
+    ) {
         this.logger.info("Deleting a RFC822 data from S3.")
-        val s3Key = this.constructS3KeyWithCredentials(objectId)
+        val s3Key = if (options.isKeyCredentialled) objectId else this.constructS3KeyWithCredentials(objectId)
 
         try {
             val request = DeleteObjectRequest(this.bucket, s3Key)
@@ -231,9 +236,10 @@ class DefaultS3Client(
         prefix: String,
         limit: Int?,
         nextToken: String?,
+        options: S3Client.KeyOptions,
     ): S3ClientListResult {
         val request = ListObjectsV2Request()
-        val s3Key = this.constructS3KeyWithCredentials(prefix)
+        val s3Key = if (options.isKeyCredentialled) prefix else this.constructS3KeyWithCredentials(prefix)
         request.bucketName = this.bucket
         request.prefix = s3Key
         request.continuationToken = nextToken
@@ -251,17 +257,21 @@ class DefaultS3Client(
         )
     }
 
-    override suspend fun getObjectMetadata(key: String): ObjectMetadata {
-        val s3Key = this.constructS3KeyWithCredentials(key)
+    override suspend fun getObjectMetadata(
+        key: String,
+        options: S3Client.KeyOptions,
+    ): ObjectMetadata {
+        val s3Key = if (options.isKeyCredentialled) key else this.constructS3KeyWithCredentials(key)
         return this.amazonS3Client.getObjectMetadata(this.bucket, s3Key)
     }
 
     override suspend fun updateObjectMetadata(
         key: String,
         metadata: Map<String, String>,
+        options: S3Client.KeyOptions,
     ) {
         try {
-            val objectData = download(key)
+            val objectData = download(key, options)
             upload(objectData, key, metadata)
         } catch (e: Exception) {
             this@DefaultS3Client.logger.error("Replacing object metadata failed: $key")
