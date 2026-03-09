@@ -134,6 +134,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 }
             deferredResult.start()
             val result = deferredResult.await()
+            // Allow background IO coroutines (invoker) to complete
+            Thread.sleep(500)
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.SUCCESS
@@ -169,6 +171,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 }
             deferredResult.start()
             val result = deferredResult.await()
+            // Allow background IO coroutines (invoker) to complete
+            Thread.sleep(500)
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.PARTIAL
@@ -277,6 +281,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 }
             deferredResult.start()
             val result = deferredResult.await()
+            // Allow background IO coroutines (invoker) to complete
+            Thread.sleep(500)
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.SUCCESS
@@ -315,6 +321,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 }
             deferredResult.start()
             val result = deferredResult.await()
+            // Allow background IO coroutines (invoker) to complete
+            Thread.sleep(500)
 
             result shouldNotBe null
             result.status shouldBe BatchOperationStatus.SUCCESS
@@ -346,6 +354,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 }
             deferredResult.start()
             val result = deferredResult.await()
+            // Allow background IO coroutines (invoker) to complete
+            Thread.sleep(500)
 
             result shouldNotBe null
 
@@ -402,6 +412,8 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
                 }
             deferredResult.start()
             deferredResult.await()
+            // Allow background IO coroutines (invoker) to complete
+            Thread.sleep(500)
 
             verify(mockUseCaseFactory).createDeleteDraftEmailMessagesUseCase()
             verify(mockUseCase).execute(

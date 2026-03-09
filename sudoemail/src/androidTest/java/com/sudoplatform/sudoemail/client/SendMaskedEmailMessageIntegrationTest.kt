@@ -83,7 +83,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             testEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddressList.add(testEmailAddress)
 
-            externalTestAccount = ExternalTestAccount(logger, ExternalTestAccountType.GMAIL)
+            externalTestAccount = ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
         }
 
     @After
@@ -405,9 +405,9 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
 
             val otherExternalTestAccount =
                 if (externalTestAccount.getAccountType() == ExternalTestAccountType.GMAIL) {
-                    ExternalTestAccount(logger, ExternalTestAccountType.YAHOO)
+                    ExternalTestAccount(context, logger, ExternalTestAccountType.YAHOO)
                 } else {
-                    ExternalTestAccount(logger, ExternalTestAccountType.GMAIL)
+                    ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
                 }
 
             val emailMessageHeader =
@@ -516,9 +516,9 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
 
             val otherExternalTestAccount =
                 if (externalTestAccount.getAccountType() == ExternalTestAccountType.GMAIL) {
-                    ExternalTestAccount(logger, ExternalTestAccountType.YAHOO)
+                    ExternalTestAccount(context, logger, ExternalTestAccountType.YAHOO)
                 } else {
-                    ExternalTestAccount(logger, ExternalTestAccountType.GMAIL)
+                    ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
                 }
 
             val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)

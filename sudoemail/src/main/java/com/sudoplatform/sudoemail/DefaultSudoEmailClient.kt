@@ -155,7 +155,12 @@ import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudonotification.types.NotificationMetaData
 import com.sudoplatform.sudonotification.types.NotificationSchemaEntry
+import com.sudoplatform.sudouser.SignInGuard
+import com.sudoplatform.sudouser.SudoPlatformSignInCallback
 import com.sudoplatform.sudouser.SudoUserClient
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Default implementation of the [SudoEmailClient] interface.
@@ -273,6 +278,16 @@ internal class DefaultSudoEmailClient(
         SubscriptionService(apiClient, serviceKeyManager, sudoUserClient, logger),
 ) : SudoEmailClient {
     /**
+     * Mutex for thread-safe access to the sign-in callback.
+     */
+    private val callbackMutex = Mutex()
+
+    /**
+     * Threadsafe container for optional callback to be invoked when operations are attempted while not signed in.
+     */
+    private var signInGuard = SignInGuard(sudoUserClient)
+
+    /**
      * Checksum's for each file are generated and are used to create a checksum that is used when
      * publishing to maven central. In order to retry a failed publish without needing to change any
      * functionality, we need a way to generate a different checksum for the source code. We can
@@ -285,24 +300,59 @@ internal class DefaultSudoEmailClient(
     /** Long-lived invoker for async (set and forget) email client operations. */
     val invoker = EmailClientInvoker(this, logger)
 
+    override fun setSignInCallback(callback: SudoPlatformSignInCallback?) {
+        runBlocking {
+            callbackMutex.withLock {
+                signInGuard.setCallback(callback)
+            }
+        }
+    }
+
+    /**
+     * Checks if the user is signed in and invokes the callback if needed.
+     * Only performs the check if a callback is configured.
+     *
+     * This method implements the automatic sign-in checking mechanism:
+     * If no callback is set, returns immediately (backward compatible behavior)
+     * If callback is set, checks if user is signed in using sudoUserClient.getSubject()
+     * If user is not signed in, invokes the callback
+     * Any exceptions from the callback are propagated to the caller
+     *
+     * @throws Exception Any exception thrown by the sign-in callback is propagated
+     */
+    private suspend fun ensureSignedIn() {
+        signInGuard.ensureSignedIn()
+    }
+
     @Throws(SudoEmailClient.EmailConfigurationException::class)
     override suspend fun getConfigurationData(): ConfigurationData {
+        ensureSignedIn()
         val config = configurationDataService.getConfigurationData()
 
         return ConfigurationDataTransformer.entityToApi(config)
     }
 
     @Throws(SudoEmailClient.EmailAddressException::class)
-    override suspend fun getEmailMaskDomains(): List<String> = configurationDataService.getEmailMaskDomains()
+    override suspend fun getEmailMaskDomains(): List<String> {
+        ensureSignedIn()
+        return configurationDataService.getEmailMaskDomains()
+    }
 
     @Throws(SudoEmailClient.EmailAddressException::class)
-    override suspend fun getSupportedEmailDomains(): List<String> = configurationDataService.getSupportedEmailDomains()
+    override suspend fun getSupportedEmailDomains(): List<String> {
+        ensureSignedIn()
+        return configurationDataService.getSupportedEmailDomains()
+    }
 
     @Throws(SudoEmailClient.EmailAddressException::class)
-    override suspend fun getConfiguredEmailDomains(): List<String> = configurationDataService.getConfiguredEmailDomains()
+    override suspend fun getConfiguredEmailDomains(): List<String> {
+        ensureSignedIn()
+        return configurationDataService.getConfiguredEmailDomains()
+    }
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun checkEmailAddressAvailability(input: CheckEmailAddressAvailabilityInput): List<String> {
+        ensureSignedIn()
         logger.debug("checkEmailAddressAvailability input: $input")
 
         return emailAddressService.checkAvailability(
@@ -315,6 +365,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun provisionEmailAddress(input: ProvisionEmailAddressInput): EmailAddress {
+        ensureSignedIn()
         logger.debug("provisionEmailAddress input: $input")
 
         val useCase = useCaseFactory.createProvisionEmailAddressUseCase()
@@ -333,6 +384,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun deprovisionEmailAddress(id: String): EmailAddress {
+        ensureSignedIn()
         logger.debug("deprovisionEmailAddress id: $id")
 
         val result =
@@ -346,6 +398,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput): String {
+        ensureSignedIn()
         logger.debug("updateEmailAddressMetadata input: $input")
 
         val useCase = useCaseFactory.createUpdateEmailAddressMetadataUseCase()
@@ -360,6 +413,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun getEmailAddress(input: GetEmailAddressInput): EmailAddress? {
+        ensureSignedIn()
         logger.debug("getEmailAddress input: $input")
 
         val useCase =
@@ -376,6 +430,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun listEmailAddresses(input: ListEmailAddressesInput): ListAPIResult<EmailAddress, PartialEmailAddress> {
+        ensureSignedIn()
         logger.debug("listEmailAddresses input: $input")
 
         val useCase =
@@ -396,6 +451,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun listEmailAddressesForSudoId(
         input: ListEmailAddressesForSudoIdInput,
     ): ListAPIResult<EmailAddress, PartialEmailAddress> {
+        ensureSignedIn()
         logger.debug("listEmailAddressesForSudoId input: $input")
 
         val useCase =
@@ -415,6 +471,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun lookupEmailAddressesPublicInfo(input: LookupEmailAddressesPublicInfoInput): List<EmailAddressPublicInfo> {
+        ensureSignedIn()
         logger.debug("lookupEmailAddressesPublicInfo input: $input")
 
         val useCase = useCaseFactory.createLookupEmailAddressesPublicInfoUseCase()
@@ -426,6 +483,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailFolderException::class)
     override suspend fun listEmailFoldersForEmailAddressId(input: ListEmailFoldersForEmailAddressIdInput): ListOutput<EmailFolder> {
+        ensureSignedIn()
         logger.debug("listEmailFoldersForEmailAddressId input: $input")
 
         val useCase = useCaseFactory.createListEmailFoldersForEmailAddressIdUseCase()
@@ -447,6 +505,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailFolderException::class)
     override suspend fun createCustomEmailFolder(input: CreateCustomEmailFolderInput): EmailFolder {
+        ensureSignedIn()
         logger.debug("createCustomEmailFolder input: $input")
 
         val useCase = useCaseFactory.createCustomEmailFolderUseCase()
@@ -464,6 +523,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailFolderException::class)
     override suspend fun deleteCustomEmailFolder(input: DeleteCustomEmailFolderInput): EmailFolder? {
+        ensureSignedIn()
         logger.debug("deleteCustomEmailFolder input: $input")
 
         val useCase = useCaseFactory.createDeleteCustomEmailFolderUseCase()
@@ -480,6 +540,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailFolderException::class)
     override suspend fun updateCustomEmailFolder(input: UpdateCustomEmailFolderInput): EmailFolder {
+        ensureSignedIn()
         logger.debug("updateCustomEmailFolder input: $input")
 
         val useCase = useCaseFactory.createUpdateCustomEmailFolderUseCase()
@@ -498,6 +559,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult {
+        ensureSignedIn()
         logger.debug("sendEmailMessage input: $input")
 
         val useCase = useCaseFactory.createSendEmailMessageUseCase()
@@ -524,6 +586,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun sendMaskedEmailMessage(input: SendMaskedEmailMessageInput): SendEmailMessageResult {
+        ensureSignedIn()
         logger.debug("sendMaskedEmailMessage input: $input")
 
         val useCase = useCaseFactory.createSendEmailMessageUseCase()
@@ -553,6 +616,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun updateEmailMessages(
         input: UpdateEmailMessagesInput,
     ): BatchOperationResult<UpdatedEmailMessageSuccess, EmailMessageOperationFailureResult> {
+        ensureSignedIn()
         logger.debug("updateEmailMessages input: $input")
 
         val useCase = useCaseFactory.createUpdateEmailMessagesUseCase()
@@ -576,6 +640,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun deleteEmailMessages(
         ids: List<String>,
     ): BatchOperationResult<DeleteEmailMessageSuccessResult, EmailMessageOperationFailureResult> {
+        ensureSignedIn()
         logger.debug("deleteEmailMessages ids: $ids")
 
         val useCase = useCaseFactory.createDeleteEmailMessagesUseCase()
@@ -586,6 +651,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun deleteEmailMessage(id: String): DeleteEmailMessageSuccessResult? {
+        ensureSignedIn()
         logger.debug("deleteEmailMessage id: $id")
 
         val useCase = useCaseFactory.createDeleteEmailMessagesUseCase()
@@ -595,6 +661,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun getEmailMessage(input: GetEmailMessageInput): EmailMessage? {
+        ensureSignedIn()
         logger.debug("getEmailMessage input: $input")
 
         val useCase = useCaseFactory.createGetEmailMessageUseCase()
@@ -618,6 +685,7 @@ internal class DefaultSudoEmailClient(
     )
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun getEmailMessageRfc822Data(input: GetEmailMessageRfc822DataInput): EmailMessageRfc822Data? {
+        ensureSignedIn()
         logger.debug("getEmailMessageRfc822Data input: $input")
 
         val useCase = useCaseFactory.createGetEmailMessageRfc822DataUseCase()
@@ -635,6 +703,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun getEmailMessageWithBody(input: GetEmailMessageWithBodyInput): EmailMessageWithBody? {
+        ensureSignedIn()
         logger.debug("getEmailMessageWithBody input: $input")
 
         val useCase = useCaseFactory.createGetEmailMessageWithBodyUseCase()
@@ -657,6 +726,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun listEmailMessages(input: ListEmailMessagesInput): ListAPIResult<EmailMessage, PartialEmailMessage> {
+        ensureSignedIn()
         logger.debug("listEmailMessages input: $input")
 
         val useCase = useCaseFactory.createListEmailMessagesUseCase()
@@ -677,6 +747,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun listEmailMessagesForEmailAddressId(
         input: ListEmailMessagesForEmailAddressIdInput,
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
+        ensureSignedIn()
         logger.debug("listEmailMessagesForEmailAddressId input: $input")
 
         val useCase = useCaseFactory.createListEmailMessagesUseCase()
@@ -698,6 +769,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun listEmailMessagesForEmailFolderId(
         input: ListEmailMessagesForEmailFolderIdInput,
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
+        ensureSignedIn()
         logger.debug("listEmailMessagesForEmailFolderId input: $input")
 
         val useCase = useCaseFactory.createListEmailMessagesUseCase()
@@ -721,6 +793,7 @@ internal class DefaultSudoEmailClient(
         SudoEmailClient.EmailAddressException::class,
     )
     override suspend fun createDraftEmailMessage(input: CreateDraftEmailMessageInput): String {
+        ensureSignedIn()
         logger.debug("createDraftEmailMessage input: ${input.senderEmailAddressId}")
 
         val useCase = useCaseFactory.createCreateDraftEmailMessageUseCase()
@@ -738,6 +811,7 @@ internal class DefaultSudoEmailClient(
         SudoEmailClient.EmailAddressException::class,
     )
     override suspend fun updateDraftEmailMessage(input: UpdateDraftEmailMessageInput): String {
+        ensureSignedIn()
         logger.debug("updateDraftEmailMessage input: $input")
 
         val useCase = useCaseFactory.createUpdateDraftEmailMessageUseCase()
@@ -758,6 +832,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun deleteDraftEmailMessages(
         input: DeleteDraftEmailMessagesInput,
     ): BatchOperationResult<DeleteEmailMessageSuccessResult, EmailMessageOperationFailureResult> {
+        ensureSignedIn()
         logger.debug("deleteDraftEmailMessages input: $input")
 
         val useCase = useCaseFactory.createDeleteDraftEmailMessagesUseCase()
@@ -779,6 +854,7 @@ internal class DefaultSudoEmailClient(
 
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun getDraftEmailMessage(input: GetDraftEmailMessageInput): DraftEmailMessageWithContent {
+        ensureSignedIn()
         logger.debug("getDraftEmailMessage input: $input")
 
         val useCase = useCaseFactory.createGetDraftEmailMessageUseCase()
@@ -800,6 +876,7 @@ internal class DefaultSudoEmailClient(
     )
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun listDraftEmailMessages(): List<DraftEmailMessageWithContent> {
+        ensureSignedIn()
         logger.debug("listDraftEmailMessages")
 
         val useCase = useCaseFactory.createListDraftEmailMessagesUseCase()
@@ -813,6 +890,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun listDraftEmailMessagesForEmailAddressId(
         input: ListDraftEmailMessagesForEmailAddressIdInput,
     ): ListOutput<DraftEmailMessageWithContent> {
+        ensureSignedIn()
         logger.debug("listDraftEmailMessagesForEmailAddressId input: $input")
 
         val useCase = useCaseFactory.createListDraftEmailMessagesForEmailAddressIdUseCase()
@@ -836,6 +914,7 @@ internal class DefaultSudoEmailClient(
     )
     @Throws(SudoEmailClient.EmailMessageException::class)
     override suspend fun listDraftEmailMessageMetadata(): List<DraftEmailMessageMetadata> {
+        ensureSignedIn()
         logger.debug("listDraftEmailMessageMetadata")
 
         val useCase = useCaseFactory.createListDraftEmailMessageMetadataUseCase()
@@ -849,6 +928,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun listDraftEmailMessageMetadataForEmailAddressId(
         input: ListDraftEmailMessageMetadataForEmailAddressIdInput,
     ): ListOutput<DraftEmailMessageMetadata> {
+        ensureSignedIn()
         logger.debug("listDraftEmailMessageMetadataForEmailAddressId input: $input")
 
         val useCase = useCaseFactory.createListDraftEmailMessageMetadataForEmailAddressIdUseCase()
@@ -867,6 +947,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun scheduleSendDraftMessage(input: ScheduleSendDraftMessageInput): ScheduledDraftMessage {
+        ensureSignedIn()
         logger.debug("scheduleSendDraftMessage input: $input")
 
         val useCase = useCaseFactory.createScheduleSendDraftMessageUseCase()
@@ -884,6 +965,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun cancelScheduledDraftMessage(input: CancelScheduledDraftMessageInput): String {
+        ensureSignedIn()
         logger.debug("cancelScheduledDraftMessage input: $input")
 
         val useCase = useCaseFactory.createCancelScheduledDraftMessageUseCase()
@@ -899,6 +981,7 @@ internal class DefaultSudoEmailClient(
     override suspend fun listScheduledDraftMessagesForEmailAddressId(
         input: ListScheduledDraftMessagesForEmailAddressIdInput,
     ): ListOutput<ScheduledDraftMessage> {
+        ensureSignedIn()
         logger.debug("listScheduledDraftMessagesForEmailAddressId input: $input")
 
         val useCase = useCaseFactory.createListScheduledDraftMessagesForEmailAddressIdUseCase()
@@ -919,6 +1002,7 @@ internal class DefaultSudoEmailClient(
         emailAddressId: String?,
         level: BlockedEmailAddressLevel?,
     ): BatchOperationResult<String, String> {
+        ensureSignedIn()
         logger.debug("blockEmailAddresses addresses: $addresses, action: $action, emailAddressId: $emailAddressId, level: $level")
 
         val useCase = useCaseFactory.createBlockEmailAddressesUseCase()
@@ -950,6 +1034,7 @@ internal class DefaultSudoEmailClient(
         ReplaceWith("unblockEmailAddressesByHashedValue"),
     )
     override suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String> {
+        ensureSignedIn()
         logger.debug("unblockEmailAddresses addresses: $addresses")
 
         val useCase = useCaseFactory.createUnblockEmailAddressesUseCase()
@@ -974,6 +1059,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun unblockEmailAddressesByHashedValue(hashedValues: List<String>): BatchOperationResult<String, String> {
+        ensureSignedIn()
         logger.debug("unblockEmailAddressesByHashedValue hashedValues: $hashedValues")
 
         val useCase = useCaseFactory.createUnblockEmailAddressesByHashedValueUseCase()
@@ -998,6 +1084,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun getEmailAddressBlocklist(): List<UnsealedBlockedAddress> {
+        ensureSignedIn()
         logger.debug("getEmailAddressBlocklist")
 
         val useCase = useCaseFactory.createGetEmailAddressBlocklistUseCase()
@@ -1006,6 +1093,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun deleteMessagesForFolderId(input: DeleteMessagesForFolderIdInput): String {
+        ensureSignedIn()
         logger.debug("deleteMessagesForFolderId input: $input")
 
         return emailMessageService.deleteForFolderId(
@@ -1043,6 +1131,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun provisionEmailMask(input: ProvisionEmailMaskInput): EmailMask {
+        ensureSignedIn()
         logger.debug("provisionEmailMask input: $input")
 
         val useCase = useCaseFactory.createProvisionEmailMaskUseCase()
@@ -1062,6 +1151,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun deprovisionEmailMask(input: DeprovisionEmailMaskInput): PartialEmailMask {
+        ensureSignedIn()
         logger.debug("deprovisionEmailMask input: $input")
 
         val useCase = useCaseFactory.createDeprovisionEmailMaskUseCase()
@@ -1076,6 +1166,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun updateEmailMask(input: UpdateEmailMaskInput): EmailMask {
+        ensureSignedIn()
         logger.debug("updateEmailMask input: $input")
 
         val useCase = useCaseFactory.createUpdateEmailMaskUseCase()
@@ -1092,6 +1183,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun enableEmailMask(input: EnableEmailMaskInput): EmailMask {
+        ensureSignedIn()
         logger.debug("enableEmailMask input: $input")
 
         val useCase = useCaseFactory.createEnableEmailMaskUseCase()
@@ -1106,6 +1198,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun disableEmailMask(input: DisableEmailMaskInput): EmailMask {
+        ensureSignedIn()
         logger.debug("disableEmailMask input: $input")
 
         val useCase = useCaseFactory.createDisableEmailMaskUseCase()
@@ -1120,6 +1213,7 @@ internal class DefaultSudoEmailClient(
     }
 
     override suspend fun listEmailMasksForOwner(input: ListEmailMasksForOwnerInput): ListAPIResult<EmailMask, PartialEmailMask> {
+        ensureSignedIn()
         logger.debug("listEmailMasksForOwner input: $input")
 
         val useCase =

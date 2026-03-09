@@ -84,6 +84,7 @@ import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
+import com.sudoplatform.sudouser.SudoPlatformSignInCallback
 import com.sudoplatform.sudouser.SudoUserClient
 import org.json.JSONException
 import java.util.Objects
@@ -647,6 +648,30 @@ interface SudoEmailClient : AutoCloseable {
             cause: Throwable? = null,
         ) : EmailCryptographicKeysException(message = message, cause = cause)
     }
+
+    /**
+     * A suspend function invoked when an operation is attempted while the user is not signed in.
+     * Implementations should perform any necessary sign-in and return normally on success,
+     * or throw an exception to abort the operation.
+     */
+    fun interface SignInCallback {
+        suspend fun invoke()
+    }
+
+    /**
+     * Sets an optional callback to be invoked when operations are attempted while not signed in.
+     * When set, all operations (except subscriptions and initialization) will check sign-in status
+     * and invoke this callback if the user is not signed in.
+     * Setting the callback to null disables automatic sign-in checking, restoring the default
+     * behavior where operations proceed without sign-in checks.
+     * If the callback throws an exception, that exception is propagated
+     * to the caller and the original operation is not executed.
+     *
+     * @param callback An optional [SudoPlatformSignInCallback] to handle sign-in. Pass null to disable
+     *                 automatic sign-in checking. The callback may throw exceptions which
+     *                 will be propagated to the caller.
+     */
+    fun setSignInCallback(callback: SudoPlatformSignInCallback?)
 
     /**
      * Get the configuration data for the email service.

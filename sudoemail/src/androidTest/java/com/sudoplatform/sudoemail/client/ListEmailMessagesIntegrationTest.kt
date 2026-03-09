@@ -23,6 +23,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoprofiles.Sudo
+import com.sudoplatform.sudouser.SudoPlatformSignInCallback
 import io.kotlintest.fail
 import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.matchers.collections.shouldContain
@@ -1134,6 +1135,111 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 else -> {
                     fail("Unexpected ListAPIResult")
                 }
+            }
+        }
+
+    @Test
+    fun listEmailMessagesShouldSucceedAndNotInvokeCallbackWhenSignedIn() =
+        runTest {
+            var callbackInvoked = false
+
+            // Set a callback - user is already signed in so it should not be invoked
+            emailClient.setSignInCallback(
+                object : SudoPlatformSignInCallback {
+                    override suspend fun signIn() {
+                        callbackInvoked = true
+                    }
+                },
+            )
+
+            try {
+                val sudo = sudoClient.createSudo(TestData.sudo)
+                sudo shouldNotBe null
+                sudoList.add(sudo)
+
+                val ownershipProof = getOwnershipProof(sudo)
+                ownershipProof shouldNotBe null
+
+                val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+                emailAddress shouldNotBe null
+                emailAddressList.add(emailAddress)
+
+                sendEmailMessage(
+                    emailClient,
+                    fromAddress = emailAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(successSimulatorAddress)),
+                )
+
+                when (val result = waitForMessages(1) { it.emailAddressId == emailAddress.id }) {
+                    is ListAPIResult.Success -> {
+                        result.result.items.size shouldBe 1
+                    }
+                    else -> {
+                        fail("Unexpected ListAPIResult")
+                    }
+                }
+
+                // Callback should NOT have been invoked since the user is signed in
+                callbackInvoked shouldBe false
+            } finally {
+                emailClient.setSignInCallback(null)
+            }
+        }
+
+    @Test
+    fun listEmailMessagesShouldInvokeCallbackWhenNotSignedIn() =
+        runTest {
+            var callbackInvoked = false
+
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            sendEmailMessage(
+                emailClient,
+                fromAddress = emailAddress,
+                toAddresses = listOf(EmailMessage.EmailAddress(successSimulatorAddress)),
+            )
+
+            // Wait for a message to be present before testing the callback path
+            waitForMessages(1) { it.emailAddressId == emailAddress.id }
+
+            // Sign out to trigger not-signed-in state
+            userClient.globalSignOut()
+
+            emailClient.setSignInCallback(
+                object : SudoPlatformSignInCallback {
+                    override suspend fun signIn() {
+                        callbackInvoked = true
+                        // Re-sign in so the operation can proceed
+                        userClient.signInWithKey()
+                    }
+                },
+            )
+
+            try {
+                when (
+                    val result = emailClient.listEmailMessages(ListEmailMessagesInput())
+                ) {
+                    is ListAPIResult.Success -> {
+                        result.result.items shouldNotBe null
+                    }
+                    is ListAPIResult.Partial -> {
+                        result.result.items shouldNotBe null
+                    }
+                }
+
+                // Callback should have been invoked since the user was not signed in
+                callbackInvoked shouldBe true
+            } finally {
+                emailClient.setSignInCallback(null)
             }
         }
 }
