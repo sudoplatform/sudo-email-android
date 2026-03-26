@@ -65,6 +65,30 @@ internal data class DisableEmailMaskRequest(
 )
 
 /**
+ * Request to verify an external email address for an email mask.
+ *
+ * @property emailAddress [String] The external email address to verify.
+ * @property emailMaskId [String] The ID of the email mask.
+ * @property verificationCode [String] Optional verification code. If null, triggers sending verification email.
+ */
+internal data class VerifyExternalEmailAddressRequest(
+    val emailAddress: String,
+    val emailMaskId: String,
+    val verificationCode: String? = null,
+)
+
+/**
+ * Result entity for external email address verification.
+ *
+ * @property isVerified [Boolean] True if the external address was successfully verified.
+ * @property reason [String] Optional reason for verification failure.
+ */
+internal data class VerifyExternalEmailAddressResultEntity(
+    val isVerified: Boolean,
+    val reason: String? = null,
+)
+
+/**
  * Filter criteria for email mask status.
  *
  * @property ne [EmailMaskEntityStatus] Status not equal to this value.
@@ -188,4 +212,12 @@ internal interface EmailMaskService {
      * @return [ListEmailMasksOutput] List API result containing email masks and next token.
      */
     suspend fun listForOwner(input: ListEmailMasksForOwnerRequest): ListEmailMasksOutput
+
+    /**
+     * Verify an external email address for an email mask.
+     *
+     * @param input [VerifyExternalEmailAddressRequest] Parameters used to verify an external email address.
+     * @return [VerifyExternalEmailAddressResultEntity] Result indicating verification status and optional reason.
+     */
+    suspend fun verifyExternalEmailAddress(input: VerifyExternalEmailAddressRequest): VerifyExternalEmailAddressResultEntity
 }

@@ -31,6 +31,7 @@ import jakarta.mail.internet.MimeUtility
 import jakarta.mail.search.AndTerm
 import jakarta.mail.search.FlagTerm
 import jakarta.mail.search.FromStringTerm
+import jakarta.mail.search.HeaderTerm
 import jakarta.mail.search.SearchTerm
 import jakarta.mail.search.SentDateTerm
 import kotlinx.coroutines.Dispatchers
@@ -589,5 +590,231 @@ internal class ExternalTestAccount(
         if (subject == null) return null
         // Normalize common formatting differences without being too clever.
         return subject.trim().replace("\r\n", "\n")
+    }
+
+    /**
+     * Waits for ALL UNSEEN emails matching [subject] in INBOX or spam folder.
+     * This is useful for concurrent tests where multiple verification emails may be present.
+     */
+    suspend fun waitForAllEmailsBySubject(
+        subject: String,
+        options: WaitOptions = WaitOptions(),
+    ): List<ReceivedEmail> =
+        withContext(Dispatchers.IO) {
+            log.debug("Waiting for all emails with subject: $subject")
+
+            val timeoutAt = System.currentTimeMillis() + options.timeoutMs
+            val pollIntervalMs = 5_000L
+
+            ensureImapConnected()
+
+            var lastError: Throwable? = null
+            while (System.currentTimeMillis() < timeoutAt) {
+                try {
+                    val allEmails = mutableListOf<ReceivedEmail>()
+
+                    val inboxResults =
+                        searchBoxForAllMatches(
+                            boxName = "INBOX",
+                            subject = subject,
+                            searchFromDate = options.searchFromDate,
+                        )
+                    allEmails.addAll(inboxResults)
+
+                    val spamFolderName = if (accountType == ExternalTestAccountType.GMAIL) "[Gmail]/Spam" else "Bulk"
+                    val spamResults =
+                        searchBoxForAllMatches(
+                            boxName = spamFolderName,
+                            subject = subject,
+                            searchFromDate = options.searchFromDate,
+                        )
+                    allEmails.addAll(spamResults)
+
+                    if (allEmails.isNotEmpty()) {
+                        closeConnection()
+                        return@withContext allEmails
+                    }
+                } catch (t: Throwable) {
+                    lastError = t
+                    log.error("IMAP poll error $t")
+                    closeConnection()
+                    ensureImapConnected()
+                }
+
+                delay(pollIntervalMs)
+            }
+
+            closeConnection()
+            throw Exception("Timeout waiting for emails with subject: $subject. Last error: $lastError")
+        }
+
+    /**
+     * Deletes an email by its Message-ID header.
+     */
+    suspend fun deleteEmail(
+        messageId: String,
+        folderName: String = "INBOX",
+    ): Boolean =
+        withContext(Dispatchers.IO) {
+            log.debug("Deleting email with messageId: $messageId from folder: $folderName")
+
+            ensureImapConnected()
+
+            val store = imapStore ?: throw IllegalStateException("IMAP store not connected")
+            var folder: Folder? = null
+
+            try {
+                folder = store.getFolder(folderName)
+                if (!folder.exists()) {
+                    log.debug("Folder does not exist: $folderName")
+                    return@withContext false
+                }
+
+                folder.open(Folder.READ_WRITE)
+
+                // Search for message by Message-ID
+                val term = HeaderTerm("Message-ID", messageId)
+                val results = folder.search(term)
+
+                if (results.isEmpty()) {
+                    log.debug("No message found with Message-ID: $messageId")
+                    return@withContext false
+                }
+
+                // Mark as deleted and expunge
+                for (msg in results) {
+                    msg.setFlag(Flags.Flag.DELETED, true)
+                }
+                folder.close(true) // true = expunge deleted messages
+                folder = null // prevent double-close in finally
+
+                log.debug("Successfully deleted email with Message-ID: $messageId")
+                return@withContext true
+            } catch (e: Throwable) {
+                log.error("Error deleting email: $e")
+                throw e
+            } finally {
+                try {
+                    folder?.close(false)
+                } catch (_: Throwable) {
+                }
+            }
+        }
+
+    /**
+     * Searches a folder for ALL emails matching the subject and date criteria.
+     */
+    private fun searchBoxForAllMatches(
+        boxName: String,
+        subject: String,
+        searchFromDate: Date?,
+    ): List<ReceivedEmail> {
+        val store = imapStore ?: throw IllegalStateException("IMAP store not connected")
+
+        log.debug("Searching box: $boxName for all emails with subject: $subject since: $searchFromDate")
+
+        var folder: Folder? = null
+        try {
+            folder = store.getFolder(boxName)
+            if (!folder.exists()) {
+                log.debug("Folder does not exist: $boxName")
+                return emptyList()
+            }
+            folder.open(Folder.READ_ONLY)
+
+            val terms = mutableListOf<SearchTerm>()
+            terms += FlagTerm(Flags(Flags.Flag.SEEN), false)
+
+            if (searchFromDate != null) {
+                terms += SentDateTerm(SentDateTerm.GE, searchFromDate)
+            }
+
+            val term = if (terms.size == 1) terms.first() else AndTerm(terms.toTypedArray())
+            val results = folder.search(term)
+
+            if (results.isNullOrEmpty()) {
+                log.debug("No matching emails found in box $boxName")
+                return emptyList()
+            }
+
+            val expectedSubject = normalizeSubjectForCompare(subject)
+            val matchingEmails = mutableListOf<ReceivedEmail>()
+
+            for (msg in results) {
+                val mimeMessage = msg as MimeMessage
+                val msgDate = mimeMessage.sentDate ?: mimeMessage.receivedDate
+
+                // Check date filter
+                if (searchFromDate != null && msgDate != null && msgDate.before(searchFromDate)) {
+                    continue
+                }
+
+                // Check subject filter
+                val actualSubject = normalizeSubjectForCompare(decodeSubjectSafely(mimeMessage.subject))
+                if (actualSubject != expectedSubject) {
+                    continue
+                }
+
+                val fromList: List<EmailMessage.EmailAddress> =
+                    mimeMessage.from
+                        ?.mapNotNull { addr ->
+                            val internet = addr as? InternetAddress
+                            val email = internet?.address ?: addr.toString()
+                            if (email.isBlank()) return@mapNotNull null
+                            EmailMessage.EmailAddress(
+                                emailAddress = email,
+                                displayName = internet?.personal,
+                            )
+                        }.orEmpty()
+
+                val toList: List<EmailMessage.EmailAddress> =
+                    (mimeMessage.getRecipients(Message.RecipientType.TO) ?: emptyArray())
+                        .mapNotNull { addr ->
+                            val internet = addr as? InternetAddress
+                            val email = internet?.address ?: addr.toString()
+                            if (email.isBlank()) return@mapNotNull null
+                            EmailMessage.EmailAddress(
+                                emailAddress = email,
+                                displayName = internet?.personal,
+                            )
+                        }
+
+                val ccList: List<EmailMessage.EmailAddress> =
+                    (mimeMessage.getRecipients(Message.RecipientType.CC) ?: emptyArray())
+                        .mapNotNull { addr ->
+                            val internet = addr as? InternetAddress
+                            val email = internet?.address ?: addr.toString()
+                            if (email.isBlank()) return@mapNotNull null
+                            EmailMessage.EmailAddress(
+                                emailAddress = email,
+                                displayName = internet?.personal,
+                            )
+                        }
+
+                matchingEmails.add(
+                    ReceivedEmail(
+                        subject = mimeMessage.subject,
+                        from = fromList,
+                        to = toList,
+                        cc = ccList,
+                        date = msgDate,
+                        messageId = mimeMessage.getHeader("Message-ID")?.firstOrNull(),
+                        textBody = extractTextBody(mimeMessage),
+                        attachments = extractAttachments(mimeMessage),
+                        rawMessage = mimeMessage,
+                    ),
+                )
+            }
+
+            return matchingEmails
+        } catch (e: Throwable) {
+            log.error("Error searching box $boxName: $e")
+            throw e
+        } finally {
+            try {
+                folder?.close(false)
+            } catch (_: Throwable) {
+            }
+        }
     }
 }

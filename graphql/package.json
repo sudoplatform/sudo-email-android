@@ -4,7 +4,7 @@
   "author": "Anonyome Labs, Inc.",
   "license": "Apache-2.0",
   "scripts": {
-    "codegen": "graphql-codegen -c codegen.yml"
+    "codegen": "graphql-codegen -c codegen.ts"
   },
   "devDependencies": {
     "@graphql-codegen/add": "^4.0.1",

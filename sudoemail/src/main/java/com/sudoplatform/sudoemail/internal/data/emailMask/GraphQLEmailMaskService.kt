@@ -18,6 +18,7 @@ import com.sudoplatform.sudoemail.graphql.type.ListEmailMasksForOwnerInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailMaskPublicKeyInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMaskInput
+import com.sudoplatform.sudoemail.graphql.type.VerifyExternalEmailAddressInput
 import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransformer
 import com.sudoplatform.sudoemail.internal.data.common.transformers.PublicKeyFormatTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMask.transformers.EmailMaskFilterTransformer
@@ -31,6 +32,8 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.ListEmailMa
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.ProvisionEmailMaskRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.SealedEmailMaskEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.UpdateEmailMaskRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.VerifyExternalEmailAddressRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.VerifyExternalEmailAddressResultEntity
 import com.sudoplatform.sudologging.Logger
 
 /**
@@ -248,6 +251,45 @@ internal class GraphQLEmailMaskService(
             return ListEmailMasksOutput(
                 items = emailMasks.map { EmailMaskTransformer.graphQLToSealedEntity(it.emailMask) },
                 nextToken = newNextToken,
+            )
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailMaskException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw ErrorTransformer.interpretEmailMaskException(e)
+            }
+        }
+    }
+
+    override suspend fun verifyExternalEmailAddress(input: VerifyExternalEmailAddressRequest): VerifyExternalEmailAddressResultEntity {
+        try {
+            val mutationInput =
+                VerifyExternalEmailAddressInput(
+                    emailAddress = input.emailAddress,
+                    emailMaskId = input.emailMaskId,
+                    verificationCode = Optional.presentIfNotNull(input.verificationCode),
+                )
+            val mutationResponse = apiClient.verifyExternalAddressMutation(mutationInput)
+
+            if (mutationResponse.hasErrors()) {
+                logger.error("errors = ${mutationResponse.errors}")
+                throw ErrorTransformer.interpretEmailMaskError(mutationResponse.errors.first())
+            }
+
+            val result = mutationResponse.data?.verifyExternalEmailAddress?.verifyExternalEmailAddressResult
+            // Handle nil response (verification email sent case)
+            if (result == null) {
+                return VerifyExternalEmailAddressResultEntity(
+                    isVerified = false,
+                    reason = "Verification email sent",
+                )
+            }
+
+            return VerifyExternalEmailAddressResultEntity(
+                isVerified = result.isVerified,
+                reason = result.reason,
             )
         } catch (e: Throwable) {
             logger.error("unexpected error $e")

@@ -44,6 +44,7 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.EnableEmail
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ListEmailMasksUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ProvisionEmailMaskUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.UpdateEmailMaskUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.VerifyExternalEmailAddressUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.DeleteEmailMessagesUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageRfc822DataUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageUseCase
@@ -135,6 +136,8 @@ internal interface UseCaseFactory {
     fun createDisableEmailMaskUseCase(): DisableEmailMaskUseCase
 
     fun createListEmailMasksUseCase(): ListEmailMasksUseCase
+
+    fun createVerifyExternalEmailAddressUseCase(): VerifyExternalEmailAddressUseCase
 }
 
 internal class DefaultUseCaseFactory(
@@ -455,5 +458,10 @@ internal class DefaultUseCaseFactory(
             emailMaskService = emailMaskService,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
+        )
+
+    override fun createVerifyExternalEmailAddressUseCase(): VerifyExternalEmailAddressUseCase =
+        VerifyExternalEmailAddressUseCase(
+            emailMaskService = emailMaskService,
         )
 }

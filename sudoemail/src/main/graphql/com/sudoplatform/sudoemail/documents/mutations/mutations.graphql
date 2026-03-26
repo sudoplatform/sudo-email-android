@@ -128,3 +128,10 @@ mutation SendMaskedEmailMessage($input: SendMaskedEmailMessageInput!) {
     ...SendEmailMessageResult
   }
 }
+
+mutation VerifyExternalEmailAddress($input: VerifyExternalEmailAddressInput!) {
+  verifyExternalEmailAddress(input: $input) {
+    ...VerifyExternalEmailAddressResult
+  }
+}
+

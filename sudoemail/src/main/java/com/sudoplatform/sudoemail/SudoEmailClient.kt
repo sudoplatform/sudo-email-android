@@ -42,6 +42,7 @@ import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
+import com.sudoplatform.sudoemail.types.VerifyExternalEmailAddressResult
 import com.sudoplatform.sudoemail.types.inputs.CancelScheduledDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
@@ -78,6 +79,7 @@ import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.VerifyExternalEmailAddressInput
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManagerFactory
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -1346,6 +1348,22 @@ interface SudoEmailClient : AutoCloseable {
      * @returns {ListOutput<EmailMask>} A promise that resolves to a list of email masks and pagination info
      */
     suspend fun listEmailMasksForOwner(input: ListEmailMasksForOwnerInput): ListAPIResult<EmailMask, PartialEmailMask>
+
+    /**
+     * Verifies an external email address for an email mask by sending a verification code
+     * or confirming ownership with a provided code.
+     *
+     * When called without a verification code, triggers sending a verification email to the
+     * external address. When called with a verification code, attempts to verify ownership
+     * of the external address.
+     *
+     * @param input [VerifyExternalEmailAddressInput] The input parameters containing the email address,
+     *  email mask ID, and optional verification code.
+     * @return [VerifyExternalEmailAddressResult] Result indicating whether verification succeeded
+     *  and an optional reason if it failed.
+     * @throws [EmailMaskException] if the operation fails.
+     */
+    suspend fun verifyExternalEmailAddress(input: VerifyExternalEmailAddressInput): VerifyExternalEmailAddressResult
 
     /**
      * Subscribes to be notified of new and deleted [EmailMessage]s. Subscribing multiple

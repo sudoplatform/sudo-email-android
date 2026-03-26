@@ -6,6 +6,7 @@
 
 package com.sudoplatform.sudoemail.internal.data.emailMessage.transformers
 
+import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.graphql.type.EmailMessageDirection
@@ -32,6 +33,7 @@ import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.State
 import java.util.Date
 
+@Keep
 internal data class EmailHeaderDetails(
     val from: List<EmailMessageAddressEntity>,
     val to: List<EmailMessageAddressEntity>,

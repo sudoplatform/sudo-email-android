@@ -113,6 +113,7 @@ import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.UnsealedBlockedAddress
 import com.sudoplatform.sudoemail.types.UpdatedEmailMessageResult.UpdatedEmailMessageSuccess
+import com.sudoplatform.sudoemail.types.VerifyExternalEmailAddressResult
 import com.sudoplatform.sudoemail.types.inputs.CancelScheduledDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.CheckEmailAddressAvailabilityInput
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
@@ -149,6 +150,7 @@ import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.VerifyExternalEmailAddressInput
 import com.sudoplatform.sudoemail.util.EmailClientInvoker
 import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
@@ -1229,6 +1231,14 @@ internal class DefaultSudoEmailClient(
             )
 
         return ListApiResultTransformer.transformEmailMaskListApiResultEntity(result)
+    }
+
+    override suspend fun verifyExternalEmailAddress(input: VerifyExternalEmailAddressInput): VerifyExternalEmailAddressResult {
+        ensureSignedIn()
+        logger.debug("verifyExternalEmailAddress input: $input")
+
+        val useCase = useCaseFactory.createVerifyExternalEmailAddressUseCase()
+        return useCase.execute(input)
     }
 
     override suspend fun subscribeToEmailMessages(

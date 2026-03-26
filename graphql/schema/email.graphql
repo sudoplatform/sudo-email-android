@@ -373,6 +373,12 @@ input SendMaskedEmailMessageInput {
   rfc822Header: Rfc822HeaderInput!
 }
 
+input VerifyExternalEmailAddressInput {
+  emailAddress: String!
+  emailMaskId: String!
+  verificationCode: String
+}
+
 type EmailConfigurationData {
   deleteEmailMessagesLimit: Int!
   updateEmailMessagesLimit: Int!
@@ -625,6 +631,10 @@ type EmailMaskConnection {
     items: [EmailMask!]!
     nextToken: String
 }
+type VerifyExternalEmailAddressResult {
+  isVerified: Boolean!
+  reason: String
+}
 
 type Query {
   getEmailConfig: EmailConfigurationData!
@@ -744,6 +754,10 @@ type Mutation {
   sendMaskedEmailMessage(
     input: SendMaskedEmailMessageInput!
   ): SendEmailMessageResult!
+
+    verifyExternalEmailAddress(
+    input: VerifyExternalEmailAddressInput!
+  ): VerifyExternalEmailAddressResult
 }
 
 type Subscription {

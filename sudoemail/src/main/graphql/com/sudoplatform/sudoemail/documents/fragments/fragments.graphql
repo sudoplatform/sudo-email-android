@@ -243,3 +243,8 @@ fragment EmailMask on EmailMask {
     createdAtEpochMs
     updatedAtEpochMs
 }
+
+fragment VerifyExternalEmailAddressResult on VerifyExternalEmailAddressResult {
+  isVerified
+  reason
+}

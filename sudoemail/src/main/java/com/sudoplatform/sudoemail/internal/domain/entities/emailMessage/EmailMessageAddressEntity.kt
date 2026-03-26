@@ -7,6 +7,7 @@
 package com.sudoplatform.sudoemail.internal.domain.entities.emailMessage
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import kotlinx.parcelize.Parcelize
 
 /**
@@ -15,6 +16,7 @@ import kotlinx.parcelize.Parcelize
  * @property emailAddress [String] Address in format 'local-part@domain' of the email.
  * @property displayName [String] The display name (or personal name) of the email address.
  */
+@Keep
 @Parcelize
 internal data class EmailMessageAddressEntity(
     val emailAddress: String,

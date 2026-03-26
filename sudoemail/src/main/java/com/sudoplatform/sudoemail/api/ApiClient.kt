@@ -52,6 +52,7 @@ import com.sudoplatform.sudoemail.graphql.UpdateCustomEmailFolderMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailAddressMetadataMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMessagesMutation
+import com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation
 import com.sudoplatform.sudoemail.graphql.type.BlockEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.CancelScheduledDraftMessageInput
 import com.sudoplatform.sudoemail.graphql.type.CheckEmailAddressAvailabilityInput
@@ -84,6 +85,7 @@ import com.sudoplatform.sudoemail.graphql.type.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailAddressMetadataInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMessagesInput
+import com.sudoplatform.sudoemail.graphql.type.VerifyExternalEmailAddressInput
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.amplify.GraphQLClient
 
@@ -371,6 +373,14 @@ open class ApiClient(
     open suspend fun listEmailMasksForOwnerQuery(input: ListEmailMasksForOwnerInput): GraphQLResponse<ListEmailMasksForOwnerQuery.Data> =
         graphQLClient.query<ListEmailMasksForOwnerQuery, ListEmailMasksForOwnerQuery.Data>(
             ListEmailMasksForOwnerQuery.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun verifyExternalAddressMutation(
+        input: VerifyExternalEmailAddressInput,
+    ): GraphQLResponse<VerifyExternalEmailAddressMutation.Data> =
+        this.graphQLClient.mutate<VerifyExternalEmailAddressMutation, VerifyExternalEmailAddressMutation.Data>(
+            VerifyExternalEmailAddressMutation.OPERATION_DOCUMENT,
             mapOf("input" to input),
         )
 

@@ -11,7 +11,7 @@ To use the code generation, run `yarn install` first from this subdirectory. Thi
 
 ## Running
 
-The code generation will automatically generate the file to its destination, just run `yarn codegen`. See `codegen.yml` for this configuration.
+The code generation will automatically generate the file to its destination, just run `yarn codegen`. See `codegen.ts` for this configuration.
 
 ## Updates
 

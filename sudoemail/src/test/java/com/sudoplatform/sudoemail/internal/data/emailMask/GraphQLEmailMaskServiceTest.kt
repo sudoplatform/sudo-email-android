@@ -923,4 +923,191 @@ class GraphQLEmailMaskServiceTest : BaseTests() {
 
             verify(mockApiClient).disableEmailMaskMutation(any<DisableEmailMaskInput>())
         }
+
+    /** Begin VerifyExternalEmailAddressTests */
+
+    @Test
+    fun `verifyExternalEmailAddress() should return result when triggering verification email`() =
+        runTest {
+            // Simulate nil response (verification email sent)
+            val mutationResponse =
+                GraphQLResponse<com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.Data>(
+                    null,
+                    emptyList(),
+                )
+
+            mockApiClient.stub {
+                onBlocking {
+                    verifyExternalAddressMutation(any())
+                } doReturn mutationResponse
+            }
+
+            val request =
+                com.sudoplatform.sudoemail.internal.domain.entities.emailMask.VerifyExternalEmailAddressRequest(
+                    emailAddress = "external@example.com",
+                    emailMaskId = "mask-id-123",
+                    verificationCode = null,
+                )
+
+            val result = instanceUnderTest.verifyExternalEmailAddress(request)
+
+            result shouldNotBe null
+            result.isVerified shouldBe false
+            result.reason shouldBe "Verification email sent"
+
+            verify(mockApiClient).verifyExternalAddressMutation(
+                check { input ->
+                    input.emailAddress shouldBe "external@example.com"
+                    input.emailMaskId shouldBe "mask-id-123"
+                    input.verificationCode shouldBe Optional.absent()
+                },
+            )
+        }
+
+    @Test
+    fun `verifyExternalEmailAddress() should return success when verification succeeds`() =
+        runTest {
+            val verifyResult =
+                com.sudoplatform.sudoemail.graphql.fragment.VerifyExternalEmailAddressResult(
+                    isVerified = true,
+                    reason = null,
+                )
+            val mutationResponse =
+                GraphQLResponse<com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.Data>(
+                    com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.Data(
+                        com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.VerifyExternalEmailAddress(
+                            __typename = "VerifyExternalEmailAddressResult",
+                            verifyExternalEmailAddressResult = verifyResult,
+                        ),
+                    ),
+                    emptyList(),
+                )
+
+            mockApiClient.stub {
+                onBlocking {
+                    verifyExternalAddressMutation(any())
+                } doReturn mutationResponse
+            }
+
+            val request =
+                com.sudoplatform.sudoemail.internal.domain.entities.emailMask.VerifyExternalEmailAddressRequest(
+                    emailAddress = "external@example.com",
+                    emailMaskId = "mask-id-123",
+                    verificationCode = "123456",
+                )
+
+            val result = instanceUnderTest.verifyExternalEmailAddress(request)
+
+            result shouldNotBe null
+            result.isVerified shouldBe true
+            result.reason shouldBe null
+
+            verify(mockApiClient).verifyExternalAddressMutation(
+                check { input ->
+                    input.emailAddress shouldBe "external@example.com"
+                    input.emailMaskId shouldBe "mask-id-123"
+                    input.verificationCode shouldBe Optional.Present("123456")
+                },
+            )
+        }
+
+    @Test
+    fun `verifyExternalEmailAddress() should return failure with invalid code`() =
+        runTest {
+            val verifyResult =
+                com.sudoplatform.sudoemail.graphql.fragment.VerifyExternalEmailAddressResult(
+                    isVerified = false,
+                    reason = "Invalid verification code",
+                )
+            val mutationResponse =
+                GraphQLResponse<com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.Data>(
+                    com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.Data(
+                        com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.VerifyExternalEmailAddress(
+                            __typename = "VerifyExternalEmailAddressResult",
+                            verifyExternalEmailAddressResult = verifyResult,
+                        ),
+                    ),
+                    emptyList(),
+                )
+
+            mockApiClient.stub {
+                onBlocking {
+                    verifyExternalAddressMutation(any())
+                } doReturn mutationResponse
+            }
+
+            val request =
+                com.sudoplatform.sudoemail.internal.domain.entities.emailMask.VerifyExternalEmailAddressRequest(
+                    emailAddress = "external@example.com",
+                    emailMaskId = "mask-id-123",
+                    verificationCode = "wrong-code",
+                )
+
+            val result = instanceUnderTest.verifyExternalEmailAddress(request)
+
+            result shouldNotBe null
+            result.isVerified shouldBe false
+            result.reason shouldBe "Invalid verification code"
+
+            verify(mockApiClient).verifyExternalAddressMutation(any())
+        }
+
+    @Test
+    fun `verifyExternalEmailAddress() should throw when GraphQL returns error`() =
+        runTest {
+            val errorResponse =
+                GraphQLResponse<com.sudoplatform.sudoemail.graphql.VerifyExternalEmailAddressMutation.Data>(
+                    null,
+                    listOf(
+                        GraphQLResponse.Error(
+                            "Email mask not found",
+                            null,
+                            null,
+                            mapOf("errorType" to "sudoplatform.email.EmailMaskNotFound"),
+                        ),
+                    ),
+                )
+
+            mockApiClient.stub {
+                onBlocking {
+                    verifyExternalAddressMutation(any())
+                } doReturn errorResponse
+            }
+
+            val request =
+                com.sudoplatform.sudoemail.internal.domain.entities.emailMask.VerifyExternalEmailAddressRequest(
+                    emailAddress = "external@example.com",
+                    emailMaskId = "nonExistentMaskId",
+                    verificationCode = "123456",
+                )
+
+            shouldThrow<SudoEmailClient.EmailMaskException.EmailMaskNotFoundException> {
+                instanceUnderTest.verifyExternalEmailAddress(request)
+            }
+
+            verify(mockApiClient).verifyExternalAddressMutation(any())
+        }
+
+    @Test
+    fun `verifyExternalEmailAddress() should throw AuthenticationException when not authorized`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    verifyExternalAddressMutation(any())
+                } doThrow NotAuthorizedException("Not authorized")
+            }
+
+            val request =
+                com.sudoplatform.sudoemail.internal.domain.entities.emailMask.VerifyExternalEmailAddressRequest(
+                    emailAddress = "external@example.com",
+                    emailMaskId = "mask-id-123",
+                    verificationCode = "123456",
+                )
+
+            shouldThrow<SudoEmailClient.EmailMaskException.AuthenticationException> {
+                instanceUnderTest.verifyExternalEmailAddress(request)
+            }
+
+            verify(mockApiClient).verifyExternalAddressMutation(any())
+        }
 }
