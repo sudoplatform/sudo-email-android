@@ -18,11 +18,13 @@ import java.util.Date
  * @property emailAddressId [String] Unique identifier of the email address associated with the draft
  *  email message.
  * @property updatedAt [Date] When the draft message was last updated.
+ * @property emailMaskId [String?] Optional email mask ID associated with the draft.
  */
 @Parcelize
 data class DraftEmailMessageMetadata(
     override val id: String,
     override val emailAddressId: String,
     override val updatedAt: Date,
+    override val emailMaskId: String? = null,
 ) : Parcelable,
     DraftEmailMessage

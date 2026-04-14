@@ -426,7 +426,10 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                 emailId = sendEmailMessageResult.id
             }
 
-            when (val listEmailMessages = waitForMessages(messageCount * 3)) {
+            // If we are using the testSentEmailBucket, then we won't have any inbound messages,
+            // otherwise we should have both the sent message and two received messages for each send
+            val numExpectedMessages = if (testSentEmailBucket != null) messageCount else messageCount * 3
+            when (val listEmailMessages = waitForMessages(numExpectedMessages)) {
                 is ListAPIResult.Success -> {
                     listEmailMessages.result.items.isEmpty() shouldBe false
                 }

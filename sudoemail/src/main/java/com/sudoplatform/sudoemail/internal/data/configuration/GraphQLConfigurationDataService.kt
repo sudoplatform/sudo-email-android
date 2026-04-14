@@ -11,8 +11,10 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransformer
 import com.sudoplatform.sudoemail.internal.data.configuration.transformers.ConfigurationDataTransformer
+import com.sudoplatform.sudoemail.internal.data.configuration.transformers.EmailDomainTransformer
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
+import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudologging.Logger
 
 /**
@@ -95,6 +97,28 @@ internal class GraphQLConfigurationDataService(
                 throw ErrorTransformer.interpretEmailDomainError(queryResponse.errors.first())
             }
             return queryResponse.data?.getEmailMaskDomains?.domains ?: emptyList()
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw ErrorTransformer.interpretEmailAddressException(e)
+            }
+        }
+    }
+
+    override suspend fun listEmailDomains(): List<EmailDomain> {
+        try {
+            val queryResponse = apiClient.listEmailDomainsQuery()
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors}")
+                throw ErrorTransformer.interpretEmailDomainError(queryResponse.errors.first())
+            }
+            return queryResponse.data?.listEmailDomains?.map {
+                EmailDomainTransformer.graphQLToApi(it.emailDomain)
+            } ?: emptyList()
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {

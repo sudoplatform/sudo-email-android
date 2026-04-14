@@ -26,6 +26,7 @@ import com.sudoplatform.sudouser.SudoUserClient
 internal data class CancelScheduledDraftMessageUseCaseInput(
     val draftId: String,
     val emailAddressId: String,
+    val emailMaskId: String?,
 )
 
 /**
@@ -66,6 +67,7 @@ internal class CancelScheduledDraftMessageUseCase(
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = "${sudoUserClient.getCredentialsProvider().identityId}/$s3Key",
                     emailAddressId = input.emailAddressId,
+                    emailMaskId = input.emailMaskId,
                 ),
             )
         } catch (e: Throwable) {

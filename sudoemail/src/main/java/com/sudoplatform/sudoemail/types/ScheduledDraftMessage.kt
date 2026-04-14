@@ -31,6 +31,7 @@ enum class ScheduledDraftMessageState {
  *
  * @property id [String] The id of the draft message that has been scheduled.
  * @property emailAddressId [String] The id of the email address associated with the draft message.
+ * @property emailMaskId [String?] The id of the email mask associated with the draft message, if any.
  * @property owner [String] Identifier of the user that owns the email message.
  * @property owners [List<Owner>] List of identifiers of the user/sudo associated with this email message.
  * @property sendAt [Date] Timestamp of when to send the message.
@@ -41,6 +42,7 @@ enum class ScheduledDraftMessageState {
 data class ScheduledDraftMessage(
     val id: String,
     val emailAddressId: String,
+    val emailMaskId: String?,
     val owner: String,
     val owners: List<Owner>,
     val sendAt: Date,

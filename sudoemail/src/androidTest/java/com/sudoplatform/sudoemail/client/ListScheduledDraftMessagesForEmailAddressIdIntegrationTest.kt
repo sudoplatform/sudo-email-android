@@ -11,8 +11,10 @@ import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessageState
 import com.sudoplatform.sudoemail.types.inputs.CancelScheduledDraftMessageInput
+import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.NotEqualStateFilter
 import com.sudoplatform.sudoemail.types.inputs.ScheduledDraftMessageFilterInput
@@ -23,6 +25,7 @@ import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,11 +39,22 @@ class ListScheduledDraftMessagesForEmailAddressIdIntegrationTest : BaseIntegrati
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()
 
+    // Shared mask test resources (only populated when masks are enabled)
+    private var maskDomains: List<String> = emptyList()
+    private var masksEnabled: Boolean = false
+
     @Before
-    fun setup() {
-        sudoClient.reset()
-        sudoClient.generateEncryptionKey()
-    }
+    fun setup() =
+        runTest {
+            sudoClient.reset()
+            sudoClient.generateEncryptionKey()
+
+            val config = emailClient.getConfigurationData()
+            masksEnabled = config.emailMasksEnabled
+            if (masksEnabled) {
+                maskDomains = getMaskDomains(emailClient)
+            }
+        }
 
     @After
     fun teardown() =
@@ -306,5 +320,143 @@ class ListScheduledDraftMessagesForEmailAddressIdIntegrationTest : BaseIntegrati
                 scheduledDraftMessage.sendAt shouldBe sendAt
             }
             response.items.find { it.id == cancelled } shouldBe null
+        }
+
+    // -------------------------------------------------------------------------
+    // Mask-related tests – skipped when masks are not enabled
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun listScheduledDraftMessagesForEmailAddressIdShouldReturnEmailMaskIdWhenPresent() =
+        runTest {
+            Assume.assumeTrue("Test skipped because email masks are not enabled.", masksEnabled)
+
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+            val mask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+
+            val sendAt =
+                Date(
+                    Date().time +
+                        java.time.Duration
+                            .ofDays(1)
+                            .toMillis(),
+                )
+
+            val draftId = scheduleSendDraftMessage(emailAddress, emailMaskId = mask.id, sendAt = sendAt)
+
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                )
+
+            val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            response shouldNotBe null
+            response.nextToken shouldBe null
+            response.items.size shouldBe 1
+            val scheduledDraftMessage = response.items[0]
+            scheduledDraftMessage.id shouldBe draftId
+            scheduledDraftMessage.emailAddressId shouldBe emailAddress.id
+            scheduledDraftMessage.state shouldBe ScheduledDraftMessageState.SCHEDULED
+            scheduledDraftMessage.sendAt shouldBe sendAt
+            scheduledDraftMessage.emailMaskId shouldBe mask.id
+        }
+
+    @Test
+    fun listScheduledDraftMessagesForEmailAddressIdShouldReturnNullEmailMaskIdWhenNotPresent() =
+        runTest {
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val sendAt =
+                Date(
+                    Date().time +
+                        java.time.Duration
+                            .ofDays(1)
+                            .toMillis(),
+                )
+
+            val draftId = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
+
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                )
+
+            val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            response shouldNotBe null
+            response.items.size shouldBe 1
+            val scheduledDraftMessage = response.items[0]
+            scheduledDraftMessage.id shouldBe draftId
+            scheduledDraftMessage.emailMaskId shouldBe null
+        }
+
+    @Test
+    fun listScheduledDraftMessagesForEmailAddressIdShouldReturnMixedMaskAndNonMaskDrafts() =
+        runTest {
+            Assume.assumeTrue("Test skipped because email masks are not enabled.", masksEnabled)
+
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+            val mask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+
+            val sendAt =
+                Date(
+                    Date().time +
+                        java.time.Duration
+                            .ofDays(1)
+                            .toMillis(),
+                )
+
+            // Schedule one draft with a mask and one without
+            val maskedDraftId = scheduleSendDraftMessage(emailAddress, emailMaskId = mask.id, sendAt = sendAt)
+            val unmaskedDraftId = scheduleSendDraftMessage(emailAddress, sendAt = sendAt)
+
+            val input =
+                ListScheduledDraftMessagesForEmailAddressIdInput(
+                    emailAddressId = emailAddress.id,
+                )
+
+            val response = emailClient.listScheduledDraftMessagesForEmailAddressId(input)
+
+            response shouldNotBe null
+            response.items.size shouldBe 2
+
+            val maskedDraft = response.items.find { it.id == maskedDraftId }
+            maskedDraft shouldNotBe null
+            maskedDraft!!.emailMaskId shouldBe mask.id
+
+            val unmaskedDraft = response.items.find { it.id == unmaskedDraftId }
+            unmaskedDraft shouldNotBe null
+            unmaskedDraft!!.emailMaskId shouldBe null
         }
 }

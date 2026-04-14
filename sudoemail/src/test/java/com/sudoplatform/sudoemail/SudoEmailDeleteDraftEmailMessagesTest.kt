@@ -153,6 +153,37 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         }
 
     @Test
+    fun `deleteDraftEmailMessages() should pass email mask id when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val input =
+                DeleteDraftEmailMessagesInput(
+                    ids = draftIds,
+                    emailAddressId = emailAddressId,
+                    emailMaskId = emailMaskId,
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.deleteDraftEmailMessages(input)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+            // Allow background IO coroutines (invoker) to complete
+            Thread.sleep(500)
+
+            result shouldNotBe null
+
+            verify(mockUseCaseFactory).createDeleteDraftEmailMessagesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.emailMaskId shouldBe emailMaskId
+                },
+            )
+            verify(mockUseCaseFactory, times(draftIds.size)).createCancelScheduledDraftMessageUseCase()
+        }
+
+    @Test
     fun `deleteDraftEmailMessages() should return partial result when some deletions fail`() =
         runTest {
             mockUseCase.stub {

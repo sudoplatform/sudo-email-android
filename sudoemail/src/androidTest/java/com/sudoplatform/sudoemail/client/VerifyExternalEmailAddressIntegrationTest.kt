@@ -61,12 +61,14 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     @After
     fun teardown() =
         runTest {
-            emailMaskList.map {
+            emailMaskList.forEach {
                 emailClient.deprovisionEmailMask(DeprovisionEmailMaskInput(it.id))
             }
-            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+            emailAddressList.forEach { emailClient.deprovisionEmailAddress(it.id) }
             sudoClient.deleteSudo(sudo)
-            externalTestAccount.closeConnection()
+            if (!emailMaskList.isEmpty()) {
+                externalTestAccount.closeConnection()
+            }
         }
 
     @Test
@@ -89,23 +91,35 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
             emailMask shouldNotBe null
             emailMask.status shouldBe EmailMaskStatus.PENDING
 
-            // Trigger verification email (no code provided)
-            val triggerResult =
-                emailClient.verifyExternalEmailAddress(
-                    VerifyExternalEmailAddressInput(
-                        emailAddress = externalAddress,
-                        emailMaskId = emailMask.id,
-                        verificationCode = null,
-                    ),
-                )
+            try {
+                // Trigger verification email (no code provided)
+                val triggerResult =
+                    emailClient.verifyExternalEmailAddress(
+                        VerifyExternalEmailAddressInput(
+                            emailAddress = externalAddress,
+                            emailMaskId = emailMask.id,
+                            verificationCode = null,
+                        ),
+                    )
 
-            triggerResult shouldNotBe null
-            triggerResult.isVerified shouldBe false
-            triggerResult.reason shouldBe "Verification email sent"
+                triggerResult shouldNotBe null
+                triggerResult.isVerified shouldBe false
+                triggerResult.reason shouldBe "Verification email sent"
+            } catch (e: Exception) {
+                logger.error("Failed to trigger verification email: ${e.message}")
+                if (e is SudoEmailClient.EmailMaskException.FailedException &&
+                    e.message!!.contains(serviceQuotaExceededErrorMessage)
+                ) {
+                    logger.info("Service quota exceeded, skipping verification flow test")
+                    return@runTest
+                } else {
+                    throw e
+                }
+            }
         }
 
     @Test
-    fun verifyExternalEmailAddressShouldCompleteVerificationFlow() =
+    fun verifyExternalEmailAddressShouldCompleteVerificationFlowAndRejectReuse() =
         runTest {
             // Skip if external email masks are not enabled
             if (!config.externalEmailMasksEnabled) {
@@ -126,17 +140,28 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
 
             // Trigger verification email
             val searchFromDate = Date(System.currentTimeMillis() - 60_000)
-            val triggerResult =
-                emailClient.verifyExternalEmailAddress(
-                    VerifyExternalEmailAddressInput(
-                        emailAddress = externalAddress,
-                        emailMaskId = emailMask.id,
-                        verificationCode = null,
-                    ),
-                )
+            try {
+                val triggerResult =
+                    emailClient.verifyExternalEmailAddress(
+                        VerifyExternalEmailAddressInput(
+                            emailAddress = externalAddress,
+                            emailMaskId = emailMask.id,
+                            verificationCode = null,
+                        ),
+                    )
 
-            triggerResult.isVerified shouldBe false
-
+                triggerResult.isVerified shouldBe false
+            } catch (e: Exception) {
+                logger.error("Failed to trigger verification email: ${e.message}")
+                if (e is SudoEmailClient.EmailMaskException.FailedException &&
+                    e.message!!.contains(serviceQuotaExceededErrorMessage)
+                ) {
+                    logger.info("Service quota exceeded, skipping verification flow test")
+                    return@runTest
+                } else {
+                    throw e
+                }
+            }
             // Wait for verification emails and try all codes
             val verificationResult =
                 waitForVerificationAndTryAllCodes(
@@ -161,6 +186,20 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
             val mask = (updatedMask as com.sudoplatform.sudoemail.types.ListAPIResult.Success).result.items.find { it.id == emailMask.id }
             mask shouldNotBe null
             mask!!.status shouldBe EmailMaskStatus.ENABLED
+
+            // Try to verify again with the same code — should be rejected
+            val secondResult =
+                emailClient.verifyExternalEmailAddress(
+                    VerifyExternalEmailAddressInput(
+                        emailAddress = externalAddress,
+                        emailMaskId = emailMask.id,
+                        verificationCode = verificationResult!!.verificationCode,
+                    ),
+                )
+
+            secondResult shouldNotBe null
+            secondResult.isVerified shouldBe false
+            secondResult.reason shouldBe "No verification code found for email address"
         }
 
     @Test
@@ -176,23 +215,14 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
             val maskAddress = "$maskLocalPart@${maskDomains.first()}"
             val externalAddress = externalTestAccount.getEmailAddress()
 
-            // Provision an email mask with external address
+            // Provision an email mask with external address — mask starts in PENDING state
             val emailMask = provisionEmailMask(maskAddress, externalAddress, ownershipProof)
             emailMaskList.add(emailMask)
 
             emailMask shouldNotBe null
             emailMask.status shouldBe EmailMaskStatus.PENDING
 
-            // Trigger verification email
-            emailClient.verifyExternalEmailAddress(
-                VerifyExternalEmailAddressInput(
-                    emailAddress = externalAddress,
-                    emailMaskId = emailMask.id,
-                    verificationCode = null,
-                ),
-            )
-
-            // Try to verify with invalid code
+            // Try to verify with invalid code (no trigger needed — mask is already PENDING)
             val verifyResult =
                 emailClient.verifyExternalEmailAddress(
                     VerifyExternalEmailAddressInput(
@@ -238,73 +268,6 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
             }
         }
 
-    @Test
-    fun verifyExternalEmailAddressShouldHandleAlreadyVerifiedMask() =
-        runTest {
-            // Skip if external email masks are not enabled
-            if (!config.externalEmailMasksEnabled) {
-                logger.info("External email masks not enabled, skipping test")
-                return@runTest
-            }
-
-            val maskLocalPart = generateSafeLocalPart("verif-already")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val externalAddress = externalTestAccount.getEmailAddress()
-
-            // Provision an email mask with external address
-            val emailMask = provisionEmailMask(maskAddress, externalAddress, ownershipProof)
-            emailMaskList.add(emailMask)
-
-            // Complete verification flow
-            val searchFromDate = Date(System.currentTimeMillis() - 60_000)
-            emailClient.verifyExternalEmailAddress(
-                VerifyExternalEmailAddressInput(
-                    emailAddress = externalAddress,
-                    emailMaskId = emailMask.id,
-                    verificationCode = null,
-                ),
-            )
-
-            // Wait for verification emails and try all codes
-            val verificationResult =
-                waitForVerificationAndTryAllCodes(
-                    externalAddress = externalAddress,
-                    emailMaskId = emailMask.id,
-                    searchFromDate = searchFromDate,
-                )
-
-            verificationResult shouldNotBe null
-
-            // Delete the email that was successfully used
-            if (verificationResult?.messageId != null) {
-                externalTestAccount.deleteEmail(verificationResult.messageId)
-            }
-            // Retrieve the verified mask
-            val updatedMask =
-                emailClient.listEmailMasksForOwner(
-                    com.sudoplatform.sudoemail.types.inputs
-                        .ListEmailMasksForOwnerInput(),
-                )
-            val mask = (updatedMask as com.sudoplatform.sudoemail.types.ListAPIResult.Success).result.items.find { it.id == emailMask.id }
-            mask shouldNotBe null
-            mask!!.status shouldBe EmailMaskStatus.ENABLED
-
-            // Try to verify again with same code
-            val secondResult =
-                emailClient.verifyExternalEmailAddress(
-                    VerifyExternalEmailAddressInput(
-                        emailAddress = externalAddress,
-                        emailMaskId = emailMask.id,
-                        verificationCode = verificationResult!!.verificationCode,
-                    ),
-                )
-
-            // Should return a result (either true or false with reason)
-            secondResult shouldNotBe null
-            secondResult.isVerified shouldBe false
-            secondResult.reason shouldBe "No verification code found for email address"
-        }
-
     /**
      * Extracts a 6-digit verification code from email body text.
      * Tries multiple patterns to find the code.
@@ -347,7 +310,7 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     /**
      * Waits for verification emails and tries each code until one succeeds.
      * Once the successful code is identified, deletes it. This allows us to
-     * run tests concurrently without building up too much noise in the externa
+     * run tests concurrently without building up too much noise in the external
      * accounts - we can't know the contents of the email or the sender's address
      * since it varies with environments.
      *

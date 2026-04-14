@@ -6,6 +6,8 @@
 
 package com.sudoplatform.sudoemail.internal.domain.entities.configuration
 
+import com.sudoplatform.sudoemail.types.EmailDomain
+
 /**
  * Service interface for retrieving email configuration data.
  *
@@ -39,4 +41,11 @@ internal interface ConfigurationDataService {
      * @return a [List] of email mask domains that have been configured.
      */
     suspend fun getEmailMaskDomains(): List<String>
+
+    /**
+     * Retrieves the list of all email domains with their metadata.
+     *
+     * @return A [List] of [EmailDomain]s.
+     */
+    suspend fun listEmailDomains(): List<EmailDomain>
 }

@@ -20,6 +20,7 @@ import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,7 +76,6 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun createDraftEmailMessageShouldReturnUUIDOnSuccessWithOutNetworkMessage() =
         runTest {
-            val uuidRegex = Regex("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
             val sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -98,9 +98,36 @@ class CreateDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
+    fun createDraftEmailMessageShouldPassWhenPassedEmailMaskId() =
+        runTest {
+            val config = emailClient.getConfigurationData()
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val maskDomains = getMaskDomains(emailClient)
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+
+            val rfc822Data =
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailMask.maskAddress,
+                    to = listOf(emailMask.maskAddress),
+                )
+            val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id, emailMask.id)
+            val response = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
+
+            response shouldMatch uuidRegex
+        }
+
+    @Test
     fun createDraftEmailMessageShouldReturnUUIDOnSuccessWithInNetworkMessage() =
         runTest {
-            val uuidRegex = Regex("^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}\$")
             val sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)

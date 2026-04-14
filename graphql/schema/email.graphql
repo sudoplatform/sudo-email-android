@@ -357,6 +357,7 @@ input DeleteMessagesByFolderIdInput {
 input ScheduleSendDraftMessageInput {
    draftMessageKey: String!
    emailAddressId: ID!
+   emailMaskId: ID
    sendAtEpochMs: Float!
    symmetricKey: String!
  }
@@ -364,6 +365,7 @@ input ScheduleSendDraftMessageInput {
 input CancelScheduledDraftMessageInput {
   draftMessageKey: String!
   emailAddressId: ID!
+  emailMaskId: ID
 }
 
 input SendMaskedEmailMessageInput {
@@ -498,6 +500,7 @@ enum ScheduledDraftMessageState {
 type ScheduledDraftMessage {
   draftMessageKey: String!
   emailAddressId: ID!
+  emailMaskId: ID
   sendAtEpochMs: Float!
   state: ScheduledDraftMessageState!
   createdAtEpochMs: Float!
@@ -636,16 +639,26 @@ type VerifyExternalEmailAddressResult {
   reason: String
 }
 
+type EmailDomain {
+  domain: String!
+  isMaskDomain: Boolean!
+  metadata: String!
+}
+
 type Query {
   getEmailConfig: EmailConfigurationData!
 
+  # Deprecated - Use listEmailDomains
   getEmailDomains: SupportedDomains!
 
   getConfiguredEmailDomains: ConfiguredDomains!
 
+  # Deprecated - Use listEmailDomains
   getEmailMaskDomains: EmailMaskDomains!
 
-    checkEmailAddressAvailability(
+  listEmailDomains: [EmailDomain!]!
+
+  checkEmailAddressAvailability(
     input: CheckEmailAddressAvailabilityInput!
   ): AvailableAddresses!
 

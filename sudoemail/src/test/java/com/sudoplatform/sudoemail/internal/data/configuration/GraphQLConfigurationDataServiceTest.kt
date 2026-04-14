@@ -40,6 +40,14 @@ import java.util.concurrent.CancellationException
 class GraphQLConfigurationDataServiceTest : BaseTests() {
     private val domains = listOf("foo.com", "bar.com")
 
+    private val listEmailDomainsItems =
+        listOf(
+            com.sudoplatform.sudoemail.graphql.fragment
+                .EmailDomain("foo.com", false, "{}"),
+            com.sudoplatform.sudoemail.graphql.fragment
+                .EmailDomain("bar.com", true, "{\"key\":\"value\"}"),
+        )
+
     private val getEmailDomainsQueryResponse by before {
         DataFactory.getEmailDomainsQueryResponse(domains)
     }
@@ -50,6 +58,10 @@ class GraphQLConfigurationDataServiceTest : BaseTests() {
 
     private val getEmailConfigQueryResponse by before {
         DataFactory.getEmailConfigQueryResponse()
+    }
+
+    private val listEmailDomainsQueryResponse by before {
+        DataFactory.listEmailDomainsQueryResponse(listEmailDomainsItems)
     }
 
     override val mockApiClient by before {
@@ -68,6 +80,11 @@ class GraphQLConfigurationDataServiceTest : BaseTests() {
                 getEmailConfigQuery()
             } doAnswer {
                 getEmailConfigQueryResponse
+            }
+            onBlocking {
+                listEmailDomainsQuery()
+            } doAnswer {
+                listEmailDomainsQueryResponse
             }
         }
     }
@@ -362,5 +379,174 @@ class GraphQLConfigurationDataServiceTest : BaseTests() {
             }
 
             verify(mockApiClient).getConfiguredEmailDomainsQuery()
+        }
+
+    @Test
+    fun `listEmailDomains() should return results when no error present`() =
+        runTest {
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    instanceUnderTest.listEmailDomains()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe false
+            result.size shouldBe 2
+            result[0].domain shouldBe "foo.com"
+            result[0].isMaskDomain shouldBe false
+            result[0].metadata shouldBe emptyMap()
+            result[1].domain shouldBe "bar.com"
+            result[1].isMaskDomain shouldBe true
+            result[1].metadata shouldBe mapOf("key" to "value")
+
+            verify(mockApiClient).listEmailDomainsQuery()
+        }
+
+    @Test
+    fun `listEmailDomains() should return empty list output when query result data is empty`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailDomainsQuery()
+                } doAnswer {
+                    DataFactory.listEmailDomainsQueryResponse(emptyList())
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    instanceUnderTest.listEmailDomains()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe true
+            result.size shouldBe 0
+
+            verify(mockApiClient).listEmailDomainsQuery()
+        }
+
+    @Test
+    fun `listEmailDomains() should return empty list output when query response is null`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailDomainsQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, null)
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    instanceUnderTest.listEmailDomains()
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldNotBe null
+            result.isEmpty() shouldBe true
+            result.size shouldBe 0
+
+            verify(mockApiClient).listEmailDomainsQuery()
+        }
+
+    @Test
+    fun `listEmailDomains() should throw when response has error`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "Test generated error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to "DilithiumCrystalsOutOfAlignment"),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailDomainsQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        instanceUnderTest.listEmailDomains()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailDomainsQuery()
+        }
+
+    @Test
+    fun `listEmailDomains() should throw when http error occurs`() =
+        runTest {
+            val testError =
+                GraphQLResponse.Error(
+                    "mock",
+                    null,
+                    null,
+                    mapOf("httpStatus" to HttpURLConnection.HTTP_FORBIDDEN),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailDomainsQuery()
+                }.thenAnswer {
+                    GraphQLResponse(null, listOf(testError))
+                }
+            }
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
+                        instanceUnderTest.listEmailDomains()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailDomainsQuery()
+        }
+
+    @Test
+    fun `listEmailDomains() should throw when unknown error occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailDomainsQuery()
+                } doThrow RuntimeException("Mock Runtime Exception")
+            }
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    shouldThrow<SudoEmailClient.EmailAddressException.UnknownException> {
+                        instanceUnderTest.listEmailDomains()
+                    }
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockApiClient).listEmailDomainsQuery()
+        }
+
+    @Test
+    fun `listEmailDomains() should not block coroutine cancellation exception`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailDomainsQuery()
+                } doThrow CancellationException("Mock Cancellation Exception")
+            }
+
+            shouldThrow<CancellationException> {
+                instanceUnderTest.listEmailDomains()
+            }
+
+            verify(mockApiClient).listEmailDomainsQuery()
         }
 }

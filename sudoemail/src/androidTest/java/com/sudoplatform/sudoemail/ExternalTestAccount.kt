@@ -44,7 +44,7 @@ import java.util.Properties
 
 enum class ExternalTestAccountType {
     GMAIL,
-    YAHOO,
+//    YAHOO, // Yahoo shut down our account :(
 }
 
 /**
@@ -118,16 +118,7 @@ internal class ExternalTestAccount(
 
     private val imapConfigs: Map<ExternalTestAccountType, ImapConfig> by lazy {
         val (gmailUser, gmailPassword) = readConfig("gmail.config")
-        val (yahooUser, yahooPassword) = readConfig("yahoo.config")
         mapOf(
-            ExternalTestAccountType.YAHOO to
-                ImapConfig(
-                    user = yahooUser,
-                    password = yahooPassword,
-                    host = "imap.mail.yahoo.com",
-                    port = 993,
-                    tls = true,
-                ),
             ExternalTestAccountType.GMAIL to
                 ImapConfig(
                     user = gmailUser,
@@ -141,16 +132,7 @@ internal class ExternalTestAccount(
 
     private val smtpConfigs: Map<ExternalTestAccountType, SmtpConfig> by lazy {
         val (gmailUser, gmailPassword) = readConfig("gmail.config")
-        val (yahooUser, yahooPassword) = readConfig("yahoo.config")
         mapOf(
-            ExternalTestAccountType.YAHOO to
-                SmtpConfig(
-                    host = "smtp.mail.yahoo.com",
-                    port = 465,
-                    secure = true,
-                    user = yahooUser,
-                    password = yahooPassword,
-                ),
             ExternalTestAccountType.GMAIL to
                 SmtpConfig(
                     host = "smtp.gmail.com",

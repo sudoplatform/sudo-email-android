@@ -23,6 +23,7 @@ import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -182,5 +183,45 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
             parsedMessage.from shouldContain emailAddress.emailAddress
             parsedMessage.subject shouldBe "Test Draft"
             parsedMessage.body shouldInclude "Test Body"
+        }
+
+    @Test
+    fun getDraftEmailMessageShouldSuccessfullyGetDraftMessageWithEmailMaskId() =
+        runTest {
+            val config = emailClient.getConfigurationData()
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            val maskDomains = getMaskDomains(emailClient)
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+
+            val rfc822Data =
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailMask.maskAddress,
+                    to = listOf(emailMask.maskAddress),
+                    subject = "Test Draft",
+                    body = "Test Body",
+                )
+
+            val createDraftInput =
+                CreateDraftEmailMessageInput(
+                    rfc822Data = rfc822Data,
+                    senderEmailAddressId = emailAddress.id,
+                    emailMaskId = emailMask.id,
+                )
+
+            val draftId = emailClient.createDraftEmailMessage(createDraftInput)
+            val input = GetDraftEmailMessageInput(draftId, emailAddress.id, emailMask.id)
+            val draftEmailMessage = emailClient.getDraftEmailMessage(input)
+            draftEmailMessage.id shouldBe draftId
+            draftEmailMessage.emailAddressId shouldBe emailAddress.id
+            draftEmailMessage.emailMaskId shouldBe emailMask.id
         }
 }

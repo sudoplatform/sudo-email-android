@@ -63,12 +63,14 @@ internal data class DeleteDraftEmailMessagesRequest(
  *
  * @property draftMessageKey [String] The S3 key of the draft message to schedule.
  * @property emailAddressId [String] The email address ID from which to send the message.
+ * @property emailMaskId [String?] The email mask ID associated with the scheduled message, if applicable.
  * @property sendAt [Date] The date and time when the message should be sent.
  * @property symmetricKey [String] The symmetric key used to encrypt the message.
  */
 internal data class ScheduleSendDraftMessageRequest(
     val draftMessageKey: String,
     val emailAddressId: String,
+    val emailMaskId: String?,
     val sendAt: Date,
     val symmetricKey: String,
 )
@@ -78,10 +80,12 @@ internal data class ScheduleSendDraftMessageRequest(
  *
  * @property draftMessageKey [String] The S3 key of the draft message to cancel.
  * @property emailAddressId [String] The email address ID associated with the scheduled message.
+ * @property emailMaskId [String?] The email mask ID associated with the scheduled message, if applicable.
  */
 internal data class CancelScheduledDraftMessageRequest(
     val draftMessageKey: String,
     val emailAddressId: String,
+    val emailMaskId: String?,
 )
 
 /**

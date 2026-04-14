@@ -31,6 +31,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailMaskDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMasksForOwnerQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
@@ -121,6 +122,12 @@ open class ApiClient(
     open suspend fun getEmailMaskDomainsQuery(): GraphQLResponse<GetEmailMaskDomainsQuery.Data> =
         this.graphQLClient.query<GetEmailMaskDomainsQuery, GetEmailMaskDomainsQuery.Data>(
             GetEmailMaskDomainsQuery.OPERATION_DOCUMENT,
+            emptyMap(),
+        )
+
+    open suspend fun listEmailDomainsQuery(): GraphQLResponse<ListEmailDomainsQuery.Data> =
+        this.graphQLClient.query<ListEmailDomainsQuery, ListEmailDomainsQuery.Data>(
+            ListEmailDomainsQuery.OPERATION_DOCUMENT,
             emptyMap(),
         )
 

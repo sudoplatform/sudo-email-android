@@ -102,17 +102,18 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 }
             }
 
-            val expectedMessageCount = 3 // Two sent, one received
+            val ootoOrSuccessSimulator = if (testSentEmailBucket == null) toSimulatorAddress else successSimulatorAddress
+            val expectedMessageCount = if (testSentEmailBucket == null) 3 else 2
             sendEmailMessage(
                 emailClient,
                 fromAddress = emailAddress,
-                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = toSimulatorAddress)),
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = ootoOrSuccessSimulator, displayName = "OOTO Or Success")),
                 subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}",
             )
             sendEmailMessage(
                 emailClient,
                 fromAddress = emailAddress,
-                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = successSimulatorAddress)),
+                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = successSimulatorAddress, displayName = "Success Simulator")),
                 subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}",
             )
 
@@ -127,28 +128,38 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                             it.direction == Direction.INBOUND
                         }
                     outbound.size shouldBe 2
-                    val successMessage = outbound.find { it.to.firstOrNull()?.emailAddress == successSimulatorAddress }
-                    val ootoMessage = outbound.find { it.to.firstOrNull()?.emailAddress == toSimulatorAddress }
+                    val successMessage =
+                        outbound.find {
+                            it.to.firstOrNull()?.emailAddress == successSimulatorAddress &&
+                                it.to.firstOrNull()?.displayName == "Success Simulator"
+                        }
+                    val ootoOrSuccessMessage =
+                        outbound.find {
+                            it.to.firstOrNull()?.emailAddress == ootoOrSuccessSimulator &&
+                                it.to.firstOrNull()?.displayName == "OOTO Or Success"
+                        }
                     successMessage shouldNotBe null
-                    ootoMessage shouldNotBe null
+                    ootoOrSuccessMessage shouldNotBe null
                     with(successMessage!!) {
                         from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                         to.firstOrNull()?.emailAddress shouldBe successSimulatorAddress
                         hasAttachments shouldBe false
                         size shouldBeGreaterThan 0.0
                     }
-                    with(ootoMessage!!) {
+                    with(ootoOrSuccessMessage!!) {
                         from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-                        to.firstOrNull()?.emailAddress shouldBe toSimulatorAddress
+                        to.firstOrNull()?.emailAddress shouldBe ootoOrSuccessSimulator
                         hasAttachments shouldBe false
                         size shouldBeGreaterThan 0.0
                     }
-                    inbound.size shouldBe 1
-                    with(inbound[0]) {
-                        from.firstOrNull()?.emailAddress shouldBe fromSimulatorAddress
-                        to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-                        hasAttachments shouldBe false
-                        size shouldBeGreaterThan 0.0
+                    if (testSentEmailBucket == null) {
+                        inbound.size shouldBe 1
+                        with(inbound[0]) {
+                            from.firstOrNull()?.emailAddress shouldBe fromSimulatorAddress
+                            to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                            hasAttachments shouldBe false
+                            size shouldBeGreaterThan 0.0
+                        }
                     }
                 }
 

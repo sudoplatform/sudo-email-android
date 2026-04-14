@@ -140,16 +140,18 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
 
             updateResult shouldNotBe null
 
+            val listCustomFolderMessages =
+                waitForMessagesByFolder(
+                    1,
+                    ListEmailMessagesForEmailFolderIdInput(customFolder.id),
+                )
             when (
-                val listEmailMessages =
-                    emailClient.listEmailMessagesForEmailFolderId(
-                        ListEmailMessagesForEmailFolderIdInput(customFolder.id),
-                    )
+                listCustomFolderMessages
             ) {
                 is ListAPIResult.Success -> {
-                    listEmailMessages.result.items shouldHaveSize 1
-                    listEmailMessages.result.items[0].id shouldBe sendResult.id
-                    listEmailMessages.result.items[0].folderId shouldBe customFolder.id
+                    listCustomFolderMessages.result.items shouldHaveSize 1
+                    listCustomFolderMessages.result.items[0].id shouldBe sendResult.id
+                    listCustomFolderMessages.result.items[0].folderId shouldBe customFolder.id
                 }
 
                 is ListAPIResult.Partial -> {
@@ -167,16 +169,18 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
 
             trashFolder shouldNotBe null
 
+            val listTrashFolderMessages =
+                waitForMessagesByFolder(
+                    1,
+                    ListEmailMessagesForEmailFolderIdInput(trashFolder!!.id),
+                )
             when (
-                val listEmailMessages =
-                    emailClient.listEmailMessagesForEmailFolderId(
-                        ListEmailMessagesForEmailFolderIdInput(trashFolder!!.id),
-                    )
+                listTrashFolderMessages
             ) {
                 is ListAPIResult.Success -> {
-                    listEmailMessages.result.items shouldHaveSize 1
-                    listEmailMessages.result.items[0].id shouldBe sendResult.id
-                    listEmailMessages.result.items[0].folderId shouldBe trashFolder.id
+                    listTrashFolderMessages.result.items shouldHaveSize 1
+                    listTrashFolderMessages.result.items[0].id shouldBe sendResult.id
+                    listTrashFolderMessages.result.items[0].folderId shouldBe trashFolder.id
                 }
 
                 is ListAPIResult.Partial -> {

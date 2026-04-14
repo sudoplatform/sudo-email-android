@@ -205,6 +205,7 @@ fragment GetEmailAddressBlocklistResponse on GetEmailAddressBlocklistResponse {
 fragment ScheduledDraftMessage on ScheduledDraftMessage {
   draftMessageKey
   emailAddressId
+  emailMaskId
   sendAtEpochMs
   state
   createdAtEpochMs
@@ -247,4 +248,10 @@ fragment EmailMask on EmailMask {
 fragment VerifyExternalEmailAddressResult on VerifyExternalEmailAddressResult {
   isVerified
   reason
+}
+
+fragment EmailDomain on EmailDomain {
+  domain
+  isMaskDomain
+  metadata
 }

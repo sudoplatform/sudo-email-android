@@ -64,10 +64,22 @@ class DefaultS3Client(
         fun constructS3KeyForDraftEmailMessage(
             emailAddressId: String,
             draftEmailMessageId: String = "",
+            emailMaskId: String? = null,
         ): String {
-            val keyPrefix = constructS3PrefixForEmailAddress(emailAddressId)
-            val keySuffix = if (draftEmailMessageId.isNotEmpty()) "/$draftEmailMessageId" else ""
-            return "$keyPrefix/draft$keySuffix"
+            var key = "${constructS3PrefixForEmailAddress(emailAddressId)}/draft"
+            key = if (emailMaskId?.isNotEmpty() == true) "$key/mask/$emailMaskId" else key
+            key = if (draftEmailMessageId.isNotEmpty()) "$key/$draftEmailMessageId" else key
+            return key
+        }
+
+        /**
+         * Extracts the emailMaskId from a draft message S3 key if present.
+         * Matches '/mask/{emailMaskId}/' in the key and returns the emailMaskId, or null if not found.
+         */
+        fun extractEmailMaskIdFromDraftMessageS3Key(key: String): String? {
+            val regex = "/mask/([^/]+)/".toRegex()
+            val match = regex.find(key)
+            return match?.groups?.get(1)?.value
         }
     }
 
@@ -78,7 +90,7 @@ class DefaultS3Client(
         options: S3Client.KeyOptions,
     ): String =
         suspendCancellableCoroutine { cont ->
-            this.logger.debug("Uploading a RFC822 data to S3.")
+            this.logger.debug("Uploading a RFC822 data to S3. Bucket: ${this.bucket}")
 
             val s3Key = if (options.isKeyCredentialled) objectId else this.constructS3KeyWithCredentials(objectId)
 

@@ -121,6 +121,51 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         }
 
     @Test
+    fun `getDraftEmailMessage() should pass email mask id when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val draftEntityWithMaskId =
+                EntityDataFactory.getDraftEmailMessageWithContentEntity(
+                    id = mockDraftId,
+                    emailAddressId = mockEmailAddressId,
+                    rfc822Data = unsealedDraftString.toByteArray(),
+                    emailMaskId = emailMaskId,
+                )
+
+            mockUseCase.stub {
+                onBlocking {
+                    execute(any())
+                } doReturn draftEntityWithMaskId
+            }
+
+            val input =
+                GetDraftEmailMessageInput(
+                    id = mockDraftId,
+                    emailAddressId = mockEmailAddressId,
+                    emailMaskId = emailMaskId,
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.getDraftEmailMessage(input)
+                }
+
+            deferredResult.start()
+            val result = deferredResult.await()
+
+            result shouldBe DraftEmailMessageTransformer.entityWithContentToApi(draftEntityWithMaskId)
+
+            verify(mockUseCaseFactory).createGetDraftEmailMessageUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.draftId shouldBe mockDraftId
+                    useCaseInput.emailAddressId shouldBe mockEmailAddressId
+                    useCaseInput.emailMaskId shouldBe emailMaskId
+                },
+            )
+        }
+
+    @Test
     fun `getDraftEmailMessage() should throw when use case throws`() =
         runTest {
             mockUseCase.stub {

@@ -22,6 +22,7 @@ import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -115,6 +116,48 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
                 parsedMessage.to shouldContain successSimulatorAddress
                 parsedMessage.from shouldContain emailAddress.emailAddress
                 parsedMessage.subject shouldContain "Draft"
+            }
+        }
+
+    @Test
+    fun listDraftEmailMessagesForEmailAddressIdShouldReturnEmailMaskIdInDraftMessageMetadata() =
+        runTest {
+            val config = emailClient.getConfigurationData()
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+            val maskDomains = getMaskDomains(emailClient)
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+
+            val numMessages = 2
+
+            for (i in 0 until numMessages) {
+                val rfc822Data =
+                    DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
+                        from = emailMask.maskAddress,
+                        to = listOf(emailMask.maskAddress),
+                        subject = "Draft $i",
+                    )
+                val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id, emailMask.id)
+                emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
+            }
+
+            val result = emailClient.listDraftEmailMessagesForEmailAddressId(ListDraftEmailMessagesForEmailAddressIdInput(emailAddress.id))
+
+            result.items.size shouldBe numMessages
+            result.items.forEach { draftEmailMessageMetadata ->
+                draftEmailMessageMetadata.emailMaskId shouldBe emailMask.id
+                draftEmailMessageMetadata.emailAddressId shouldBe emailAddress.id
             }
         }
 

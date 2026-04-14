@@ -26,6 +26,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMasksForOwnerQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
@@ -50,6 +51,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressPublicKey
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailConfigurationData
+import com.sudoplatform.sudoemail.graphql.fragment.EmailDomain
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.graphql.fragment.EmailMask
 import com.sudoplatform.sudoemail.graphql.fragment.GetEmailAddressBlocklistResponse
@@ -224,6 +226,7 @@ object DataFactory {
     ) = ScheduledDraftMessage(
         draftMessageKey = draftMessageKey,
         emailAddressId = emailAddressId,
+        emailMaskId = null,
         owner = owner,
         owners = owners,
         sendAtEpochMs = sendAtEpochMs,
@@ -570,6 +573,19 @@ object DataFactory {
                 GetEmailDomainsQuery.GetEmailDomains(
                     domains,
                 ),
+            ),
+            null,
+        )
+
+    fun listEmailDomainsQueryResponse(items: List<EmailDomain>): GraphQLResponse<ListEmailDomainsQuery.Data> =
+        GraphQLResponse<ListEmailDomainsQuery.Data>(
+            ListEmailDomainsQuery.Data(
+                items.map {
+                    ListEmailDomainsQuery.ListEmailDomain(
+                        "EmailDomain",
+                        it,
+                    )
+                },
             ),
             null,
         )

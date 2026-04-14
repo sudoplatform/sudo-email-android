@@ -139,6 +139,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -159,7 +160,40 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
             verify(mockServiceKeyManager).getSymmetricKeyData(keyId)
             verify(mockSudoUserClient).getCredentialsProvider()
             verify(mockCredentialsProvider).identityId
-            verify(mockDraftEmailMessageService).scheduleSend(any())
+            verify(mockDraftEmailMessageService).scheduleSend(
+                check { request ->
+                    request.emailMaskId shouldBe null
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should pass emailMaskId through to service when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val input =
+                ScheduleSendDraftMessageUseCaseInput(
+                    id = draftId,
+                    emailAddressId = emailAddressId,
+                    emailMaskId = emailMaskId,
+                    sendAt = sendAt,
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe scheduledDraftMessageEntity
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).getObjectMetadata(any())
+            verify(mockServiceKeyManager).getSymmetricKeyData(keyId)
+            verify(mockSudoUserClient).getCredentialsProvider()
+            verify(mockCredentialsProvider).identityId
+            verify(mockDraftEmailMessageService).scheduleSend(
+                check { request ->
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailMaskId shouldBe emailMaskId
+                },
+            )
         }
 
     @Test
@@ -173,6 +207,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -199,6 +234,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = pastDate,
                 )
 
@@ -221,6 +257,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = now,
                 )
 
@@ -238,6 +275,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -268,6 +306,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -290,6 +329,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -316,6 +356,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -342,6 +383,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -367,6 +409,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -398,6 +441,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -424,6 +468,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -444,6 +489,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = customDraftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 
@@ -475,6 +521,7 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
                 ScheduleSendDraftMessageUseCaseInput(
                     id = draftId,
                     emailAddressId = customEmailAddressId,
+                    emailMaskId = null,
                     sendAt = sendAt,
                 )
 

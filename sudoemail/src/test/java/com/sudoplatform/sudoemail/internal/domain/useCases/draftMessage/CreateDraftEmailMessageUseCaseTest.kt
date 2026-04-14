@@ -151,6 +151,39 @@ class CreateDraftEmailMessageUseCaseTest : BaseTests() {
         }
 
     @Test
+    fun `execute() should use email mask id in s3 key when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val input =
+                CreateDraftEmailMessageUseCaseInput(
+                    emailAddressId = senderEmailAddressId,
+                    rfc822Data = rfc822Data,
+                    emailMaskId = emailMaskId,
+                )
+
+            val draftId = useCase.execute(input)
+
+            draftId shouldNotBe null
+            draftId.isNotEmpty() shouldBe true
+
+            verify(mockEmailAddressService).get(
+                check {
+                    it.id shouldBe senderEmailAddressId
+                },
+            )
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockSaveDraftEmailMessageUseCase).execute(
+                check {
+                    it.s3Key shouldContain senderEmailAddressId
+                    it.s3Key shouldContain draftId
+                    it.s3Key shouldContain emailMaskId
+                    it.symmetricKeyId shouldBe mockSymmetricKeyId
+                    it.rfc822Data shouldBe rfc822Data
+                },
+            )
+        }
+
+    @Test
     fun `execute() should throw when email address not found`() =
         runTest {
             mockEmailAddressService.stub {

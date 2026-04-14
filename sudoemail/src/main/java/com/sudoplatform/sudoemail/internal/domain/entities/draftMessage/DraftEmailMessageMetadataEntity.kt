@@ -23,4 +23,5 @@ internal data class DraftEmailMessageMetadataEntity(
     val id: String,
     val emailAddressId: String,
     val updatedAt: Date,
+    val emailMaskId: String? = null,
 ) : Parcelable

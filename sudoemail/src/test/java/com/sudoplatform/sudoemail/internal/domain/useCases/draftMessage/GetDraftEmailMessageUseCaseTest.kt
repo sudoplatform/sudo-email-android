@@ -272,6 +272,33 @@ class GetDraftEmailMessageUseCaseTest : BaseTests() {
         }
 
     @Test
+    fun `execute() should include email mask id in s3 key when included`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val s3KeyWithEmailMask = DefaultS3Client.constructS3KeyForDraftEmailMessage(senderEmailAddressId, mockDraftId, emailMaskId)
+
+            val input =
+                GetDraftEmailMessageUseCaseInput(
+                    draftId = mockDraftId,
+                    emailAddressId = senderEmailAddressId,
+                    emailMaskId = emailMaskId,
+                )
+
+            val result = useCase.execute(input)
+
+            result.rfc822Data shouldBe rfc822Data
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).get(
+                check {
+                    it.s3Key shouldBe s3KeyWithEmailMask
+                },
+            )
+            verify(mockSealingService).unsealString(any(), any())
+            verify(mockEmailMessageDataProcessor).parseInternetMessageData(any())
+        }
+
+    @Test
     fun `execute() should skip address lookup if not passed an EmailAddressService`() =
         runTest {
             val useCase =

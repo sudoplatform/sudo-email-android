@@ -12,9 +12,11 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessageState
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
+import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoprofiles.Sudo
@@ -24,6 +26,7 @@ import io.kotlintest.shouldThrow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,17 +41,28 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
     private val sudoList = mutableListOf<Sudo>()
 
+    // Shared mask test resources (only populated when masks are enabled)
+    private var maskDomains: List<String> = emptyList()
+    private var masksEnabled: Boolean = false
+
     @Before
-    fun setup() {
-        sudoClient.reset()
-        sudoClient.generateEncryptionKey()
-    }
+    fun setup() =
+        runTest {
+            sudoClient.reset()
+            sudoClient.generateEncryptionKey()
+
+            val config = emailClient.getConfigurationData()
+            masksEnabled = config.emailMasksEnabled
+            if (masksEnabled) {
+                maskDomains = getMaskDomains(emailClient)
+            }
+        }
 
     @After
     fun teardown() =
         runTest {
-            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
+            emailAddressList.forEach { emailClient.deprovisionEmailAddress(it.id) }
+            sudoList.forEach { sudoClient.deleteSudo(it) }
             sudoClient.reset()
         }
 
@@ -59,6 +73,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     "dummyId",
                     "dummyEmailAddressId",
+                    emailMaskId = null,
                     Date(),
                 )
 
@@ -85,6 +100,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     "dummyId",
                     emailAddress.id,
+                    null,
                     Date(),
                 )
 
@@ -112,6 +128,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     "dummyId",
                     emailAddress.id,
+                    null,
                     sendAt,
                 )
 
@@ -149,6 +166,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     draftId,
                     emailAddress.id,
+                    null,
                     sendAt,
                 )
 
@@ -159,6 +177,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
             response.emailAddressId shouldBe emailAddress.id
             response.sendAt shouldBe sendAt
             response.state shouldBe ScheduledDraftMessageState.SCHEDULED
+            response.emailMaskId shouldBe null
         }
 
     @Test
@@ -188,6 +207,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     draftId,
                     emailAddress.id,
+                    null,
                     sendAt,
                 )
             val scheduledDraft = emailClient.scheduleSendDraftMessage(input)
@@ -201,6 +221,95 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
             delay(3000)
             shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
                 emailClient.getDraftEmailMessage(GetDraftEmailMessageInput(scheduledDraft.id, emailAddress.id))
+            }
+        }
+
+    // -------------------------------------------------------------------------
+    // Mask-related tests – skipped when masks are not enabled
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun scheduleSendDraftMessageWithMaskShouldReturnEmailMaskIdInResponse() =
+        runTest {
+            Assume.assumeTrue("Test skipped because email masks are not enabled.", masksEnabled)
+
+            val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+            val mask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+
+            val rfc822Data =
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailAddress.emailAddress,
+                    to = listOf(emailAddress.emailAddress),
+                )
+            val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
+            val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
+            draftId shouldNotBe null
+
+            val input =
+                ScheduleSendDraftMessageInput(
+                    id = draftId,
+                    emailAddressId = emailAddress.id,
+                    emailMaskId = mask.id,
+                    sendAt = sendAt,
+                )
+
+            val response = emailClient.scheduleSendDraftMessage(input)
+
+            response shouldNotBe null
+            response.id shouldBe draftId
+            response.emailAddressId shouldBe emailAddress.id
+            response.sendAt shouldBe sendAt
+            response.state shouldBe ScheduledDraftMessageState.SCHEDULED
+            response.emailMaskId shouldBe mask.id
+        }
+
+    @Test
+    fun scheduleSendDraftMessageWithInvalidMaskIdShouldFail() =
+        runTest {
+            Assume.assumeTrue("Test skipped because email masks are not enabled.", masksEnabled)
+
+            val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
+            val sudo = createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val rfc822Data =
+                DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
+                    from = emailAddress.emailAddress,
+                    to = listOf(emailAddress.emailAddress),
+                )
+            val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
+            val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
+            draftId shouldNotBe null
+
+            val input =
+                ScheduleSendDraftMessageInput(
+                    id = draftId,
+                    emailAddressId = emailAddress.id,
+                    emailMaskId = "non-existent-mask-id",
+                    sendAt = sendAt,
+                )
+
+            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+                emailClient.scheduleSendDraftMessage(input)
             }
         }
 }

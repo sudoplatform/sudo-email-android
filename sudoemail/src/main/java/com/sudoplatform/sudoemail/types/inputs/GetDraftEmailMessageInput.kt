@@ -12,8 +12,10 @@ package com.sudoplatform.sudoemail.types.inputs
  *
  * @property id [String] The id to the draft email message
  * @property emailAddressId [String] The id of the email address the draft is for
+ * @property emailMaskId [String?] Optional email mask ID associated with the draft.
  */
 data class GetDraftEmailMessageInput(
     val id: String,
     val emailAddressId: String,
+    val emailMaskId: String? = null,
 )

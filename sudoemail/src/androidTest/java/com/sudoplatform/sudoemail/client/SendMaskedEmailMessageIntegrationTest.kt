@@ -35,6 +35,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
@@ -341,22 +342,27 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
             emailMaskList.add(provisionedMask)
             val timestamp = Date()
+            val senderDisplayName = "Sender Display Name"
+            val receiverDisplayName = "Receiver Display Name"
+
+            val specialCharactersSubject = "Test Subject with special characters 😎 ¡ ™ £ ¢ ∞ § ¶ • ª. at $timestamp"
+            val specialCharactersBody = "Test Body with special characters 💐, 😱 ¡ ™ £ ¢ ∞ § ¶ • ª. at $timestamp"
 
             val emailMessageHeader =
                 InternetMessageFormatHeader(
-                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
+                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress, senderDisplayName),
+                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress(), receiverDisplayName)),
                     cc = emptyList(),
                     bcc = emptyList(),
                     replyTo = emptyList(),
-                    subject = "Test Subject sent via a mask at $timestamp",
+                    subject = specialCharactersSubject,
                 )
 
             val sendMaskedEmailMessageInput =
                 SendMaskedEmailMessageInput(
                     senderEmailMaskId = provisionedMask.id,
                     emailMessageHeader = emailMessageHeader,
-                    body = "Test Body sent via a mask at $timestamp",
+                    body = specialCharactersBody,
                     attachments = emptyList(),
                     inlineAttachment = emptyList(),
                 )
@@ -378,83 +384,26 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
                 emailMaskId shouldBe provisionedMask.id
             }
 
-            // Wait a bit for message to be delivered
-            Thread.sleep(5000)
+            // If we are using the testSentEmailBucket, the message won't get delivered to the external account,
+            // so we can skip waiting for the email in that case
+            if (testSentEmailBucket == null) {
+                // Wait a bit for message to be delivered
+                Thread.sleep(5000)
 
-            val receivedEmail =
-                externalTestAccount.waitForEmailFromSender(
-                    sender = maskAddress,
-                    subject = emailMessageHeader.subject,
-                    ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
-                )
-
-            receivedEmail shouldNotBe null
-            receivedEmail.subject shouldBe emailMessageHeader.subject
-            receivedEmail.from[0].emailAddress shouldBe maskAddress
-        }
-
-    @Test
-    fun sendMaskedEmailMessageSuccessfullySendsToMultipleExternalEmailAddresses() =
-        runTest(timeout = Duration.parse("2m")) {
-            val maskLocalPart = generateSafeLocalPart("android-mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-
-            val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
-            emailMaskList.add(provisionedMask)
-            val timestamp = Date()
-
-            val otherExternalTestAccount =
-                if (externalTestAccount.getAccountType() == ExternalTestAccountType.GMAIL) {
-                    ExternalTestAccount(context, logger, ExternalTestAccountType.YAHOO)
-                } else {
-                    ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
-                }
-
-            val emailMessageHeader =
-                InternetMessageFormatHeader(
-                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
-                    to =
-                        listOf(
-                            EmailMessage.EmailAddress(externalTestAccount.getEmailAddress()),
-                            EmailMessage.EmailAddress(otherExternalTestAccount.getEmailAddress()),
-                        ),
-                    cc = emptyList(),
-                    bcc = emptyList(),
-                    replyTo = emptyList(),
-                    subject = "Test Subject sent to multiple recipients via a mask at $timestamp",
-                )
-
-            val sendMaskedEmailMessageInput =
-                SendMaskedEmailMessageInput(
-                    senderEmailMaskId = provisionedMask.id,
-                    emailMessageHeader = emailMessageHeader,
-                    body = "Test Body sent to multiple recipients via a mask at $timestamp",
-                    attachments = emptyList(),
-                    inlineAttachment = emptyList(),
-                )
-
-            val sendResult = emailClient.sendMaskedEmailMessage(sendMaskedEmailMessageInput)
-
-            sendResult.id shouldNotBe null
-
-            waitForMessage(sendResult.id)
-
-            // Wait a bit for message to be delivered
-            Thread.sleep(5000)
-
-            listOf(externalTestAccount, otherExternalTestAccount).forEach { recipient ->
                 val receivedEmail =
-                    recipient.waitForEmailFromSender(
+                    externalTestAccount.waitForEmailFromSender(
                         sender = maskAddress,
-                        subject = emailMessageHeader.subject,
+                        subject = specialCharactersSubject,
                         ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
                     )
 
                 receivedEmail shouldNotBe null
-                receivedEmail.subject shouldBe emailMessageHeader.subject
+                receivedEmail.subject shouldBe specialCharactersSubject
                 receivedEmail.from[0].emailAddress shouldBe maskAddress
+                receivedEmail.from[0].displayName shouldBe senderDisplayName
+                receivedEmail.to[0].emailAddress shouldBe externalTestAccount.getEmailAddress()
+                receivedEmail.to[0].displayName shouldBe receiverDisplayName
             }
-            otherExternalTestAccount.closeConnection()
         }
 
     @Test
@@ -467,6 +416,15 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             emailMaskList.add(provisionedMask)
             val timestamp = Date()
 
+            val attachment =
+                EmailAttachment(
+                    fileName = "testAttachment.txt",
+                    contentId = UUID.randomUUID().toString(),
+                    mimeType = "text/plain",
+                    inlineAttachment = false,
+                    data = "This is the content of the attachment".toByteArray(),
+                )
+
             val emailMessageHeader =
                 InternetMessageFormatHeader(
                     from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
@@ -474,15 +432,15 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
                     cc = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
                     bcc = emptyList(),
                     replyTo = emptyList(),
-                    subject = "Test Subject sent with cc recipient via a mask at $timestamp",
+                    subject = "Test Subject sent with cc recipient and attachment via a mask at $timestamp",
                 )
 
             val sendMaskedEmailMessageInput =
                 SendMaskedEmailMessageInput(
                     senderEmailMaskId = provisionedMask.id,
                     emailMessageHeader = emailMessageHeader,
-                    body = "Test Body sent with cc recipient via a mask at $timestamp",
-                    attachments = emptyList(),
+                    body = "Test Body sent with cc recipient and attachment via a mask at $timestamp",
+                    attachments = listOf(attachment),
                     inlineAttachment = emptyList(),
                 )
 
@@ -492,44 +450,55 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
 
             waitForMessage(sendResult.id)
 
-            // Wait a bit for message to be delivered
-            Thread.sleep(5000)
+            // If we are using the testSentEmailBucket, the message won't get delivered to the external account,
+            // so we can skip waiting for the email in that case
+            if (testSentEmailBucket == null) {
+                // Wait a bit for message to be delivered
+                Thread.sleep(5000)
 
-            val receivedEmail =
-                externalTestAccount.waitForEmailFromSender(
-                    sender = maskAddress,
-                    subject = emailMessageHeader.subject,
-                    ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
-                )
+                val receivedEmail =
+                    externalTestAccount.waitForEmailFromSender(
+                        sender = maskAddress,
+                        subject = emailMessageHeader.subject,
+                        ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
+                    )
 
-            receivedEmail shouldNotBe null
-            receivedEmail.subject shouldBe emailMessageHeader.subject
-            receivedEmail.from[0].emailAddress shouldBe maskAddress
-            receivedEmail.cc[0].emailAddress shouldBe externalTestAccount.getEmailAddress()
+                receivedEmail shouldNotBe null
+                receivedEmail.subject shouldBe emailMessageHeader.subject
+                receivedEmail.from[0].emailAddress shouldBe maskAddress
+                receivedEmail.cc[0].emailAddress shouldBe externalTestAccount.getEmailAddress()
+                receivedEmail.attachments.size shouldBe 1
+                receivedEmail.attachments[0].fileName shouldBe attachment.fileName
+                receivedEmail.attachments[0].mimeType?.lowercase() shouldBe attachment.mimeType
+            }
         }
 
     @Test
+    @Ignore("Disabling this test for now as our external Yahoo account was deleted")
     fun sendMaskedEmailMessageSuccessfullySendsToBothToAndCcRecipients() =
         runTest {
             val maskLocalPart = generateSafeLocalPart("android-mask")
             val maskAddress = "$maskLocalPart@${maskDomains.first()}"
 
             val otherExternalTestAccount =
-                if (externalTestAccount.getAccountType() == ExternalTestAccountType.GMAIL) {
-                    ExternalTestAccount(context, logger, ExternalTestAccountType.YAHOO)
-                } else {
-                    ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
-                }
+//                if (externalTestAccount.getAccountType() == ExternalTestAccountType.GMAIL) {
+//                    ExternalTestAccount(context, logger, ExternalTestAccountType.YAHOO)
+//                } else {
+                ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
+//                }
 
             val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
             emailMaskList.add(provisionedMask)
             val timestamp = Date()
+            val senderDisplayName = "Sender Display Name"
+            val toReceiverDisplayName = "To Receiver Display Name"
+            val ccReceiverDisplayName = "CC Receiver Display Name"
 
             val emailMessageHeader =
                 InternetMessageFormatHeader(
-                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
-                    cc = listOf(EmailMessage.EmailAddress(otherExternalTestAccount.getEmailAddress())),
+                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress, senderDisplayName),
+                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress(), toReceiverDisplayName)),
+                    cc = listOf(EmailMessage.EmailAddress(otherExternalTestAccount.getEmailAddress(), ccReceiverDisplayName)),
                     bcc = emptyList(),
                     replyTo = emptyList(),
                     subject = "Test Subject sent with both to and cc recipient via a mask at $timestamp",
@@ -564,6 +533,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
                 receivedEmail shouldNotBe null
                 receivedEmail.subject shouldBe emailMessageHeader.subject
                 receivedEmail.from[0].emailAddress shouldBe maskAddress
+                receivedEmail.from[0].displayName shouldBe senderDisplayName
             }
             otherExternalTestAccount.closeConnection()
         }
@@ -613,211 +583,46 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
 
             waitForMessage(sendResult.id)
 
-            // Wait a bit for message to be delivered
-            Thread.sleep(5000)
+            // If we are using the testSentEmailBucket, the message won't get delivered to the external account,
+            // so we can skip waiting for the email in that case
+            if (testSentEmailBucket == null) {
+                // Wait a bit for message to be delivered
+                Thread.sleep(5000)
 
-            // Verify internal recipient received the message
-            when (
-                val internalRecipientMessages =
-                    waitForMessagesByAddress(
-                        1,
-                        ListEmailMessagesForEmailAddressIdInput(
-                            emailAddressId = internalRecipient.id,
-                        ),
+                // Verify internal recipient received the message
+                when (
+                    val internalRecipientMessages =
+                        waitForMessagesByAddress(
+                            1,
+                            ListEmailMessagesForEmailAddressIdInput(
+                                emailAddressId = internalRecipient.id,
+                            ),
+                        )
+                ) {
+                    is ListAPIResult.Success -> {
+                        val message = internalRecipientMessages.result.items.first()
+                        message.subject shouldBe emailMessageHeader.subject
+                        message.from.firstOrNull()?.emailAddress shouldBe provisionedMask.maskAddress
+                        message.encryptionStatus shouldBe EncryptionStatus.UNENCRYPTED
+                    }
+
+                    else -> {
+                        fail("Unexpected ListAPIResult")
+                    }
+                }
+
+                // Verify external recipient received the message
+                val receivedEmail =
+                    externalTestAccount.waitForEmailFromSender(
+                        sender = maskAddress,
+                        subject = emailMessageHeader.subject,
+                        ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
                     )
-            ) {
-                is ListAPIResult.Success -> {
-                    val message = internalRecipientMessages.result.items.first()
-                    message.subject shouldBe emailMessageHeader.subject
-                    message.from.firstOrNull()?.emailAddress shouldBe provisionedMask.maskAddress
-                    message.encryptionStatus shouldBe EncryptionStatus.UNENCRYPTED
-                }
 
-                else -> {
-                    fail("Unexpected ListAPIResult")
-                }
+                receivedEmail shouldNotBe null
+                receivedEmail.subject shouldBe emailMessageHeader.subject
+                receivedEmail.from[0].emailAddress shouldBe maskAddress
             }
-
-            // Verify external recipient received the message
-            val receivedEmail =
-                externalTestAccount.waitForEmailFromSender(
-                    sender = maskAddress,
-                    subject = emailMessageHeader.subject,
-                    ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
-                )
-
-            receivedEmail shouldNotBe null
-            receivedEmail.subject shouldBe emailMessageHeader.subject
-            receivedEmail.from[0].emailAddress shouldBe maskAddress
-        }
-
-    @Test
-    fun sendMaskedEmailMessageSuccessfullySendsMessageWithSpecialCharactersInSubjectAndBody() =
-        runTest(timeout = Duration.parse("2m")) {
-            val maskLocalPart = generateSafeLocalPart("android-mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-
-            val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
-            emailMaskList.add(provisionedMask)
-            val timestamp = Date()
-
-            val specialCharactersSubject = "Test Subject with special characters 😎 ¡ ™ £ ¢ ∞ § ¶ • ª. at $timestamp"
-            val specialCharactersBody = "Test Body with special characters 💐, 😱 ¡ ™ £ ¢ ∞ § ¶ • ª. at $timestamp"
-
-            val emailMessageHeader =
-                InternetMessageFormatHeader(
-                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
-                    cc = emptyList(),
-                    bcc = emptyList(),
-                    replyTo = emptyList(),
-                    subject = specialCharactersSubject,
-                )
-
-            val sendMaskedEmailMessageInput =
-                SendMaskedEmailMessageInput(
-                    senderEmailMaskId = provisionedMask.id,
-                    emailMessageHeader = emailMessageHeader,
-                    body = specialCharactersBody,
-                    attachments = emptyList(),
-                    inlineAttachment = emptyList(),
-                )
-
-            val sendResult = emailClient.sendMaskedEmailMessage(sendMaskedEmailMessageInput)
-
-            sendResult.id shouldNotBe null
-
-            waitForMessage(sendResult.id)
-
-            // Wait a bit for message to be delivered
-            Thread.sleep(5000)
-
-            val receivedEmail =
-                externalTestAccount.waitForEmailFromSender(
-                    sender = maskAddress,
-                    subject = specialCharactersSubject,
-                    ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
-                )
-
-            receivedEmail shouldNotBe null
-            receivedEmail.subject shouldBe specialCharactersSubject
-            receivedEmail.from[0].emailAddress shouldBe maskAddress
-        }
-
-    @Test fun sendMaskedEmailMessageSuccessfullySendsMessageWithAttachments() =
-        runTest {
-            val maskLocalPart = generateSafeLocalPart("android-mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-
-            val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
-            emailMaskList.add(provisionedMask)
-            val timestamp = Date()
-
-            val attachment =
-                EmailAttachment(
-                    fileName = "testAttachment.txt",
-                    contentId = UUID.randomUUID().toString(),
-                    mimeType = "text/plain",
-                    inlineAttachment = false,
-                    data = "This is the content of the attachment".toByteArray(),
-                )
-
-            val emailMessageHeader =
-                InternetMessageFormatHeader(
-                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
-                    cc = emptyList(),
-                    bcc = emptyList(),
-                    replyTo = emptyList(),
-                    subject = "Test Subject with attachment at $timestamp",
-                )
-
-            val sendMaskedEmailMessageInput =
-                SendMaskedEmailMessageInput(
-                    senderEmailMaskId = provisionedMask.id,
-                    emailMessageHeader = emailMessageHeader,
-                    body = "Test Body with attachment at $timestamp",
-                    attachments = listOf(attachment),
-                    inlineAttachment = emptyList(),
-                )
-
-            val sendResult = emailClient.sendMaskedEmailMessage(sendMaskedEmailMessageInput)
-
-            sendResult.id shouldNotBe null
-
-            waitForMessage(sendResult.id)
-
-            // Wait a bit for message to be delivered
-            Thread.sleep(5000)
-
-            val receivedEmail =
-                externalTestAccount.waitForEmailFromSender(
-                    sender = maskAddress,
-                    subject = emailMessageHeader.subject,
-                    ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
-                )
-
-            receivedEmail shouldNotBe null
-            receivedEmail.subject shouldBe emailMessageHeader.subject
-            receivedEmail.from[0].emailAddress shouldBe maskAddress
-            receivedEmail.attachments.size shouldBe 1
-            receivedEmail.attachments[0].fileName shouldBe attachment.fileName
-            receivedEmail.attachments[0].mimeType?.lowercase() shouldBe attachment.mimeType
-        }
-
-    @Test
-    fun sendMaskedEmailMessageSuccessfullySendsMessageWithSenderAndReceiverDisplayNames() =
-        runTest {
-            val maskLocalPart = generateSafeLocalPart("android-mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-
-            val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
-            emailMaskList.add(provisionedMask)
-            val timestamp = Date()
-            val senderDisplayName = "Sender Display Name"
-            val receiverDisplayName = "Receiver Display Name"
-
-            val emailMessageHeader =
-                InternetMessageFormatHeader(
-                    from = EmailMessage.EmailAddress(provisionedMask.maskAddress, senderDisplayName),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress(), receiverDisplayName)),
-                    cc = emptyList(),
-                    bcc = emptyList(),
-                    replyTo = emptyList(),
-                    subject = "Test Subject with display names at $timestamp",
-                )
-
-            val sendMaskedEmailMessageInput =
-                SendMaskedEmailMessageInput(
-                    senderEmailMaskId = provisionedMask.id,
-                    emailMessageHeader = emailMessageHeader,
-                    body = "Test Body with display names at $timestamp",
-                    attachments = emptyList(),
-                    inlineAttachment = emptyList(),
-                )
-
-            val sendResult = emailClient.sendMaskedEmailMessage(sendMaskedEmailMessageInput)
-
-            sendResult.id shouldNotBe null
-
-            waitForMessage(sendResult.id)
-
-            // Wait a bit for message to be delivered
-            Thread.sleep(5000)
-
-            val receivedEmail =
-                externalTestAccount.waitForEmailFromSender(
-                    sender = maskAddress,
-                    subject = emailMessageHeader.subject,
-                    ExternalTestAccount.WaitOptions(timeoutMs = 120_000, searchFromDate = Date(timestamp.time - 60_000)),
-                )
-
-            receivedEmail shouldNotBe null
-            receivedEmail.subject shouldBe emailMessageHeader.subject
-            receivedEmail.from[0].emailAddress shouldBe maskAddress
-            receivedEmail.from[0].displayName shouldBe senderDisplayName
-            receivedEmail.to[0].emailAddress shouldBe externalTestAccount.getEmailAddress()
-            receivedEmail.to[0].displayName shouldBe receiverDisplayName
         }
 
     // In-network cases

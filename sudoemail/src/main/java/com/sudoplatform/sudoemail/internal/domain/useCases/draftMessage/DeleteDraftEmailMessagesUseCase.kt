@@ -10,6 +10,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.domain.entities.common.BatchOperationResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.EmailMessageOperationFailureResultEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.CancelScheduledDraftMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DeleteDraftEmailMessagesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
@@ -23,10 +24,12 @@ import com.sudoplatform.sudologging.Logger
  *
  * @property ids [List] of [String] draft message IDs to delete.
  * @property emailAddressId [String] The email address ID associated with the drafts.
+ * @property emailMaskId [String?] The identifier of the email mask associated with the draft email messages, if any
  */
 internal data class DeleteDraftEmailMessagesUseCaseInput(
     val ids: List<String>,
     val emailAddressId: String,
+    val emailMaskId: String?,
 )
 
 /**
@@ -54,7 +57,7 @@ internal class DeleteDraftEmailMessagesUseCase(
         input: DeleteDraftEmailMessagesUseCaseInput,
     ): BatchOperationResultEntity<DeleteEmailMessageSuccessResultEntity, EmailMessageOperationFailureResultEntity> {
         logger.debug("DeleteDraftEmailMessagesUseCase: Executing with input: $input")
-        val (ids, emailAddressId) = input
+        val (ids, emailAddressId, emailMaskId) = input
         if (emailAddressService.get(GetEmailAddressRequest(emailAddressId)) == null) {
             throw SudoEmailClient.EmailAddressException.EmailAddressNotFoundException(
                 StringConstants.EMAIL_ADDRESS_NOT_FOUND_MSG,
@@ -67,10 +70,27 @@ internal class DeleteDraftEmailMessagesUseCase(
             )
         }
 
-        return draftEmailMessageService.delete(
-            DeleteDraftEmailMessagesRequest(
-                s3Keys = ids.map { DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, it) }.toSet(),
-            ),
-        )
+        val deleteResult =
+            draftEmailMessageService.delete(
+                DeleteDraftEmailMessagesRequest(
+                    s3Keys = ids.map { DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, it, emailMaskId) }.toSet(),
+                ),
+            )
+
+        for (successResult in (deleteResult.successValues ?: emptyList())) {
+            try {
+                draftEmailMessageService.cancelScheduledDraftMessage(
+                    CancelScheduledDraftMessageRequest(
+                        draftMessageKey = successResult.id,
+                        emailAddressId = emailAddressId,
+                        emailMaskId = input.emailMaskId,
+                    ),
+                )
+            } catch (e: Throwable) {
+                logger.debug("DeleteDraftEmailMessagesUseCase: No scheduled message to cancel for key ${successResult.id}: ${e.message}")
+            }
+        }
+
+        return deleteResult
     }
 }

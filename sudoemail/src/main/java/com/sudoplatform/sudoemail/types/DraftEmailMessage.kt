@@ -15,9 +15,11 @@ import java.util.Date
  * @property emailAddressId [String] Unique identifier of the email address associated with the draft
  *  email message.
  * @property updatedAt [Date] When the draft message was last updated.
+ * @property emailMaskId [String?] Optional email mask ID associated with the draft.
  */
 internal interface DraftEmailMessage {
     val id: String
     val emailAddressId: String
     val updatedAt: Date
+    val emailMaskId: String?
 }

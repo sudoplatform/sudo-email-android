@@ -96,6 +96,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val result = useCase.execute(input)
@@ -112,6 +113,35 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                     it.draftMessageKey.contains(emailAddressId) shouldBe true
                     it.draftMessageKey.contains(draftId) shouldBe true
                     it.emailAddressId shouldBe emailAddressId
+                    it.emailMaskId shouldBe null
+                },
+            )
+            verify(mockSudoUserClient).getCredentialsProvider()
+            verify(mockCredentialsProvider).identityId
+        }
+
+    @Test
+    fun `execute() should pass emailMaskId through to service when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val input =
+                CancelScheduledDraftMessageUseCaseInput(
+                    draftId = draftId,
+                    emailAddressId = emailAddressId,
+                    emailMaskId = emailMaskId,
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe draftId
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request ->
+                    request.draftMessageKey.contains(emailAddressId) shouldBe true
+                    request.draftMessageKey.contains(draftId) shouldBe true
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailMaskId shouldBe emailMaskId
                 },
             )
             verify(mockSudoUserClient).getCredentialsProvider()
@@ -129,6 +159,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val exception =
@@ -152,6 +183,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             useCase.execute(input)
@@ -180,6 +212,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -203,6 +236,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException> {
@@ -227,6 +261,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {

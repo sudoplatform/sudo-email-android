@@ -111,6 +111,35 @@ class SudoEmailCreateDraftEmailMessageTest : BaseTests() {
         }
 
     @Test
+    fun `createDraftEmailMessage should pass email mask id when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val inputWithEmailMaskId =
+                CreateDraftEmailMessageInput(
+                    rfc822Data = input.rfc822Data,
+                    senderEmailAddressId = input.senderEmailAddressId,
+                    emailMaskId = emailMaskId,
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.createDraftEmailMessage(inputWithEmailMaskId)
+                }
+            deferredResult.start()
+            val result = deferredResult.await()
+            result shouldBe mockDraftId
+
+            verify(mockUseCaseFactory).createCreateDraftEmailMessageUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.rfc822Data shouldBe inputWithEmailMaskId.rfc822Data
+                    useCaseInput.emailAddressId shouldBe inputWithEmailMaskId.senderEmailAddressId
+                    useCaseInput.emailMaskId shouldBe emailMaskId
+                },
+            )
+        }
+
+    @Test
     fun `createDraftEmailMessage() should throw when use case throws`() =
         runTest {
             mockUseCase.stub {

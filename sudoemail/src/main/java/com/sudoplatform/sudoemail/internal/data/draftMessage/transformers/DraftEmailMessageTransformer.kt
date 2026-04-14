@@ -64,6 +64,7 @@ internal object DraftEmailMessageTransformer {
             emailAddressId = entity.emailAddressId,
             updatedAt = entity.updatedAt,
             rfc822Data = entity.rfc822Data,
+            emailMaskId = entity.emailMaskId,
         )
 
     /**
@@ -77,5 +78,6 @@ internal object DraftEmailMessageTransformer {
             id = entity.id,
             emailAddressId = entity.emailAddressId,
             updatedAt = entity.updatedAt,
+            emailMaskId = entity.emailMaskId,
         )
 }

@@ -94,6 +94,13 @@
       <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
       <cve>CVE-2024-7246</cve>
    </suppress>
+   <suppress until="2026-10-13">
+      <notes><![CDATA[
+   gRPC 1.57.2, 1.69.1 and related components
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/io\.grpc/grpc.*@.*$</packageUrl>
+      <cve>CVE-2026-33186</cve>
+   </suppress>
    <suppress until="2026-06-30">
       <notes><![CDATA[
    protobuf-java-util 3.22.3, 3.24.4
@@ -101,12 +108,34 @@
       <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java-util@.*$</packageUrl>
       <cve>CVE-2024-7254</cve>
    </suppress>
+   <suppress until="2026-10-13">
+      <notes><![CDATA[
+   protobuf-java 3.24.4, 3.25.5 and protobuf-java-util 3.22.3
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java.*@.*$</packageUrl>
+      <cve>CVE-2026-0994</cve>
+   </suppress>
+   <suppress until="2026-10-13">
+      <notes><![CDATA[
+   protobuf-kotlin 3.24.4
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-kotlin@.*$</packageUrl>
+      <cve>CVE-2026-0994</cve>
+   </suppress>
    <suppress until="2026-06-30">
      <notes><![CDATA[
    file name: netty-codec-http-4.1.125.Final.jar
    ]]></notes>
        <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
        <cve>CVE-2025-67735</cve>
+       <cve>CVE-2026-33870</cve>
+   </suppress>
+   <suppress until="2026-06-30">
+       <notes><![CDATA[
+   file name: netty-codec-http2-4.1.125.Final.jar
+   ]]></notes>
+       <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
+       <cve>CVE-2026-33871</cve>
    </suppress>
    <suppress until="2026-06-30">
       <notes><![CDATA[

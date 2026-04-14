@@ -27,11 +27,13 @@ import java.util.Date
  *
  * @property id [String] The ID of the draft message to schedule.
  * @property emailAddressId [String] The email address ID associated with the draft.
+ * @property emailMaskId [String?] The email mask ID associated with the draft, if applicable.
  * @property sendAt [Date] The date and time to send the message.
  */
 internal data class ScheduleSendDraftMessageUseCaseInput(
     val id: String,
     val emailAddressId: String,
+    val emailMaskId: String?,
     val sendAt: Date,
 )
 
@@ -89,6 +91,7 @@ internal class ScheduleSendDraftMessageUseCase(
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = "${sudoUserClient.getCredentialsProvider().identityId}/$s3Key",
                     emailAddressId = input.emailAddressId,
+                    emailMaskId = input.emailMaskId,
                     sendAt = input.sendAt,
                     symmetricKey = symmetricKeyData.encodeBase64String(),
                 ),

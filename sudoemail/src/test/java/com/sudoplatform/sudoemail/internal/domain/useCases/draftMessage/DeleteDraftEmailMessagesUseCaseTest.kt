@@ -13,6 +13,7 @@ import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.domain.entities.common.BatchOperationResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.BatchOperationStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.EmailMessageOperationFailureResultEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.CancelScheduledDraftMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteEmailMessageSuccessResultEntity
@@ -26,8 +27,10 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
@@ -105,6 +108,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
     private val mockDraftEmailMessageService by before {
         mock<DraftEmailMessageService>().stub {
             onBlocking { delete(any()) } doReturn successResult
+            onBlocking { cancelScheduledDraftMessage(any()) } doReturn draftId1
         }
     }
 
@@ -138,6 +142,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2, draftId3),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val result = useCase.execute(input)
@@ -158,10 +163,147 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                     request.s3Keys shouldBe setOf(mockS3Key1, mockS3Key2, mockS3Key3)
                 },
             )
+            verify(mockDraftEmailMessageService, times(3)).cancelScheduledDraftMessage(any())
         }
 
     @Test
-    fun `execute() should return partial result when some deletes fail`() =
+    fun `execute() should call cancelScheduledDraftMessage for each successfully deleted draft`() =
+        runTest {
+            val input =
+                DeleteDraftEmailMessagesUseCaseInput(
+                    ids = listOf(draftId1, draftId2, draftId3),
+                    emailAddressId = emailAddressId,
+                    emailMaskId = null,
+                )
+
+            useCase.execute(input)
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).delete(any())
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request ->
+                    request.draftMessageKey shouldBe mockS3Key1
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailMaskId shouldBe null
+                },
+            )
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request ->
+                    request.draftMessageKey shouldBe mockS3Key2
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailMaskId shouldBe null
+                },
+            )
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request ->
+                    request.draftMessageKey shouldBe mockS3Key3
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailMaskId shouldBe null
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should pass emailMaskId to cancelScheduledDraftMessage when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val input =
+                DeleteDraftEmailMessagesUseCaseInput(
+                    ids = listOf(draftId1),
+                    emailAddressId = emailAddressId,
+                    emailMaskId = emailMaskId,
+                )
+
+            val singleSuccessResult =
+                BatchOperationResultEntity<DeleteEmailMessageSuccessResultEntity, EmailMessageOperationFailureResultEntity>(
+                    status = BatchOperationStatusEntity.SUCCESS,
+                    successValues = listOf(DeleteEmailMessageSuccessResultEntity(mockS3Key1)),
+                    failureValues = emptyList(),
+                )
+            mockDraftEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn singleSuccessResult
+            }
+
+            useCase.execute(input)
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).delete(any())
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request ->
+                    request.draftMessageKey shouldBe mockS3Key1
+                    request.emailAddressId shouldBe emailAddressId
+                    request.emailMaskId shouldBe emailMaskId
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should not call cancelScheduledDraftMessage when delete result has no successes`() =
+        runTest {
+            mockDraftEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn failureResult
+            }
+
+            val input =
+                DeleteDraftEmailMessagesUseCaseInput(
+                    ids = listOf(draftId1, draftId2),
+                    emailAddressId = emailAddressId,
+                    emailMaskId = null,
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe failureResult
+            result.status shouldBe BatchOperationStatusEntity.FAILURE
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).delete(any())
+            // No cancel calls since there were no successes
+            verify(mockDraftEmailMessageService, times(0)).cancelScheduledDraftMessage(any())
+        }
+
+    @Test
+    fun `execute() should include email mask id in s3 key when provided`() =
+        runTest {
+            val emailMaskId = "emailMaskId"
+            val mockS3Key1 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId1, emailMaskId)
+            val mockS3Key2 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId2, emailMaskId)
+            val mockS3Key3 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId3, emailMaskId)
+            val input =
+                DeleteDraftEmailMessagesUseCaseInput(
+                    ids = listOf(draftId1, draftId2, draftId3),
+                    emailAddressId = emailAddressId,
+                    emailMaskId,
+                )
+
+            val result = useCase.execute(input)
+
+            result shouldBe successResult
+            result.status shouldBe BatchOperationStatusEntity.SUCCESS
+            result.successValues?.size shouldBe 3
+            result.failureValues?.size shouldBe 0
+
+            verify(mockEmailAddressService).get(
+                check {
+                    it.id shouldBe emailAddressId
+                },
+            )
+            verify(mockDraftEmailMessageService).delete(
+                check { request ->
+                    request.s3Keys.size shouldBe 3
+                    request.s3Keys shouldBe setOf(mockS3Key1, mockS3Key2, mockS3Key3)
+                },
+            )
+
+            verify(mockDraftEmailMessageService, times(3)).cancelScheduledDraftMessage(
+                check { input ->
+                    input.emailMaskId shouldBe emailMaskId
+                },
+            )
+        }
+
+    @Test
+    fun `execute() should only call cancelScheduledDraftMessage for successful deletes in partial result`() =
         runTest {
             mockDraftEmailMessageService.stub {
                 onBlocking { delete(any()) } doReturn partialResult
@@ -171,6 +313,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2, draftId3),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val result = useCase.execute(input)
@@ -182,6 +325,74 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockEmailAddressService).get(any())
             verify(mockDraftEmailMessageService).delete(any())
+            // Only 2 cancel calls for the 2 successful deletes (mockS3Key1 and mockS3Key3)
+            verify(mockDraftEmailMessageService, times(2)).cancelScheduledDraftMessage(any())
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request -> request.draftMessageKey shouldBe mockS3Key1 },
+            )
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request -> request.draftMessageKey shouldBe mockS3Key3 },
+            )
+        }
+
+    @Test
+    fun `execute() should swallow cancelScheduledDraftMessage exceptions and still return delete result`() =
+        runTest {
+            mockDraftEmailMessageService.stub {
+                onBlocking { cancelScheduledDraftMessage(any()) } doThrow
+                    SudoEmailClient.EmailMessageException.EmailMessageNotFoundException("Not found")
+            }
+
+            val input =
+                DeleteDraftEmailMessagesUseCaseInput(
+                    ids = listOf(draftId1, draftId2, draftId3),
+                    emailAddressId = emailAddressId,
+                    emailMaskId = null,
+                )
+
+            // Should NOT throw even though cancel throws
+            val result = useCase.execute(input)
+
+            result shouldBe successResult
+            result.status shouldBe BatchOperationStatusEntity.SUCCESS
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).delete(any())
+            verify(mockDraftEmailMessageService, times(3)).cancelScheduledDraftMessage(any())
+        }
+
+    @Test
+    fun `execute() should swallow generic exceptions from cancelScheduledDraftMessage`() =
+        runTest {
+            mockDraftEmailMessageService.stub {
+                onBlocking { cancelScheduledDraftMessage(any()) } doThrow RuntimeException("Unexpected error")
+            }
+
+            val input =
+                DeleteDraftEmailMessagesUseCaseInput(
+                    ids = listOf(draftId1),
+                    emailAddressId = emailAddressId,
+                    emailMaskId = null,
+                )
+
+            val singleSuccessResult =
+                BatchOperationResultEntity<DeleteEmailMessageSuccessResultEntity, EmailMessageOperationFailureResultEntity>(
+                    status = BatchOperationStatusEntity.SUCCESS,
+                    successValues = listOf(DeleteEmailMessageSuccessResultEntity(mockS3Key1)),
+                    failureValues = emptyList(),
+                )
+            mockDraftEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn singleSuccessResult
+            }
+
+            // Should NOT throw even though cancel throws
+            val result = useCase.execute(input)
+
+            result.status shouldBe BatchOperationStatusEntity.SUCCESS
+
+            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService).delete(any())
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(any())
         }
 
     @Test
@@ -195,6 +406,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val result = useCase.execute(input)
@@ -206,6 +418,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockEmailAddressService).get(any())
             verify(mockDraftEmailMessageService).delete(any())
+            verify(mockDraftEmailMessageService, times(0)).cancelScheduledDraftMessage(any())
         }
 
     @Test
@@ -219,6 +432,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val exception =
@@ -242,6 +456,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = emptyList(),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val exception =
@@ -272,6 +487,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             val result = useCase.execute(input)
@@ -287,34 +503,71 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                     request.s3Keys shouldBe setOf(mockS3Key1)
                 },
             )
+            verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
+                check { request ->
+                    request.draftMessageKey shouldBe mockS3Key1
+                    request.emailAddressId shouldBe emailAddressId
+                },
+            )
         }
 
     @Test
     fun `execute() should construct correct S3 keys from draft IDs`() =
         runTest {
+            val twoKeySuccessResult =
+                BatchOperationResultEntity<DeleteEmailMessageSuccessResultEntity, EmailMessageOperationFailureResultEntity>(
+                    status = BatchOperationStatusEntity.SUCCESS,
+                    successValues =
+                        listOf(
+                            DeleteEmailMessageSuccessResultEntity(mockS3Key1),
+                            DeleteEmailMessageSuccessResultEntity(mockS3Key2),
+                        ),
+                    failureValues = emptyList(),
+                )
+            mockDraftEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn twoKeySuccessResult
+            }
+
             val input =
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             useCase.execute(input)
 
+            verify(mockEmailAddressService).get(any())
             verify(mockDraftEmailMessageService).delete(
                 check { request ->
                     request.s3Keys shouldBe setOf(mockS3Key1, mockS3Key2)
                 },
             )
-            verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService, times(2)).cancelScheduledDraftMessage(any())
         }
 
     @Test
     fun `execute() should handle duplicate draft IDs by deduplicating in set`() =
         runTest {
+            val dedupedSuccessResult =
+                BatchOperationResultEntity<DeleteEmailMessageSuccessResultEntity, EmailMessageOperationFailureResultEntity>(
+                    status = BatchOperationStatusEntity.SUCCESS,
+                    successValues =
+                        listOf(
+                            DeleteEmailMessageSuccessResultEntity(mockS3Key1),
+                            DeleteEmailMessageSuccessResultEntity(mockS3Key2),
+                        ),
+                    failureValues = emptyList(),
+                )
+            mockDraftEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn dedupedSuccessResult
+            }
+
             val input =
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId1, draftId2),
                     emailAddressId = emailAddressId,
+                    emailMaskId = null,
                 )
 
             useCase.execute(input)
@@ -327,5 +580,6 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 },
             )
             verify(mockEmailAddressService).get(any())
+            verify(mockDraftEmailMessageService, times(2)).cancelScheduledDraftMessage(any())
         }
 }

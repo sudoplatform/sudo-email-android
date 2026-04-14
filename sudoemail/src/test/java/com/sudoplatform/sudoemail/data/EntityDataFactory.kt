@@ -489,11 +489,13 @@ internal object EntityDataFactory {
         emailAddressId: String = "mockEmailAddressId",
         updatedAt: Date = Date(1L),
         rfc822Data: ByteArray = "RFC822 data".toByteArray(),
+        emailMaskId: String? = null,
     ) = DraftEmailMessageWithContentEntity(
         id = id,
         emailAddressId = emailAddressId,
         updatedAt = updatedAt,
         rfc822Data = rfc822Data,
+        emailMaskId = emailMaskId,
     )
 
     fun getDraftEmailMessageMetadataEntity(

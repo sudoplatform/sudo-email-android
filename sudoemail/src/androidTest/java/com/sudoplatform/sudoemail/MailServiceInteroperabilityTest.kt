@@ -50,7 +50,7 @@ class MailServiceInteroperabilityTest(
         fun data(): List<String> =
             listOf(
                 "sudo.platform.testing@gmail.com",
-                "sudo_platform_testing@yahoo.com",
+                // "sudo_platform_testing@yahoo.com", // Yahoo shut down our account :(
                 "sudo.platform.testing@outlook.com",
                 "sudo.platform.testing@proton.me",
 //                "sudoplatformtesting@icloud.com", // No iCloud testing for now until we can get a long-lived user with a consistent address

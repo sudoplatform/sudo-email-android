@@ -27,6 +27,7 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
@@ -113,11 +114,13 @@ interface SudoEmailClient : AutoCloseable {
         private const val CONFIG_REGION = "region"
         private const val CONFIG_EMAIL_BUCKET = "bucket"
         private const val CONFIG_EMAIL_TRANSIENT_BUCKET = "transientBucket"
+        private const val CONFIG_TEST_SENT_EMAIL_BUCKET = "testSentEmailBucket"
 
         internal data class S3Configuration(
             val region: String,
             val emailBucket: String,
             val transientBucket: String,
+            val testSentEmailBucket: String? = null,
         )
 
         @Throws(Builder.ConfigurationException::class)
@@ -166,7 +169,15 @@ interface SudoEmailClient : AutoCloseable {
                     )
                 }
 
-            return S3Configuration(region, emailBucket, emailTransientBucket)
+            val testSentEmailBucket =
+                try {
+                    emailConfig.getString(CONFIG_TEST_SENT_EMAIL_BUCKET)
+                } catch (e: JSONException) {
+                    logger.debug("Optional configuration $CONFIG_TEST_SENT_EMAIL_BUCKET not found in $postamble")
+                    null
+                }
+
+            return S3Configuration(region, emailBucket, emailTransientBucket, testSentEmailBucket)
         }
     }
 
@@ -694,6 +705,7 @@ interface SudoEmailClient : AutoCloseable {
      * @throws [EmailAddressException].
      */
     @Throws(EmailAddressException::class)
+    @Deprecated("Use listEmailDomains instead", ReplaceWith("listEmailDomains"))
     suspend fun getSupportedEmailDomains(): List<String>
 
     /**
@@ -715,7 +727,18 @@ interface SudoEmailClient : AutoCloseable {
      *
      * @throws [EmailAddressException]
      */
+    @Deprecated("Use listEmailDomains instead", ReplaceWith("listEmailDomains"))
     suspend fun getEmailMaskDomains(): List<String>
+
+    /**
+     * Get a list of all email domains with their associated metadata.
+     *
+     * @return A list of [EmailDomain]s.
+     *
+     * @throws [EmailAddressException].
+     */
+    @Throws(EmailAddressException::class)
+    suspend fun listEmailDomains(): List<EmailDomain>
 
     /**
      * Check if an email address is available to be provisioned within a domain.

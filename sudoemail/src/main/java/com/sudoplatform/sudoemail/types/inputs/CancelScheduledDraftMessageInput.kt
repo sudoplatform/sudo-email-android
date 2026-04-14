@@ -15,4 +15,5 @@ package com.sudoplatform.sudoemail.types.inputs
 data class CancelScheduledDraftMessageInput(
     val id: String,
     val emailAddressId: String,
+    val emailMaskId: String? = null,
 )

@@ -98,6 +98,7 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
@@ -334,12 +335,20 @@ internal class DefaultSudoEmailClient(
         return ConfigurationDataTransformer.entityToApi(config)
     }
 
+    @Deprecated("Use listEmailDomains instead", replaceWith = ReplaceWith("listEmailDomains"))
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun getEmailMaskDomains(): List<String> {
         ensureSignedIn()
         return configurationDataService.getEmailMaskDomains()
     }
 
+    @Throws(SudoEmailClient.EmailAddressException::class)
+    override suspend fun listEmailDomains(): List<EmailDomain> {
+        ensureSignedIn()
+        return configurationDataService.listEmailDomains()
+    }
+
+    @Deprecated("Use listEmailDomains instead", replaceWith = ReplaceWith("listEmailDomains"))
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun getSupportedEmailDomains(): List<String> {
         ensureSignedIn()
@@ -804,6 +813,7 @@ internal class DefaultSudoEmailClient(
             CreateDraftEmailMessageUseCaseInput(
                 rfc822Data = input.rfc822Data,
                 emailAddressId = input.senderEmailAddressId,
+                emailMaskId = input.emailMaskId,
             ),
         )
     }
@@ -823,6 +833,7 @@ internal class DefaultSudoEmailClient(
                 rfc822Data = input.rfc822Data,
                 emailAddressId = input.senderEmailAddressId,
                 draftId = input.id,
+                emailMaskId = input.emailMaskId,
             ),
         )
     }
@@ -844,6 +855,7 @@ internal class DefaultSudoEmailClient(
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = input.ids,
                     emailAddressId = input.emailAddressId,
+                    emailMaskId = input.emailMaskId,
                 ),
             )
 
@@ -866,6 +878,7 @@ internal class DefaultSudoEmailClient(
                 GetDraftEmailMessageUseCaseInput(
                     draftId = input.id,
                     emailAddressId = input.emailAddressId,
+                    emailMaskId = input.emailMaskId,
                 ),
             )
 
@@ -959,6 +972,7 @@ internal class DefaultSudoEmailClient(
                 ScheduleSendDraftMessageUseCaseInput(
                     id = input.id,
                     emailAddressId = input.emailAddressId,
+                    emailMaskId = input.emailMaskId,
                     sendAt = input.sendAt,
                 ),
             )
@@ -976,6 +990,7 @@ internal class DefaultSudoEmailClient(
             CancelScheduledDraftMessageUseCaseInput(
                 draftId = input.id,
                 emailAddressId = input.emailAddressId,
+                emailMaskId = input.emailMaskId,
             ),
         )
     }
