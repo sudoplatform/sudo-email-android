@@ -102,19 +102,30 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 }
             }
 
-            val ootoOrSuccessSimulator = if (testSentEmailBucket == null) toSimulatorAddress else successSimulatorAddress
-            val expectedMessageCount = if (testSentEmailBucket == null) 3 else 2
+            val expectedMessageCount = if (testSentEmailBucket != null) 3 else 2
+            val message1Subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}"
             sendEmailMessage(
                 emailClient,
                 fromAddress = emailAddress,
-                toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = ootoOrSuccessSimulator, displayName = "OOTO Or Success")),
-                subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}",
+                toAddresses =
+                    if (testSentEmailBucket == null) {
+                        listOf(
+                            EmailMessage.EmailAddress(emailAddress = successSimulatorAddress, displayName = "Success Simulator"),
+                        )
+                    } else {
+                        listOf(
+                            EmailMessage.EmailAddress(emailAddress = successSimulatorAddress, displayName = "Success Simulator"),
+                            EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress),
+                        )
+                    },
+                subject = message1Subject,
             )
+            val message2Subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}"
             sendEmailMessage(
                 emailClient,
                 fromAddress = emailAddress,
                 toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = successSimulatorAddress, displayName = "Success Simulator")),
-                subject = "listEmailMessagesShouldReturnEmailMessageListResult ${UUID.randomUUID()}",
+                subject = message2Subject,
             )
 
             when (val listEmailMessages = waitForMessages(expectedMessageCount) { it.emailAddressId == emailAddress.id }) {
@@ -128,35 +139,45 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                             it.direction == Direction.INBOUND
                         }
                     outbound.size shouldBe 2
-                    val successMessage =
+                    val message1 =
                         outbound.find {
-                            it.to.firstOrNull()?.emailAddress == successSimulatorAddress &&
-                                it.to.firstOrNull()?.displayName == "Success Simulator"
+                            it.subject == message1Subject
                         }
-                    val ootoOrSuccessMessage =
+                    val message2 =
                         outbound.find {
-                            it.to.firstOrNull()?.emailAddress == ootoOrSuccessSimulator &&
-                                it.to.firstOrNull()?.displayName == "OOTO Or Success"
+                            it.subject == message2Subject
                         }
-                    successMessage shouldNotBe null
-                    ootoOrSuccessMessage shouldNotBe null
-                    with(successMessage!!) {
+                    message1 shouldNotBe null
+                    message2 shouldNotBe null
+                    with(message1!!) {
+                        from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                        to.find {
+                            it.emailAddress == successSimulatorAddress
+                        }
+                        if (testSentEmailBucket !== null) {
+                            to.find {
+                                it.emailAddress == emailAddress.emailAddress
+                            }
+                        }
+                        hasAttachments shouldBe false
+                        size shouldBeGreaterThan 0.0
+                    }
+                    with(message2!!) {
                         from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
                         to.firstOrNull()?.emailAddress shouldBe successSimulatorAddress
                         hasAttachments shouldBe false
                         size shouldBeGreaterThan 0.0
                     }
-                    with(ootoOrSuccessMessage!!) {
-                        from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
-                        to.firstOrNull()?.emailAddress shouldBe ootoOrSuccessSimulator
-                        hasAttachments shouldBe false
-                        size shouldBeGreaterThan 0.0
-                    }
-                    if (testSentEmailBucket == null) {
+                    if (testSentEmailBucket != null) {
                         inbound.size shouldBe 1
                         with(inbound[0]) {
-                            from.firstOrNull()?.emailAddress shouldBe fromSimulatorAddress
-                            to.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                            from.firstOrNull()?.emailAddress shouldBe emailAddress.emailAddress
+                            to.find {
+                                it.emailAddress == successSimulatorAddress
+                            }
+                            to.find {
+                                it.emailAddress == emailAddress.emailAddress
+                            }
                             hasAttachments shouldBe false
                             size shouldBeGreaterThan 0.0
                         }

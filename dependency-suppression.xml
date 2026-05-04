@@ -179,4 +179,20 @@
         <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-reflect@.*$</packageUrl>
         <cve>CVE-2020-29582</cve>
     </suppress>
+    <suppress until="2026-06-30">
+        <notes><![CDATA[
+   file name: analysis-markdown-2.0.0.jar, dokka-base-2.0.0.jar, dokka-core-2.0.0.jar
+   CVE-2020-29582 is a Kotlin temp-file permissions issue incorrectly attributed to Dokka build-tooling artifacts.
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.dokka/(analysis-markdown|dokka-base|dokka-core)@.*$</packageUrl>
+        <cve>CVE-2020-29582</cve>
+    </suppress>
+    <suppress until="2026-06-30">
+        <notes><![CDATA[
+   file name: browser-1.4.0.aar
+   CVE-2008-7298 is a 2008 CVE for the old AOSP "Android Browser" app, incorrectly matched against the modern androidx.browser library.
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/androidx\.browser/browser@.*$</packageUrl>
+        <cve>CVE-2008-7298</cve>
+    </suppress>
 </suppressions>

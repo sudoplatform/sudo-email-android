@@ -10,23 +10,28 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.ExternalTestAccount
 import com.sudoplatform.sudoemail.ExternalTestAccountType
+import com.sudoplatform.sudoemail.S3TestAccount
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
+import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMaskStatus
 import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.VerifyExternalEmailAddressInput
+import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
+import java.util.UUID
 
 /**
  * Test the operation of [SudoEmailClient.verifyExternalEmailAddress].
@@ -35,26 +40,50 @@ import java.util.Date
 class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     private val emailMaskList = mutableListOf<EmailMask>()
     private val emailAddressList = mutableListOf<EmailAddress>()
+    private val sudoList = mutableListOf<Sudo>()
+    private var runTests = true
 
-    private lateinit var sudo: com.sudoplatform.sudoprofiles.Sudo
+    private lateinit var sudo: Sudo
     private lateinit var ownershipProof: String
     private lateinit var maskDomains: List<String>
     private lateinit var config: com.sudoplatform.sudoemail.types.ConfigurationData
     private lateinit var externalTestAccount: ExternalTestAccount
+    private lateinit var s3TestAccount: S3TestAccount
+    private lateinit var externalAddress: String
 
     @Before
     fun setup() {
         runTest {
+            config = emailClient.getConfigurationData()
+            runTests = config.emailMasksEnabled
+            Assume.assumeTrue("Test suite skipped due to external masks not being enabled.", runTests)
             sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null
+            sudoList.add(sudo)
             ownershipProof = getOwnershipProof(sudo)
             ownershipProof.isBlank() shouldBe false
 
             maskDomains = getMaskDomains(emailClient)
             maskDomains.size shouldBeGreaterThan 0
 
-            config = emailClient.getConfigurationData()
-            externalTestAccount = ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
+            if (testSentEmailBucket == null) {
+                externalTestAccount = ExternalTestAccount(context, logger, ExternalTestAccountType.GMAIL)
+                externalAddress = externalTestAccount.getEmailAddress()
+            } else {
+                s3TestAccount =
+                    S3TestAccount(
+                        DefaultS3Client(
+                            context,
+                            userClient,
+                            region!!,
+                            testSentEmailBucket!!,
+                            logger,
+                        ),
+                        userClient.getCredentialsProvider().identityId,
+                        logger,
+                    )
+                externalAddress = "${UUID.randomUUID()}@sudoplatform.com"
+            }
         }
     }
 
@@ -65,8 +94,10 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
                 emailClient.deprovisionEmailMask(DeprovisionEmailMaskInput(it.id))
             }
             emailAddressList.forEach { emailClient.deprovisionEmailAddress(it.id) }
-            sudoClient.deleteSudo(sudo)
-            if (!emailMaskList.isEmpty()) {
+            if (sudoList.isNotEmpty()) {
+                sudoList.map { sudoClient.deleteSudo(it) }
+            }
+            if (runTests && testSentEmailBucket == null) {
                 externalTestAccount.closeConnection()
             }
         }
@@ -74,15 +105,8 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     @Test
     fun verifyExternalEmailAddressShouldTriggerVerificationEmail() =
         runTest {
-            // Skip if external email masks are not enabled
-            if (!config.externalEmailMasksEnabled) {
-                logger.info("External email masks not enabled, skipping test")
-                return@runTest
-            }
-
             val maskLocalPart = generateSafeLocalPart("verif-external")
             val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val externalAddress = externalTestAccount.getEmailAddress()
 
             // Provision an email mask with external address
             val emailMask = provisionEmailMask(maskAddress, externalAddress, ownershipProof)
@@ -121,15 +145,8 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     @Test
     fun verifyExternalEmailAddressShouldCompleteVerificationFlowAndRejectReuse() =
         runTest {
-            // Skip if external email masks are not enabled
-            if (!config.externalEmailMasksEnabled) {
-                logger.info("External email masks not enabled, skipping test")
-                return@runTest
-            }
-
             val maskLocalPart = generateSafeLocalPart("verif-flow")
             val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val externalAddress = externalTestAccount.getEmailAddress()
 
             // Provision an email mask with external address
             val emailMask = provisionEmailMask(maskAddress, externalAddress, ownershipProof)
@@ -163,19 +180,52 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
                 }
             }
             // Wait for verification emails and try all codes
-            val verificationResult =
-                waitForVerificationAndTryAllCodes(
-                    externalAddress = externalAddress,
-                    emailMaskId = emailMask.id,
-                    searchFromDate = searchFromDate,
-                )
+            var verificationResult: VerificationResult? = null
+            if (testSentEmailBucket == null) {
+                val result =
+                    waitForVerificationAndTryAllCodes(
+                        externalAddress = externalAddress,
+                        emailMaskId = emailMask.id,
+                        searchFromDate = searchFromDate,
+                    )
 
-            verificationResult shouldNotBe null
+                result shouldNotBe null
 
-            // Delete the email that was successfully used
-            if (verificationResult?.messageId != null) {
-                externalTestAccount.deleteEmail(verificationResult.messageId)
+                // Delete the email that was successfully used
+                if (result?.messageId != null) {
+                    externalTestAccount.deleteEmail(result.messageId)
+                    verificationResult = result
+                }
+            } else {
+                val verificationEmail =
+                    s3TestAccount.waitForEmail(
+                        subject = "Verify your email address",
+                        options = S3TestAccount.WaitForEmailOptions(timeoutMs = 120_000, searchFromDate = searchFromDate),
+                    )
+                val verificationCode = extractVerificationCode(verificationEmail.textBody ?: "")
+                verificationCode shouldNotBe null
+                try {
+                    val verifyResult =
+                        emailClient.verifyExternalEmailAddress(
+                            VerifyExternalEmailAddressInput(
+                                emailAddress = externalAddress,
+                                emailMaskId = emailMask.id,
+                                verificationCode = verificationCode,
+                            ),
+                        )
+
+                    if (verifyResult.isVerified) {
+                        logger.info("Successfully verified with code: $verificationCode")
+                        verificationResult = VerificationResult(verificationCode!!, verificationEmail.messageId)
+                    } else {
+                        logger.debug("Verification failed with code $verificationCode: ${verifyResult.reason}")
+                    }
+                } catch (e: Exception) {
+                    logger.debug("Verification failed with code $verificationCode: ${e.message}")
+                    // Continue trying other codes
+                }
             }
+            verificationResult shouldNotBe null
 
             // Verify mask status changed to ENABLED
             val updatedMask =
@@ -205,15 +255,8 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     @Test
     fun verifyExternalEmailAddressShouldFailWithInvalidCode() =
         runTest {
-            // Skip if external email masks are not enabled
-            if (!config.externalEmailMasksEnabled) {
-                logger.info("External email masks not enabled, skipping test")
-                return@runTest
-            }
-
             val maskLocalPart = generateSafeLocalPart("verif-invalid")
             val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val externalAddress = externalTestAccount.getEmailAddress()
 
             // Provision an email mask with external address — mask starts in PENDING state
             val emailMask = provisionEmailMask(maskAddress, externalAddress, ownershipProof)
@@ -250,14 +293,6 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     @Test
     fun verifyExternalEmailAddressShouldThrowWithNonExistentMask() =
         runTest {
-            // Skip if external email masks are not enabled
-            if (!config.externalEmailMasksEnabled) {
-                logger.info("External email masks not enabled, skipping test")
-                return@runTest
-            }
-
-            val externalAddress = externalTestAccount.getEmailAddress()
-
             shouldThrow<SudoEmailClient.EmailMaskException.EmailMaskNotFoundException> {
                 emailClient.verifyExternalEmailAddress(
                     VerifyExternalEmailAddressInput(

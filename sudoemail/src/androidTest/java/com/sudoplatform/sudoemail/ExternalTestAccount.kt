@@ -17,8 +17,6 @@ import jakarta.mail.Flags
 import jakarta.mail.Folder
 import jakarta.mail.Message
 import jakarta.mail.MessagingException
-import jakarta.mail.Multipart
-import jakarta.mail.Part
 import jakarta.mail.PasswordAuthentication
 import jakarta.mail.Session
 import jakarta.mail.Store
@@ -38,7 +36,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.util.Date
 import java.util.Properties
 
@@ -56,7 +53,7 @@ internal class ExternalTestAccount(
     private val context: Context,
     private val log: Logger,
     accountType: ExternalTestAccountType? = null,
-) {
+) : TestAccount {
     data class ImapConfig(
         val user: String,
         val password: String,
@@ -86,24 +83,6 @@ internal class ExternalTestAccount(
         val body: String? = null,
         val inReplyTo: String? = null,
         val attachments: List<EmailAttachment>? = null,
-    )
-
-    data class ReceivedEmailAttachment(
-        val fileName: String?,
-        val mimeType: String?,
-        val data: ByteArray,
-    )
-
-    data class ReceivedEmail(
-        val subject: String?,
-        val from: List<EmailMessage.EmailAddress>,
-        val to: List<EmailMessage.EmailAddress>,
-        val cc: List<EmailMessage.EmailAddress>,
-        val date: Date?,
-        val messageId: String?,
-        val textBody: String?,
-        val attachments: List<ReceivedEmailAttachment>,
-        val rawMessage: MimeMessage,
     )
 
     private fun readConfig(fileName: String): Pair<String, String> {
@@ -182,7 +161,7 @@ internal class ExternalTestAccount(
         sender: String,
         subject: String? = null,
         options: WaitOptions = WaitOptions(),
-    ): ReceivedEmail =
+    ): TestAccount.ReceivedEmail =
         withContext(Dispatchers.IO) {
             log.debug(
                 "Waiting for email from sender: $sender with subject: $subject",
@@ -358,7 +337,7 @@ internal class ExternalTestAccount(
         sender: String,
         subject: String?,
         searchFromDate: Date?,
-    ): ReceivedEmail? {
+    ): TestAccount.ReceivedEmail? {
         val store = imapStore ?: throw IllegalStateException("IMAP store not connected")
 
         log.debug(
@@ -456,7 +435,7 @@ internal class ExternalTestAccount(
                             )
                         }
 
-                return ReceivedEmail(
+                return TestAccount.ReceivedEmail(
                     subject = mimeMessage.subject,
                     from = fromList,
                     to = toList,
@@ -478,83 +457,6 @@ internal class ExternalTestAccount(
                 folder?.close(false)
             } catch (_: Throwable) {
             }
-        }
-    }
-
-    private fun extractAttachments(message: MimeMessage): List<ReceivedEmailAttachment> =
-        try {
-            val out = mutableListOf<ReceivedEmailAttachment>()
-            collectAttachmentsFromPart(message, out)
-            out
-        } catch (e: Throwable) {
-            log.debug("Failed to extract attachments: $e")
-            emptyList()
-        }
-
-    private fun collectAttachmentsFromPart(
-        part: Part,
-        out: MutableList<ReceivedEmailAttachment>,
-    ) {
-        when (val content = part.content) {
-            is Multipart -> {
-                for (i in 0 until content.count) {
-                    val bodyPart = content.getBodyPart(i)
-
-                    // If it's a nested multipart (e.g. multipart/alternative inside multipart/mixed)
-                    // recurse before/after attachment checks.
-                    if (bodyPart.isMimeType("multipart/*")) {
-                        collectAttachmentsFromPart(bodyPart, out)
-                        continue
-                    }
-
-                    val disposition = bodyPart.disposition
-                    val isAttachmentDisposition = disposition != null && disposition.equals(Part.ATTACHMENT, ignoreCase = true)
-                    val hasFileName = !bodyPart.fileName.isNullOrBlank()
-
-                    // Some providers don’t set disposition=ATTACHMENT but do set filename.
-                    if (isAttachmentDisposition || hasFileName) {
-                        val bytes = readAllBytes(bodyPart)
-                        out +=
-                            ReceivedEmailAttachment(
-                                fileName = bodyPart.fileName,
-                                mimeType = bodyPart.contentType?.substringBefore(';')?.trim(),
-                                data = bytes,
-                            )
-                    }
-                }
-            }
-            else -> {
-                // leaf, no-op
-            }
-        }
-    }
-
-    private fun readAllBytes(part: Part): ByteArray {
-        val input = part.inputStream
-        return input.use {
-            val buffer = ByteArrayOutputStream()
-            it.copyTo(buffer)
-            buffer.toByteArray()
-        }
-    }
-
-    private fun extractTextBody(message: MimeMessage): String? {
-        return try {
-            when (val content = message.content) {
-                is String -> content
-                is Multipart -> {
-                    for (i in 0 until content.count) {
-                        val part = content.getBodyPart(i)
-                        if (part.isMimeType("text/plain")) {
-                            return part.content as? String
-                        }
-                    }
-                    null
-                }
-                else -> null
-            }
-        } catch (e: Throwable) {
-            null
         }
     }
 
@@ -581,7 +483,7 @@ internal class ExternalTestAccount(
     suspend fun waitForAllEmailsBySubject(
         subject: String,
         options: WaitOptions = WaitOptions(),
-    ): List<ReceivedEmail> =
+    ): List<TestAccount.ReceivedEmail> =
         withContext(Dispatchers.IO) {
             log.debug("Waiting for all emails with subject: $subject")
 
@@ -593,7 +495,7 @@ internal class ExternalTestAccount(
             var lastError: Throwable? = null
             while (System.currentTimeMillis() < timeoutAt) {
                 try {
-                    val allEmails = mutableListOf<ReceivedEmail>()
+                    val allEmails = mutableListOf<TestAccount.ReceivedEmail>()
 
                     val inboxResults =
                         searchBoxForAllMatches(
@@ -690,7 +592,7 @@ internal class ExternalTestAccount(
         boxName: String,
         subject: String,
         searchFromDate: Date?,
-    ): List<ReceivedEmail> {
+    ): List<TestAccount.ReceivedEmail> {
         val store = imapStore ?: throw IllegalStateException("IMAP store not connected")
 
         log.debug("Searching box: $boxName for all emails with subject: $subject since: $searchFromDate")
@@ -720,7 +622,7 @@ internal class ExternalTestAccount(
             }
 
             val expectedSubject = normalizeSubjectForCompare(subject)
-            val matchingEmails = mutableListOf<ReceivedEmail>()
+            val matchingEmails = mutableListOf<TestAccount.ReceivedEmail>()
 
             for (msg in results) {
                 val mimeMessage = msg as MimeMessage
@@ -737,48 +639,12 @@ internal class ExternalTestAccount(
                     continue
                 }
 
-                val fromList: List<EmailMessage.EmailAddress> =
-                    mimeMessage.from
-                        ?.mapNotNull { addr ->
-                            val internet = addr as? InternetAddress
-                            val email = internet?.address ?: addr.toString()
-                            if (email.isBlank()) return@mapNotNull null
-                            EmailMessage.EmailAddress(
-                                emailAddress = email,
-                                displayName = internet?.personal,
-                            )
-                        }.orEmpty()
-
-                val toList: List<EmailMessage.EmailAddress> =
-                    (mimeMessage.getRecipients(Message.RecipientType.TO) ?: emptyArray())
-                        .mapNotNull { addr ->
-                            val internet = addr as? InternetAddress
-                            val email = internet?.address ?: addr.toString()
-                            if (email.isBlank()) return@mapNotNull null
-                            EmailMessage.EmailAddress(
-                                emailAddress = email,
-                                displayName = internet?.personal,
-                            )
-                        }
-
-                val ccList: List<EmailMessage.EmailAddress> =
-                    (mimeMessage.getRecipients(Message.RecipientType.CC) ?: emptyArray())
-                        .mapNotNull { addr ->
-                            val internet = addr as? InternetAddress
-                            val email = internet?.address ?: addr.toString()
-                            if (email.isBlank()) return@mapNotNull null
-                            EmailMessage.EmailAddress(
-                                emailAddress = email,
-                                displayName = internet?.personal,
-                            )
-                        }
-
                 matchingEmails.add(
-                    ReceivedEmail(
+                    TestAccount.ReceivedEmail(
                         subject = mimeMessage.subject,
-                        from = fromList,
-                        to = toList,
-                        cc = ccList,
+                        from = buildFromList(mimeMessage.from),
+                        to = buildRecipientList(mimeMessage.getRecipients(Message.RecipientType.TO) ?: emptyArray()),
+                        cc = buildRecipientList(mimeMessage.getRecipients(Message.RecipientType.CC) ?: emptyArray()),
                         date = msgDate,
                         messageId = mimeMessage.getHeader("Message-ID")?.firstOrNull(),
                         textBody = extractTextBody(mimeMessage),

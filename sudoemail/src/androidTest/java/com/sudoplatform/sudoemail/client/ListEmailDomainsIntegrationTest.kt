@@ -37,8 +37,12 @@ class ListEmailDomainsIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailDomainsReturnsExpectedOutput() =
         runTest {
+            val config = emailClient.getConfigurationData()
             val generalDomains = getEmailDomains(emailClient)
-            val maskDomains = getMaskDomains(emailClient)
+            var maskDomains: List<String> = emptyList()
+            if (config.emailMasksEnabled) {
+                maskDomains = getMaskDomains(emailClient)
+            }
 
             val domainsList = emailClient.listEmailDomains()
             domainsList shouldNotBe null

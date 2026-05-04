@@ -98,6 +98,9 @@ abstract class BaseIntegrationTest {
         protected var testSentEmailBucket: String? = null
 
         @JvmStatic
+        protected var region: String? = null
+
+        @JvmStatic
         protected val entitlements =
             listOf(
                 Entitlement("sudoplatform.sudo.max", "test", 3),
@@ -245,6 +248,7 @@ abstract class BaseIntegrationTest {
 
             val clientConfig = SudoEmailClient.readConfiguration(context, logger)
             testSentEmailBucket = clientConfig.testSentEmailBucket
+            region = clientConfig.region
 
             runTest {
                 registerSignInAndEntitle()

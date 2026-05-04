@@ -14,6 +14,8 @@ import com.sudoplatform.sudoconfigmanager.SudoConfigManager
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.logging.LogConstants
+import com.sudoplatform.sudoemail.s3.DefaultS3Client
+import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.DefaultEmailCryptoService
 import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
@@ -189,6 +191,7 @@ interface SudoEmailClient : AutoCloseable {
         private var sudoUserClient: SudoUserClient? = null
         private var apiClient: ApiClient? = null
         private var keyManager: KeyManagerInterface? = null
+        private var s3Client: S3Client? = null
         private var logger: Logger =
             Logger(LogConstants.SUDOLOG_TAG, AndroidUtilsLogDriver(LogLevel.INFO))
         private var namespace: String = DEFAULT_KEY_NAMESPACE
@@ -220,6 +223,11 @@ interface SudoEmailClient : AutoCloseable {
         fun setApiClient(apiClient: ApiClient) =
             also {
                 this.apiClient = apiClient
+            }
+
+        fun setS3Client(s3Client: S3Client) =
+            also {
+                this.s3Client = s3Client
             }
 
         /**
@@ -326,6 +334,8 @@ interface SudoEmailClient : AutoCloseable {
                 sealingService = sealingService,
                 emailCryptoService = emailCryptoService,
                 notificationHandler = notificationHandler,
+                s3TransientClient = s3Client ?: DefaultS3Client(context!!, sudoUserClient!!, region, transientBucket, logger),
+                s3EmailClient = s3Client ?: DefaultS3Client(context!!, sudoUserClient!!, region, emailBucket, logger),
             )
         }
     }
