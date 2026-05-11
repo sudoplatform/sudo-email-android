@@ -15,8 +15,11 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
+import com.sudoplatform.sudoemail.internal.domain.entities.common.OwnerEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttributeEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.CacheGetResult
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.s3.S3Exception
@@ -29,9 +32,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -95,19 +100,29 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
         }
     }
 
+    private val mockEmailMessageBodyCache by before {
+        mock<EmailMessageBodyCache>().stub {
+            onBlocking { get(any()) } doReturn null
+            onBlocking { getCacheSizeLimit() } doReturn 300L * 1024 * 1024
+        }
+    }
+
     private val useCase by before {
         RetrieveAndDecodeEmailMessageUseCase(
             s3EmailClient = mockS3EmailClient,
             serviceKeyManager = mockServiceKeyManager,
             logger = mockLogger,
+            emailMessageBodyCache = mockEmailMessageBodyCache,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
             mockS3EmailClient,
             mockKeyManager,
+            mockEmailMessageBodyCache,
         )
     }
 
@@ -118,6 +133,16 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe
+                        "${StringConstants.BINARY_DATA_CONTENT_ENCODING},${StringConstants.CRYPTO_CONTENT_ENCODING}"
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -138,6 +163,16 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe
+                        "${StringConstants.CRYPTO_CONTENT_ENCODING},${StringConstants.BINARY_DATA_CONTENT_ENCODING}"
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -168,6 +203,15 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe compressedData
+                    input.contentEncoding shouldBe StringConstants.COMPRESSION_CONTENT_ENCODING
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
@@ -205,6 +249,16 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe
+                        "${StringConstants.COMPRESSION_CONTENT_ENCODING},${StringConstants.CRYPTO_CONTENT_ENCODING}"
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -226,6 +280,15 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe rfc822Data
+                    input.contentEncoding shouldBe StringConstants.BINARY_DATA_CONTENT_ENCODING
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
@@ -244,6 +307,15 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe null
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -267,6 +339,15 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             exception.message shouldBe "Invalid Content-Encoding value invalid-encoding"
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe "invalid-encoding"
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
@@ -282,6 +363,7 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 useCase.execute(emailMessageEntity)
             }
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
@@ -300,6 +382,7 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 useCase.execute(emailMessageEntity)
             }
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
 
@@ -314,6 +397,7 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 useCase.execute(emailMessageEntity)
             }
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
@@ -329,6 +413,16 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
                 useCase.execute(emailMessageEntity)
             }
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe
+                        "${StringConstants.BINARY_DATA_CONTENT_ENCODING},${StringConstants.CRYPTO_CONTENT_ENCODING}"
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -359,6 +453,16 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             useCase.execute(customEmailMessage)
 
+            verify(mockEmailMessageBodyCache).get(customEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe customEmailMessageId
+                    input.emailAddressId shouldBe customEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe
+                        "${StringConstants.BINARY_DATA_CONTENT_ENCODING},${StringConstants.CRYPTO_CONTENT_ENCODING}"
+                },
+            )
             verify(mockS3EmailClient).download(expectedS3Key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(expectedS3Key, S3Client.KeyOptions(true))
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
@@ -389,6 +493,15 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe compressedData
+                    input.contentEncoding shouldBe " ${StringConstants.COMPRESSION_CONTENT_ENCODING} "
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
         }
@@ -407,8 +520,255 @@ class RetrieveAndDecodeEmailMessageUseCaseTest : BaseTests() {
 
             result shouldBe rfc822Data
 
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                    input.contentEncoding shouldBe "SUDOPLATFORM-CRYPTO,SUDOPLATFORM-BINARY-DATA"
+                },
+            )
             verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
             verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    // --- Cache integration tests ---
+
+    @Test
+    fun `execute() should return cached blob without calling S3 on cache hit`() =
+        runTest {
+            val cachedBlob = sealedRfc822Data.toByteArray()
+            val contentEncoding = "${StringConstants.BINARY_DATA_CONTENT_ENCODING},${StringConstants.CRYPTO_CONTENT_ENCODING}"
+
+            mockEmailMessageBodyCache.stub {
+                onBlocking { get(any()) } doReturn
+                    CacheGetResult(
+                        messageId = mockEmailMessageId,
+                        sudoId = "mockSudoId",
+                        emailAddressId = mockEmailAddressId,
+                        sealedBlob = cachedBlob,
+                        contentEncoding = contentEncoding,
+                    )
+            }
+
+            val result = useCase.execute(emailMessageEntity)
+
+            result shouldBe rfc822Data
+
+            // Cache was consulted
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+
+            // S3 was NOT called
+            verify(mockS3EmailClient, never()).download(any(), any())
+            verify(mockS3EmailClient, never()).getObjectMetadata(any(), any())
+
+            // Decryption still happened (unsealing occurs regardless of source)
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should call S3 and populate cache on cache miss`() =
+        runTest {
+            // Cache returns null (miss) — this is the default stub behaviour
+            val result = useCase.execute(emailMessageEntity)
+
+            result shouldBe rfc822Data
+
+            // Cache was consulted
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+
+            // S3 was called
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+
+            // Cache was populated
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.messageId shouldBe mockEmailMessageId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sealedBlob shouldBe sealedRfc822Data.toByteArray()
+                },
+            )
+
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should fall back to S3 when cache get throws and re-populate cache`() =
+        runTest {
+            mockEmailMessageBodyCache.stub {
+                onBlocking { get(any()) } doThrow RuntimeException("Cache corrupted")
+            }
+
+            val result = useCase.execute(emailMessageEntity)
+
+            result shouldBe rfc822Data
+
+            // Cache get was attempted
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+
+            // Fell back to S3
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+
+            // Cache was re-populated
+            verify(mockEmailMessageBodyCache).put(any())
+
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should fall back to S3 when cache put throws without propagating error`() =
+        runTest {
+            mockEmailMessageBodyCache.stub {
+                onBlocking { get(any()) } doReturn null
+                onBlocking { put(any()) } doThrow RuntimeException("Cache write failed")
+            }
+
+            val result = useCase.execute(emailMessageEntity)
+
+            // Should still succeed — cache put error is swallowed
+            result shouldBe rfc822Data
+
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockS3EmailClient).download(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockS3EmailClient).getObjectMetadata(emailMessageEntity.rfc822DataAttributes.key, S3Client.KeyOptions(true))
+            verify(mockEmailMessageBodyCache).put(any())
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should extract sudoId from owners with sudoplatform sudoservice issuer`() =
+        runTest {
+            val sudoId = "testSudoId"
+            val emailMessageWithSudoOwner =
+                EntityDataFactory.getSealedEmailMessageEntity(
+                    id = mockEmailMessageId,
+                    emailAddressId = mockEmailAddressId,
+                    owners =
+                        listOf(
+                            OwnerEntity(id = "accountOwner", issuer = "sudoplatform"),
+                            OwnerEntity(id = sudoId, issuer = "sudoplatform.sudoservice"),
+                        ),
+                    rfc822Header =
+                        SealedAttributeEntity(
+                            keyId = mockKeyId,
+                            algorithm = mockAlgorithm,
+                            base64EncodedSealedData = sealedRfc822Data,
+                            plainTextType = "string",
+                        ),
+                    encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
+                )
+
+            useCase.execute(emailMessageWithSudoOwner)
+
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.sudoId shouldBe sudoId
+                    input.emailAddressId shouldBe mockEmailAddressId
+                },
+            )
+            verify(mockS3EmailClient).download(any(), any())
+            verify(mockS3EmailClient).getObjectMetadata(any(), any())
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should set sudoId to null when no sudoservice owner exists`() =
+        runTest {
+            val emailMessageWithoutSudoOwner =
+                EntityDataFactory.getSealedEmailMessageEntity(
+                    id = mockEmailMessageId,
+                    emailAddressId = mockEmailAddressId,
+                    owners =
+                        listOf(
+                            OwnerEntity(id = "accountOwner", issuer = "sudoplatform"),
+                        ),
+                    rfc822Header =
+                        SealedAttributeEntity(
+                            keyId = mockKeyId,
+                            algorithm = mockAlgorithm,
+                            base64EncodedSealedData = sealedRfc822Data,
+                            plainTextType = "string",
+                        ),
+                    encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
+                )
+
+            useCase.execute(emailMessageWithoutSudoOwner)
+
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockEmailMessageBodyCache).put(
+                check { input ->
+                    input.sudoId shouldBe null
+                },
+            )
+            verify(mockS3EmailClient).download(any(), any())
+            verify(mockS3EmailClient).getObjectMetadata(any(), any())
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should preserve contentEncoding from cache hit`() =
+        runTest {
+            val cachedBlob = sealedRfc822Data.toByteArray()
+            val contentEncoding = "${StringConstants.CRYPTO_CONTENT_ENCODING},${StringConstants.BINARY_DATA_CONTENT_ENCODING}"
+
+            mockEmailMessageBodyCache.stub {
+                onBlocking { get(any()) } doReturn
+                    CacheGetResult(
+                        messageId = mockEmailMessageId,
+                        sudoId = null,
+                        emailAddressId = mockEmailAddressId,
+                        sealedBlob = cachedBlob,
+                        contentEncoding = contentEncoding,
+                    )
+            }
+
+            val result = useCase.execute(emailMessageEntity)
+
+            result shouldBe rfc822Data
+
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockS3EmailClient, never()).download(any(), any())
+            verify(mockS3EmailClient, never()).getObjectMetadata(any(), any())
+            verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should use default content encoding when cache hit has null contentEncoding`() =
+        runTest {
+            val cachedBlob = sealedRfc822Data.toByteArray()
+
+            mockEmailMessageBodyCache.stub {
+                onBlocking { get(any()) } doReturn
+                    CacheGetResult(
+                        messageId = mockEmailMessageId,
+                        sudoId = null,
+                        emailAddressId = mockEmailAddressId,
+                        sealedBlob = cachedBlob,
+                        contentEncoding = null,
+                    )
+            }
+
+            val result = useCase.execute(emailMessageEntity)
+
+            // Default encoding is crypto + binary-data, which triggers unsealing
+            result shouldBe rfc822Data
+
+            verify(mockEmailMessageBodyCache).get(mockEmailMessageId)
+            verify(mockS3EmailClient, never()).download(any(), any())
+            verify(mockS3EmailClient, never()).getObjectMetadata(any(), any())
             verify(mockKeyManager).decryptWithPrivateKey(anyString(), any(), any())
             verify(mockKeyManager).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
         }

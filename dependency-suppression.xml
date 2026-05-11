@@ -195,4 +195,13 @@
         <packageUrl regex="true">^pkg:maven/androidx\.browser/browser@.*$</packageUrl>
         <cve>CVE-2008-7298</cve>
     </suppress>
+    <suppress until="2026-06-30">
+        <notes><![CDATA[
+   file name: room-compiler-processing-2.7.1.jar
+   CVE-2018-1000840 is for the Processing creative coding framework (processing.org), not for androidx.room/room-compiler-processing.
+   False positive due to CPE name collision.
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/androidx\.room/room-compiler-processing@.*$</packageUrl>
+        <cve>CVE-2018-1000840</cve>
+    </suppress>
 </suppressions>

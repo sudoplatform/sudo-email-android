@@ -12,6 +12,7 @@ import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransfo
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageRfc822DataEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudologging.Logger
@@ -44,11 +45,13 @@ internal class GetEmailMessageRfc822DataUseCase(
     private val s3EmailClient: S3Client,
     private val serviceKeyManager: ServiceKeyManager,
     private val logger: Logger,
+    private val emailMessageBodyCache: EmailMessageBodyCache,
     private val retrieveAndDecodeEmailMessageUseCase: RetrieveAndDecodeEmailMessageUseCase =
         RetrieveAndDecodeEmailMessageUseCase(
             s3EmailClient = s3EmailClient,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
+            emailMessageBodyCache = emailMessageBodyCache,
         ),
 ) {
     /**

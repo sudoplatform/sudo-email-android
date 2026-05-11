@@ -65,3 +65,5 @@ sudoemail/src/main/assets/**
 
 # MCP
 .mcp-project.json
+
+.kiro/

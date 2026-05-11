@@ -29,6 +29,7 @@ import com.sudoplatform.sudoemail.internal.data.emailFolder.transformers.EmailFo
 import com.sudoplatform.sudoemail.internal.data.emailMask.GraphQLEmailMaskService
 import com.sudoplatform.sudoemail.internal.data.emailMask.transformers.EmailMaskTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.GraphQLEmailMessageService
+import com.sudoplatform.sudoemail.internal.data.emailMessage.cache.RoomEmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailAttachmentTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.InternetMessageFormatHeaderTransformer
@@ -43,6 +44,8 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.EmailFold
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.EmailMaskService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteMessageForFolderIdRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.CacheFlushInput
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.domain.useCases.DefaultUseCaseFactory
 import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.BlockEmailAddressesUseCaseInput
@@ -87,6 +90,7 @@ import com.sudoplatform.sudoemail.secure.DefaultSealingService
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
+import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.subscription.SubscriptionService
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
@@ -125,6 +129,7 @@ import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.DisableEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.EnableEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.FlushMessageBodyCacheInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
@@ -161,6 +166,9 @@ import com.sudoplatform.sudonotification.types.NotificationSchemaEntry
 import com.sudoplatform.sudouser.SignInGuard
 import com.sudoplatform.sudouser.SudoPlatformSignInCallback
 import com.sudoplatform.sudouser.SudoUserClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -254,6 +262,11 @@ internal class DefaultSudoEmailClient(
             apiClient,
             logger,
         ),
+    private val emailMessageBodyCache: EmailMessageBodyCache =
+        RoomEmailMessageBodyCache(
+            context = context,
+            logger = logger,
+        ),
     private val useCaseFactory: UseCaseFactory =
         DefaultUseCaseFactory(
             emailAddressService = emailAddressService,
@@ -275,6 +288,7 @@ internal class DefaultSudoEmailClient(
             sudoUserClient = sudoUserClient,
             emailCryptoService = emailCryptoService,
             emailMaskService = emailMaskService,
+            emailMessageBodyCache = emailMessageBodyCache,
             logger = logger,
         ),
     private val subscriptions: SubscriptionService =
@@ -404,6 +418,14 @@ internal class DefaultSudoEmailClient(
                     emailAddressId = id,
                 ),
             )
+
+        // Flush cache entries for the deprovisioned email address
+        try {
+            emailMessageBodyCache.flush(CacheFlushInput(emailAddressId = id))
+        } catch (e: Exception) {
+            logger.error("Cache flush error after deprovision: ${e.message}")
+        }
+
         return EmailAddressTransformer.sealedEntityToApi(result)
     }
 
@@ -1260,7 +1282,30 @@ internal class DefaultSudoEmailClient(
         id: String,
         subscriber: EmailMessageSubscriber,
     ) {
-        subscriptions.subscribeEmailMessages(id, subscriber)
+        // Wrap the subscriber to also handle cache deletion on DELETED events
+        val wrappedSubscriber =
+            object : EmailMessageSubscriber {
+                override fun emailMessageChanged(
+                    emailMessage: EmailMessage,
+                    type: EmailMessageSubscriber.ChangeType,
+                ) {
+                    if (type == EmailMessageSubscriber.ChangeType.DELETED) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                emailMessageBodyCache.deleteMessage(emailMessage.id)
+                            } catch (e: Exception) {
+                                logger.error("Cache deleteMessage error on subscription DELETED: ${e.message}")
+                            }
+                        }
+                    }
+                    subscriber.emailMessageChanged(emailMessage, type)
+                }
+
+                override fun connectionStatusChanged(state: Subscriber.ConnectionState) {
+                    subscriber.connectionStatusChanged(state)
+                }
+            }
+        subscriptions.subscribeEmailMessages(id, wrappedSubscriber)
     }
 
     override suspend fun unsubscribeFromEmailMessages(id: String) {
@@ -1275,9 +1320,29 @@ internal class DefaultSudoEmailClient(
         subscriptions.close()
     }
 
+    override suspend fun flushMessageBodyCache(input: FlushMessageBodyCacheInput) {
+        emailMessageBodyCache.flush(
+            CacheFlushInput(
+                sudoId = input.sudoId,
+                emailAddressId = input.emailAddressId,
+            ),
+        )
+    }
+
+    override suspend fun setMessageBodyCacheSizeLimit(bytes: Long) {
+        emailMessageBodyCache.setCacheSizeLimit(bytes)
+    }
+
     override fun reset() {
         close()
         this.serviceKeyManager.removeAllKeys()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                emailMessageBodyCache.flushAll()
+            } catch (e: Exception) {
+                logger.error("Cache flushAll error on reset: ${e.message}")
+            }
+        }
     }
 }
 

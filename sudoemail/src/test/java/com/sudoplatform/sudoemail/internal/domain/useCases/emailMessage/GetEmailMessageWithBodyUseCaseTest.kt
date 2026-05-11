@@ -18,6 +18,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMes
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SimplifiedEmailMessageEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -229,6 +230,10 @@ class GetEmailMessageWithBodyUseCaseTest : BaseTests() {
         }
     }
 
+    private val mockEmailMessageBodyCache by before {
+        mock<EmailMessageBodyCache>()
+    }
+
     private val useCase by before {
         GetEmailMessageWithBodyUseCase(
             emailMessageService = mockEmailMessageService,
@@ -237,6 +242,7 @@ class GetEmailMessageWithBodyUseCaseTest : BaseTests() {
             emailMessageDataProcessor = mockEmailMessageDataProcessor,
             emailCryptoService = mockEmailCryptoService,
             logger = mockLogger,
+            emailMessageBodyCache = mockEmailMessageBodyCache,
             retrieveAndDecodeEmailMessageUseCase = mockRetrieveAndDecodeEmailMessageUseCase,
         )
     }

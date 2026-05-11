@@ -8,6 +8,7 @@ package com.sudoplatform.sudoemail
 
 import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -57,6 +58,10 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
         )
     }
 
+    private val mockEmailMessageBodyCache by before {
+        mock<EmailMessageBodyCache>()
+    }
+
     private val client by before {
         DefaultSudoEmailClient(
             context = mockContext,
@@ -71,16 +76,19 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             s3TransientClient = mockS3Client,
             s3EmailClient = mockS3Client,
             emailAddressService = mockEmailAddressService,
+            emailMessageBodyCache = mockEmailMessageBodyCache,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
             mockContext,
             mockUserClient,
             mockKeyManager,
             mockEmailAddressService,
+            mockEmailMessageBodyCache,
             mockS3Client,
         )
     }
@@ -114,6 +122,12 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             verify(mockEmailAddressService).deprovision(
                 check { input ->
                     input.emailAddressId shouldBe mockEmailAddressId
+                },
+            )
+            verify(mockEmailMessageBodyCache).flush(
+                check { input ->
+                    input.emailAddressId shouldBe mockEmailAddressId
+                    input.sudoId shouldBe null
                 },
             )
         }

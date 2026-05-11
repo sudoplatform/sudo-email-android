@@ -319,11 +319,11 @@ abstract class BaseIntegrationTest {
         prefix: String? = null,
         mixedCaseEmail: Boolean? = false,
     ): EmailAddress {
-        val emailDomains = client.getSupportedEmailDomains()
+        val emailDomains = client.listEmailDomains()
         emailDomains.size shouldBeGreaterThanOrEqual 1
 
         val localPart = generateSafeLocalPart(prefix)
-        val emailAddress = address ?: (localPart + "@" + emailDomains.first())
+        val emailAddress = address ?: (localPart + "@" + emailDomains.first { !it.isMaskDomain }.domain)
         val provisionInput =
             ProvisionEmailAddressInput(
                 emailAddress = emailAddress,

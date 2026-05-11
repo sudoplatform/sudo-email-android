@@ -14,6 +14,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMes
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageWithBodyEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
@@ -56,11 +57,13 @@ internal class GetEmailMessageWithBodyUseCase(
     private val emailMessageDataProcessor: EmailMessageDataProcessor,
     private val emailCryptoService: EmailCryptoService,
     private val logger: Logger,
+    private val emailMessageBodyCache: EmailMessageBodyCache,
     private val retrieveAndDecodeEmailMessageUseCase: RetrieveAndDecodeEmailMessageUseCase =
         RetrieveAndDecodeEmailMessageUseCase(
             s3EmailClient = s3EmailClient,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
+            emailMessageBodyCache = emailMessageBodyCache,
         ),
 ) {
     /**

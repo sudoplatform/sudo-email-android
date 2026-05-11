@@ -15,6 +15,8 @@ import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransfo
 import com.sudoplatform.sudoemail.internal.domain.entities.common.KeyInfo
 import com.sudoplatform.sudoemail.internal.domain.entities.common.KeyType
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SealedEmailMessageEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.CachePutInput
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudologging.Logger
@@ -26,18 +28,24 @@ import java.util.zip.GZIPInputStream
 /**
  * Use case for retrieving and decoding an email message.
  *
- * This use case retrieves an email message from S3 and decodes it by reversing
- * the applied content encodings such as compression and encryption.
+ * This use case retrieves an email message from S3 (or the local cache) and decodes it
+ * by reversing the applied content encodings such as compression and encryption.
  *
  * @property s3EmailClient [S3Client] Client for S3 email bucket operations.
  * @property serviceKeyManager [ServiceKeyManager] Manager for encryption keys.
  * @property logger [Logger] Logger for debugging.
+ * @property emailMessageBodyCache [EmailMessageBodyCache] Local cache for sealed message bodies.
  */
 internal class RetrieveAndDecodeEmailMessageUseCase(
     private val s3EmailClient: S3Client,
     private val serviceKeyManager: ServiceKeyManager,
     private val logger: Logger,
+    private val emailMessageBodyCache: EmailMessageBodyCache,
 ) {
+    companion object {
+        private const val SUDO_SERVICE_ISSUER = "sudoplatform.sudoservice"
+    }
+
     /**
      * Executes the retrieve and decode email message use case.
      *
@@ -50,16 +58,62 @@ internal class RetrieveAndDecodeEmailMessageUseCase(
         logger.debug("Retrieving and decoding email message: $emailMessage")
         try {
             val s3Key = emailMessage.rfc822DataAttributes.key
-            val sealedRfc822Data = s3EmailClient.download(s3Key, S3Client.KeyOptions(isKeyCredentialled = true))
-            val rfc822Metadata = s3EmailClient.getObjectMetadata(s3Key, S3Client.KeyOptions(isKeyCredentialled = true))
-            val contentEncodingValues =
-                (
-                    if (rfc822Metadata.contentEncoding != null) {
-                        rfc822Metadata.contentEncoding.split(',')
-                    } else {
-                        listOf(StringConstants.CRYPTO_CONTENT_ENCODING, StringConstants.BINARY_DATA_CONTENT_ENCODING)
-                    }
-                ).reversed()
+            val sealedRfc822Data: ByteArray
+            val contentEncodingValues: List<String>
+
+            // Cache-first retrieval
+            val cacheResult =
+                try {
+                    emailMessageBodyCache.get(emailMessage.id)
+                } catch (e: Exception) {
+                    logger.error("Cache get error, falling back to S3: ${e.message}")
+                    null
+                }
+
+            if (cacheResult != null) {
+                // Cache hit
+                logger.debug("Cache hit for message: ${emailMessage.id}")
+                sealedRfc822Data = cacheResult.sealedBlob
+                contentEncodingValues =
+                    (
+                        if (cacheResult.contentEncoding != null) {
+                            cacheResult.contentEncoding.split(',')
+                        } else {
+                            listOf(StringConstants.CRYPTO_CONTENT_ENCODING, StringConstants.BINARY_DATA_CONTENT_ENCODING)
+                        }
+                    ).reversed()
+            } else {
+                // Cache miss — download from S3
+                logger.debug("Cache miss for message: ${emailMessage.id}")
+                sealedRfc822Data = s3EmailClient.download(s3Key, S3Client.KeyOptions(isKeyCredentialled = true))
+                val rfc822Metadata = s3EmailClient.getObjectMetadata(s3Key, S3Client.KeyOptions(isKeyCredentialled = true))
+                contentEncodingValues =
+                    (
+                        if (rfc822Metadata.contentEncoding != null) {
+                            rfc822Metadata.contentEncoding.split(',')
+                        } else {
+                            listOf(StringConstants.CRYPTO_CONTENT_ENCODING, StringConstants.BINARY_DATA_CONTENT_ENCODING)
+                        }
+                    ).reversed()
+
+                // Populate cache (fire-and-forget style — errors are caught internally by the cache)
+                val sudoOwner = emailMessage.owners.find { it.issuer == SUDO_SERVICE_ISSUER }
+                try {
+                    emailMessageBodyCache.put(
+                        CachePutInput(
+                            messageId = emailMessage.id,
+                            sudoId = sudoOwner?.id,
+                            emailAddressId = emailMessage.emailAddressId,
+                            sealedBlob = sealedRfc822Data,
+                            contentEncoding = rfc822Metadata.contentEncoding,
+                        ),
+                    )
+                } catch (e: Exception) {
+                    logger.error("Cache put error: ${e.message}")
+                }
+            }
+
+            // Decode the sealed data
             var decodedBytes = sealedRfc822Data
             for (value in contentEncodingValues) {
                 when (value.trim().lowercase()) {

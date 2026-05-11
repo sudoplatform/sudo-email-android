@@ -4,6 +4,30 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: https://developer.android.com/jetpack/androidx/releases/annotation#1.1.0
+- artifact: androidx.room:room-common-jvm:+
+  name: room-common-jvm
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://developer.android.com/jetpack/androidx/releases/room#2.7.1
+- artifact: androidx.room:room-ktx:+
+  name: room-ktx
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://developer.android.com/jetpack/androidx/releases/room#2.7.1
+- artifact: androidx.room:room-runtime-jvm:+
+  name: room-runtime-jvm
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://developer.android.com/jetpack/androidx/releases/room#2.7.1
+- artifact: androidx.sqlite:sqlite-jvm:+
+  name: sqlite-jvm
+  copyrightHolder: Google, Inc.
+  license: The Apache Software License, Version 2.0
+  licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
+  url: https://developer.android.com/jetpack/androidx/releases/sqlite#2.5.0
 - artifact: androidx.credentials:credentials-play-services-auth:+
   name: credentials-play-services-auth
   copyrightHolder: Google, Inc.
@@ -162,12 +186,12 @@
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
   url: https://developer.android.com/jetpack/androidx
-- artifact: androidx.collection:collection:+
-  name: Android Support Library collections
+- artifact: androidx.collection:collection-jvm:+
+  name: collection-jvm
   copyrightHolder: Google, Inc.
   license: The Apache Software License, Version 2.0
   licenseUrl: http://www.apache.org/licenses/LICENSE-2.0.txt
-  url: https://developer.android.com/jetpack/androidx
+  url: https://developer.android.com/jetpack/androidx/releases/collection#1.4.2
 - artifact: androidx.loader:loader:+
   name: Android Suppot Library loader
   copyrightHolder: Google, Inc.

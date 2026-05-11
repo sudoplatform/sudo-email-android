@@ -10,6 +10,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
@@ -20,15 +21,19 @@ import com.sudoplatform.sudologging.Logger
  * Use case for deleting email messages.
  *
  * This use case handles deleting one or more email messages by their IDs.
+ * After a successful deletion, it removes the corresponding cache entries
+ * in a fire-and-forget manner.
  *
  * @property emailMessageService [EmailMessageService] Service for email message operations.
  * @property configurationDataService [ConfigurationDataService] Service for configuration data.
  * @property logger [Logger] Logger for debugging.
+ * @property emailMessageBodyCache [EmailMessageBodyCache] Local cache for sealed message bodies.
  */
 internal class DeleteEmailMessagesUseCase(
     private val emailMessageService: EmailMessageService,
     private val configurationDataService: ConfigurationDataService,
     private val logger: Logger,
+    private val emailMessageBodyCache: EmailMessageBodyCache,
 ) {
     /**
      * Executes the delete email messages use case.
@@ -69,6 +74,18 @@ internal class DeleteEmailMessagesUseCase(
             } else {
                 BatchOperationStatus.PARTIAL
             }
+
+        // Fire-and-forget cache deletion for successfully deleted messages
+        if (result.successIds.isNotEmpty()) {
+            result.successIds.forEach { id ->
+                try {
+                    emailMessageBodyCache.deleteMessage(id)
+                } catch (e: Exception) {
+                    logger.error("Cache deleteMessage error for $id: ${e.message}")
+                }
+            }
+        }
+
         return BatchOperationResult.createDifferent(status, successValues, failureValues)
     }
 
@@ -76,6 +93,12 @@ internal class DeleteEmailMessagesUseCase(
         val result = emailMessageService.delete(setOf(id))
 
         return if (result.successIds.contains(id)) {
+            // Fire-and-forget cache deletion
+            try {
+                emailMessageBodyCache.deleteMessage(id)
+            } catch (e: Exception) {
+                logger.error("Cache deleteMessage error for $id: ${e.message}")
+            }
             DeleteEmailMessageSuccessResult(id)
         } else {
             null

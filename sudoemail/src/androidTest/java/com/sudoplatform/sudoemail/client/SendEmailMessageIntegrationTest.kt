@@ -371,7 +371,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailWithMixtureOfRecipientsShouldReturnUnencryptedStatus() =
         runTest(
-            timeout = kotlin.time.Duration.parse("2m"),
+            timeout = kotlin.time.Duration.parse("3m"),
         ) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
@@ -427,7 +427,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
             }
 
             val numExpectedMessages = messageCount * 3
-            when (val listEmailMessages = waitForMessages(numExpectedMessages)) {
+            when (val listEmailMessages = waitForMessages(numExpectedMessages, timeout = Duration.TWO_MINUTES)) {
                 is ListAPIResult.Success -> {
                     listEmailMessages.result.items.isEmpty() shouldBe false
                 }

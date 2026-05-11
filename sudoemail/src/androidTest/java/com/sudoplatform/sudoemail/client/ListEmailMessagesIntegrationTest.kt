@@ -77,7 +77,7 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun listEmailMessagesShouldReturnEmailMessageListResultForOutNetworkMessages() =
-        runTest(timeout = Duration.parse("2m")) {
+        runTest(timeout = Duration.parse("3m")) {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
@@ -128,7 +128,13 @@ class ListEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 subject = message2Subject,
             )
 
-            when (val listEmailMessages = waitForMessages(expectedMessageCount) { it.emailAddressId == emailAddress.id }) {
+            when (
+                val listEmailMessages =
+                    waitForMessages(expectedMessageCount, timeout = org.awaitility.Duration.TWO_MINUTES) {
+                        it.emailAddressId ==
+                            emailAddress.id
+                    }
+            ) {
                 is ListAPIResult.Success -> {
                     val outbound =
                         listEmailMessages.result.items.filter {

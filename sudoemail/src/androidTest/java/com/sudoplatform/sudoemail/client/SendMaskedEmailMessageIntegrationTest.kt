@@ -141,7 +141,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             val emailMessageHeader =
                 InternetMessageFormatHeader(
                     from = EmailMessage.EmailAddress("unknown@${maskDomains.first()}"),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
+                    to = listOf(EmailMessage.EmailAddress(externalAddress)),
                     cc = emptyList(),
                     bcc = emptyList(),
                     replyTo = emptyList(),
@@ -180,7 +180,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             val emailMessageHeader =
                 InternetMessageFormatHeader(
                     from = EmailMessage.EmailAddress(provisionedMask1.maskAddress),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
+                    to = listOf(EmailMessage.EmailAddress(externalAddress)),
                     cc = emptyList(),
                     bcc = emptyList(),
                     replyTo = emptyList(),
@@ -213,7 +213,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             val emailMessageHeader =
                 InternetMessageFormatHeader(
                     from = EmailMessage.EmailAddress(""),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
+                    to = listOf(EmailMessage.EmailAddress(externalAddress)),
                     cc = emptyList(),
                     bcc = emptyList(),
                     replyTo = emptyList(),
@@ -249,7 +249,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             val emailMessageHeader =
                 InternetMessageFormatHeader(
                     from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
-                    to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
+                    to = listOf(EmailMessage.EmailAddress(externalAddress)),
                     cc = emptyList(),
                     bcc = emptyList(),
                     replyTo = emptyList(),
@@ -334,7 +334,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
                 val emailMessageHeader =
                     InternetMessageFormatHeader(
                         from = EmailMessage.EmailAddress(provisionedMask.maskAddress),
-                        to = listOf(EmailMessage.EmailAddress(externalTestAccount.getEmailAddress())),
+                        to = listOf(EmailMessage.EmailAddress(externalAddress)),
                         cc = emptyList(),
                         bcc = emptyList(),
                         replyTo = emptyList(),

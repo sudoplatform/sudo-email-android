@@ -12,6 +12,7 @@ import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteEmailMessagesResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -24,7 +25,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.robolectric.RobolectricTestRunner
@@ -60,19 +63,26 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
         }
     }
 
+    private val mockEmailMessageBodyCache by before {
+        mock<EmailMessageBodyCache>()
+    }
+
     private val useCase by before {
         DeleteEmailMessagesUseCase(
             mockEmailMessageService,
             mockConfigurationDataService,
             mockLogger,
+            mockEmailMessageBodyCache,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
             mockEmailMessageService,
             mockConfigurationDataService,
+            mockEmailMessageBodyCache,
         )
     }
 
@@ -92,6 +102,9 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockEmailMessageService).delete(ids)
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-1")
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-2")
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-3")
         }
 
     @Test
@@ -119,6 +132,8 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockEmailMessageService).delete(ids)
+            verify(mockEmailMessageBodyCache).deleteMessage("success-1")
+            verify(mockEmailMessageBodyCache).deleteMessage("success-2")
         }
 
     @Test
@@ -199,6 +214,9 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockEmailMessageService).delete(maxIds)
+            maxIds.forEach { id ->
+                verify(mockEmailMessageBodyCache).deleteMessage(id)
+            }
         }
 
     @Test
@@ -235,6 +253,9 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockEmailMessageService).delete(ids)
+            verify(mockEmailMessageBodyCache).deleteMessage("id-1")
+            verify(mockEmailMessageBodyCache).deleteMessage("id-2")
+            verify(mockEmailMessageBodyCache).deleteMessage("id-3")
         }
 
     @Test
@@ -279,6 +300,7 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockConfigurationDataService).getConfigurationData()
             verify(mockEmailMessageService).delete(ids)
+            verify(mockEmailMessageBodyCache).deleteMessage("success-1")
         }
 
     /** Begin Single Delete Tests */
@@ -301,6 +323,7 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
             result?.id shouldBe "message-id-1"
 
             verify(mockEmailMessageService).delete(setOf("message-id-1"))
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-1")
         }
 
     @Test
@@ -339,6 +362,7 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
             result shouldNotBe null
 
             verify(mockEmailMessageService).delete(setOf("test-id"))
+            verify(mockEmailMessageBodyCache).deleteMessage("test-id")
         }
 
     @Test
@@ -354,6 +378,149 @@ class DeleteEmailMessagesUseCaseTest : BaseTests() {
                 useCase.execute("message-id-1")
             }
 
+            verify(mockEmailMessageService).delete(setOf("message-id-1"))
+        }
+
+    /** Begin Cache Integration Tests */
+
+    @Test
+    fun `execute() should call cache deleteMessage for each successfully deleted ID`() =
+        runTest {
+            val ids = setOf("message-id-1", "message-id-2", "message-id-3")
+
+            useCase.execute(ids)
+
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-1")
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-2")
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-3")
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockEmailMessageService).delete(ids)
+        }
+
+    @Test
+    fun `execute() should not call cache deleteMessage for failed IDs`() =
+        runTest {
+            val partialResult =
+                DeleteEmailMessagesResultEntity(
+                    successIds = mutableListOf("success-1"),
+                    failureIds = listOf("failed-1"),
+                )
+            mockEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn partialResult
+            }
+
+            val ids = setOf("success-1", "failed-1")
+
+            useCase.execute(ids)
+
+            verify(mockEmailMessageBodyCache).deleteMessage("success-1")
+            verify(mockEmailMessageBodyCache, never()).deleteMessage("failed-1")
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockEmailMessageService).delete(ids)
+        }
+
+    @Test
+    fun `execute() should not propagate cache deletion failure`() =
+        runTest {
+            mockEmailMessageBodyCache.stub {
+                onBlocking { deleteMessage(any()) } doThrow RuntimeException("Cache error")
+            }
+
+            val ids = setOf("message-id-1", "message-id-2", "message-id-3")
+
+            // Should not throw despite cache errors
+            val result = useCase.execute(ids)
+
+            result.status shouldBe BatchOperationStatus.SUCCESS
+            result.successValues?.size shouldBe 3
+
+            verify(mockEmailMessageBodyCache, times(3)).deleteMessage(any())
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockEmailMessageService).delete(ids)
+        }
+
+    @Test
+    fun `execute() should not call cache deleteMessage when all deletes fail`() =
+        runTest {
+            val failedResult =
+                DeleteEmailMessagesResultEntity(
+                    successIds = mutableListOf(),
+                    failureIds = listOf("failed-1", "failed-2"),
+                )
+            mockEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn failedResult
+            }
+
+            val ids = setOf("failed-1", "failed-2")
+
+            useCase.execute(ids)
+
+            verify(mockEmailMessageBodyCache, never()).deleteMessage(any())
+
+            verify(mockConfigurationDataService).getConfigurationData()
+            verify(mockEmailMessageService).delete(ids)
+        }
+
+    @Test
+    fun `execute(single id) should call cache deleteMessage on successful delete`() =
+        runTest {
+            val singleResult =
+                DeleteEmailMessagesResultEntity(
+                    successIds = mutableListOf("message-id-1"),
+                    failureIds = emptyList(),
+                )
+            mockEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn singleResult
+            }
+
+            useCase.execute("message-id-1")
+
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-1")
+            verify(mockEmailMessageService).delete(setOf("message-id-1"))
+        }
+
+    @Test
+    fun `execute(single id) should not call cache deleteMessage on failed delete`() =
+        runTest {
+            val failedResult =
+                DeleteEmailMessagesResultEntity(
+                    successIds = mutableListOf(),
+                    failureIds = listOf("message-id-1"),
+                )
+            mockEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn failedResult
+            }
+
+            useCase.execute("message-id-1")
+
+            verify(mockEmailMessageBodyCache, never()).deleteMessage(any())
+            verify(mockEmailMessageService).delete(setOf("message-id-1"))
+        }
+
+    @Test
+    fun `execute(single id) should not propagate cache deletion failure`() =
+        runTest {
+            val singleResult =
+                DeleteEmailMessagesResultEntity(
+                    successIds = mutableListOf("message-id-1"),
+                    failureIds = emptyList(),
+                )
+            mockEmailMessageService.stub {
+                onBlocking { delete(any()) } doReturn singleResult
+            }
+            mockEmailMessageBodyCache.stub {
+                onBlocking { deleteMessage(any()) } doThrow RuntimeException("Cache error")
+            }
+
+            // Should not throw despite cache error
+            val result = useCase.execute("message-id-1")
+
+            result shouldNotBe null
+            result?.id shouldBe "message-id-1"
+
+            verify(mockEmailMessageBodyCache).deleteMessage("message-id-1")
             verify(mockEmailMessageService).delete(setOf("message-id-1"))
         }
 }

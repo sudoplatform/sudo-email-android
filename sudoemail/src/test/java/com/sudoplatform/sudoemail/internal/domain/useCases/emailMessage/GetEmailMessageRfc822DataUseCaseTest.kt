@@ -14,6 +14,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttribut
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import io.kotlintest.shouldBe
@@ -81,13 +82,18 @@ class GetEmailMessageRfc822DataUseCaseTest : BaseTests() {
         }
     }
 
+    private val mockEmailMessageBodyCache by before {
+        mock<EmailMessageBodyCache>()
+    }
+
     private val useCase by before {
         GetEmailMessageRfc822DataUseCase(
             mockEmailMessageService,
             mockS3EmailClient,
             mockServiceKeyManager,
             mockLogger,
-            mockRetrieveAndDecodeEmailMessageUseCase,
+            emailMessageBodyCache = mockEmailMessageBodyCache,
+            retrieveAndDecodeEmailMessageUseCase = mockRetrieveAndDecodeEmailMessageUseCase,
         )
     }
 

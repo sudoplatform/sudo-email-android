@@ -6,17 +6,23 @@
 
 package com.sudoplatform.sudoemail
 
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
-import com.sudoplatform.sudouser.SudoUserClient
+import com.sudoplatform.sudoemail.subscription.SubscriptionService
+import com.sudoplatform.sudoemail.types.EmailMessage
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -28,12 +34,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class SudoEmailSubscribeTest : BaseTests() {
-    override val mockUserClient by before {
-        mock<SudoUserClient>().stub {
-            on { getSubject() } doReturn "subject"
-        }
-    }
-
     private val mockEmailMessageSubscriber by before {
         mock<EmailMessageSubscriber>()
     }
@@ -51,6 +51,14 @@ class SudoEmailSubscribeTest : BaseTests() {
         mock<UseCaseFactory>()
     }
 
+    private val mockEmailMessageBodyCache by before {
+        mock<EmailMessageBodyCache>()
+    }
+
+    private val mockSubscriptions by before {
+        mock<SubscriptionService>()
+    }
+
     private val client by before {
         DefaultSudoEmailClient(
             context = mockContext,
@@ -65,13 +73,15 @@ class SudoEmailSubscribeTest : BaseTests() {
             s3TransientClient = mockS3Client,
             s3EmailClient = mockS3Client,
             useCaseFactory = mockUseCaseFactory,
+            emailMessageBodyCache = mockEmailMessageBodyCache,
+            subscriptions = mockSubscriptions,
         )
     }
 
     @After
     fun fini() {
+        verifyNoMoreInteractionsOnBaseMocks()
         verifyNoMoreInteractions(
-            mockUserClient,
             mockKeyManager,
             mockApiClient,
             mockS3Client,
@@ -81,8 +91,10 @@ class SudoEmailSubscribeTest : BaseTests() {
     @Test
     fun `subscribeToEmailMessages() should throw when not authenticated`() =
         runTest {
-            mockUserClient.stub {
-                on { getSubject() } doReturn null
+            mockSubscriptions.stub {
+                onBlocking {
+                    subscribeEmailMessages(any(), any())
+                } doThrow SudoEmailClient.EmailMessageException.AuthenticationException()
             }
 
             shouldThrow<SudoEmailClient.EmailMessageException.AuthenticationException> {
@@ -96,6 +108,60 @@ class SudoEmailSubscribeTest : BaseTests() {
                 )
             }
 
-            verify(mockUserClient, times(2)).getSubject()
+            verify(mockSubscriptions, times(2)).subscribeEmailMessages(any(), any())
+        }
+
+    @Test
+    fun `subscribeToEmailMessages() should call cache deleteMessage on DELETED event`() =
+        runTest {
+            val subscriberCaptor = argumentCaptor<EmailMessageSubscriber>()
+
+            client.subscribeToEmailMessages("test-sub-id", mockEmailMessageSubscriber)
+
+            verify(mockSubscriptions).subscribeEmailMessages(any(), subscriberCaptor.capture())
+
+            // Simulate a DELETED event
+            val mockEmailMessage =
+                mock<EmailMessage>().stub {
+                    on { id } doAnswer { "deleted-message-id" }
+                }
+
+            subscriberCaptor.firstValue.emailMessageChanged(
+                mockEmailMessage,
+                EmailMessageSubscriber.ChangeType.DELETED,
+            )
+
+            // Give the coroutine time to execute
+            Thread.sleep(100)
+
+            verify(mockEmailMessageBodyCache).deleteMessage("deleted-message-id")
+            verify(mockEmailMessageSubscriber).emailMessageChanged(mockEmailMessage, EmailMessageSubscriber.ChangeType.DELETED)
+        }
+
+    @Test
+    fun `subscribeToEmailMessages() should not call cache deleteMessage on CREATED event`() =
+        runTest {
+            val subscriberCaptor = argumentCaptor<EmailMessageSubscriber>()
+
+            client.subscribeToEmailMessages("test-sub-id", mockEmailMessageSubscriber)
+
+            verify(mockSubscriptions).subscribeEmailMessages(any(), subscriberCaptor.capture())
+
+            // Simulate a CREATED event
+            val mockEmailMessage =
+                mock<EmailMessage>().stub {
+                    on { id } doAnswer { "created-message-id" }
+                }
+
+            subscriberCaptor.firstValue.emailMessageChanged(
+                mockEmailMessage,
+                EmailMessageSubscriber.ChangeType.CREATED,
+            )
+
+            // Give the coroutine time (if any) to execute
+            Thread.sleep(100)
+
+            verify(mockEmailMessageBodyCache, never()).deleteMessage(any())
+            verify(mockEmailMessageSubscriber).emailMessageChanged(mockEmailMessage, EmailMessageSubscriber.ChangeType.CREATED)
         }
 }

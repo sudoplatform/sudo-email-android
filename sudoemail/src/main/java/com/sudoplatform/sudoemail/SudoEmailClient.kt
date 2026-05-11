@@ -56,6 +56,7 @@ import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.DisableEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.EnableEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.FlushMessageBodyCacheInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
@@ -1423,6 +1424,30 @@ interface SudoEmailClient : AutoCloseable {
      * Unsubscribe all subscribers from receiving notifications about modifications to [EmailMessage]s.
      */
     suspend fun unsubscribeAllFromEmailMessages()
+
+    /**
+     * Flush the local message body cache for a specific sudo or email address.
+     *
+     * Removes all cached sealed message bodies matching the given scope. Exactly one of
+     * [FlushMessageBodyCacheInput.sudoId] or [FlushMessageBodyCacheInput.emailAddressId]
+     * must be provided.
+     *
+     * @param input [FlushMessageBodyCacheInput] The scope of the flush operation.
+     * @throws IllegalArgumentException If neither sudoId nor emailAddressId is provided.
+     */
+    suspend fun flushMessageBodyCache(input: FlushMessageBodyCacheInput)
+
+    /**
+     * Update the maximum size of the local message body cache.
+     *
+     * If the new limit is lower than the current total cached size, the least recently
+     * used entries are immediately evicted until the total size is within the new limit.
+     * Setting [bytes] to 0 disables caching entirely.
+     *
+     * @param bytes [Long] New cache size limit in bytes. Must be >= 0.
+     * @throws IllegalArgumentException If [bytes] is negative.
+     */
+    suspend fun setMessageBodyCacheSizeLimit(bytes: Long)
 
     /**
      * Reset any internal state and cached content.

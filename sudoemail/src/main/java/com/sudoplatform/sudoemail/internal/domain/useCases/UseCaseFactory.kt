@@ -13,6 +13,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAdd
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.EmailFolderService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.EmailMaskService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.BlockEmailAddressesUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.GetEmailAddressBlocklistUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.UnblockEmailAddressesByHashedValueUseCase
@@ -156,6 +157,7 @@ internal class DefaultUseCaseFactory(
     private val sealingService: SealingService,
     private val sudoUserClient: SudoUserClient,
     private val emailCryptoService: EmailCryptoService,
+    private val emailMessageBodyCache: EmailMessageBodyCache,
     private val logger: Logger,
 ) : UseCaseFactory {
     override fun createProvisionEmailAddressUseCase(): ProvisionEmailAddressUseCase =
@@ -254,6 +256,7 @@ internal class DefaultUseCaseFactory(
             emailMessageService = emailMessageService,
             configurationDataService = configurationDataService,
             logger = logger,
+            emailMessageBodyCache = emailMessageBodyCache,
         )
 
     override fun createGetEmailMessageUseCase(): GetEmailMessageUseCase =
@@ -269,6 +272,7 @@ internal class DefaultUseCaseFactory(
             s3EmailClient = s3EmailClient,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
+            emailMessageBodyCache = emailMessageBodyCache,
         )
 
     override fun createGetEmailMessageWithBodyUseCase(): GetEmailMessageWithBodyUseCase =
@@ -279,6 +283,7 @@ internal class DefaultUseCaseFactory(
             emailMessageDataProcessor = emailMessageDataProcessor,
             emailCryptoService = emailCryptoService,
             logger = logger,
+            emailMessageBodyCache = emailMessageBodyCache,
         )
 
     override fun createListEmailMessagesUseCase(): ListEmailMessagesUseCase =
