@@ -429,6 +429,7 @@ object DataFactory {
         prohibitedFileExtensions: List<String> = listOf(".js", ".exe", ".lib"),
         emailMasksEnabled: Boolean = true,
         externalEmailMasksEnabled: Boolean = true,
+        allowOwnerEmailAddressReuse: Boolean = true,
     ): GraphQLResponse<GetEmailConfigQuery.Data> =
         GraphQLResponse<GetEmailConfigQuery.Data>(
             GetEmailConfigQuery.Data(
@@ -444,6 +445,7 @@ object DataFactory {
                         prohibitedFileExtensions,
                         emailMasksEnabled,
                         externalEmailMasksEnabled,
+                        allowOwnerEmailAddressReuse,
                     ),
                 ),
             ),

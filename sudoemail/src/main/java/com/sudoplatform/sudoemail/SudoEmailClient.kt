@@ -34,7 +34,6 @@ import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
-import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
 import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
@@ -60,7 +59,6 @@ import com.sudoplatform.sudoemail.types.inputs.FlushMessageBodyCacheInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
-import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageWithBodyInput
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAddressIdInput
@@ -1021,19 +1019,6 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailMessageException::class)
     suspend fun getEmailMessage(input: GetEmailMessageInput): EmailMessage?
-
-    /**
-     * Get the RFC 6854 (supersedes RFC 822) data of an [EmailMessage].
-     *
-     * @param input [GetEmailMessageRfc822DataInput] Parameters used to retrieve the data of the email message.
-     * @returns The data associated with the [EmailMessage] or null if the email message cannot be found.
-     */
-    @Deprecated(
-        "Use getEmailMessageWithBody instead to retrieve email message data",
-        ReplaceWith("getEmailMessageWithBody"),
-    )
-    @Throws(EmailMessageException::class)
-    suspend fun getEmailMessageRfc822Data(input: GetEmailMessageRfc822DataInput): EmailMessageRfc822Data?
 
     /**
      * Get the body and attachment data of an [EmailMessage].

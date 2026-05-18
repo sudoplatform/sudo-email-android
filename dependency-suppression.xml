@@ -129,6 +129,7 @@
        <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
        <cve>CVE-2025-67735</cve>
        <cve>CVE-2026-33870</cve>
+       <cve>CVE-2026-41417</cve>
    </suppress>
    <suppress until="2026-06-30">
        <notes><![CDATA[

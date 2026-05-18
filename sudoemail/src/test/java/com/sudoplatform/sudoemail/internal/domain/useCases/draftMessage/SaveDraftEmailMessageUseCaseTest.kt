@@ -11,7 +11,6 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
-import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
@@ -52,17 +51,7 @@ class SaveDraftEmailMessageUseCaseTest : BaseTests() {
     private val mockSealedData = mockSeal(DataFactory.unsealedHeaderDetailsString).toByteArray()
 
     private val mockConfigurationData by before {
-        ConfigurationDataEntity(
-            deleteEmailMessagesLimit = 10,
-            updateEmailMessagesLimit = 10,
-            emailMessageMaxInboundMessageSize = 10240000,
-            emailMessageMaxOutboundMessageSize = 10240000,
-            emailMessageRecipientsLimit = 10,
-            encryptedEmailMessageRecipientsLimit = 10,
-            prohibitedFileExtensions = emptyList(),
-            emailMasksEnabled = true,
-            externalEmailMasksEnabled = true,
-        )
+        EntityDataFactory.getConfigurationDataEntity()
     }
 
     private val mockExternalSimplifiedEmailMessage by before {

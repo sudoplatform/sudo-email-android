@@ -122,6 +122,9 @@ class GraphQLConfigurationDataServiceTest : BaseTests() {
                 emailMessageRecipientsLimit shouldBe 5
                 encryptedEmailMessageRecipientsLimit shouldBe 10
                 prohibitedFileExtensions shouldBe listOf(".js", ".exe", ".lib")
+                emailMasksEnabled shouldBe true
+                externalEmailMasksEnabled shouldBe true
+                allowOwnerEmailAddressReuse shouldBe true
             }
 
             verify(mockApiClient).getEmailConfigQuery()

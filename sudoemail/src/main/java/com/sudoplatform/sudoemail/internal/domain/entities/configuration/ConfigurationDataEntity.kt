@@ -26,6 +26,7 @@ import java.io.File
  *  as attachments.
  * @property emailMasksEnabled [Boolean] Whether email masks are enabled.
  * @property externalEmailMasksEnabled [Boolean] Whether external email masks are enabled.
+ * @property allowOwnerEmailAddressReuse [Boolean] Whether a deprovisioned email address can be reused when creating a new
  */
 @Parcelize
 internal data class ConfigurationDataEntity(
@@ -38,6 +39,7 @@ internal data class ConfigurationDataEntity(
     val prohibitedFileExtensions: List<String>,
     val emailMasksEnabled: Boolean,
     val externalEmailMasksEnabled: Boolean,
+    val allowOwnerEmailAddressReuse: Boolean,
 ) : Parcelable {
     fun verifyAttachmentValidity(
         attachments: List<EmailAttachmentEntity>,

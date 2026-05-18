@@ -54,6 +54,7 @@ class GetConfigurationDataIntegrationTest : BaseIntegrationTest() {
                 encryptedEmailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
                 externalEmailMasksEnabled shouldNotBe null
                 emailMasksEnabled shouldNotBe null
+                allowOwnerEmailAddressReuse shouldNotBe null
             }
         }
 }

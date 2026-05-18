@@ -391,6 +391,7 @@ type EmailConfigurationData {
   prohibitedFileExtensions: [String!]!
   emailMasksEnabled: Boolean!
   externalEmailMasksEnabled: Boolean!
+  allowOwnerEmailAddressReuse: Boolean!
 }
 
 type Owner {

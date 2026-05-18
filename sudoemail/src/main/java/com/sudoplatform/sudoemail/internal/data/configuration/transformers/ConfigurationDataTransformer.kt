@@ -31,6 +31,7 @@ internal object ConfigurationDataTransformer {
             prohibitedFileExtensions = configurationData.prohibitedFileExtensions,
             emailMasksEnabled = configurationData.emailMasksEnabled,
             externalEmailMasksEnabled = configurationData.externalEmailMasksEnabled,
+            allowOwnerEmailAddressReuse = configurationData.allowOwnerEmailAddressReuse,
         )
 
     /**
@@ -50,5 +51,6 @@ internal object ConfigurationDataTransformer {
             prohibitedFileExtensions = configurationDataEntity.prohibitedFileExtensions,
             emailMasksEnabled = configurationDataEntity.emailMasksEnabled,
             externalEmailMasksEnabled = configurationDataEntity.externalEmailMasksEnabled,
+            allowOwnerEmailAddressReuse = configurationDataEntity.allowOwnerEmailAddressReuse,
         )
 }

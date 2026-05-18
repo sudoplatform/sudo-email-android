@@ -23,6 +23,8 @@ import kotlinx.parcelize.Parcelize
  *  as attachments.
  * @property emailMasksEnabled [Boolean] Whether email masks are enabled.
  * @property externalEmailMasksEnabled [Boolean] Whether external email masks are enabled.
+ * @property allowOwnerEmailAddressReuse [Boolean] Whether q deprovisioned email address can be reused when creating a new
+ *  email by the same owner.
  */
 @Parcelize
 data class ConfigurationData(
@@ -35,4 +37,5 @@ data class ConfigurationData(
     val prohibitedFileExtensions: List<String>,
     val emailMasksEnabled: Boolean,
     val externalEmailMasksEnabled: Boolean,
+    val allowOwnerEmailAddressReuse: Boolean,
 ) : Parcelable

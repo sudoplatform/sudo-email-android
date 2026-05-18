@@ -1,5 +1,5 @@
 /*
- * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,19 +13,22 @@ import com.sudoplatform.sudoemail.data.EntityDataFactory
 import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.domain.entities.common.OwnerEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttributeEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SimplifiedEmailMessageEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.CacheGetResult
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
+import com.sudoplatform.sudoemail.internal.util.EmailMessageDataProcessor
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
+import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.uuid
 import io.kotest.property.checkAll
-import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,13 +43,28 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.robolectric.RobolectricTestRunner
 
 /**
- * Property-based tests for [RetrieveAndDecodeEmailMessageUseCase] cache integration.
+ * Property-based tests for [GetEmailMessageWithBodyUseCase] cache integration.
  */
 @RunWith(RobolectricTestRunner::class)
-class RetrieveAndDecodeEmailMessageUseCasePropertyTest : BaseTests() {
+class GetEmailMessageWithBodyUseCasePropertyTest : BaseTests() {
     private val rfc822Data = DataFactory.unsealedHeaderDetailsString.toByteArray()
     private val sealedRfc822Data = mockSeal("sealed RFC822 data")
     private val mockRfc822Metadata: ObjectMetadata = ObjectMetadata()
+    private val messageBody = "This is the message body"
+
+    private val mockSimplifiedEmailMessage by before {
+        SimplifiedEmailMessageEntity(
+            from = listOf(mockSenderAddress),
+            to = listOf(mockExternalRecipientAddress),
+            cc = emptyList(),
+            bcc = emptyList(),
+            subject = "Test Subject",
+            body = messageBody,
+            isHtml = false,
+            attachments = emptyList(),
+            inlineAttachments = emptyList(),
+        )
+    }
 
     override val mockKeyManager by before {
         mock<KeyManagerInterface>().stub {
@@ -79,14 +97,31 @@ class RetrieveAndDecodeEmailMessageUseCasePropertyTest : BaseTests() {
         }
     }
 
+    private val mockEmailMessageDataProcessor by before {
+        mock<EmailMessageDataProcessor>().stub {
+            on { parseInternetMessageData(any()) } doReturn mockSimplifiedEmailMessage
+        }
+    }
+
+    private val mockEmailCryptoService by before {
+        mock<EmailCryptoService>()
+    }
+
+    private val mockEmailMessageService by before {
+        mock<EmailMessageService>()
+    }
+
     private val mockEmailMessageBodyCache by before {
         mock<EmailMessageBodyCache>()
     }
 
     private val useCase by before {
-        RetrieveAndDecodeEmailMessageUseCase(
+        GetEmailMessageWithBodyUseCase(
+            emailMessageService = mockEmailMessageService,
             s3EmailClient = mockS3EmailClient,
             serviceKeyManager = mockServiceKeyManager,
+            emailMessageDataProcessor = mockEmailMessageDataProcessor,
+            emailCryptoService = mockEmailCryptoService,
             logger = mockLogger,
             emailMessageBodyCache = mockEmailMessageBodyCache,
         )
@@ -98,24 +133,87 @@ class RetrieveAndDecodeEmailMessageUseCasePropertyTest : BaseTests() {
         runTest {
             checkAll(
                 100,
-                Arb.bind(
-                    Arb.uuid().map { it.toString() },
-                    Arb.uuid().map { it.toString() },
-                    Arb.uuid().map { it.toString() },
-                    Arb.of("sudoplatform-crypto,sudoplatform-binary-data", "sudoplatform-binary-data,sudoplatform-crypto", null),
-                ) { messageId, sudoId, emailAddressId, contentEncoding ->
-                    Triple(
-                        messageId,
-                        CacheGetResult(messageId, sudoId, emailAddressId, sealedRfc822Data.toByteArray(), contentEncoding),
-                        emailAddressId,
-                    )
-                },
-            ) { (messageId, cacheResult, emailAddressId) ->
-                clearInvocations(mockS3EmailClient, mockKeyManager, mockEmailMessageBodyCache)
+                Arb.uuid().map { it.toString() },
+                Arb.uuid().map { it.toString() },
+                Arb.uuid().map { it.toString() },
+                Arb.of(
+                    "sudoplatform-crypto,sudoplatform-binary-data",
+                    "sudoplatform-binary-data,sudoplatform-crypto",
+                    null,
+                ),
+            ) { messageId, sudoId, emailAddressId, contentEncoding ->
+                clearInvocations(
+                    mockS3EmailClient,
+                    mockKeyManager,
+                    mockEmailMessageBodyCache,
+                    mockEmailMessageService,
+                    mockEmailMessageDataProcessor,
+                )
+
+                val cacheResult = CacheGetResult(messageId, sudoId, emailAddressId, sealedRfc822Data.toByteArray(), contentEncoding)
 
                 // Stub cache to return a hit
                 mockEmailMessageBodyCache.stub {
                     onBlocking { get(messageId) } doReturn cacheResult
+                }
+
+                val emailMessage =
+                    EntityDataFactory.getSealedEmailMessageEntity(
+                        id = messageId,
+                        emailAddressId = emailAddressId,
+                        owners = listOf(OwnerEntity(id = sudoId, issuer = "sudoplatform.sudoservice")),
+                        rfc822Header =
+                            SealedAttributeEntity(
+                                keyId = mockKeyId,
+                                algorithm = mockAlgorithm,
+                                base64EncodedSealedData = sealedRfc822Data,
+                                plainTextType = "string",
+                            ),
+                        encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
+                    )
+
+                // Stub email message service to return the entity
+                mockEmailMessageService.stub {
+                    onBlocking { get(any()) } doReturn emailMessage
+                }
+
+                val input =
+                    GetEmailMessageWithBodyUseCaseInput(
+                        id = messageId,
+                        emailAddressId = emailAddressId,
+                    )
+
+                val result = useCase.execute(input)
+
+                // Result should be non-null (message was found and decoded)
+                result shouldNotBe null
+
+                // S3 should NOT have been called
+                verifyNoInteractions(mockS3EmailClient)
+            }
+        }
+
+    // Feature: pemc-1738, Property 9: Zero cache size disables caching / cache miss always calls S3
+    @Test
+    fun `Property 9 - when cache get returns null, S3 is always called`() =
+        runTest {
+            checkAll(
+                100,
+                Arb.uuid().map { it.toString() },
+            ) { messageId ->
+                clearInvocations(
+                    mockS3EmailClient,
+                    mockKeyManager,
+                    mockEmailMessageBodyCache,
+                    mockEmailMessageService,
+                    mockEmailMessageDataProcessor,
+                )
+
+                val emailAddressId = "addr-1"
+
+                // Stub cache to return null (simulates cache disabled / miss)
+                mockEmailMessageBodyCache.stub {
+                    onBlocking { get(messageId) } doReturn null
                 }
 
                 val emailMessage =
@@ -133,49 +231,20 @@ class RetrieveAndDecodeEmailMessageUseCasePropertyTest : BaseTests() {
                         encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
                     )
 
-                val result = useCase.execute(emailMessage)
-
-                // Result should be the decoded data (unsealing still happens)
-                result shouldBe rfc822Data
-
-                // S3 should NOT have been called
-                verifyNoInteractions(mockS3EmailClient)
-            }
-        }
-
-    // Feature: pemc-1738, Property 9: Zero cache size disables caching
-    @Test
-    fun `Property 9 - when cache get returns null, S3 is always called`() =
-        runTest {
-            checkAll(
-                100,
-                Arb.uuid().map { it.toString() },
-            ) { messageId ->
-                clearInvocations(mockS3EmailClient, mockKeyManager, mockEmailMessageBodyCache)
-
-                // Stub cache to return null (simulates cache disabled / miss)
-                mockEmailMessageBodyCache.stub {
-                    onBlocking { get(messageId) } doReturn null
+                // Stub email message service to return the entity
+                mockEmailMessageService.stub {
+                    onBlocking { get(any()) } doReturn emailMessage
                 }
 
-                val emailMessage =
-                    EntityDataFactory.getSealedEmailMessageEntity(
+                val input =
+                    GetEmailMessageWithBodyUseCaseInput(
                         id = messageId,
-                        emailAddressId = "addr-1",
-                        owners = listOf(OwnerEntity(id = "sudoId", issuer = "sudoplatform.sudoservice")),
-                        rfc822Header =
-                            SealedAttributeEntity(
-                                keyId = mockKeyId,
-                                algorithm = mockAlgorithm,
-                                base64EncodedSealedData = sealedRfc822Data,
-                                plainTextType = "string",
-                            ),
-                        encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
+                        emailAddressId = emailAddressId,
                     )
 
-                val result = useCase.execute(emailMessage)
+                val result = useCase.execute(input)
 
-                result shouldBe rfc822Data
+                result shouldNotBe null
 
                 // S3 SHOULD have been called
                 verify(mockS3EmailClient).download(any(), any())

@@ -74,7 +74,6 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.EnableEmail
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ListEmailMasksUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ProvisionEmailMaskUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.UpdateEmailMaskUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageRfc822DataUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageWithBodyUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.ListEmailMessagesUseCaseInput
@@ -107,7 +106,6 @@ import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
-import com.sudoplatform.sudoemail.types.EmailMessageRfc822Data
 import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
@@ -133,7 +131,6 @@ import com.sudoplatform.sudoemail.types.inputs.FlushMessageBodyCacheInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
-import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageRfc822DataInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageWithBodyInput
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAddressIdInput
@@ -710,28 +707,6 @@ internal class DefaultSudoEmailClient(
             return EmailMessageTransformer.entityToApi(it)
         }
         return null
-    }
-
-    @Deprecated(
-        "Use getEmailMessageWithBody instead to retrieve email message data",
-        ReplaceWith("getEmailMessageWithBody"),
-    )
-    @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun getEmailMessageRfc822Data(input: GetEmailMessageRfc822DataInput): EmailMessageRfc822Data? {
-        ensureSignedIn()
-        logger.debug("getEmailMessageRfc822Data input: $input")
-
-        val useCase = useCaseFactory.createGetEmailMessageRfc822DataUseCase()
-
-        val result =
-            useCase.execute(
-                GetEmailMessageRfc822DataUseCaseInput(
-                    id = input.id,
-                    emailAddressId = input.emailAddressId,
-                ),
-            ) ?: return null
-
-        return EmailMessageRfc822Data(result.id, result.rfc822Data)
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)

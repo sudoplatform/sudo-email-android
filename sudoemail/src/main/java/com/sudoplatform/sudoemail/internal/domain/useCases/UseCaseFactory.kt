@@ -47,7 +47,6 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ProvisionEm
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.UpdateEmailMaskUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.VerifyExternalEmailAddressUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.DeleteEmailMessagesUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageRfc822DataUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageWithBodyUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.ListEmailMessagesUseCase
@@ -89,8 +88,6 @@ internal interface UseCaseFactory {
     fun createDeleteEmailMessagesUseCase(): DeleteEmailMessagesUseCase
 
     fun createGetEmailMessageUseCase(): GetEmailMessageUseCase
-
-    fun createGetEmailMessageRfc822DataUseCase(): GetEmailMessageRfc822DataUseCase
 
     fun createGetEmailMessageWithBodyUseCase(): GetEmailMessageWithBodyUseCase
 
@@ -264,15 +261,6 @@ internal class DefaultUseCaseFactory(
             emailMessageService = emailMessageService,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
-        )
-
-    override fun createGetEmailMessageRfc822DataUseCase(): GetEmailMessageRfc822DataUseCase =
-        GetEmailMessageRfc822DataUseCase(
-            emailMessageService = emailMessageService,
-            s3EmailClient = s3EmailClient,
-            serviceKeyManager = serviceKeyManager,
-            logger = logger,
-            emailMessageBodyCache = emailMessageBodyCache,
         )
 
     override fun createGetEmailMessageWithBodyUseCase(): GetEmailMessageWithBodyUseCase =

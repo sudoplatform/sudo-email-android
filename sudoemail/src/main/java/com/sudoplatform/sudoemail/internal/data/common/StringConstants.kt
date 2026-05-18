@@ -86,4 +86,6 @@ object StringConstants {
     const val ERROR_EMAIL_MASK_LOCKED = "EmailMaskLocked"
 
     const val UNKNOWN_ERROR_MSG = "An unknown error occurred"
+
+    const val SUDO_SERVICE_ISSUER = "sudoplatform.sudoservice"
 }

@@ -159,6 +159,7 @@ fragment EmailConfigurationData on EmailConfigurationData {
     prohibitedFileExtensions
     emailMasksEnabled
     externalEmailMasksEnabled
+    allowOwnerEmailAddressReuse
 }
 
 fragment BlockedAddress on BlockedEmailAddress {
