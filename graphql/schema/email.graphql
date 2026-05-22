@@ -91,18 +91,21 @@ input CheckEmailAddressAvailabilityInput {
 }
 
 input ListEmailAddressesInput {
+  filter: EmailAddressFilterInput
   limit: Int
   nextToken: String
 }
 
 input ListEmailAddressesForSudoIdInput {
   sudoId: ID!
+  filter: EmailAddressFilterInput
   limit: Int
   nextToken: String
 }
 
 input ListEmailFoldersForEmailAddressIdInput {
   emailAddressId: ID!
+  filter: EmailFolderFilterInput
   limit: Int
   nextToken: String
 }
@@ -127,6 +130,7 @@ input ListEmailMessagesForEmailAddressIdInput {
 input ListEmailMessagesForEmailFolderIdInput {
   folderId: ID!
   specifiedDateRange: EmailMessageDateRangeInput
+  filter: EmailMessageFilterInput
   limit: Int
   sortOrder: SortOrder
   nextToken: String
@@ -181,10 +185,6 @@ input UpdateEmailMessagesInput {
   values: EmailMessageUpdateValuesInput!
 }
 
-input DeleteEmailMessageInput {
-  messageId: ID!
-}
-
 input OwnerInput {
   id: String!
   issuer: String!
@@ -232,6 +232,103 @@ input SealedAttributeInput {
   keyId: String!
   plainTextType: String!
   base64EncodedSealedData: String!
+}
+
+input EmailAddressFilterInput {
+  id: IDFilterInput
+  identityId: IDFilterInput
+  keyRingId: IDFilterInput
+  emailAddress: StringFilterInput
+  and: [EmailAddressFilterInput]
+  or: [EmailAddressFilterInput]
+  not: EmailAddressFilterInput
+}
+
+input EmailFolderFilterInput {
+  id: IDFilterInput
+  folderName: StringFilterInput
+  size: FloatFilterInput
+  unseenCount: IntFilterInput
+  and: [EmailFolderFilterInput]
+  or: [EmailFolderFilterInput]
+  not: EmailFolderFilterInput
+}
+
+enum MailboxType {
+  ADDRESS
+  MASK
+}
+
+input MailboxIdsFilterInput {
+  type: MailboxType!
+  id: StringFilterInput!
+}
+
+input EmailMessageFilterInput {
+  id: IDFilterInput
+  messageId: IDFilterInput
+  algorithm: StringFilterInput
+  keyId: IDFilterInput
+  folderId: IDFilterInput
+  direction: EmailMessageDirectionFilterInput
+  seen: BooleanFilterInput
+  repliedTo: BooleanFilterInput
+  forwarded: BooleanFilterInput
+  clientRefId: IDFilterInput
+  state: EmailMessageStateFilterInput
+  mailboxIds: [MailboxIdsFilterInput]
+  and: [EmailMessageFilterInput]
+  or: [EmailMessageFilterInput]
+  not: EmailMessageFilterInput
+}
+
+input EmailMessageStateFilterInput {
+  ne: EmailMessageState
+  eq: EmailMessageState
+  in: [EmailMessageState]
+  notIn: [EmailMessageState]
+}
+
+input EmailMessageDirectionFilterInput {
+  eq: EmailMessageDirection
+  ne: EmailMessageDirection
+}
+
+input StringFilterInput {
+  ne: String
+  eq: String
+  beginsWith: String
+}
+
+input IDFilterInput {
+  ne: ID
+  eq: ID
+  beginsWith: ID
+}
+
+input IntFilterInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+input FloatFilterInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+}
+
+input BooleanFilterInput {
+  ne: Boolean
+  eq: Boolean
 }
 
 input ProvisionEmailMaskPublicKeyInput {
@@ -732,8 +829,6 @@ type Mutation {
   updateEmailMessagesV2(
     input: UpdateEmailMessagesInput!
   ): UpdateEmailMessagesV2Result!
-
-  deleteEmailMessage(input: DeleteEmailMessageInput!): ID!
 
   updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput!): ID!
 

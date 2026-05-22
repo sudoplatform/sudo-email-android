@@ -16,7 +16,10 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.ListAPIResultE
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttributeEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SortOrderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageDateRangeEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageFilterInputEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageStateFilterEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageStateFilterInputEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesOutput
 import com.sudoplatform.sudoemail.keys.DefaultServiceKeyManager
@@ -652,6 +655,38 @@ class ListEmailMessagesUseCaseTest : BaseTests() {
                     request.limit shouldBe 10
                     request.sortOrder shouldBe SortOrderEntity.DESC
                     request.includeDeletedMessages shouldBe false
+                },
+            )
+            verify(mockKeyManager, times(2)).decryptWithPrivateKey(anyString(), any(), any())
+            verify(mockKeyManager, times(2)).decryptWithSymmetricKey(any<ByteArray>(), any<ByteArray>())
+        }
+
+    @Test
+    fun `execute() should pass filter when emailFolderId is provided`() =
+        runTest {
+            val emailFolderId = "test-email-folder-id"
+            val filter =
+                EmailMessageFilterInputEntity(
+                    state = EmailMessageStateFilterInputEntity(equal = EmailMessageStateFilterEntity.RECEIVED),
+                )
+            val input =
+                ListEmailMessagesUseCaseInput(
+                    emailFolderId = emailFolderId,
+                    dateRange = null,
+                    filter = filter,
+                    limit = 10,
+                    nextToken = null,
+                    sortOrder = SortOrderEntity.DESC,
+                    includeDeletedMessages = false,
+                )
+
+            useCase.execute(input)
+
+            verify(mockEmailMessageService).listForEmailFolderId(
+                check { request ->
+                    request.emailFolderId shouldBe emailFolderId
+                    request.filter shouldNotBe null
+                    request.filter?.state?.equal shouldBe EmailMessageStateFilterEntity.RECEIVED
                 },
             )
             verify(mockKeyManager, times(2)).decryptWithPrivateKey(anyString(), any(), any())

@@ -149,6 +149,7 @@ internal data class ListEmailMessagesForEmailAddressIdRequest(
  *
  * @property emailFolderId [String] The email folder ID to filter messages.
  * @property dateRange [EmailMessageDateRangeEntity] Optional date range to filter messages.
+ * @property filter [EmailMessageFilterInputEntity] Optional structured filter to apply.
  * @property limit [Int] Optional maximum number of results to return.
  * @property nextToken [String] Optional token for pagination.
  * @property sortOrder [SortOrderEntity] The order to sort results.
@@ -157,6 +158,7 @@ internal data class ListEmailMessagesForEmailAddressIdRequest(
 internal data class ListEmailMessagesForEmailFolderIdRequest(
     val emailFolderId: String,
     val dateRange: EmailMessageDateRangeEntity?,
+    val filter: EmailMessageFilterInputEntity? = null,
     val limit: Int?,
     val nextToken: String?,
     val sortOrder: SortOrderEntity,

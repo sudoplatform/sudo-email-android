@@ -17,6 +17,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.PartialResultE
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SortOrderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageDateRangeEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageFilterInputEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesForEmailAddressIdRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesForEmailFolderIdRequest
@@ -31,6 +32,7 @@ import com.sudoplatform.sudologging.Logger
  * @property emailAddressId [String] Optional email address ID to filter messages by.
  * @property emailFolderId [String] Optional email folder ID to filter messages by.
  * @property dateRange [EmailMessageDateRangeEntity] Optional date range to filter messages.
+ * @property filter [EmailMessageFilterInputEntity] Optional structured filter for supported list operations.
  * @property limit [Int] Optional maximum number of results to return.
  * @property nextToken [String] Optional token for pagination.
  * @property sortOrder [SortOrderEntity] The order to sort results.
@@ -40,6 +42,7 @@ internal data class ListEmailMessagesUseCaseInput(
     val emailAddressId: String? = null,
     val emailFolderId: String? = null,
     val dateRange: EmailMessageDateRangeEntity?,
+    val filter: EmailMessageFilterInputEntity? = null,
     val limit: Int?,
     val nextToken: String?,
     val sortOrder: SortOrderEntity,
@@ -96,6 +99,7 @@ internal class ListEmailMessagesUseCase(
                                 ListEmailMessagesForEmailFolderIdRequest(
                                     emailFolderId = input.emailFolderId,
                                     dateRange = input.dateRange,
+                                    filter = input.filter,
                                     limit = input.limit,
                                     nextToken = input.nextToken,
                                     sortOrder = input.sortOrder,

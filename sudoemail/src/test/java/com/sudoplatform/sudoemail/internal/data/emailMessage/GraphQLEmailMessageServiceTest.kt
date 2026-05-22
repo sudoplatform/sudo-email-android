@@ -28,6 +28,11 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteMe
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailAttachmentEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageDateRangeEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageDirectionFilterEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageDirectionFilterInputEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageFilterInputEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageStateFilterEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageStateFilterInputEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EncryptionStatusEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.GetEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.InternetMessageFormatHeaderEntity
@@ -2715,6 +2720,52 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                 check { input ->
                     input.folderId shouldBe emailFolderId
                     input.specifiedDateRange shouldNotBe Optional.absent()
+                },
+            )
+        }
+
+    @Test
+    fun `listEmailMessagesForEmailFolderId() should pass structured filter when specified`() =
+        runTest {
+            val emailFolderId = "test-email-folder-id"
+            val message = DataFactory.getSealedEmailMessage(id = "message-id-1", folderId = emailFolderId)
+            val queryResponse =
+                DataFactory.listEmailMessagesForEmailFolderIdQueryResponse(
+                    items = listOf(message),
+                    nextToken = null,
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMessagesForEmailFolderIdQuery(any())
+                } doReturn queryResponse
+            }
+
+            val request =
+                ListEmailMessagesForEmailFolderIdRequest(
+                    emailFolderId = emailFolderId,
+                    dateRange = null,
+                    filter =
+                        EmailMessageFilterInputEntity(
+                            state = EmailMessageStateFilterInputEntity(equal = EmailMessageStateFilterEntity.RECEIVED),
+                        ),
+                    limit = 10,
+                    nextToken = null,
+                    sortOrder = SortOrderEntity.DESC,
+                    includeDeletedMessages = false,
+                )
+
+            val result = instanceUnderTest.listForEmailFolderId(request)
+
+            result.items.size shouldBe 1
+
+            verify(mockApiClient).listEmailMessagesForEmailFolderIdQuery(
+                check { input ->
+                    input.folderId shouldBe emailFolderId
+                    input.filter shouldNotBe Optional.absent()
+                    val filter = (input.filter as Optional.Present).value!!
+                    filter.state shouldNotBe Optional.absent()
+                    val state = (filter.state as Optional.Present).value!!
+                    state.eq shouldBe Optional.present(EmailMessageState.RECEIVED)
                 },
             )
         }

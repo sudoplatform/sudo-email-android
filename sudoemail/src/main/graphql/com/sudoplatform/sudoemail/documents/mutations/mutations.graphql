@@ -42,10 +42,6 @@ mutation UpdateEmailMessages($input: UpdateEmailMessagesInput!) {
   }
 }
 
-mutation DeleteEmailMessage($input: DeleteEmailMessageInput!) {
-  deleteEmailMessage(input: $input)
-}
-
 mutation BlockEmailAddresses($input: BlockEmailAddressesInput!) {
   blockEmailAddresses(input: $input) {
     ...BlockAddressesResult

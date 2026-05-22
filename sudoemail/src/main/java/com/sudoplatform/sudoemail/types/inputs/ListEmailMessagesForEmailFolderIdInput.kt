@@ -23,6 +23,7 @@ import com.sudoplatform.sudoemail.types.SortOrder
  *  supplied to this method if using a previously generated [nextToken].
  * @property sortOrder [SortOrder] The direction in which the email messages are sorted. Defaults to descending.
  * @property includeDeletedMessages [Boolean] Indicates whether or not to include deleted messages. Defaults to false.
+ * @property filter [EmailMessageFilterInput] Optional filter criteria applied by the backend.
  */
 data class ListEmailMessagesForEmailFolderIdInput(
     val folderId: String,
@@ -31,4 +32,5 @@ data class ListEmailMessagesForEmailFolderIdInput(
     val nextToken: String? = null,
     val sortOrder: SortOrder = SortOrder.DESC,
     val includeDeletedMessages: Boolean = false,
+    val filter: EmailMessageFilterInput? = null,
 )

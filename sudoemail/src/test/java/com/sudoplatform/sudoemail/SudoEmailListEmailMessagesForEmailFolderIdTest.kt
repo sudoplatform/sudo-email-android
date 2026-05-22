@@ -21,6 +21,9 @@ import com.sudoplatform.sudoemail.types.DateRange
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
+import com.sudoplatform.sudoemail.types.inputs.EmailMessageFilterInput
+import com.sudoplatform.sudoemail.types.inputs.EmailMessageStateFilter
+import com.sudoplatform.sudoemail.types.inputs.EmailMessageStateFilterInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
@@ -533,6 +536,37 @@ class SudoEmailListEmailMessagesForEmailFolderIdTest : BaseTests() {
                     useCaseInput.emailFolderId shouldBe emailFolderId
                     useCaseInput.emailAddressId shouldBe null
                     useCaseInput.includeDeletedMessages shouldBe true
+                },
+            )
+        }
+
+    @Test
+    fun `listEmailMessagesForEmailFolderId() should pass filter parameter when specified`() =
+        runTest {
+            val input =
+                ListEmailMessagesForEmailFolderIdInput(
+                    folderId = emailFolderId,
+                    filter =
+                        EmailMessageFilterInput(
+                            state = EmailMessageStateFilterInput(equal = EmailMessageStateFilter.RECEIVED),
+                        ),
+                )
+
+            val deferredResult =
+                async(StandardTestDispatcher(testScheduler)) {
+                    client.listEmailMessagesForEmailFolderId(input)
+                }
+            deferredResult.start()
+            deferredResult.await()
+
+            verify(mockUseCaseFactory).createListEmailMessagesUseCase()
+            verify(mockUseCase).execute(
+                check { useCaseInput ->
+                    useCaseInput.filter shouldNotBe null
+                    useCaseInput.filter
+                        ?.state
+                        ?.equal
+                        ?.name shouldBe "RECEIVED"
                 },
             )
         }

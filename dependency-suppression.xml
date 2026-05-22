@@ -130,6 +130,17 @@
        <cve>CVE-2025-67735</cve>
        <cve>CVE-2026-33870</cve>
        <cve>CVE-2026-41417</cve>
+       <cve>CVE-2026-42578</cve>
+       <cve>CVE-2026-42579</cve>
+       <cve>CVE-2026-42580</cve>
+       <cve>CVE-2026-42581</cve>
+       <cve>CVE-2026-42582</cve>
+       <cve>CVE-2026-42583</cve>
+       <cve>CVE-2026-42584</cve>
+       <cve>CVE-2026-42585</cve>
+       <cve>CVE-2026-42586</cve>
+       <cve>CVE-2026-42587</cve>
+       <cve>CVE-2026-44248</cve>
    </suppress>
    <suppress until="2026-06-30">
        <notes><![CDATA[

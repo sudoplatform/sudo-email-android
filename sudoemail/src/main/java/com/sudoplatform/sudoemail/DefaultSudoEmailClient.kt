@@ -31,6 +31,7 @@ import com.sudoplatform.sudoemail.internal.data.emailMask.transformers.EmailMask
 import com.sudoplatform.sudoemail.internal.data.emailMessage.GraphQLEmailMessageService
 import com.sudoplatform.sudoemail.internal.data.emailMessage.cache.RoomEmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailAttachmentTransformer
+import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageFilterTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.InternetMessageFormatHeaderTransformer
 import com.sudoplatform.sudoemail.internal.domain.entities.blockedAddress.BlockedAddressService
@@ -789,6 +790,7 @@ internal class DefaultSudoEmailClient(
                     limit = input.limit,
                     nextToken = input.nextToken,
                     dateRange = input.dateRange?.let { DateRangeTransformer.apiToEntity(it) },
+                    filter = input.filter?.let { EmailMessageFilterTransformer.apiToEntity(it) },
                     sortOrder = SortOrderTransformer.apiToEntity(input.sortOrder),
                     includeDeletedMessages = input.includeDeletedMessages,
                 ),

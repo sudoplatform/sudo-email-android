@@ -13,14 +13,22 @@ import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.DateRange
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
 import com.sudoplatform.sudoemail.types.State
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
+import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.EmailMessageFilterInput
+import com.sudoplatform.sudoemail.types.inputs.EmailMessageMailboxType
+import com.sudoplatform.sudoemail.types.inputs.EmailMessageStateFilter
+import com.sudoplatform.sudoemail.types.inputs.EmailMessageStateFilterInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
+import com.sudoplatform.sudoemail.types.inputs.MailboxIdsFilterInput
+import com.sudoplatform.sudoemail.types.inputs.StringFieldFilterInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
@@ -48,6 +56,7 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
+    private val emailMaskList = mutableListOf<EmailMask>()
     private val sudoList = mutableListOf<Sudo>()
 
     @Before
@@ -59,6 +68,11 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @After
     fun teardown() =
         runTest {
+            emailMaskList.map {
+                emailClient.deprovisionEmailMask(
+                    DeprovisionEmailMaskInput(it.id),
+                )
+            }
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
             sudoList.map { sudoClient.deleteSudo(it) }
             sudoClient.reset()
@@ -1196,6 +1210,98 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
+    fun listEmailMessagesForEmailFolderIdShouldRespectStateFilter() =
+        runTest(timeout = kotlin.time.Duration.parse("3m")) {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            emailAddress shouldNotBe null
+            emailAddressList.add(emailAddress)
+
+            val fromEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            fromEmailAddress shouldNotBe null
+            emailAddressList.add(fromEmailAddress)
+
+            val sentFolder =
+                getFolderByName(emailClient, fromEmailAddress.id, "SENT")
+                    ?: fail("EmailFolder could not be found")
+
+            var deletedMessageId = ""
+            val messageCount = 2
+            for (i in 0 until messageCount) {
+                val sendEmailMessageResult =
+                    sendEmailMessage(
+                        client = emailClient,
+                        fromAddress = fromEmailAddress,
+                        toAddresses = listOf(EmailMessage.EmailAddress(emailAddress = emailAddress.emailAddress)),
+                        subject =
+                            "listEmailMessagesForEmailFolderIdShouldRespectStateFilter" +
+                                " ${UUID.randomUUID()}",
+                    )
+                deletedMessageId = sendEmailMessageResult.id
+            }
+
+            when (
+                val listEmailMessages =
+                    waitForMessagesByFolder(
+                        messageCount,
+                        ListEmailMessagesForEmailFolderIdInput(sentFolder.id),
+                    )
+            ) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items shouldHaveSize messageCount
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+
+            val deleteResult = emailClient.deleteEmailMessage(deletedMessageId)
+            deleteResult shouldNotBe null
+
+            val inputWithStateFilter =
+                ListEmailMessagesForEmailFolderIdInput(
+                    folderId = sentFolder.id,
+                    includeDeletedMessages = true,
+                    filter =
+                        EmailMessageFilterInput(
+                            state =
+                                EmailMessageStateFilterInput(
+                                    equal = EmailMessageStateFilter.DELETED,
+                                ),
+                        ),
+                )
+
+            when (
+                val listEmailMessages =
+                    waitForMessagesByFolder(
+                        1,
+                        inputWithStateFilter,
+                    )
+            ) {
+                is ListAPIResult.Success -> {
+                    listEmailMessages.result.items shouldHaveSize 1
+                    listEmailMessages.result.items
+                        .first()
+                        .id shouldBe deletedMessageId
+                    listEmailMessages.result.items
+                        .first()
+                        .state shouldBe State.DELETED
+                }
+
+                else -> {
+                    fail("Unexpected ListAPIResult")
+                }
+            }
+        }
+
+    @Test
     fun listEmailMessagesForEmailFolderIdShouldWorkForCustomFolders() =
         runTest {
             val sudo = sudoClient.createSudo(TestData.sudo)
@@ -1262,6 +1368,178 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
 
                 else -> {
                     fail("Unexpected ListAPIResult")
+                }
+            }
+        }
+
+    @Test
+    fun listEmailMessagesForEmailFolderIdShouldRespectMailboxIdsFilter() =
+        runTest(timeout = kotlin.time.Duration.parse("3m")) {
+            val sudo = sudoClient.createSudo(TestData.sudo)
+            sudo shouldNotBe null
+            sudoList.add(sudo)
+
+            val ownershipProof = getOwnershipProof(sudo)
+            ownershipProof shouldNotBe null
+
+            // The address that will receive messages
+            val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
+            recipientAddress shouldNotBe null
+            emailAddressList.add(recipientAddress)
+
+            // A separate address used to send messages
+            val senderAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender")
+            senderAddress shouldNotBe null
+            emailAddressList.add(senderAddress)
+
+            val inboxFolder =
+                getFolderByName(emailClient, recipientAddress.id, "INBOX")
+                    ?: fail("INBOX folder could not be found")
+
+            val masksEnabled = emailClient.getConfigurationData().emailMasksEnabled
+
+            if (masksEnabled) {
+                val maskDomains = getMaskDomains(emailClient)
+                maskDomains.size shouldBeGreaterThanOrEqual 1
+
+                val maskLocalPart = generateSafeLocalPart("android-mbx-mask")
+                val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+                val provisionedMask =
+                    provisionEmailMask(
+                        maskAddress = maskAddress,
+                        realAddress = recipientAddress.emailAddress,
+                        ownershipProofToken = ownershipProof,
+                    )
+                emailMaskList.add(provisionedMask)
+
+                // Send a plain (non-masked) inbound message to the recipient address
+                val plainSubject = "Plain inbound message ${UUID.randomUUID()}"
+                sendEmailMessage(
+                    emailClient,
+                    fromAddress = senderAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(recipientAddress.emailAddress)),
+                    subject = plainSubject,
+                )
+
+                // Send an inbound message via the mask address (routes to the real recipient address)
+                val maskedSubject = "Masked inbound message ${UUID.randomUUID()}"
+                sendEmailMessage(
+                    emailClient,
+                    fromAddress = senderAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(provisionedMask.maskAddress)),
+                    subject = maskedSubject,
+                )
+
+                // Wait for both inbound messages to arrive in INBOX
+                waitForMessagesByFolder(
+                    2,
+                    ListEmailMessagesForEmailFolderIdInput(folderId = inboxFolder.id),
+                )
+
+                // Filter by ADDRESS mailbox id - should return only the non-masked message
+                val addressFilter =
+                    EmailMessageFilterInput(
+                        mailboxIds =
+                            listOf(
+                                MailboxIdsFilterInput(
+                                    type = EmailMessageMailboxType.ADDRESS,
+                                    id = StringFieldFilterInput(equal = recipientAddress.id),
+                                ),
+                            ),
+                    )
+                when (
+                    val addressFiltered =
+                        emailClient.listEmailMessagesForEmailFolderId(
+                            ListEmailMessagesForEmailFolderIdInput(
+                                folderId = inboxFolder.id,
+                                filter = addressFilter,
+                            ),
+                        )
+                ) {
+                    is ListAPIResult.Success -> {
+                        addressFiltered.result.items shouldHaveSize 1
+                        addressFiltered.result.items[0].subject shouldBe plainSubject
+                        addressFiltered.result.items[0].emailMaskId shouldBe null
+                    }
+                    else -> {
+                        fail("Unexpected ListAPIResult when filtering by ADDRESS mailbox id")
+                    }
+                }
+
+                // Filter by MASK mailbox id - should return only the masked message
+                val maskFilter =
+                    EmailMessageFilterInput(
+                        mailboxIds =
+                            listOf(
+                                MailboxIdsFilterInput(
+                                    type = EmailMessageMailboxType.MASK,
+                                    id = StringFieldFilterInput(equal = provisionedMask.id),
+                                ),
+                            ),
+                    )
+                when (
+                    val maskFiltered =
+                        emailClient.listEmailMessagesForEmailFolderId(
+                            ListEmailMessagesForEmailFolderIdInput(
+                                folderId = inboxFolder.id,
+                                filter = maskFilter,
+                            ),
+                        )
+                ) {
+                    is ListAPIResult.Success -> {
+                        maskFiltered.result.items shouldHaveSize 1
+                        maskFiltered.result.items[0].subject shouldBe maskedSubject
+                        maskFiltered.result.items[0].emailMaskId shouldBe provisionedMask.id
+                    }
+                    else -> {
+                        fail("Unexpected ListAPIResult when filtering by MASK mailbox id")
+                    }
+                }
+            } else {
+                // Masks not enabled: send a plain message and verify ADDRESS mailbox id filter returns the expected count
+
+                val plainSubject = "Plain inbound message ${UUID.randomUUID()}"
+                sendEmailMessage(
+                    emailClient,
+                    fromAddress = senderAddress,
+                    toAddresses = listOf(EmailMessage.EmailAddress(recipientAddress.emailAddress)),
+                    subject = plainSubject,
+                )
+
+                // Wait for the message to arrive in INBOX
+                waitForMessagesByFolder(
+                    1,
+                    ListEmailMessagesForEmailFolderIdInput(folderId = inboxFolder.id),
+                )
+
+                // Filter by ADDRESS mailbox id - should return the message
+                val addressFilter =
+                    EmailMessageFilterInput(
+                        mailboxIds =
+                            listOf(
+                                MailboxIdsFilterInput(
+                                    type = EmailMessageMailboxType.ADDRESS,
+                                    id = StringFieldFilterInput(equal = recipientAddress.id),
+                                ),
+                            ),
+                    )
+                when (
+                    val addressFiltered =
+                        emailClient.listEmailMessagesForEmailFolderId(
+                            ListEmailMessagesForEmailFolderIdInput(
+                                folderId = inboxFolder.id,
+                                filter = addressFilter,
+                            ),
+                        )
+                ) {
+                    is ListAPIResult.Success -> {
+                        addressFiltered.result.items shouldHaveSize 1
+                        addressFiltered.result.items[0].subject shouldBe plainSubject
+                        addressFiltered.result.items[0].id
+                    }
+                    else -> {
+                        fail("Unexpected ListAPIResult when filtering by ADDRESS mailbox id")
+                    }
                 }
             }
         }

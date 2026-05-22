@@ -572,6 +572,7 @@ abstract class BaseIntegrationTest {
                             val input =
                                 ListEmailMessagesForEmailFolderIdInput(
                                     folderId = listInput.folderId,
+                                    filter = listInput.filter,
                                     dateRange = listInput.dateRange,
                                     sortOrder = listInput.sortOrder,
                                     includeDeletedMessages = listInput.includeDeletedMessages,

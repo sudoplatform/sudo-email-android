@@ -27,6 +27,7 @@ import com.sudoplatform.sudoemail.internal.data.common.transformers.BatchOperati
 import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransformer
 import com.sudoplatform.sudoemail.internal.data.common.transformers.SortOrderTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageDateRangeTransformer.toEmailMessageDateRangeInput
+import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageFilterTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailMessageTransformer.toEmailMessageEncryptionStatus
 import com.sudoplatform.sudoemail.internal.domain.entities.common.BatchOperationResultEntity
@@ -416,6 +417,7 @@ internal class GraphQLEmailMessageService(
                     limit = Optional.presentIfNotNull(input.limit),
                     nextToken = Optional.presentIfNotNull(input.nextToken),
                     specifiedDateRange = Optional.presentIfNotNull(input.dateRange.toEmailMessageDateRangeInput()),
+                    filter = Optional.presentIfNotNull(input.filter?.let { EmailMessageFilterTransformer.entityToGraphQl(it) }),
                     sortOrder = Optional.presentIfNotNull(SortOrderTransformer.entityToGraphQL(input.sortOrder)),
                     includeDeletedMessages = Optional.presentIfNotNull(input.includeDeletedMessages),
                 )
