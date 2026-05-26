@@ -302,6 +302,11 @@ internal class DefaultSudoEmailClient(
      */
     private var signInGuard = SignInGuard(sudoUserClient)
 
+    init {
+        (s3TransientClient as? DefaultS3Client)?.signInGuard = signInGuard
+        (s3EmailClient as? DefaultS3Client)?.signInGuard = signInGuard
+    }
+
     /**
      * Checksum's for each file are generated and are used to create a checksum that is used when
      * publishing to maven central. In order to retry a failed publish without needing to change any

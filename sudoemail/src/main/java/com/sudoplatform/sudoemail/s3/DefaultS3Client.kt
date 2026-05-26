@@ -12,6 +12,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility
 import com.amazonaws.regions.Region
+import com.amazonaws.services.cognitoidentity.model.NotAuthorizedException
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.DeleteObjectRequest
 import com.amazonaws.services.s3.model.ListObjectsV2Request
@@ -19,6 +20,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.sudoplatform.sudoemail.s3.types.S3ClientListOutput
 import com.sudoplatform.sudoemail.s3.types.S3ClientListResult
 import com.sudoplatform.sudologging.Logger
+import com.sudoplatform.sudouser.SignInGuard
 import com.sudoplatform.sudouser.SudoUserClient
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
@@ -47,6 +49,12 @@ class DefaultS3Client(
 
     private val credentialsProvider: CognitoCredentialsProvider = sudoUserClient.getCredentialsProvider()
 
+    /**
+     * Optional [SignInGuard] for retrying S3 operations when a [NotAuthorizedException] occurs.
+     * When set, upload/download will call [SignInGuard.ensureSignedIn] and retry once on auth failure.
+     */
+    var signInGuard: SignInGuard? = null
+
     init {
         this.amazonS3Client = AmazonS3Client(this.credentialsProvider, Region.getRegion(region))
         this.transferUtility =
@@ -56,6 +64,50 @@ class DefaultS3Client(
                 .s3Client(this.amazonS3Client)
                 .defaultBucket(bucket)
                 .build()
+    }
+
+    /**
+     * Checks whether the given throwable has a [NotAuthorizedException] in its cause chain.
+     */
+    private fun isNotAuthorizedException(throwable: Throwable?): Boolean {
+        var current = throwable
+        while (current != null) {
+            if (current is NotAuthorizedException) return true
+            current = current.cause
+        }
+        return false
+    }
+
+    /**
+     * Unwraps nested [S3Exception] layers to find the original cause.
+     * Kotlin coroutine stacktrace recovery can wrap exceptions in copies, resulting in
+     * S3Exception(cause = S3Exception(cause = NotAuthorizedException)). This peels through
+     * up to 2 layers of S3Exception wrapping to reach the underlying error.
+     */
+    private fun unwrapNestedS3Exception(throwable: Throwable?): Throwable? {
+        var current = throwable
+        repeat(2) {
+            if (current is S3Exception) {
+                current = current.cause
+            }
+        }
+        return current
+    }
+
+    private fun normalizeUploadException(exception: S3Exception.UploadException): S3Exception.UploadException {
+        val nonS3Cause = unwrapNestedS3Exception(exception)
+        if (nonS3Cause == null || nonS3Cause === exception.cause) {
+            return exception
+        }
+        return S3Exception.UploadException(exception.message ?: nonS3Cause.message, cause = nonS3Cause)
+    }
+
+    private fun normalizeDownloadException(exception: S3Exception.DownloadException): S3Exception.DownloadException {
+        val nonS3Cause = unwrapNestedS3Exception(exception)
+        if (nonS3Cause == null || nonS3Cause === exception.cause) {
+            return exception
+        }
+        return S3Exception.DownloadException(exception.message ?: nonS3Cause.message, cause = nonS3Cause)
     }
 
     companion object {
@@ -84,6 +136,30 @@ class DefaultS3Client(
     }
 
     override suspend fun upload(
+        data: ByteArray,
+        objectId: String,
+        metadata: Map<String, String>?,
+        options: S3Client.KeyOptions,
+    ): String {
+        try {
+            return performUpload(data, objectId, metadata, options)
+        } catch (e: S3Exception.UploadException) {
+            val normalized = normalizeUploadException(e)
+            val guard = signInGuard
+            if (guard != null && isNotAuthorizedException(normalized.cause)) {
+                logger.info("S3 upload failed with NotAuthorizedException, attempting re-auth and retry.")
+                try {
+                    guard.ensureSignedIn()
+                    return performUpload(data, objectId, metadata, options)
+                } catch (_: Exception) {
+                    throw normalized
+                }
+            }
+            throw normalized
+        }
+    }
+
+    private suspend fun performUpload(
         data: ByteArray,
         objectId: String,
         metadata: Map<String, String>?,
@@ -159,6 +235,28 @@ class DefaultS3Client(
         }
 
     override suspend fun download(
+        key: String,
+        options: S3Client.KeyOptions,
+    ): ByteArray {
+        try {
+            return performDownload(key, options)
+        } catch (e: S3Exception.DownloadException) {
+            val normalized = normalizeDownloadException(e)
+            val guard = signInGuard
+            if (guard != null && isNotAuthorizedException(normalized.cause)) {
+                logger.info("S3 download failed with NotAuthorizedException, attempting re-auth and retry.")
+                try {
+                    guard.ensureSignedIn()
+                    return performDownload(key, options)
+                } catch (_: Exception) {
+                    throw normalized
+                }
+            }
+            throw normalized
+        }
+    }
+
+    private suspend fun performDownload(
         key: String,
         options: S3Client.KeyOptions,
     ): ByteArray =
