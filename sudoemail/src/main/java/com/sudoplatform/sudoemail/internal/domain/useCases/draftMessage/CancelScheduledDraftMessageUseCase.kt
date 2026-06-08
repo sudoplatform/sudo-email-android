@@ -61,7 +61,12 @@ internal class CancelScheduledDraftMessageUseCase(
         }
 
         try {
-            val s3Key = DefaultS3Client.constructS3KeyForDraftEmailMessage(input.emailAddressId, input.draftId)
+            val s3Key =
+                DefaultS3Client.constructS3KeyForDraftEmailMessage(
+                    input.emailAddressId,
+                    input.draftId,
+                    input.emailMaskId,
+                )
 
             return draftEmailMessageService.cancelScheduledDraftMessage(
                 CancelScheduledDraftMessageRequest(

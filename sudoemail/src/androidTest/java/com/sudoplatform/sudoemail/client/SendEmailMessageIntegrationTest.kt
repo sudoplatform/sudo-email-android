@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Anonyome Labs, Inc. All rights reserved.
+ * Copyright © 2026 Anonyome Labs, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,8 +34,8 @@ import kotlinx.coroutines.test.runTest
 import org.awaitility.Duration
 import org.awaitility.kotlin.await
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -1336,9 +1336,18 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    @Ignore("Ignore as this depends on the amount of memory on the simulator")
     fun sendEncryptedEmailShouldThrowIfMessageIsTooLarge() =
         runTest {
+            val isEmulator =
+                android.os.Build.HARDWARE
+                    .contains("ranchu") ||
+                    android.os.Build.PRODUCT
+                        .contains("sdk")
+            Assume.assumeFalse(
+                "Skipping on emulator due to memory constraints",
+                isEmulator,
+            )
+
             val configurationData = emailClient.getConfigurationData()
             val emailMessageMaxOutboundMessageSize =
                 configurationData.emailMessageMaxOutboundMessageSize

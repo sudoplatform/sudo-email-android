@@ -699,7 +699,12 @@ abstract class BaseIntegrationTest {
                 from = senderAddress.emailAddress,
                 to = to ?: listOf(senderAddress.emailAddress),
             )
-        val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, senderAddress.id)
+        val createDraftEmailMessageInput =
+            CreateDraftEmailMessageInput(
+                rfc822Data,
+                senderAddress.id,
+                emailMaskId,
+            )
         val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
 
         draftId shouldNotBe null

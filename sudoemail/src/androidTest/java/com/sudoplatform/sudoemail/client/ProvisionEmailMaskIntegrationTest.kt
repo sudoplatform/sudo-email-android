@@ -218,10 +218,9 @@ class ProvisionEmailMaskIntegrationTest : BaseIntegrationTest() {
         runTest {
             val maskLocalPart = generateSafeLocalPart("mask")
             val maskAddress = "$maskLocalPart@gmail.com"
-            val realAddress = "test@example.com"
 
             shouldThrow<SudoEmailClient.EmailMaskException.InvalidEmailAddressException> {
-                provisionEmailMask(maskAddress, realAddress, ownershipProof)
+                provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
             }
         }
 
@@ -229,10 +228,9 @@ class ProvisionEmailMaskIntegrationTest : BaseIntegrationTest() {
     fun provisionEmailMaskShouldFailWithInvalidMaskAddress() =
         runTest {
             val invalidMaskAddress = "@" + maskDomains.first()
-            val realAddress = "test@example.com"
 
             shouldThrow<SudoEmailClient.EmailMaskException.InvalidEmailAddressException> {
-                provisionEmailMask(invalidMaskAddress, realAddress, ownershipProof)
+                provisionEmailMask(invalidMaskAddress, testEmailAddress.emailAddress, ownershipProof)
             }
         }
 

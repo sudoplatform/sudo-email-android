@@ -237,6 +237,16 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendMaskedEmailMessageThrowsEmailMessageSizeLimitExceededErrorIfMessageExceedsSizeLimit() =
         runTest {
+            val isEmulator =
+                android.os.Build.HARDWARE
+                    .contains("ranchu") ||
+                    android.os.Build.PRODUCT
+                        .contains("sdk")
+            Assume.assumeFalse(
+                "Skipping on emulator due to memory constraints",
+                isEmulator,
+            )
+
             val maskLocalPart = generateSafeLocalPart("android-mask")
             val maskAddress = "$maskLocalPart@${maskDomains.first()}"
 

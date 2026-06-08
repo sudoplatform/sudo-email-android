@@ -12,11 +12,9 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessageState
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
-import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoprofiles.Sudo
@@ -253,7 +251,12 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                     from = emailAddress.emailAddress,
                     to = listOf(emailAddress.emailAddress),
                 )
-            val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id)
+            val createDraftEmailMessageInput =
+                CreateDraftEmailMessageInput(
+                    rfc822Data,
+                    emailAddress.id,
+                    mask.id,
+                )
             val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
             draftId shouldNotBe null
 
@@ -308,7 +311,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                     sendAt = sendAt,
                 )
 
-            shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {
+            shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
                 emailClient.scheduleSendDraftMessage(input)
             }
         }

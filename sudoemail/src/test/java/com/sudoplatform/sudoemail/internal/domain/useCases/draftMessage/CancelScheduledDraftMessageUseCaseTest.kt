@@ -140,6 +140,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 check { request ->
                     request.draftMessageKey.contains(emailAddressId) shouldBe true
                     request.draftMessageKey.contains(draftId) shouldBe true
+                    request.draftMessageKey.contains(emailMaskId) shouldBe true
                     request.emailAddressId shouldBe emailAddressId
                     request.emailMaskId shouldBe emailMaskId
                 },

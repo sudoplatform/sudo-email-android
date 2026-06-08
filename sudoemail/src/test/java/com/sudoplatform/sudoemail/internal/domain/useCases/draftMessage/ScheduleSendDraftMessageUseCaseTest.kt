@@ -184,12 +184,17 @@ class ScheduleSendDraftMessageUseCaseTest : BaseTests() {
             result shouldBe scheduledDraftMessageEntity
 
             verify(mockEmailAddressService).get(any())
-            verify(mockDraftEmailMessageService).getObjectMetadata(any())
+            verify(mockDraftEmailMessageService).getObjectMetadata(
+                check { s3Key ->
+                    s3Key.contains(emailMaskId) shouldBe true
+                },
+            )
             verify(mockServiceKeyManager).getSymmetricKeyData(keyId)
             verify(mockSudoUserClient).getCredentialsProvider()
             verify(mockCredentialsProvider).identityId
             verify(mockDraftEmailMessageService).scheduleSend(
                 check { request ->
+                    request.draftMessageKey.contains(emailMaskId) shouldBe true
                     request.emailAddressId shouldBe emailAddressId
                     request.emailMaskId shouldBe emailMaskId
                 },

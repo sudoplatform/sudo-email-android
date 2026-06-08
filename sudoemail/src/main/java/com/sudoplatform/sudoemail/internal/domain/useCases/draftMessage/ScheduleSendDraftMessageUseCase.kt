@@ -77,7 +77,12 @@ internal class ScheduleSendDraftMessageUseCase(
         }
 
         try {
-            val s3Key = DefaultS3Client.constructS3KeyForDraftEmailMessage(input.emailAddressId, input.id)
+            val s3Key =
+                DefaultS3Client.constructS3KeyForDraftEmailMessage(
+                    input.emailAddressId,
+                    input.id,
+                    input.emailMaskId,
+                )
 
             val (keyId) = draftEmailMessageService.getObjectMetadata(s3Key)
 
