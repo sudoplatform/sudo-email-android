@@ -35,8 +35,10 @@ class LookupEmailAddressesPublicInfoIntegrationTest : BaseIntegrationTest() {
 
     @Before
     fun setup() {
-        sudoClient.reset()
-        sudoClient.generateEncryptionKey()
+        runTest {
+            sudoClient.reset()
+            sudoClient.generateEncryptionKey()
+        }
     }
 
     @After

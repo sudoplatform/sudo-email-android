@@ -234,8 +234,10 @@ abstract class BaseIntegrationTest {
                 Logger.getLogger("org.apache.http").level = java.util.logging.Level.FINEST
             }
 
-            sudoClient.reset()
-            userClient.reset()
+            runTest {
+                sudoClient.reset()
+                userClient.reset()
+            }
 
             sudoClient.generateEncryptionKey()
             emailClient =

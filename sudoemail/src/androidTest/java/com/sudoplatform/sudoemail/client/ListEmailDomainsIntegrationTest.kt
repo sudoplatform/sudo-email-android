@@ -25,7 +25,9 @@ import org.junit.runner.RunWith
 class ListEmailDomainsIntegrationTest : BaseIntegrationTest() {
     @Before
     fun setup() {
-        sudoClient.reset()
+        runTest {
+            sudoClient.reset()
+        }
     }
 
     @After

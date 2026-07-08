@@ -55,7 +55,7 @@ class VerifyExternalEmailAddressIntegrationTest : BaseIntegrationTest() {
     fun setup() {
         runTest {
             config = emailClient.getConfigurationData()
-            runTests = config.emailMasksEnabled
+            runTests = config.externalEmailMasksEnabled
             Assume.assumeTrue("Test suite skipped due to external masks not being enabled.", runTests)
             sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null

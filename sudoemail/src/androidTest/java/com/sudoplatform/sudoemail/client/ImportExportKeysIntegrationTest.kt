@@ -18,7 +18,7 @@ import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -33,20 +33,22 @@ class ImportExportKeysIntegrationTest : BaseIntegrationTest() {
 
     @Before
     fun setup() {
-        sudoClient.reset()
-        sudoClient.generateEncryptionKey()
+        runTest {
+            sudoClient.reset()
+            sudoClient.generateEncryptionKey()
+        }
     }
 
     @After
     fun teardown() =
-        runBlocking {
+        runTest {
             sudoList.map { sudoClient.deleteSudo(it) }
             sudoClient.reset()
         }
 
     @Test
     fun exportImportKeysShouldSucceed() =
-        runBlocking {
+        runTest {
             val sudo = sudoClient.createSudo(TestData.sudo)
             sudo shouldNotBe null
             sudoList.add(sudo)
