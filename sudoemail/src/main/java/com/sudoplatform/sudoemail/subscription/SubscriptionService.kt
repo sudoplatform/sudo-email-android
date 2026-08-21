@@ -20,6 +20,7 @@ import com.sudoplatform.sudologging.AndroidUtilsLogDriver
 import com.sudoplatform.sudologging.LogLevel
 import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -121,14 +122,24 @@ internal class SubscriptionService(
                 }
             val onSubscription: (GraphQLResponse<OnEmailMessageCreatedSubscription.Data>) -> Unit = {
                 scope.launch {
-                    val createEmailMessage = it.data?.onEmailMessageCreated ?: return@launch
-                    createSubscriptionManager.emailMessageChanged(
-                        EmailMessageTransformer.graphQLToApi(
-                            deviceKeyManager,
-                            createEmailMessage.sealedEmailMessage,
-                        ),
-                        EmailMessageSubscriber.ChangeType.CREATED,
-                    )
+                    try {
+                        val createEmailMessage = it.data?.onEmailMessageCreated ?: return@launch
+                        createSubscriptionManager.emailMessageChanged(
+                            EmailMessageTransformer.graphQLToApi(
+                                deviceKeyManager,
+                                createEmailMessage.sealedEmailMessage,
+                            ),
+                            EmailMessageSubscriber.ChangeType.CREATED,
+                        )
+                    } catch (e: Exception) {
+                        when (e) {
+                            is CancellationException -> {
+                                logger.debug("Subscription coroutine cancelled: $e")
+                                throw e
+                            }
+                            else -> logger.error("Error processing email message created subscription event: $e")
+                        }
+                    }
                 }
             }
             val onSubscriptionCompleted = {
@@ -149,14 +160,24 @@ internal class SubscriptionService(
                 }
             val onSubscription: (GraphQLResponse<OnEmailMessageDeletedSubscription.Data>) -> Unit = {
                 scope.launch {
-                    val deleteEmailMessage = it.data?.onEmailMessageDeleted ?: return@launch
-                    deleteSubscriptionManager.emailMessageChanged(
-                        EmailMessageTransformer.graphQLToApi(
-                            deviceKeyManager,
-                            deleteEmailMessage.sealedEmailMessage,
-                        ),
-                        EmailMessageSubscriber.ChangeType.DELETED,
-                    )
+                    try {
+                        val deleteEmailMessage = it.data?.onEmailMessageDeleted ?: return@launch
+                        deleteSubscriptionManager.emailMessageChanged(
+                            EmailMessageTransformer.graphQLToApi(
+                                deviceKeyManager,
+                                deleteEmailMessage.sealedEmailMessage,
+                            ),
+                            EmailMessageSubscriber.ChangeType.DELETED,
+                        )
+                    } catch (e: Exception) {
+                        when (e) {
+                            is CancellationException -> {
+                                logger.debug("Subscription coroutine cancelled: $e")
+                                throw e
+                            }
+                            else -> logger.error("Error processing email message deleted subscription event: $e")
+                        }
+                    }
                 }
             }
             val onSubscriptionCompleted = {
@@ -177,14 +198,24 @@ internal class SubscriptionService(
                 }
             val onSubscription: (GraphQLResponse<OnEmailMessageUpdatedSubscription.Data>) -> Unit = {
                 scope.launch {
-                    val updateEmailMessage = it.data?.onEmailMessageUpdated ?: return@launch
-                    updateSubscriptionManager.emailMessageChanged(
-                        EmailMessageTransformer.graphQLToApi(
-                            deviceKeyManager,
-                            updateEmailMessage.sealedEmailMessage,
-                        ),
-                        EmailMessageSubscriber.ChangeType.UPDATED,
-                    )
+                    try {
+                        val updateEmailMessage = it.data?.onEmailMessageUpdated ?: return@launch
+                        updateSubscriptionManager.emailMessageChanged(
+                            EmailMessageTransformer.graphQLToApi(
+                                deviceKeyManager,
+                                updateEmailMessage.sealedEmailMessage,
+                            ),
+                            EmailMessageSubscriber.ChangeType.UPDATED,
+                        )
+                    } catch (e: Exception) {
+                        when (e) {
+                            is CancellationException -> {
+                                logger.debug("Subscription coroutine cancelled: $e")
+                                throw e
+                            }
+                            else -> logger.error("Error processing email message updated subscription event: $e")
+                        }
+                    }
                 }
             }
             val onSubscriptionCompleted = {

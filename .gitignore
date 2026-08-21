@@ -63,6 +63,9 @@ secret.properties
 sudoemail/src/main/assets/**
 **/jacoco.exec
 
+sudoemail/src/androidTest/assets/sudoplatformconfig.json
+sudoemail/src/androidTest/assets/api.key
+
 # MCP
 .mcp-project.json
 
