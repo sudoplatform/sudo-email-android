@@ -248,7 +248,7 @@ internal class DefaultEmailMessageDataProcessor(
         val (inlineAttachments, attachments) =
             allAttachments
                 .partition {
-                    it.inlineAttachment || (it.contentId.isNotEmpty() && body.contains("cid:${it.contentId}"))
+                    this.isValidInlineAttachment(it, body)
                 }.let { (inline, regular) ->
                     inline.map { it.copy(inlineAttachment = true) } to regular.map { it.copy(inlineAttachment = false) }
                 }
@@ -265,6 +265,15 @@ internal class DefaultEmailMessageDataProcessor(
             inlineAttachments,
         )
     }
+
+    private fun isValidInlineAttachment(
+        attachment: EmailAttachmentEntity,
+        body: String,
+    ): Boolean =
+        attachment.inlineAttachment &&
+            attachment.contentId.isNotEmpty() &&
+            body.contains("cid:${attachment.contentId}") &&
+            attachment.fileName.isNotEmpty()
 
     /**
      * Partition the email body [Part]s into [ViewablePart]s and [EmailAttachmentEntity]s.

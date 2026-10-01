@@ -12,6 +12,7 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMask
+import com.sudoplatform.sudoemail.types.EmailMaskRealAddressType
 import com.sudoplatform.sudoemail.types.EmailMaskStatus
 import com.sudoplatform.sudoemail.types.inputs.DisableEmailMaskInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMaskInput
@@ -465,6 +466,121 @@ class UpdateEmailMaskIntegrationTest : BaseIntegrationTest() {
                 // Null inputs should preserve existing values
                 metadata shouldBe provisionedMask.metadata
                 expiresAt shouldBe provisionedMask.expiresAt
+            }
+        }
+
+    @Test
+    fun updateEmailMaskShouldThrowWhenMaskIsNotExternal() =
+        runTest {
+            Assume.assumeTrue(
+                "Test skipped due to external masks not being enabled.",
+                emailClient.getConfigurationData().externalEmailMasksEnabled,
+            )
+
+            // Provision an internal mask (real address is a provisioned Sudo email address)
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+
+            val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
+            emailMaskList.add(provisionedMask)
+            provisionedMask.realAddressType shouldBe EmailMaskRealAddressType.INTERNAL
+
+            val updateInput =
+                UpdateEmailMaskInput(
+                    emailMaskId = provisionedMask.id,
+                    realAddress = "new@example.com",
+                )
+
+            shouldThrow<SudoEmailClient.EmailMaskException.InvalidArgumentException> {
+                emailClient.updateEmailMask(updateInput)
+            }
+        }
+
+    @Test
+    fun updateEmailMaskShouldThrowWhenNewAddressIsInvalid() =
+        runTest {
+            Assume.assumeTrue(
+                "Test skipped due to external masks not being enabled.",
+                emailClient.getConfigurationData().externalEmailMasksEnabled,
+            )
+
+            // Provision an external mask (real address is an external email address)
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+
+            val provisionedMask = provisionEmailMask(maskAddress, "test@sudoplatform.com", ownershipProof)
+            emailMaskList.add(provisionedMask)
+            provisionedMask.realAddressType shouldBe EmailMaskRealAddressType.EXTERNAL
+
+            val updateInput =
+                UpdateEmailMaskInput(
+                    emailMaskId = provisionedMask.id,
+                    realAddress = "not-a-valid-email",
+                )
+
+            shouldThrow<SudoEmailClient.EmailMaskException.InvalidEmailAddressException> {
+                emailClient.updateEmailMask(updateInput)
+            }
+        }
+
+    @Test
+    fun updateEmailMaskShouldThrowWhenNewAddressIsInternal() =
+        runTest {
+            Assume.assumeTrue(
+                "Test skipped due to external masks not being enabled.",
+                emailClient.getConfigurationData().externalEmailMasksEnabled,
+            )
+
+            // Provision an external mask, then attempt to set the real address to an internal (Sudo) address
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+
+            val provisionedMask = provisionEmailMask(maskAddress, "test@sudoplatform.com", ownershipProof)
+            emailMaskList.add(provisionedMask)
+            provisionedMask.realAddressType shouldBe EmailMaskRealAddressType.EXTERNAL
+
+            val updateInput =
+                UpdateEmailMaskInput(
+                    emailMaskId = provisionedMask.id,
+                    realAddress = testEmailAddress.emailAddress,
+                )
+
+            shouldThrow<SudoEmailClient.EmailMaskException.InvalidArgumentException> {
+                emailClient.updateEmailMask(updateInput)
+            }
+        }
+
+    @Test
+    fun updateEmailMaskShouldUpdateRealAddressSuccessfully() =
+        runTest {
+            Assume.assumeTrue(
+                "Test skipped due to external masks not being enabled.",
+                emailClient.getConfigurationData().externalEmailMasksEnabled,
+            )
+
+            val newAddress = "new@example.com"
+
+            // Provision an external mask (real address is an external email address)
+            val maskLocalPart = generateSafeLocalPart("mask")
+            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
+
+            val provisionedMask = provisionEmailMask(maskAddress, "test@sudoplatform.com", ownershipProof)
+            emailMaskList.add(provisionedMask)
+            provisionedMask.realAddressType shouldBe EmailMaskRealAddressType.EXTERNAL
+
+            val updateInput =
+                UpdateEmailMaskInput(
+                    emailMaskId = provisionedMask.id,
+                    realAddress = newAddress,
+                )
+            val result = emailClient.updateEmailMask(updateInput)
+
+            with(result) {
+                id shouldBe provisionedMask.id
+                realAddress shouldBe newAddress
+                version shouldBe provisionedMask.version + 1
+                updatedAt.time shouldBeGreaterThan provisionedMask.updatedAt.time
+                maskAddress shouldBe provisionedMask.maskAddress
             }
         }
 }

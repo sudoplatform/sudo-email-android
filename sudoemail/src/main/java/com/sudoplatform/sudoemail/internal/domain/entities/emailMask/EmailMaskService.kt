@@ -37,6 +37,7 @@ internal data class DeprovisionEmailMaskRequest(
  * @property id [String] The ID of the email mask to update.
  * @property metadata [SealedAttributeInput] Optional sealed metadata for the email mask.
  * @property expiresAt [Date] Optional expiration date for the email mask.
+ * @property realAddress [String] Optional real email address for the email mask. Only valid for external masks in a pending state.
  */
 internal data class UpdateEmailMaskRequest(
     val id: String,
@@ -44,6 +45,7 @@ internal data class UpdateEmailMaskRequest(
     val clearMetadata: Boolean = false,
     val expiresAt: Date? = null,
     val clearExpiresAt: Boolean = false,
+    val realAddress: String? = null,
 )
 
 /**

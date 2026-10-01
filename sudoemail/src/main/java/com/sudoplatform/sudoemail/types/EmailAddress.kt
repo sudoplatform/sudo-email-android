@@ -19,6 +19,7 @@ import java.util.Date
  * @property emailAddress [String] Address in format 'local-part@domain' of the email.
  * @property size [Double] The total size of all email messages assigned to the email address in bytes.
  * @property numberOfEmailMessages [Int] The total number of email messages assigned to the email address.
+ * Drafts are messages that have not yet been sent or received, so they are not considered in this count.
  * @property version [Int] Current version of the email address.
  * @property createdAt [Date] When the email address was created.
  * @property updatedAt [Date] When the email address was last updated.

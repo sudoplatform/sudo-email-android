@@ -147,6 +147,7 @@ internal class GraphQLEmailMaskService(
                     id = input.id,
                     metadata = metadata,
                     expiresAtEpochSec = expiresAtEpochSec,
+                    realAddress = Optional.presentIfNotNull(input.realAddress),
                 )
             val mutationResponse = apiClient.updateEmailMaskMutation(mutationInput)
 

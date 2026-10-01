@@ -19,6 +19,7 @@ import com.sudoplatform.sudoemail.secure.EmailCryptoService
 import com.sudoplatform.sudoemail.secure.types.SecureEmailAttachmentType
 import com.sudoplatform.sudoemail.secure.types.SecurePackage
 import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
@@ -51,6 +52,7 @@ class DefaultEmailMessageDataProcessorTest {
         private const val DELIVERY_FAILED_PLAIN_SERVER_PLAIN_ATTACHED_EMAIL = "delivery_failed_plain_server_plain_attached.eml"
         private const val DELIVERY_FAILED_PLAIN_SERVER_HTML_ATTACHED_EMAIL = "delivery_failed_plain_server_html_attached.eml"
         private const val MEETING_INVITE_EMAIL = "meeting_invite.eml"
+        private const val RAW_EMAIL_WITH_INLINE_PDF_ATTACHMENT = "email_with_inline_pdf_attachment.eml"
     }
 
     val context: Context = ApplicationProvider.getApplicationContext()
@@ -303,7 +305,7 @@ class DefaultEmailMessageDataProcessorTest {
                 cc = listOf(ccInput),
                 bcc = listOf(bccInput),
                 subject = subjectInput,
-                body = bodyInput,
+                body = "$bodyInput cid:${inlineAttachment.contentId}",
                 attachments = listOf(attachment),
                 inlineAttachments = listOf(inlineAttachment),
                 encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
@@ -316,7 +318,7 @@ class DefaultEmailMessageDataProcessorTest {
             cc shouldContainExactlyInAnyOrder listOf(ccInput)
             bcc shouldContainExactlyInAnyOrder listOf(bccInput)
             subject shouldBe subjectInput
-            body shouldBe bodyInput
+            body shouldContain bodyInput
             isHtml shouldBe false
             with(attachments.first()) {
                 fileName shouldBe attachment.fileName
@@ -331,6 +333,28 @@ class DefaultEmailMessageDataProcessorTest {
                 mimeType shouldBe inlineAttachment.mimeType
                 inlineAttachments.first().inlineAttachment shouldBe true
                 data shouldBe inlineAttachment.data
+            }
+        }
+    }
+
+    @Test
+    fun shouldParseMessageWithInlinePdfAttachment() {
+        val rawEmail = getRawEmail(RAW_EMAIL_WITH_INLINE_PDF_ATTACHMENT)
+
+        val message = DefaultEmailMessageDataProcessor(context).parseInternetMessageData(rawEmail)
+
+        with(message) {
+            from shouldContainExactlyInAnyOrder listOf(fromInput)
+            to shouldContainExactlyInAnyOrder listOf(toInput)
+            cc shouldContainExactlyInAnyOrder listOf(ccInput)
+            bcc shouldContainExactlyInAnyOrder listOf(bccInput)
+            subject shouldBe subjectInput
+            body shouldContain "Hello there from all the toys"
+            inlineAttachments.size shouldBe 0
+            with(attachments.first()) {
+                fileName shouldBe "lorem-ipsum.pdf"
+                mimeType shouldBe "application/pdf"
+                attachments.first().inlineAttachment shouldBe false
             }
         }
     }
@@ -378,22 +402,20 @@ class DefaultEmailMessageDataProcessorTest {
             )
             isHtml shouldBe true
 
-            attachments.size shouldBe 1
-            with(attachments.first()) {
+            attachments.size shouldBe 2
+            with(attachments[0]) {
+                fileName shouldBe "oczami-golebia.jpg"
+                contentId shouldBe "15ffdee8dd14254a3fe1"
+                mimeType shouldBe "image/jpeg"
+                inlineAttachment shouldBe false
+                data.size shouldBe 61728
+            }
+            with(attachments[1]) {
                 fileName shouldBe "sample_file.jpg"
                 contentId shouldBe "15ffdeead5ee90dd7642"
                 mimeType shouldBe "image/jpeg"
                 inlineAttachment shouldBe false
                 data.size shouldBe 1253432
-            }
-
-            inlineAttachments.size shouldBe 1
-            with(inlineAttachments.first()) {
-                fileName shouldBe "oczami-golebia.jpg"
-                contentId shouldBe "15ffdee8dd14254a3fe1"
-                mimeType shouldBe "image/jpeg"
-                inlineAttachment shouldBe true
-                data.size shouldBe 61728
             }
         }
     }

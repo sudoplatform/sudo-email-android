@@ -88,7 +88,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
             maskDomains.size shouldBeGreaterThanOrEqual 1
 
             // Create email address for testing
-            testEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            testEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-pers")
             emailAddressList.add(testEmailAddress)
 
             if (testSentEmailBucket == null) {
@@ -114,20 +114,24 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
     @After
     fun teardown() =
         runTest {
-            if (emailMaskList.isNotEmpty()) {
-                emailMaskList.map {
-                    emailClient.deprovisionEmailMask(
-                        DeprovisionEmailMaskInput(it.id),
-                    )
+            try {
+                if (emailMaskList.isNotEmpty()) {
+                    emailMaskList.map {
+                        emailClient.deprovisionEmailMask(
+                            DeprovisionEmailMaskInput(it.id),
+                        )
+                    }
                 }
+                if (emailAddressList.isNotEmpty()) {
+                    emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
+                }
+                if (sudoList.isNotEmpty()) {
+                    sudoList.map { sudoClient.deleteSudo(it) }
+                }
+                sudoClient.reset()
+            } catch (e: Exception) {
+                // No-op
             }
-            if (emailAddressList.isNotEmpty()) {
-                emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            }
-            if (sudoList.isNotEmpty()) {
-                sudoList.map { sudoClient.deleteSudo(it) }
-            }
-            sudoClient.reset()
             if (runTests && testSentEmailBucket == null) {
                 externalTestAccount.closeConnection()
             }
@@ -630,7 +634,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
                 provisionEmailAddress(
                     emailClient,
                     ownershipProof,
-                    prefix = "internalRecipient",
+                    prefix = "internal-recipient",
                 )
             val provisionedMask = provisionEmailMask(maskAddress, testEmailAddress.emailAddress, ownershipProof)
             emailMaskList.add(provisionedMask)
@@ -1111,7 +1115,7 @@ class SendMaskedEmailMessageIntegrationTest : BaseIntegrationTest() {
                 provisionEmailAddress(
                     emailClient,
                     ownershipProof,
-                    prefix = "internalRecipient",
+                    prefix = "internal-recipient",
                 )
             val timestamp = Date()
 

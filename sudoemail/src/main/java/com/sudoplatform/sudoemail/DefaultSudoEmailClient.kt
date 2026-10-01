@@ -1198,6 +1198,7 @@ internal class DefaultSudoEmailClient(
                     input.emailMaskId,
                     input.metadata,
                     input.expiresAt,
+                    input.realAddress,
                 ),
             )
         return EmailMaskTransformer.unsealedEntityToApi(result)

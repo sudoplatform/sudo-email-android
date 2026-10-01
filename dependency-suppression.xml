@@ -272,4 +272,13 @@
         <cve>CVE-2026-54514</cve>
         <cve>CVE-2026-54515</cve>
     </suppress>
+    <suppress until="2027-07-01">
+        <notes><![CDATA[
+   file name: freemarker-2.3.32.jar
+   FreeMarker is a transitive build-tooling dependency (dependency-check / Dokka reports), not shipped
+   in the release artifact. The CVE-2026-84939 vulnerable path is not reachable in this project.
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.freemarker/freemarker@.*$</packageUrl>
+        <cve>CVE-2026-84939</cve>
+    </suppress>
 </suppressions>

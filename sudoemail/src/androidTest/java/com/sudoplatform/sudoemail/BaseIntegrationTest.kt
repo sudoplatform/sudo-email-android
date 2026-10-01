@@ -24,6 +24,7 @@ import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
@@ -55,6 +56,7 @@ import org.awaitility.kotlin.has
 import org.awaitility.kotlin.untilCallTo
 import org.junit.AfterClass
 import org.junit.BeforeClass
+import org.junit.Rule
 import timber.log.Timber
 import java.util.Date
 import java.util.UUID
@@ -78,6 +80,14 @@ data class MessageDetails(
  * Test the operation of the [SudoEmailClient].
  */
 abstract class BaseIntegrationTest {
+    /**
+     * Retries a failing integration test before reporting it as failed, to mitigate
+     * flakiness in the on-device test suite. Inherited by every subclass, so all
+     * integration tests get retry behaviour without per-class configuration.
+     */
+    @get:Rule
+    val retryRule = RetryRule(0)
+
     protected val toSimulatorAddress = "ooto@simulator.amazonses.com"
     protected val successSimulatorAddress = "success@simulator.amazonses.com"
     protected val ootoResponseSubjectPrefix = "Out of the Office: "
@@ -112,7 +122,8 @@ abstract class BaseIntegrationTest {
                 Entitlement("sudoplatform.email.emailMessageReceiveUserEntitled", "test", 1),
                 Entitlement("sudoplatform.email.emailAddressMaxProvisionsExpendable", "test", 60),
                 Entitlement("sudoplatform.email.emailMaskUserEntitled", "test", 1),
-                Entitlement("sudoplatform.email.emailMaskMaxPerUser", "test", 100),
+                Entitlement("sudoplatform.email.emailMaskMaxPerUser", "test", 50),
+                Entitlement("sudoplatform.email.emailMaskMaxProvisionsExpendable", "test", 100),
             )
 
         @JvmStatic
@@ -320,6 +331,7 @@ abstract class BaseIntegrationTest {
         keyId: String? = null,
         prefix: String? = null,
         mixedCaseEmail: Boolean? = false,
+        waitForConsistency: Boolean = true,
     ): EmailAddress {
         val emailDomains = client.listEmailDomains()
         emailDomains.size shouldBeGreaterThanOrEqual 1
@@ -334,6 +346,9 @@ abstract class BaseIntegrationTest {
                 keyId = keyId,
             )
         val provisionedEmailAddress = client.provisionEmailAddress(provisionInput)
+        if (waitForConsistency) {
+            waitForEmailAddress(provisionedEmailAddress.id)
+        }
         if (mixedCaseEmail != true) {
             return provisionedEmailAddress
         }
@@ -462,6 +477,29 @@ abstract class BaseIntegrationTest {
     ): EmailFolder? {
         val listFoldersInput = ListEmailFoldersForEmailAddressIdInput(emailAddressId)
         return client.listEmailFoldersForEmailAddressId(listFoldersInput).items.find { it.folderName == folderName }
+    }
+
+    /**
+     * Wait for a provisioned email address to become queryable.
+     *
+     * Provisioning can be eventually consistent: [SudoEmailClient.provisionEmailAddress]
+     * may return before the address is retrievable by id, which causes downstream calls
+     * (e.g. provisioning a mask against it) to fail with `EmailAddressNotFoundException`.
+     * Poll until the address is visible before proceeding.
+     */
+    protected fun waitForEmailAddress(
+        id: String,
+        timeout: Duration = Duration.TEN_SECONDS,
+    ) {
+        Awaitility
+            .await("email address $id to be queryable")
+            .atMost(timeout)
+            .pollInterval(Duration.ONE_SECOND)
+            .until {
+                runBlocking {
+                    emailClient.getEmailAddress(GetEmailAddressInput(id)) != null
+                }
+            }
     }
 
     /** Wait for single message to arrive. */

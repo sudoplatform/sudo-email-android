@@ -332,67 +332,67 @@ input BooleanFilterInput {
 }
 
 input ProvisionEmailMaskPublicKeyInput {
-    keyId: String!
-    algorithm: String!
-    keyFormat: KeyFormat!
-    publicKey: String!
+  keyId: String!
+  algorithm: String!
+  keyFormat: KeyFormat!
+  publicKey: String!
 }
 
 input ProvisionEmailMaskInput {
-    maskAddress: String!
-    realAddress: String!
-    metadata: SealedAttributeInput
-    expiresAtEpochSec: Int
-    ownershipProofTokens: [String!]!
-    key: ProvisionEmailMaskPublicKeyInput!
+  maskAddress: String!
+  realAddress: String!
+  metadata: SealedAttributeInput
+  expiresAtEpochSec: Int
+  ownershipProofTokens: [String!]!
+  key: ProvisionEmailMaskPublicKeyInput!
 }
 
 input DeprovisionEmailMaskInput {
-    emailMaskId: ID!
+  emailMaskId: ID!
 }
 
 input UpdateEmailMaskInput {
-    id: ID!
-    metadata: SealedAttributeInput
-    expiresAtEpochSec: Int
+  id: ID!
+  metadata: SealedAttributeInput
+  expiresAtEpochSec: Int
+  realAddress: String
 }
 
 input EnableEmailMaskInput {
-    emailMaskId: ID!
+  emailMaskId: ID!
 }
 
 input DisableEmailMaskInput {
-    emailMaskId: ID!
+  emailMaskId: ID!
 }
 
 input EmailMaskStatusFilterInput {
-    ne: EmailMaskStatus
-    eq: EmailMaskStatus
-    in: [EmailMaskStatus]
-    notIn: [EmailMaskStatus]
+  ne: EmailMaskStatus
+  eq: EmailMaskStatus
+  in: [EmailMaskStatus]
+  notIn: [EmailMaskStatus]
 }
 
 input EmailMaskRealAddressTypeFilterInput {
-    ne: EmailMaskRealAddressType
-    eq: EmailMaskRealAddressType
-    in: [EmailMaskRealAddressType]
-    notIn: [EmailMaskRealAddressType]
+  ne: EmailMaskRealAddressType
+  eq: EmailMaskRealAddressType
+  in: [EmailMaskRealAddressType]
+  notIn: [EmailMaskRealAddressType]
 }
 
 input EmailMaskFilterInput {
-    status: EmailMaskStatusFilterInput
-    realAddressType: EmailMaskRealAddressTypeFilterInput
-    and: [EmailMaskFilterInput]
-    or: [EmailMaskFilterInput]
-    not: EmailMaskFilterInput
+  status: EmailMaskStatusFilterInput
+  realAddressType: EmailMaskRealAddressTypeFilterInput
+  and: [EmailMaskFilterInput]
+  or: [EmailMaskFilterInput]
+  not: EmailMaskFilterInput
 }
 
 input ListEmailMasksForOwnerInput {
-    filter: EmailMaskFilterInput
-    limit: Int
-    nextToken: String
+  filter: EmailMaskFilterInput
+  limit: Int
+  nextToken: String
 }
-
 
 enum BlockedAddressHashAlgorithm {
   SHA256
@@ -452,12 +452,12 @@ input DeleteMessagesByFolderIdInput {
 }
 
 input ScheduleSendDraftMessageInput {
-   draftMessageKey: String!
-   emailAddressId: ID!
-   emailMaskId: ID
-   sendAtEpochMs: Float!
-   symmetricKey: String!
- }
+  draftMessageKey: String!
+  emailAddressId: ID!
+  emailMaskId: ID
+  sendAtEpochMs: Float!
+  symmetricKey: String!
+}
 
 input CancelScheduledDraftMessageInput {
   draftMessageKey: String!
@@ -497,8 +497,8 @@ type Owner {
 }
 
 type Rfc822DataAttributesType {
-    bucket: String!
-    key: String!
+  bucket: String!
+  key: String!
 }
 
 type EmailAddress {
@@ -607,17 +607,16 @@ type ScheduledDraftMessage {
   owners: [Owner!]!
 }
 
-
 enum EmailMaskRealAddressType {
-    INTERNAL
-    EXTERNAL
+  INTERNAL
+  EXTERNAL
 }
 
 enum EmailMaskStatus {
-    ENABLED
-    DISABLED
-    LOCKED
-    PENDING
+  ENABLED
+  DISABLED
+  LOCKED
+  PENDING
 }
 
 type EmailAddressConnection {
@@ -701,36 +700,35 @@ type ConfiguredDomains {
 }
 
 type EmailMaskDomains {
-    domains: [String!]!
+  domains: [String!]!
 }
 
 type EmailMask {
-    id: ID!
-    owner: ID!
-    owners: [Owner!]!
-    keyRingId: ID!
-    identityId: ID!
-    maskAddress: String!
-    realAddress: String!
-    realAddressType: EmailMaskRealAddressType!
-    status: EmailMaskStatus!
-    inboundReceived: Int!
-    inboundDelivered: Int!
-    outboundReceived: Int!
-    outboundDelivered: Int!
-    spamCount: Int!
-    virusCount: Int!
-    metadata: SealedAttribute
-    expiresAtEpochSec: Int
-    createdAtEpochMs: Float!
-    updatedAtEpochMs: Float!
-    version: Int!
+  id: ID!
+  owner: ID!
+  owners: [Owner!]!
+  keyRingId: ID!
+  identityId: ID!
+  maskAddress: String!
+  realAddress: String!
+  realAddressType: EmailMaskRealAddressType!
+  status: EmailMaskStatus!
+  inboundReceived: Int!
+  inboundDelivered: Int!
+  outboundReceived: Int!
+  outboundDelivered: Int!
+  spamCount: Int!
+  virusCount: Int!
+  metadata: SealedAttribute
+  expiresAtEpochSec: Int
+  createdAtEpochMs: Float!
+  updatedAtEpochMs: Float!
+  version: Int!
 }
 
-
 type EmailMaskConnection {
-    items: [EmailMask!]!
-    nextToken: String
+  items: [EmailMask!]!
+  nextToken: String
 }
 type VerifyExternalEmailAddressResult {
   isVerified: Boolean!
@@ -774,9 +772,7 @@ type Query {
 
   getEmailMessage(id: ID!): SealedEmailMessage
 
-  listEmailMessages(
-    input: ListEmailMessagesInput!
-  ): EmailMessageConnection!
+  listEmailMessages(input: ListEmailMessagesInput!): EmailMessageConnection!
 
   listEmailMessagesForEmailAddressId(
     input: ListEmailMessagesForEmailAddressIdInput!
@@ -822,7 +818,9 @@ type Mutation {
 
   sendEmailMessageV2(input: SendEmailMessageInput!): SendEmailMessageResult!
 
-  sendEncryptedEmailMessage(input: SendEncryptedEmailMessageInput!): SendEmailMessageResult!
+  sendEncryptedEmailMessage(
+    input: SendEncryptedEmailMessageInput!
+  ): SendEmailMessageResult!
 
   deleteEmailMessages(input: DeleteEmailMessagesInput!): [ID!]!
 
@@ -832,9 +830,13 @@ type Mutation {
 
   updateEmailAddressMetadata(input: UpdateEmailAddressMetadataInput!): ID!
 
-  blockEmailAddresses(input: BlockEmailAddressesInput!): BlockEmailAddressesBulkUpdateResult!
+  blockEmailAddresses(
+    input: BlockEmailAddressesInput!
+  ): BlockEmailAddressesBulkUpdateResult!
 
-  unblockEmailAddresses(input: UnblockEmailAddressesInput!): BlockEmailAddressesBulkUpdateResult!
+  unblockEmailAddresses(
+    input: UnblockEmailAddressesInput!
+  ): BlockEmailAddressesBulkUpdateResult!
 
   createCustomEmailFolder(input: CreateCustomEmailFolderInput!): EmailFolder!
 
@@ -864,7 +866,7 @@ type Mutation {
     input: SendMaskedEmailMessageInput!
   ): SendEmailMessageResult!
 
-    verifyExternalEmailAddress(
+  verifyExternalEmailAddress(
     input: VerifyExternalEmailAddressInput!
   ): VerifyExternalEmailAddressResult
 }

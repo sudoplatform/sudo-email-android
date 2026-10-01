@@ -574,6 +574,7 @@ class GraphQLEmailMaskServiceTest : BaseTests() {
                     input.id shouldBe "mockEmailMaskId"
                     input.metadata shouldBe Optional.absent()
                     input.expiresAtEpochSec shouldBe Optional.absent()
+                    input.realAddress shouldBe Optional.absent()
                 },
             )
         }
@@ -696,6 +697,37 @@ class GraphQLEmailMaskServiceTest : BaseTests() {
                     input.id shouldBe "mockEmailMaskId"
                     input.metadata shouldNotBe Optional.absent()
                     input.expiresAtEpochSec shouldNotBe Optional.absent()
+                },
+            )
+        }
+
+    @Test
+    fun `update() should include realAddress when provided`() =
+        runTest {
+            val updateEmailMaskMutationResponse = DataFactory.updateEmailMaskMutationResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    updateEmailMaskMutation(any<UpdateEmailMaskInput>())
+                } doReturn updateEmailMaskMutationResponse
+            }
+
+            val request =
+                UpdateEmailMaskRequest(
+                    id = "mockEmailMaskId",
+                    realAddress = "new@example.com",
+                )
+
+            val result = instanceUnderTest.update(request)
+
+            result shouldNotBe null
+            result.id shouldBe "mockEmailMaskId"
+
+            verify(mockApiClient).updateEmailMaskMutation(
+                check { input ->
+                    input.id shouldBe "mockEmailMaskId"
+                    input.metadata shouldBe Optional.absent()
+                    input.expiresAtEpochSec shouldBe Optional.absent()
+                    input.realAddress shouldBe Optional.presentIfNotNull("new@example.com")
                 },
             )
         }

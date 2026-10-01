@@ -167,7 +167,7 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
                     emailClient,
                     emailAddress,
                     toAddresses = listOf(EmailMessage.EmailAddress(receiverEmailAddress.emailAddress)),
-                    body = messageBody,
+                    body = "$messageBody cid:${inlineAttachment.contentId}",
                     attachments = listOf(attachment),
                     inlineAttachments = listOf(inlineAttachment),
                 )

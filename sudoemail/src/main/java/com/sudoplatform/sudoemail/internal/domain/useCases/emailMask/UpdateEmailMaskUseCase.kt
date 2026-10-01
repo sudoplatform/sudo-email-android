@@ -29,11 +29,13 @@ import java.util.Date
  * @property id [String] The ID of the email mask to update.
  * @property metadata [String] Optional new metadata for the email mask. If the empty map is provided, this will clear the metadata.
  * @property expiresAt [Date] Optional new expiration date for the email mask. If a zero date is provided, this will clear the expiration date
+ * @property realAddress [String] Optional real email address for the email mask. Only valid for external masks in a pending state.
  */
 internal data class UpdateEmailMaskUseCaseInput(
     val id: String,
     val metadata: Map<String, String>? = null,
     val expiresAt: Date? = null,
+    val realAddress: String? = null,
 )
 
 /**
@@ -115,6 +117,7 @@ internal class UpdateEmailMaskUseCase(
                     clearMetadata = clearMetadata,
                     expiresAt = expiresAt,
                     clearExpiresAt = clearExpiresAt,
+                    realAddress = input.realAddress,
                 )
 
             val updatedEmailMask = emailMaskService.update(updateEmailMaskRequest)
