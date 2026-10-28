@@ -113,20 +113,20 @@ class SudoEmailUpdateDraftEmailMessageTest : BaseTests() {
         }
 
     @Test
-    fun `updateDraftEmailMessage should pass email mask id when provided`() =
+    fun `updateDraftEmailMessage should pass email alias id when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
-            val inputWithEmailMaskId =
+            val emailAliasId = "emailAliasId"
+            val inputWithEmailAliasId =
                 UpdateDraftEmailMessageInput(
                     id = input.id,
                     rfc822Data = input.rfc822Data,
                     senderEmailAddressId = input.senderEmailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.updateDraftEmailMessage(inputWithEmailMaskId)
+                    client.updateDraftEmailMessage(inputWithEmailAliasId)
                 }
             deferredResult.start()
             val result = deferredResult.await()
@@ -135,10 +135,10 @@ class SudoEmailUpdateDraftEmailMessageTest : BaseTests() {
             verify(mockUseCaseFactory).createUpdateDraftEmailMessageUseCase()
             verify(mockUseCase).execute(
                 check { useCaseInput ->
-                    useCaseInput.rfc822Data shouldBe inputWithEmailMaskId.rfc822Data
-                    useCaseInput.emailAddressId shouldBe inputWithEmailMaskId.senderEmailAddressId
-                    useCaseInput.emailMaskId shouldBe emailMaskId
-                    useCaseInput.draftId shouldBe inputWithEmailMaskId.id
+                    useCaseInput.rfc822Data shouldBe inputWithEmailAliasId.rfc822Data
+                    useCaseInput.emailAddressId shouldBe inputWithEmailAliasId.senderEmailAddressId
+                    useCaseInput.emailAliasId shouldBe emailAliasId
+                    useCaseInput.draftId shouldBe inputWithEmailAliasId.id
                 },
             )
         }

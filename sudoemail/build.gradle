@@ -52,6 +52,17 @@ android {
     }
 
     testOptions {
+        managedDevices {
+            localDevices {
+                googleAtdApi33 {
+                    device = "Pixel 7"
+                    apiLevel = 33
+                    systemImageSource = "google-atd"
+                    testedAbi = "x86_64"
+                }
+            }
+        }
+
         unitTests.includeAndroidResources = true
         unitTests.returnDefaultValues = true
         unitTests.all {
@@ -345,6 +356,19 @@ if (project.findProperty("tag") &&
     apply from: "${rootProject.projectDir}/util/publish-mavencentral.gradle"
 } else if (project.file("${rootProject.projectDir}/util/publish-internal-android.gradle").exists()) {
     apply from: "${rootProject.projectDir}/util/publish-internal-android.gradle"
+}
+
+// Robolectric resolves its android-all-instrumented runtime jars through its own Maven resolver
+// at test time, bypassing Gradle's repositories and defaulting to public Maven Central. In CI
+// (CODEARTIFACT_AUTH_TOKEN set) point it at the CodeArtifact pull-through so it never hits — and
+// rate-limit-fails on — Maven Central. Locally it falls back to its Maven Central default.
+if (System.getenv("CODEARTIFACT_AUTH_TOKEN")) {
+    tasks.withType(Test).configureEach {
+        systemProperty "robolectric.dependency.repo.url", (findProperty("codeartifactMavenCentralUrl") ?: "https://anonyome-947875592751.d.codeartifact.us-east-1.amazonaws.com/maven/maven-central-store/")
+        systemProperty "robolectric.dependency.repo.id", "codeartifact"
+        systemProperty "robolectric.dependency.repo.username", "aws"
+        systemProperty "robolectric.dependency.repo.password", System.getenv("CODEARTIFACT_AUTH_TOKEN")
+    }
 }
 
 configurations.all {

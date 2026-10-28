@@ -1,1 +1,26 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        // In CI, CODEARTIFACT_AUTH_TOKEN is set and Maven Central is resolved through the
+        // AWS CodeArtifact pull-through cache. Locally the token is absent, so we use
+        // mavenCentral() directly.
+        if (System.getenv("CODEARTIFACT_AUTH_TOKEN")) {
+            maven {
+                name = "CodeArtifact Maven Central"
+                url = uri(providers.gradleProperty("codeartifactMavenCentralUrl").get())
+                credentials {
+                    username = "aws"
+                    password = System.getenv("CODEARTIFACT_AUTH_TOKEN")
+                }
+                content {
+                    excludeGroup("com.anonyome")
+                }
+            }
+        } else {
+            mavenCentral()
+        }
+    }
+}
+
 include ':sudoemail'

@@ -111,19 +111,19 @@ class SudoEmailCreateDraftEmailMessageTest : BaseTests() {
         }
 
     @Test
-    fun `createDraftEmailMessage should pass email mask id when provided`() =
+    fun `createDraftEmailMessage should pass email alias id when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
-            val inputWithEmailMaskId =
+            val emailAliasId = "emailAliasId"
+            val inputWithEmailAliasId =
                 CreateDraftEmailMessageInput(
                     rfc822Data = input.rfc822Data,
                     senderEmailAddressId = input.senderEmailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             val deferredResult =
                 async(StandardTestDispatcher(testScheduler)) {
-                    client.createDraftEmailMessage(inputWithEmailMaskId)
+                    client.createDraftEmailMessage(inputWithEmailAliasId)
                 }
             deferredResult.start()
             val result = deferredResult.await()
@@ -132,9 +132,9 @@ class SudoEmailCreateDraftEmailMessageTest : BaseTests() {
             verify(mockUseCaseFactory).createCreateDraftEmailMessageUseCase()
             verify(mockUseCase).execute(
                 check { useCaseInput ->
-                    useCaseInput.rfc822Data shouldBe inputWithEmailMaskId.rfc822Data
-                    useCaseInput.emailAddressId shouldBe inputWithEmailMaskId.senderEmailAddressId
-                    useCaseInput.emailMaskId shouldBe emailMaskId
+                    useCaseInput.rfc822Data shouldBe inputWithEmailAliasId.rfc822Data
+                    useCaseInput.emailAddressId shouldBe inputWithEmailAliasId.senderEmailAddressId
+                    useCaseInput.emailAliasId shouldBe emailAliasId
                 },
             )
         }

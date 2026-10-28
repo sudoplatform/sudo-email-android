@@ -40,7 +40,7 @@ import java.util.Date
 class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
     private val dummyDraftId = "dummyId"
     private val dummyEmailAddressId = "dummyEmailAddressId"
-    private val dummyEmailMaskId = "dummyEmailMaskId"
+    private val dummyEmailAliasId = "dummyEmailAliasId"
     private val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
     private val input by before {
         ScheduleSendDraftMessageInput(
@@ -50,11 +50,11 @@ class SudoEmailScheduleSendDraftMessageTest : BaseTests() {
             sendAt,
         )
     }
-    private val inputWithMask by before {
+    private val inputWithAlias by before {
         ScheduleSendDraftMessageInput(
             dummyDraftId,
             dummyEmailAddressId,
-            dummyEmailMaskId,
+            dummyEmailAliasId,
             sendAt,
         )
     }

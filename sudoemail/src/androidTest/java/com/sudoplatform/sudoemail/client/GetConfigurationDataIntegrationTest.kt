@@ -54,8 +54,8 @@ class GetConfigurationDataIntegrationTest : BaseIntegrationTest() {
                 emailMessageMaxOutboundMessageSize shouldBeGreaterThanOrEqual 1
                 emailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
                 encryptedEmailMessageRecipientsLimit shouldBeGreaterThanOrEqual 1
-                externalEmailMasksEnabled shouldNotBe null
-                emailMasksEnabled shouldNotBe null
+                externalEmailAliasesEnabled shouldNotBe null
+                emailAliasesEnabled shouldNotBe null
                 allowOwnerEmailAddressReuse shouldNotBe null
             }
         }

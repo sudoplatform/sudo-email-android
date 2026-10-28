@@ -24,12 +24,12 @@ import com.sudoplatform.sudologging.Logger
  *
  * @property ids [List] of [String] draft message IDs to delete.
  * @property emailAddressId [String] The email address ID associated with the drafts.
- * @property emailMaskId [String?] The identifier of the email mask associated with the draft email messages, if any
+ * @property emailAliasId [String?] The identifier of the email alias associated with the draft email messages, if any
  */
 internal data class DeleteDraftEmailMessagesUseCaseInput(
     val ids: List<String>,
     val emailAddressId: String,
-    val emailMaskId: String?,
+    val emailAliasId: String?,
 )
 
 /**
@@ -57,7 +57,7 @@ internal class DeleteDraftEmailMessagesUseCase(
         input: DeleteDraftEmailMessagesUseCaseInput,
     ): BatchOperationResultEntity<DeleteEmailMessageSuccessResultEntity, EmailMessageOperationFailureResultEntity> {
         logger.debug("DeleteDraftEmailMessagesUseCase: Executing with input: $input")
-        val (ids, emailAddressId, emailMaskId) = input
+        val (ids, emailAddressId, emailAliasId) = input
         if (emailAddressService.get(GetEmailAddressRequest(emailAddressId)) == null) {
             throw SudoEmailClient.EmailAddressException.EmailAddressNotFoundException(
                 StringConstants.EMAIL_ADDRESS_NOT_FOUND_MSG,
@@ -73,7 +73,7 @@ internal class DeleteDraftEmailMessagesUseCase(
         val deleteResult =
             draftEmailMessageService.delete(
                 DeleteDraftEmailMessagesRequest(
-                    s3Keys = ids.map { DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, it, emailMaskId) }.toSet(),
+                    s3Keys = ids.map { DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, it, emailAliasId) }.toSet(),
                 ),
             )
 
@@ -83,7 +83,7 @@ internal class DeleteDraftEmailMessagesUseCase(
                     CancelScheduledDraftMessageRequest(
                         draftMessageKey = successResult.id,
                         emailAddressId = emailAddressId,
-                        emailMaskId = input.emailMaskId,
+                        emailAliasId = input.emailAliasId,
                     ),
                 )
             } catch (e: Throwable) {

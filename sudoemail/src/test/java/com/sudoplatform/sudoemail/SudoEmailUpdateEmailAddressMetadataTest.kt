@@ -113,7 +113,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             verify(mockUseCase).execute(
                 check { useCaseInput ->
                     useCaseInput.emailAddressId shouldBe unsealedEmailAddress.id
-                    useCaseInput.alias shouldBe input.alias
+                    useCaseInput.alias shouldBe input.displayName
                 },
             )
         }
@@ -144,7 +144,7 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             verify(mockUseCase).execute(
                 check { useCaseInput ->
                     useCaseInput.emailAddressId shouldBe unsealedEmailAddress.id
-                    useCaseInput.alias shouldBe input.alias
+                    useCaseInput.alias shouldBe input.displayName
                 },
             )
         }

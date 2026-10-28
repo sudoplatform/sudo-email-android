@@ -122,8 +122,8 @@ class GraphQLConfigurationDataServiceTest : BaseTests() {
                 emailMessageRecipientsLimit shouldBe 5
                 encryptedEmailMessageRecipientsLimit shouldBe 10
                 prohibitedFileExtensions shouldBe listOf(".js", ".exe", ".lib")
-                emailMasksEnabled shouldBe true
-                externalEmailMasksEnabled shouldBe true
+                emailAliasesEnabled shouldBe true
+                externalEmailAliasesEnabled shouldBe true
                 allowOwnerEmailAddressReuse shouldBe true
             }
 
@@ -398,10 +398,10 @@ class GraphQLConfigurationDataServiceTest : BaseTests() {
             result.isEmpty() shouldBe false
             result.size shouldBe 2
             result[0].domain shouldBe "foo.com"
-            result[0].isMaskDomain shouldBe false
+            result[0].isAliasDomain shouldBe false
             result[0].metadata shouldBe emptyMap()
             result[1].domain shouldBe "bar.com"
-            result[1].isMaskDomain shouldBe true
+            result[1].isAliasDomain shouldBe true
             result[1].metadata shouldBe mapOf("key" to "value")
 
             verify(mockApiClient).listEmailDomainsQuery()

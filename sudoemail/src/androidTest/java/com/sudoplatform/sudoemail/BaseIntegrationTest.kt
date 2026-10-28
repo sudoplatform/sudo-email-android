@@ -11,12 +11,14 @@ import android.net.Uri
 import android.os.StrictMode
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import com.sudoplatform.sudoemail.BaseIntegrationTest.Companion.cachedEmailDomains
+import com.sudoplatform.sudoemail.BaseIntegrationTest.Companion.fini
 import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
+import com.sudoplatform.sudoemail.types.EmailAlias
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudoemail.types.EmailFolder
-import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.InternetMessageFormatHeader
 import com.sudoplatform.sudoemail.types.ListAPIResult
@@ -31,7 +33,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressI
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
-import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
 import com.sudoplatform.sudoentitlements.SudoEntitlementsClient
@@ -48,12 +50,15 @@ import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import org.awaitility.Awaitility
 import org.awaitility.Duration
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.has
 import org.awaitility.kotlin.untilCallTo
+import org.awaitility.kotlin.withAlias
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -109,6 +114,26 @@ abstract class BaseIntegrationTest {
 
         @JvmStatic
         protected var region: String? = null
+
+        /**
+         * Cache of the supported email domain list, populated on first use within a
+         * class run and cleared in [fini]. [provisionEmailAddress] is called hundreds
+         * of times across the suite and the domain list is identical for the lifetime
+         * of a class, so fetching it once per class avoids a redundant network round
+         * trip on every provision. Scoped per-class (cleared in @AfterClass) so it
+         * cannot leak stale data across configs/classes.
+         */
+        @JvmStatic
+        private var cachedEmailDomains: List<EmailDomain>? = null
+
+        /**
+         * Optional shared [Sudo] for the currently-running test class, created on
+         * first use via [sharedSudo] and deleted in [fini]. Integration test classes
+         * run sequentially in a single process, so only one class's shared sudo is
+         * live at a time. Null for classes that never call [sharedSudo].
+         */
+        @JvmStatic
+        private var sharedSudoInstance: Sudo? = null
 
         @JvmStatic
         protected val entitlements =
@@ -275,20 +300,68 @@ abstract class BaseIntegrationTest {
                 if (userClient.isRegistered()) {
                     deregister()
                 }
+                // Delete the class's shared sudo (if any) before resetting the clients.
+                // Best-effort: it may already be gone if a test deleted it.
+                sharedSudoInstance?.let { sudo -> runCatching { sudoClient.deleteSudo(sudo) } }
+                sharedSudoInstance = null
                 emailClient.reset()
                 sudoClient.reset()
                 userClient.reset()
+                cachedEmailDomains = null
                 Timber.uprootAll()
             }
+
+        /**
+         * Returns the supported email domain list, fetching it from the service at
+         * most once per class run and caching the result. See [cachedEmailDomains].
+         */
+        @JvmStatic
+        private suspend fun getCachedEmailDomains(client: SudoEmailClient): List<EmailDomain> =
+            cachedEmailDomains ?: client.listEmailDomains().also { cachedEmailDomains = it }
     }
 
     protected suspend fun createSudo(sudoInput: Sudo): Sudo = sudoClient.createSudo(sudoInput)
 
     protected suspend fun getOwnershipProof(sudo: Sudo): String = sudoClient.getOwnershipProof(sudo, "sudoplatform.email.email-address")
 
-    protected suspend fun getEmailDomains(client: SudoEmailClient): List<String> = client.getSupportedEmailDomains()
+    /**
+     * Returns a [Sudo] shared across this test class, created once on first use and
+     * deleted in [fini]. Lets a class provision per-test addresses without paying for
+     * a fresh sudo each test.
+     *
+     * Created from a dedicated [Sudo] instance so its identity is distinct from any
+     * per-test sudos a class also creates and deletes from [TestData.sudo].
+     *
+     * Constraints for classes that use this:
+     * - Do NOT reset `sudoClient` / regenerate its key per test; that invalidates the
+     *   shared sudo and its key material.
+     * - A single test must stay within the `emailAddressMaxPerSudo` entitlement for
+     *   concurrently-provisioned addresses, since they all live under this sudo.
+     */
+    private val sharedSudoMutex = Mutex()
 
-    protected suspend fun getMaskDomains(client: SudoEmailClient): List<String> = client.getEmailMaskDomains()
+    protected suspend fun sharedSudo(): Sudo =
+        sharedSudoMutex.withLock {
+            sharedSudoInstance ?: createSudo(
+                Sudo(
+                    "Mr",
+                    "Theodore",
+                    "Bear",
+                    "Shopping",
+                    null,
+                    null,
+                ),
+            ).also { sharedSudoInstance = it }
+        }
+
+    /** Returns a fresh ownership proof for this class's [sharedSudo]. */
+    protected suspend fun sharedOwnershipProof(): String = getOwnershipProof(sharedSudo())
+
+    protected suspend fun getEmailDomains(client: SudoEmailClient): List<String> =
+        client.listEmailDomains().filter { !it.isAliasDomain }.map { it.domain }
+
+    protected suspend fun getAliasDomains(client: SudoEmailClient): List<String> =
+        client.listEmailDomains().filter { it.isAliasDomain }.map { it.domain }
 
     protected suspend fun listEmailDomains(client: SudoEmailClient): List<EmailDomain> = client.listEmailDomains()
 
@@ -333,16 +406,16 @@ abstract class BaseIntegrationTest {
         mixedCaseEmail: Boolean? = false,
         waitForConsistency: Boolean = true,
     ): EmailAddress {
-        val emailDomains = client.listEmailDomains()
+        val emailDomains = getCachedEmailDomains(client)
         emailDomains.size shouldBeGreaterThanOrEqual 1
 
         val localPart = generateSafeLocalPart(prefix)
-        val emailAddress = address ?: (localPart + "@" + emailDomains.first { !it.isMaskDomain }.domain)
+        val emailAddress = address ?: (localPart + "@" + emailDomains.first { !it.isAliasDomain }.domain)
         val provisionInput =
             ProvisionEmailAddressInput(
                 emailAddress = emailAddress,
                 ownershipProofToken = ownershipProofToken,
-                alias = alias,
+                displayName = alias,
                 keyId = keyId,
             )
         val provisionedEmailAddress = client.provisionEmailAddress(provisionInput)
@@ -363,30 +436,30 @@ abstract class BaseIntegrationTest {
             provisionedEmailAddress.createdAt,
             provisionedEmailAddress.updatedAt,
             provisionedEmailAddress.lastReceivedAt,
-            provisionedEmailAddress.alias,
+            provisionedEmailAddress.displayName,
             provisionedEmailAddress.folders,
         )
     }
 
-    // Helper method to provision an email mask
-    protected suspend fun provisionEmailMask(
-        maskAddress: String,
+    // Helper method to provision an email alias
+    protected suspend fun provisionEmailAlias(
+        aliasAddress: String,
         realAddress: String,
         ownershipProofToken: String,
         metadata: Map<String, String>? = null,
         expiresAt: Date? = null,
         keyId: String? = null,
-    ): EmailMask {
+    ): EmailAlias {
         val provisionInput =
-            ProvisionEmailMaskInput(
-                maskAddress = maskAddress,
+            ProvisionEmailAliasInput(
+                aliasAddress = aliasAddress,
                 realAddress = realAddress,
                 ownershipProofToken = ownershipProofToken,
                 metadata = metadata,
                 expiresAt = expiresAt,
                 keyId = keyId,
             )
-        return emailClient.provisionEmailMask(provisionInput)
+        return emailClient.provisionEmailAlias(provisionInput)
     }
 
     protected suspend fun sendEmailMessage(
@@ -417,7 +490,7 @@ abstract class BaseIntegrationTest {
             }
         val emailMessageHeader =
             InternetMessageFormatHeader(
-                EmailMessage.EmailAddress(fromAddress.emailAddress, fromAddress.alias),
+                EmailMessage.EmailAddress(fromAddress.emailAddress, fromAddress.displayName),
                 toAddresses,
                 ccAddresses,
                 bccAddresses,
@@ -522,6 +595,7 @@ abstract class BaseIntegrationTest {
         count: Int,
         listInput: ListEmailMessagesInput = ListEmailMessagesInput(),
         timeout: Duration = Duration.ONE_MINUTE,
+        traceId: String? = "",
         predicate: (EmailMessage) -> Boolean = { true },
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
         val items = mutableListOf<EmailMessage>()
@@ -530,6 +604,7 @@ abstract class BaseIntegrationTest {
         await
             .atMost(timeout)
             .pollInterval(Duration.TWO_HUNDRED_MILLISECONDS)
+            .withAlias("wait for $count messages with $listInput $traceId")
             .untilCallTo {
                 runBlocking {
                     with(emailClient) {
@@ -595,6 +670,7 @@ abstract class BaseIntegrationTest {
         listInput: ListEmailMessagesForEmailFolderIdInput,
         atMost: Duration? = Duration.ONE_MINUTE,
         pollInterval: Duration? = Duration.TWO_HUNDRED_MILLISECONDS,
+        traceId: String? = "",
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
         val items = mutableListOf<EmailMessage>()
         val failed = mutableListOf<PartialResult<PartialEmailMessage>>()
@@ -602,6 +678,7 @@ abstract class BaseIntegrationTest {
         await
             .atMost(atMost)
             .pollInterval(pollInterval)
+            .withAlias("wait for $count messages in folder ${listInput.folderId} $traceId")
             .untilCallTo {
                 runBlocking {
                     with(emailClient) {
@@ -661,6 +738,7 @@ abstract class BaseIntegrationTest {
     protected fun waitForMessagesByAddress(
         count: Int,
         listInput: ListEmailMessagesForEmailAddressIdInput,
+        traceId: String? = "",
     ): ListAPIResult<EmailMessage, PartialEmailMessage> {
         val items = mutableListOf<EmailMessage>()
         val failed = mutableListOf<PartialResult<PartialEmailMessage>>()
@@ -668,6 +746,7 @@ abstract class BaseIntegrationTest {
         await
             .atMost(Duration.ONE_MINUTE)
             .pollInterval(Duration.TWO_HUNDRED_MILLISECONDS)
+            .withAlias("wait for $count messages with for email address ${listInput.emailAddressId} $traceId")
             .untilCallTo {
                 runBlocking {
                     with(emailClient) {
@@ -725,7 +804,7 @@ abstract class BaseIntegrationTest {
     protected suspend fun scheduleSendDraftMessage(
         senderAddress: EmailAddress,
         to: List<String>? = null,
-        emailMaskId: String? = null,
+        emailAliasId: String? = null,
         sendAt: Date =
             Date(
                 Date().time +
@@ -743,7 +822,7 @@ abstract class BaseIntegrationTest {
             CreateDraftEmailMessageInput(
                 rfc822Data,
                 senderAddress.id,
-                emailMaskId,
+                emailAliasId,
             )
         val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
 
@@ -753,7 +832,7 @@ abstract class BaseIntegrationTest {
             ScheduleSendDraftMessageInput(
                 id = draftId,
                 emailAddressId = senderAddress.id,
-                emailMaskId = emailMaskId,
+                emailAliasId = emailAliasId,
                 sendAt = sendAt,
             )
 

@@ -26,7 +26,7 @@ internal object ScheduledDraftMessageTransformer {
         ScheduledDraftMessageEntity(
             id = graphQL.draftMessageKey.substringAfterLast('/'),
             emailAddressId = graphQL.emailAddressId,
-            emailMaskId = graphQL.emailMaskId,
+            emailAliasId = graphQL.emailMaskId,
             sendAt = graphQL.sendAtEpochMs.toDate(),
             owner = graphQL.owner,
             owners = graphQL.owners.map { OwnerTransformer.graphQLToEntity(it) },
@@ -45,7 +45,7 @@ internal object ScheduledDraftMessageTransformer {
         ScheduledDraftMessage(
             id = entity.id,
             emailAddressId = entity.emailAddressId,
-            emailMaskId = entity.emailMaskId,
+            emailAliasId = entity.emailAliasId,
             sendAt = entity.sendAt,
             owner = entity.owner,
             owners = entity.owners.map { OwnerTransformer.entityToApi(it) },

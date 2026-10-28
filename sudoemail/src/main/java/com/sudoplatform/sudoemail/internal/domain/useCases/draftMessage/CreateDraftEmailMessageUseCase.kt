@@ -25,12 +25,12 @@ import java.util.UUID
  *
  * @property emailAddressId [String] The email address ID to associate with the draft.
  * @property rfc822Data [ByteArray] The RFC822 formatted email message data.
- * @property emailMaskId [String?] Optional email mask ID to associate with the draft.
+ * @property emailAliasId [String?] Optional email alias ID to associate with the draft.
  */
 internal data class CreateDraftEmailMessageUseCaseInput(
     val emailAddressId: String,
     val rfc822Data: ByteArray,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -107,7 +107,7 @@ internal class CreateDraftEmailMessageUseCase(
             DefaultS3Client.constructS3KeyForDraftEmailMessage(
                 input.emailAddressId,
                 draftId,
-                input.emailMaskId,
+                input.emailAliasId,
             )
 
         saveDraftEmailMessageUseCase.execute(

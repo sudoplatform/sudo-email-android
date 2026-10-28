@@ -44,8 +44,8 @@ internal object EntityDataFactory {
         emailMessageRecipientsLimit: Int = 5,
         encryptedEmailMessageRecipientsLimit: Int = 10,
         prohibitedFileExtensions: List<String> = listOf(".js", ".exe", ".lib"),
-        emailMasksEnabled: Boolean = true,
-        externalEmailMasksEnabled: Boolean = true,
+        emailAliasesEnabled: Boolean = true,
+        externalEmailAliasesEnabled: Boolean = true,
         allowOwnerEmailAddressReuse: Boolean = true,
     ) = ConfigurationDataEntity(
         deleteEmailMessagesLimit = deleteEmailMessagesLimit,
@@ -55,8 +55,8 @@ internal object EntityDataFactory {
         emailMessageRecipientsLimit = emailMessageRecipientsLimit,
         encryptedEmailMessageRecipientsLimit = encryptedEmailMessageRecipientsLimit,
         prohibitedFileExtensions = prohibitedFileExtensions,
-        emailMasksEnabled = emailMasksEnabled,
-        externalEmailMasksEnabled = externalEmailMasksEnabled,
+        emailAliasesEnabled = emailAliasesEnabled,
+        externalEmailAliasesEnabled = externalEmailAliasesEnabled,
         allowOwnerEmailAddressReuse = allowOwnerEmailAddressReuse,
     )
 
@@ -295,7 +295,7 @@ internal object EntityDataFactory {
                 base64EncodedSealedData = "mockSealedData",
             ),
         encryptionStatus: EncryptionStatusEntity = EncryptionStatusEntity.UNENCRYPTED,
-        emailMaskId: String? = null,
+        emailAliasId: String? = null,
     ) = SealedEmailMessageEntity(
         id = id,
         clientRefId = clientRefId,
@@ -317,7 +317,7 @@ internal object EntityDataFactory {
         rfc822DataAttributes = rfc822DataAttributes,
         rfc822Header = rfc822Header,
         encryptionStatus = encryptionStatus,
-        emailMaskId = emailMaskId,
+        emailAliasId = emailAliasId,
     )
 
     fun getEmailMessageEntity(
@@ -362,7 +362,7 @@ internal object EntityDataFactory {
         date: Date? = Date(1L),
         keyId: String = "keyId",
         algorithm: String = "algorithm",
-        emailMaskId: String? = null,
+        emailAliasId: String? = null,
     ) = EmailMessageEntity(
         id = id,
         clientRefId = clientRefId,
@@ -392,7 +392,7 @@ internal object EntityDataFactory {
         date = date,
         keyId = keyId,
         algorithm = algorithm,
-        emailMaskId = emailMaskId,
+        emailAliasId = emailAliasId,
     )
 
     fun getPartialEmailMessageEntity(
@@ -491,13 +491,13 @@ internal object EntityDataFactory {
         emailAddressId: String = "mockEmailAddressId",
         updatedAt: Date = Date(1L),
         rfc822Data: ByteArray = "RFC822 data".toByteArray(),
-        emailMaskId: String? = null,
+        emailAliasId: String? = null,
     ) = DraftEmailMessageWithContentEntity(
         id = id,
         emailAddressId = emailAddressId,
         updatedAt = updatedAt,
         rfc822Data = rfc822Data,
-        emailMaskId = emailMaskId,
+        emailAliasId = emailAliasId,
     )
 
     fun getDraftEmailMessageMetadataEntity(

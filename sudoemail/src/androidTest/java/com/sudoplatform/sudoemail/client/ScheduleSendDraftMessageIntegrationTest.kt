@@ -9,20 +9,20 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessageState
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.awaitility.Awaitility
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
@@ -37,22 +37,18 @@ import java.util.Date
 @RunWith(AndroidJUnit4::class)
 class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
 
-    // Shared mask test resources (only populated when masks are enabled)
-    private var maskDomains: List<String> = emptyList()
-    private var masksEnabled: Boolean = false
+    // Shared alias test resources (only populated when aliases are enabled)
+    private var aliasDomains: List<String> = emptyList()
+    private var aliasesEnabled: Boolean = false
 
     @Before
     fun setup() =
         runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-
             val config = emailClient.getConfigurationData()
-            masksEnabled = config.emailMasksEnabled
-            if (masksEnabled) {
-                maskDomains = getMaskDomains(emailClient)
+            aliasesEnabled = config.emailAliasesEnabled
+            if (aliasesEnabled) {
+                aliasDomains = getAliasDomains(emailClient)
             }
         }
 
@@ -60,8 +56,6 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
     fun teardown() =
         runTest {
             emailAddressList.forEach { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.forEach { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
@@ -71,7 +65,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     "dummyId",
                     "dummyEmailAddressId",
-                    emailMaskId = null,
+                    emailAliasId = null,
                     Date(),
                 )
 
@@ -83,11 +77,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun scheduleSendDraftMessageShouldFailWithSendAtNotInFuture() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
@@ -111,11 +101,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
     fun scheduleSendDraftMessageShouldFailIfDraftMessageNotFound() =
         runTest {
             val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
@@ -139,11 +125,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
     fun scheduleSendDraftMessageShouldReturnScheduledDraftMessageEntityOnSuccess() =
         runTest {
             val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
@@ -175,18 +157,14 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
             response.emailAddressId shouldBe emailAddress.id
             response.sendAt shouldBe sendAt
             response.state shouldBe ScheduledDraftMessageState.SCHEDULED
-            response.emailMaskId shouldBe null
+            response.emailAliasId shouldBe null
         }
 
     @Test
     fun scheduleAndDeleteDraftMessageShouldSucceed() =
         runTest {
             val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -212,39 +190,59 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
             scheduledDraft shouldNotBe null
             scheduledDraft.id shouldBe draftId
 
-            // Ensure that the draft message has been created/scheduled
-            delay(3000)
+            val listInput = ListScheduledDraftMessagesForEmailAddressIdInput(emailAddressId = emailAddress.id)
+
+            // Poll until the draft appears as SCHEDULED (scheduling is eventually
+            // consistent).
+            Awaitility
+                .await("draft $draftId to be scheduled")
+                .atMost(org.awaitility.Duration.TEN_SECONDS)
+                .pollInterval(org.awaitility.Duration.TWO_HUNDRED_MILLISECONDS)
+                .until {
+                    runBlocking {
+                        emailClient.listScheduledDraftMessagesForEmailAddressId(listInput).items.any {
+                            it.id == draftId && it.state == ScheduledDraftMessageState.SCHEDULED
+                        }
+                    }
+                }
+
             emailClient.deleteDraftEmailMessages(DeleteDraftEmailMessagesInput(listOf(draftId), emailAddress.id))
-            // give some time for the deletion to complete
-            delay(3000)
-            shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
-                emailClient.getDraftEmailMessage(GetDraftEmailMessageInput(scheduledDraft.id, emailAddress.id))
-            }
+
+            // Poll until getting the underlying draft throws not-found (deletion is
+            // eventually consistent).
+            Awaitility
+                .await("draft $draftId to be deleted")
+                .atMost(org.awaitility.Duration.TEN_SECONDS)
+                .pollInterval(org.awaitility.Duration.TWO_HUNDRED_MILLISECONDS)
+                .until {
+                    runBlocking {
+                        shouldThrow<SudoEmailClient.EmailMessageException.EmailMessageNotFoundException> {
+                            emailClient.getDraftEmailMessage(GetDraftEmailMessageInput(scheduledDraft.id, emailAddress.id))
+                        }
+                        true
+                    }
+                }
         }
 
     // -------------------------------------------------------------------------
-    // Mask-related tests – skipped when masks are not enabled
+    // Alias-related tests – skipped when aliases are not enabled
     // -------------------------------------------------------------------------
 
     @Test
-    fun scheduleSendDraftMessageWithMaskShouldReturnEmailMaskIdInResponse() =
+    fun scheduleSendDraftMessageWithAliasShouldReturnEmailAliasIdInResponse() =
         runTest {
-            Assume.assumeTrue("Test skipped because email masks are not enabled.", masksEnabled)
+            Assume.assumeTrue("Test skipped because email masks are not enabled.", aliasesEnabled)
 
             val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val maskLocalPart = generateSafeLocalPart("mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val mask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+            val aliasLocalPart = generateSafeLocalPart("alias")
+            val aliasAddress = "$aliasLocalPart@${aliasDomains.first()}"
+            val alias = provisionEmailAlias(aliasAddress, emailAddress.emailAddress, ownershipProof)
 
             val rfc822Data =
                 DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
@@ -255,7 +253,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 CreateDraftEmailMessageInput(
                     rfc822Data,
                     emailAddress.id,
-                    mask.id,
+                    alias.id,
                 )
             val draftId = emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
             draftId shouldNotBe null
@@ -264,7 +262,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     id = draftId,
                     emailAddressId = emailAddress.id,
-                    emailMaskId = mask.id,
+                    emailAliasId = alias.id,
                     sendAt = sendAt,
                 )
 
@@ -275,20 +273,16 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
             response.emailAddressId shouldBe emailAddress.id
             response.sendAt shouldBe sendAt
             response.state shouldBe ScheduledDraftMessageState.SCHEDULED
-            response.emailMaskId shouldBe mask.id
+            response.emailAliasId shouldBe alias.id
         }
 
     @Test
-    fun scheduleSendDraftMessageWithInvalidMaskIdShouldFail() =
+    fun scheduleSendDraftMessageWithInvalidAliasIdShouldFail() =
         runTest {
-            Assume.assumeTrue("Test skipped because email masks are not enabled.", masksEnabled)
+            Assume.assumeTrue("Test skipped because email masks are not enabled.", aliasesEnabled)
 
             val sendAt = Date(Date().time + Duration.ofDays(1).toMillis())
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -307,7 +301,7 @@ class ScheduleSendDraftMessageIntegrationTest : BaseIntegrationTest() {
                 ScheduleSendDraftMessageInput(
                     id = draftId,
                     emailAddressId = emailAddress.id,
-                    emailMaskId = "non-existent-mask-id",
+                    emailAliasId = "non-existent-alias-id",
                     sendAt = sendAt,
                 )
 

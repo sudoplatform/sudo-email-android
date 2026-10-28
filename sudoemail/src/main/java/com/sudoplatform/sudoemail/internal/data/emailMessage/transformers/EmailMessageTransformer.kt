@@ -84,7 +84,7 @@ internal object EmailMessageTransformer {
             updatedAtEpochMs = sealedEmailMessage.updatedAtEpochMs,
             sortDateEpochMs = sealedEmailMessage.sortDateEpochMs,
             rfc822Header = sealedEmailMessage.rfc822Header.toSealedAttributeEntity(),
-            emailMaskId = sealedEmailMessage.emailMaskId,
+            emailAliasId = sealedEmailMessage.emailMaskId,
             rfc822DataAttributes = sealedEmailMessage.rfc822DataAttributes.toRfc822DataAttributesEntity(),
         )
 
@@ -129,7 +129,7 @@ internal object EmailMessageTransformer {
             date = unsealedRfc822Header.date,
             keyId = sealedEmailMessage.rfc822Header.keyId,
             algorithm = sealedEmailMessage.rfc822Header.algorithm,
-            emailMaskId = sealedEmailMessage.emailMaskId,
+            emailAliasId = sealedEmailMessage.emailAliasId,
         )
     }
 
@@ -161,7 +161,7 @@ internal object EmailMessageTransformer {
             hasAttachments = entity.hasAttachments,
             encryptionStatus = entity.encryptionStatus.toEncryptionStatus(),
             date = entity.date,
-            emailMaskId = entity.emailMaskId,
+            emailAliasId = entity.emailAliasId,
         )
 
     fun sealedEntityToPartialEntity(entity: SealedEmailMessageEntity): PartialEmailMessageEntity =
@@ -184,7 +184,7 @@ internal object EmailMessageTransformer {
             sortDate = entity.sortDateEpochMs.toDate(),
             createdAt = entity.createdAtEpochMs.toDate(),
             updatedAt = entity.updatedAtEpochMs.toDate(),
-            emailMaskId = entity.emailMaskId,
+            emailAliasId = entity.emailAliasId,
         )
 
     fun entityToPartialApi(entity: PartialEmailMessageEntity): PartialEmailMessage =
@@ -207,7 +207,7 @@ internal object EmailMessageTransformer {
             sortDate = entity.sortDate,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
-            emailMaskId = entity.emailMaskId,
+            emailAliasId = entity.emailAliasId,
         )
 
     fun graphQLToApi(

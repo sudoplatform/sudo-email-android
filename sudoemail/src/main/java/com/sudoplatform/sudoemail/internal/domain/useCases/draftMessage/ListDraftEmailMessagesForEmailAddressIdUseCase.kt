@@ -89,7 +89,7 @@ internal class ListDraftEmailMessagesForEmailAddressIdUseCase(
                             GetDraftEmailMessageUseCaseInput(
                                 draftId = metadata.id,
                                 emailAddressId = emailAddressId,
-                                emailMaskId = metadata.emailMaskId,
+                                emailAliasId = metadata.emailAliasId,
                             ),
                         )
                     }

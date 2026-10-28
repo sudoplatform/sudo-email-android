@@ -9,21 +9,18 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assume
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -35,22 +32,11 @@ import kotlin.time.Duration
 @RunWith(AndroidJUnit4::class)
 class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
@@ -72,11 +58,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun deleteDraftEmailMessagesShouldReturnSuccessOnNonExistentMessage() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -97,11 +79,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun deleteDraftEmailMessagesShouldReturnSuccessResult() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -138,24 +116,20 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun deleteDraftEmailMessagesShouldSuccessfullyDeleteSingleDraftWithEmailMaskId() =
+    fun deleteDraftEmailMessagesShouldSuccessfullyDeleteSingleDraftWithEmailAliasId() =
         runTest {
             val config = emailClient.getConfigurationData()
-            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailAliasesEnabled)
 
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val maskDomains = getMaskDomains(emailClient)
-            val maskLocalPart = generateSafeLocalPart("mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+            val aliasDomains = getAliasDomains(emailClient)
+            val aliasLocalPart = generateSafeLocalPart("alias")
+            val aliasAddress = "$aliasLocalPart@${aliasDomains.first()}"
+            val emailAlias = provisionEmailAlias(aliasAddress, emailAddress.emailAddress, ownershipProof)
 
             val rfc822Data =
                 DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
@@ -168,7 +142,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 CreateDraftEmailMessageInput(
                     rfc822Data = rfc822Data,
                     senderEmailAddressId = emailAddress.id,
-                    emailMaskId = emailMask.id,
+                    emailAliasId = emailAlias.id,
                 )
 
             val draftId = emailClient.createDraftEmailMessage(createDraftInput)
@@ -177,7 +151,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 DeleteDraftEmailMessagesInput(
                     listOf(draftId),
                     emailAddress.id,
-                    emailMask.id,
+                    emailAlias.id,
                 )
             val result = emailClient.deleteDraftEmailMessages(deleteDraftEmailMessagesInput)
             result.status shouldBe BatchOperationStatus.SUCCESS
@@ -192,11 +166,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun deleteDraftEmailMessagesShouldDeleteMultipleMessagesAtOnce() =
         runTest(timeout = Duration.parse("2m")) {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -231,24 +201,20 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun deleteDraftEmailMessagesShouldSucceedWhenDeletingMultipleDraftsWithAMaskId() =
+    fun deleteDraftEmailMessagesShouldSucceedWhenDeletingMultipleDraftsWithAnAliasId() =
         runTest(timeout = Duration.parse("2m")) {
             val config = emailClient.getConfigurationData()
-            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailAliasesEnabled)
 
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
 
-            val maskDomains = getMaskDomains(emailClient)
-            val maskLocalPart = generateSafeLocalPart("mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+            val aliasDomains = getAliasDomains(emailClient)
+            val aliasLocalPart = generateSafeLocalPart("alias")
+            val aliasAddress = "$aliasLocalPart@${aliasDomains.first()}"
+            val emailAlias = provisionEmailAlias(aliasAddress, emailAddress.emailAddress, ownershipProof)
 
             val draftIds = mutableListOf<String>()
 
@@ -264,7 +230,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
                     CreateDraftEmailMessageInput(
                         rfc822Data = rfc822Data,
                         senderEmailAddressId = emailAddress.id,
-                        emailMaskId = emailMask.id,
+                        emailAliasId = emailAlias.id,
                     )
                 val draftId = emailClient.createDraftEmailMessage(createDraftInput)
                 draftIds.add(draftId)
@@ -274,7 +240,7 @@ class DeleteDraftEmailMessagesIntegrationTest : BaseIntegrationTest() {
                 DeleteDraftEmailMessagesInput(
                     draftIds,
                     emailAddress.id,
-                    emailMask.id,
+                    emailAlias.id,
                 )
             val result = emailClient.deleteDraftEmailMessages(input)
             result.status shouldBe BatchOperationStatus.SUCCESS

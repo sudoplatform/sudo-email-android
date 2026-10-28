@@ -29,16 +29,16 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.types.EmailAlias
 import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudoemail.types.EmailFolder
-import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
-import com.sudoplatform.sudoemail.types.PartialEmailMask
+import com.sudoplatform.sudoemail.types.PartialEmailAlias
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
@@ -52,9 +52,9 @@ import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
-import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
-import com.sudoplatform.sudoemail.types.inputs.DisableEmailMaskInput
-import com.sudoplatform.sudoemail.types.inputs.EnableEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailAliasInput
+import com.sudoplatform.sudoemail.types.inputs.DisableEmailAliasInput
+import com.sudoplatform.sudoemail.types.inputs.EnableEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.FlushMessageBodyCacheInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
@@ -64,22 +64,22 @@ import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForE
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailAliasesForOwnerInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
-import com.sudoplatform.sudoemail.types.inputs.ListEmailMasksForOwnerInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
-import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.types.inputs.SendMaskedEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageViaAliasInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
-import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.VerifyExternalEmailAddressInput
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
@@ -354,12 +354,6 @@ interface SudoEmailClient : AutoCloseable {
             cause: Throwable? = null,
         ) : EmailAddressException(message = message, cause = cause)
 
-        @Deprecated("InsufficientEntitlementsException is now thrown instead")
-        class EntitlementsExceededException(
-            message: String? = null,
-            cause: Throwable? = null,
-        ) : EmailAddressException(message = message, cause = cause)
-
         class InsufficientEntitlementsException(
             message: String? = null,
             cause: Throwable? = null,
@@ -476,88 +470,88 @@ interface SudoEmailClient : AutoCloseable {
     }
 
     /**
-     * Defines the exceptions for the email mask based methods.
+     * Defines the exceptions for the email alias based methods.
      *
      * @property message [String] Accompanying message for the exception.
      * @property cause [Throwable] The cause for the exception.
      */
-    sealed class EmailMaskException(
+    sealed class EmailAliasException(
         message: String? = null,
         cause: Throwable? = null,
     ) : RuntimeException(message, cause) {
         class FailedException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class InvalidArgumentException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class ProvisionFailedException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class DeprovisionFailedException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class UpdateFailedException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class InvalidEmailAddressException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message, cause)
+        ) : EmailAliasException(message, cause)
 
         class UnavailableEmailAddressException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
-        class EmailMaskAlreadyExistsException(
+        class EmailAliasAlreadyExistsException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
-        class EmailMaskLockedException(
+        class EmailAliasLockedException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class UnsealingException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
-        class EmailMaskNotFoundException(
+        class EmailAliasNotFoundException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class PublicKeyException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class InsufficientEntitlementsException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class AuthenticationException(
             message: String? = null,
             cause: Throwable? = null,
-        ) : EmailMaskException(message = message, cause = cause)
+        ) : EmailAliasException(message = message, cause = cause)
 
         class UnknownException(
             cause: Throwable,
-        ) : EmailMaskException(cause = cause)
+        ) : EmailAliasException(cause = cause)
     }
 
     /**
@@ -706,18 +700,6 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun getConfigurationData(): ConfigurationData
 
     /**
-     * Get a list of the supported email domains. Primarily intended to be used to perform a domain search
-     * which occurs prior to provisioning an email address.
-     *
-     * @return A list of supported domains.
-     *
-     * @throws [EmailAddressException].
-     */
-    @Throws(EmailAddressException::class)
-    @Deprecated("Use listEmailDomains instead", ReplaceWith("listEmailDomains"))
-    suspend fun getSupportedEmailDomains(): List<String>
-
-    /**
      * Get a list of all of the configured domains. Primarily intended to be used as part of performing
      * an email send operation in order to fetch all domains configured for the service so that appropriate
      * encryption decisions can be made.
@@ -728,16 +710,6 @@ interface SudoEmailClient : AutoCloseable {
      */
     @Throws(EmailAddressException::class)
     suspend fun getConfiguredEmailDomains(): List<String>
-
-    /**
-     * Get a list of all of the email domains on which email masks may be provisioned.
-     *
-     * @return A list of all configured domains.
-     *
-     * @throws [EmailAddressException]
-     */
-    @Deprecated("Use listEmailDomains instead", ReplaceWith("listEmailDomains"))
-    suspend fun getEmailMaskDomains(): List<String>
 
     /**
      * Get a list of all email domains with their associated metadata.
@@ -932,18 +904,18 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun sendEmailMessage(input: SendEmailMessageInput): SendEmailMessageResult
 
     /**
-     * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data and a masked email address.
+     * Send an email message using RFC 6854 (supersedes RFC 822)(https://tools.ietf.org/html/rfc6854) data via an email alias.
      *
      * Email messages sent to in-network recipients (i.e. email addresses that exist within the Sudo Platform)
      * will be sent end-to-end encrypted.
      *
-     * @param input [SendMaskedEmailMessageInput] Parameters used to send an email message with a masked email address.
+     * @param input [SendEmailMessageViaAliasInput] Parameters used to send an email message via an email alias.
      * @return The identifier of the [EmailMessage] that is being sent.
      *
      * @throws [EmailMessageException].
      */
     @Throws(EmailMessageException::class)
-    suspend fun sendMaskedEmailMessage(input: SendMaskedEmailMessageInput): SendEmailMessageResult
+    suspend fun sendEmailMessageViaAlias(input: SendEmailMessageViaAliasInput): SendEmailMessageResult
 
     /**
      * Update multiple [EmailMessage]s using a list of identifiers.
@@ -1160,20 +1132,6 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun getDraftEmailMessage(input: GetDraftEmailMessageInput): DraftEmailMessageWithContent
 
     /**
-     * Lists the metadata and content of all draft messages for the user.
-     *
-     * @return List of [DraftEmailMessageWithContent].
-     *
-     * @throws [EmailMessageException].
-     */
-    @Deprecated(
-        "Use listDraftEmailMessagesForEmailAddressId instead to retrieve draft email messages",
-        ReplaceWith("listDraftEmailMessagesForEmailAddressId(input)"),
-    )
-    @Throws(EmailMessageException::class)
-    suspend fun listDraftEmailMessages(): List<DraftEmailMessageWithContent>
-
-    /**
      * Lists the metadata and content of draft messages for the specified email address identifier with pagination support.
      *
      * @param input [ListDraftEmailMessagesForEmailAddressIdInput] The input object containing the email address ID and pagination parameters.
@@ -1185,20 +1143,6 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun listDraftEmailMessagesForEmailAddressId(
         input: ListDraftEmailMessagesForEmailAddressIdInput,
     ): ListOutput<DraftEmailMessageWithContent>
-
-    /**
-     * Lists the metadata of all draft messages for the user.
-     *
-     * @return List of [DraftEmailMessageMetadata].
-     *
-     * @throws [EmailMessageException].
-     */
-    @Deprecated(
-        "Use listDraftEmailMessagesMetadataFormEmailAddressId instead to retrieve draft email messages",
-        ReplaceWith("listDraftEmailMessageMetadataForEmailAddressId(input)"),
-    )
-    @Throws(EmailMessageException::class)
-    suspend fun listDraftEmailMessageMetadata(): List<DraftEmailMessageMetadata>
 
     /**
      * Lists the metadata of all draft messages for the specified email address identifier with pagination support.
@@ -1262,19 +1206,6 @@ interface SudoEmailClient : AutoCloseable {
     ): BatchOperationResult<String, String>
 
     /**
-     * Unblocks the given email address(es) for the logged in user
-     *
-     * @param addresses [List<String>] The list of email addresses to unblock
-     * @return A success, partial or failed [BatchOperationResult] result containing either a list of identifiers
-     *  of email addresses that succeeded or failed to be unblocked.
-     */
-    @Deprecated(
-        "Use unblockEmailAddressesByHashedValue instead",
-        ReplaceWith("unblockEmailAddressesByHashedValue"),
-    )
-    suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String>
-
-    /**
      * Unblocks the email addresses associated with the hashed values passed in for the logged in user
      *
      * @param hashedValues [List<String>] The list of hashedValues to unblock
@@ -1321,55 +1252,55 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun exportKeys(): ByteArray
 
     /**
-     * Provisions a new email mask with the specified configuration.
+     * Provisions a new email alias with the specified configuration.
      *
-     * @param {ProvisionEmailMaskInput} input The input parameters for provisioning the email mask
-     * @returns {EmailMask} The newly created email mask
+     * @param {ProvisionEmailAliasInput} input The input parameters for provisioning the email alias
+     * @returns {EmailAlias} The newly created email alias
      */
-    suspend fun provisionEmailMask(input: ProvisionEmailMaskInput): EmailMask
+    suspend fun provisionEmailAlias(input: ProvisionEmailAliasInput): EmailAlias
 
     /**
-     * Deprovisions an existing email mask, permanently removing it from the system.
+     * Deprovisions an existing email alias, permanently removing it from the system.
      *
-     * @param {DeprovisionEmailMaskInput} input The input parameters for deprovisioning the email mask
-     * @returns {EmailMask} The deprovisioned email mask
+     * @param {DeprovisionEmailAliasInput} input The input parameters for deprovisioning the email alias
+     * @returns {EmailAlias} The deprovisioned email alias
      */
-    suspend fun deprovisionEmailMask(input: DeprovisionEmailMaskInput): PartialEmailMask
+    suspend fun deprovisionEmailAlias(input: DeprovisionEmailAliasInput): PartialEmailAlias
 
     /**
-     * Updates or clears the metadata or expiration date of an existing email mask.
+     * Updates or clears the metadata or expiration date of an existing email alias.
      *
-     * @param {UpdateEmailMaskInput} input The input parameters for updating the email mask
-     * @returns {EmailMask} A promise that resolves to the updated email mask
+     * @param {UpdateEmailAliasInput} input The input parameters for updating the email alias
+     * @returns {EmailAlias} A promise that resolves to the updated email alias
      */
-    suspend fun updateEmailMask(input: UpdateEmailMaskInput): EmailMask
+    suspend fun updateEmailAlias(input: UpdateEmailAliasInput): EmailAlias
 
     /**
-     * Enables a previously disabled email mask, allowing it to forward emails again.
+     * Enables a previously disabled email alias, allowing it to forward emails again.
      *
-     * @param {EnableEmailMaskInput} input The input parameters for enabling the email mask
-     * @returns {EmailMask} A promise that resolves to the enabled email mask
+     * @param {EnableEmailAliasInput} input The input parameters for enabling the email alias
+     * @returns {EmailAlias} A promise that resolves to the enabled email alias
      */
-    suspend fun enableEmailMask(input: EnableEmailMaskInput): EmailMask
+    suspend fun enableEmailAlias(input: EnableEmailAliasInput): EmailAlias
 
     /**
-     * Disables an active email mask, preventing it from forwarding emails.
+     * Disables an active email alias, preventing it from forwarding emails.
      *
-     * @param {DisableEmailMaskInput} input The input parameters for disabling the email mask
-     * @returns {EmailMask} A promise that resolves to the disabled email mask
+     * @param {DisableEmailAliasInput} input The input parameters for disabling the email alias
+     * @returns {EmailAlias} A promise that resolves to the disabled email alias
      */
-    suspend fun disableEmailMask(input: DisableEmailMaskInput): EmailMask
+    suspend fun disableEmailAlias(input: DisableEmailAliasInput): EmailAlias
 
     /**
-     * Lists email masks owned by the current user, with optional filtering and pagination.
+     * Lists email aliases owned by the current user, with optional filtering and pagination.
      *
-     * @param {ListEmailMasksForOwnerInput} input The input parameters for filtering and pagination
-     * @returns {ListOutput<EmailMask>} A promise that resolves to a list of email masks and pagination info
+     * @param {ListEmailAliasesForOwnerInput} input The input parameters for filtering and pagination
+     * @returns {ListOutput<EmailAlias>} A promise that resolves to a list of email aliases and pagination info
      */
-    suspend fun listEmailMasksForOwner(input: ListEmailMasksForOwnerInput): ListAPIResult<EmailMask, PartialEmailMask>
+    suspend fun listEmailAliasesForOwner(input: ListEmailAliasesForOwnerInput): ListAPIResult<EmailAlias, PartialEmailAlias>
 
     /**
-     * Verifies an external email address for an email mask by sending a verification code
+     * Verifies an external email address for an email alias by sending a verification code
      * or confirming ownership with a provided code.
      *
      * When called without a verification code, triggers sending a verification email to the
@@ -1377,10 +1308,10 @@ interface SudoEmailClient : AutoCloseable {
      * of the external address.
      *
      * @param input [VerifyExternalEmailAddressInput] The input parameters containing the email address,
-     *  email mask ID, and optional verification code.
+     *  email alias ID, and optional verification code.
      * @return [VerifyExternalEmailAddressResult] Result indicating whether verification succeeded
      *  and an optional reason if it failed.
-     * @throws [EmailMaskException] if the operation fails.
+     * @throws [EmailAliasException] if the operation fails.
      */
     suspend fun verifyExternalEmailAddress(input: VerifyExternalEmailAddressInput): VerifyExternalEmailAddressResult
 

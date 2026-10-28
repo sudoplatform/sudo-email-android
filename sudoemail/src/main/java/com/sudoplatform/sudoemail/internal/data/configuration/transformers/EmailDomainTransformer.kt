@@ -28,7 +28,7 @@ internal object EmailDomainTransformer {
         }
         return EmailDomain(
             domain = graphQLDomain.domain,
-            isMaskDomain = graphQLDomain.isMaskDomain,
+            isAliasDomain = graphQLDomain.isMaskDomain,
             metadata = metadataMap,
         )
     }

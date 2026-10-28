@@ -21,7 +21,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.Internet
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEncryptedEmailMessageRequest
-import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendMaskedEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendViaAliasEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SimplifiedEmailMessageEntity
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCaseInput
@@ -34,8 +34,8 @@ import java.util.UUID
 /**
  * Input for the send email message use case.
  *
- * @property senderEmailAddressId [String] The email address ID from which to send the message. Required if not using mask id.
- * @property senderMaskId [String] The mask ID from which to send the message. Required if not using email address id.
+ * @property senderEmailAddressId [String] The email address ID from which to send the message. Required if not using alias id.
+ * @property senderAliasId [String] The alias ID from which to send the message. Required if not using email address id.
  * @property emailMessageHeader [InternetMessageFormatHeaderEntity] The email message header.
  * @property body [String] The body content of the email message.
  * @property attachments [List] of [EmailAttachmentEntity] file attachments.
@@ -45,7 +45,7 @@ import java.util.UUID
  */
 internal data class SendEmailMessageUseCaseInput(
     val senderEmailAddressId: String?,
-    val senderMaskId: String?,
+    val senderAliasId: String?,
     val emailMessageHeader: InternetMessageFormatHeaderEntity,
     val body: String,
     val attachments: List<EmailAttachmentEntity> = emptyList(),
@@ -97,7 +97,7 @@ internal class SendEmailMessageUseCase(
         logger.debug("SendEmailMessageUseCase execute input: $input")
         val (
             senderEmailAddressId,
-            senderMaskId,
+            senderAliasId,
             emailMessageHeader,
             body,
             attachments,
@@ -112,7 +112,7 @@ internal class SendEmailMessageUseCase(
             emailMessageRecipientsLimit,
             encryptedEmailMessageRecipientsLimit,
             _,
-            emailMasksEnabled,
+            emailAliasesEnabled,
         ) = configurationData
 
         try {
@@ -123,7 +123,7 @@ internal class SendEmailMessageUseCase(
             val domains = mutableListOf<String>()
             val domainsResult = configurationDataService.getConfiguredEmailDomains()
             domains.addAll(domainsResult)
-            if (emailMasksEnabled) {
+            if (emailAliasesEnabled) {
                 val maskDomains = configurationDataService.getEmailMaskDomains()
                 domains.addAll(maskDomains)
             }
@@ -168,7 +168,7 @@ internal class SendEmailMessageUseCase(
                 }
                 return sendInNetworkEmailMessage(
                     senderEmailAddressId,
-                    senderMaskId,
+                    senderAliasId,
                     emailMessageHeader,
                     body,
                     attachments,
@@ -187,7 +187,7 @@ internal class SendEmailMessageUseCase(
 
             return sendOutOfNetworkEmailMessage(
                 senderEmailAddressId = senderEmailAddressId,
-                senderMaskId,
+                senderAliasId,
                 emailMessageHeader = emailMessageHeader,
                 body = body,
                 attachments = attachments,
@@ -204,7 +204,7 @@ internal class SendEmailMessageUseCase(
 
     private suspend fun sendInNetworkEmailMessage(
         senderEmailAddressId: String?,
-        senderMaskId: String?,
+        senderAliasId: String?,
         emailMessageHeader: InternetMessageFormatHeaderEntity,
         body: String,
         attachments: List<EmailAttachmentEntity>,
@@ -215,8 +215,8 @@ internal class SendEmailMessageUseCase(
         emailMessageMaxOutboundMessageSize: Int,
     ): SendEmailMessageResultEntity {
         val senderId =
-            senderEmailAddressId ?: senderMaskId ?: throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
-                "Either sender email address ID or sender mask ID must be provided",
+            senderEmailAddressId ?: senderAliasId ?: throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
+                "Either sender email address ID or sender alias ID must be provided",
             )
 
         try {
@@ -258,9 +258,9 @@ internal class SendEmailMessageUseCase(
                     )
                 return emailMessageService.sendEncrypted(sendEncryptedEmailMessageRequest)
             } else {
-                val sendMaskedEmailMessageRequest =
-                    SendMaskedEmailMessageRequest(
-                        emailMaskId = senderId,
+                val sendViaAliasEmailMessageRequest =
+                    SendViaAliasEmailMessageRequest(
+                        emailAliasId = senderId,
                         encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
                         s3ObjectKey = s3ObjectKey,
                         region = region,
@@ -271,7 +271,7 @@ internal class SendEmailMessageUseCase(
                         replyingMessageId = replyingMessageId,
                         forwardingMessageId = forwardingMessageId,
                     )
-                return emailMessageService.sendMasked(sendMaskedEmailMessageRequest)
+                return emailMessageService.sendViaAlias(sendViaAliasEmailMessageRequest)
             }
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
@@ -281,7 +281,7 @@ internal class SendEmailMessageUseCase(
 
     private suspend fun sendOutOfNetworkEmailMessage(
         senderEmailAddressId: String?,
-        senderMaskId: String?,
+        senderAliasId: String?,
         emailMessageHeader: InternetMessageFormatHeaderEntity,
         body: String,
         attachments: List<EmailAttachmentEntity>,
@@ -291,8 +291,8 @@ internal class SendEmailMessageUseCase(
         emailMessageMaxOutboundMessageSize: Int,
     ): SendEmailMessageResultEntity {
         val senderId =
-            senderEmailAddressId ?: senderMaskId ?: throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
-                "Either sender email address ID or sender mask ID must be provided",
+            senderEmailAddressId ?: senderAliasId ?: throw SudoEmailClient.EmailMessageException.InvalidArgumentException(
+                "Either sender email address ID or sender alias ID must be provided",
             )
         try {
             val messageData =
@@ -327,9 +327,9 @@ internal class SendEmailMessageUseCase(
                     )
                 return emailMessageService.send(sendEmailMessageRequest)
             } else {
-                val sendMaskedEmailMessageRequest =
-                    SendMaskedEmailMessageRequest(
-                        emailMaskId = senderId,
+                val sendViaAliasEmailMessageRequest =
+                    SendViaAliasEmailMessageRequest(
+                        emailAliasId = senderId,
                         encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
                         s3ObjectKey = s3ObjectKey,
                         region = region,
@@ -340,7 +340,7 @@ internal class SendEmailMessageUseCase(
                         replyingMessageId = replyingMessageId,
                         forwardingMessageId = forwardingMessageId,
                     )
-                return emailMessageService.sendMasked(sendMaskedEmailMessageRequest)
+                return emailMessageService.sendViaAlias(sendViaAliasEmailMessageRequest)
             }
         } catch (e: Throwable) {
             logger.error("unexpected error $e")

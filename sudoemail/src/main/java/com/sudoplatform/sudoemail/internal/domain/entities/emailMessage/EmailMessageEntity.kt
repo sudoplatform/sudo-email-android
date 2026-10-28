@@ -95,7 +95,7 @@ enum class EncryptionStatusEntity {
  * @property hasAttachments [Boolean] Whether or not the message has attachments.
  * @property encryptionStatus [EncryptionStatusEntity] The encryption status of the email message.
  * @property date [Date] The date header of the email message.
- * @property emailMaskId [String] The identifier of the email mask used to send or receive this message, if any
+ * @property emailAliasId [String] The identifier of the email alias used to send or receive this message, if any
  *
  */
 @Parcelize
@@ -130,5 +130,5 @@ internal data class EmailMessageEntity(
     val date: Date? = null,
     val keyId: String,
     val algorithm: String,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
 ) : Parcelable

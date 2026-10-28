@@ -93,7 +93,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
         mock<EmailMessageService>().stub {
             onBlocking { send(any()) } doReturn sendResult
             onBlocking { sendEncrypted(any()) } doReturn sendResult
-            onBlocking { sendMasked(any()) } doReturn sendResult
+            onBlocking { sendViaAlias(any()) } doReturn sendResult
         }
     }
 
@@ -179,7 +179,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     attachments = emptyList(),
                     inlineAttachments = emptyList(),
@@ -226,7 +226,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = emptyList(),
@@ -279,7 +279,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = emptyList(),
@@ -345,7 +345,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -405,7 +405,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -436,7 +436,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -481,7 +481,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Reply body",
                     replyingMessageId = "original-message-id",
@@ -527,7 +527,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Forward body",
                     forwardingMessageId = "forwarded-message-id",
@@ -577,7 +577,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -631,7 +631,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = listOf(badAttachment),
@@ -664,7 +664,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -713,7 +713,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -762,7 +762,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -815,7 +815,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                 )
@@ -844,10 +844,10 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             )
         }
 
-    /** Begin SendMaskedEmailMessageTests */
+    /** Begin SendEmailMessageViaAliasTests */
 
     @Test
-    fun `execute() should send masked email for out-of-network recipients`() =
+    fun `execute() should send email via alias for out-of-network recipients`() =
         runTest {
             val header =
                 InternetMessageFormatHeaderEntity(
@@ -859,11 +859,11 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                     subject = "Test Subject",
                 )
 
-            val maskId = "test-mask-id"
+            val aliasId = "test-alias-id"
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = null,
-                    senderMaskId = maskId,
+                    senderAliasId = aliasId,
                     emailMessageHeader = header,
                     attachments = emptyList(),
                     inlineAttachments = emptyList(),
@@ -884,9 +884,9 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                 any(),
             )
             verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
-            verify(mockEmailMessageService).sendMasked(
+            verify(mockEmailMessageService).sendViaAlias(
                 check { serviceInput ->
-                    serviceInput.emailMaskId shouldBe maskId
+                    serviceInput.emailAliasId shouldBe aliasId
                     serviceInput.transientBucket shouldBe transientBucket
                     serviceInput.region shouldBe region
                     serviceInput.encryptionStatus.toString() shouldBe EmailMessageEncryptionStatus.UNENCRYPTED.toString()
@@ -895,7 +895,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
         }
 
     @Test
-    fun `execute() should send masked email for in-network recipients`() =
+    fun `execute() should send email via alias for in-network recipients`() =
         runTest {
             val header =
                 InternetMessageFormatHeaderEntity(
@@ -907,11 +907,11 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                     subject = "Test Subject",
                 )
 
-            val maskId = "test-mask-id"
+            val aliasId = "test-alias-id"
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = null,
-                    senderMaskId = maskId,
+                    senderAliasId = aliasId,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = emptyList(),
@@ -934,9 +934,9 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                 any(),
             )
             verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
-            verify(mockEmailMessageService).sendMasked(
+            verify(mockEmailMessageService).sendViaAlias(
                 check { serviceInput ->
-                    serviceInput.emailMaskId shouldBe maskId
+                    serviceInput.emailAliasId shouldBe aliasId
                     serviceInput.transientBucket shouldBe transientBucket
                     serviceInput.region shouldBe region
                     serviceInput.encryptionStatus.toString() shouldBe EmailMessageEncryptionStatus.ENCRYPTED.toString()
@@ -945,7 +945,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
         }
 
     @Test
-    fun `execute() should throw InvalidArgumentException when neither senderEmailAddressId nor senderMaskId is provided`() =
+    fun `execute() should throw InvalidArgumentException when neither senderEmailAddressId nor senderAliasId is provided`() =
         runTest {
             val header =
                 InternetMessageFormatHeaderEntity(
@@ -960,7 +960,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = null,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = emptyList(),
@@ -1009,7 +1009,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = mockEmailAddressId,
-                    senderMaskId = null,
+                    senderAliasId = null,
                     emailMessageHeader = header,
                     attachments = emptyList(),
                     inlineAttachments = emptyList(),
@@ -1042,7 +1042,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
         }
 
     @Test
-    fun `execute() should send masked email for non-encrypted recipients`() =
+    fun `execute() should send email via alias for non-encrypted recipients`() =
         runTest {
             val header =
                 InternetMessageFormatHeaderEntity(
@@ -1054,7 +1054,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                     subject = "Test Subject",
                 )
 
-            val maskId = "test-mask-id"
+            val aliasId = "test-alias-id"
             val publicInfoEntitiesNoEncryption =
                 listOf(
                     EntityDataFactory.getEmailAddressPublicInfoEntity(
@@ -1073,7 +1073,7 @@ class SendEmailMessageUseCaseTest : BaseTests() {
             val input =
                 SendEmailMessageUseCaseInput(
                     senderEmailAddressId = null,
-                    senderMaskId = maskId,
+                    senderAliasId = aliasId,
                     emailMessageHeader = header,
                     body = "Test body",
                     attachments = emptyList(),
@@ -1096,9 +1096,9 @@ class SendEmailMessageUseCaseTest : BaseTests() {
                 any(),
             )
             verify(mockS3TransientClient).upload(any(), any(), anyOrNull(), any())
-            verify(mockEmailMessageService).sendMasked(
+            verify(mockEmailMessageService).sendViaAlias(
                 check { serviceInput ->
-                    serviceInput.emailMaskId shouldBe maskId
+                    serviceInput.emailAliasId shouldBe aliasId
                     serviceInput.transientBucket shouldBe transientBucket
                     serviceInput.region shouldBe region
                     serviceInput.encryptionStatus.toString() shouldBe EmailMessageEncryptionStatus.UNENCRYPTED.toString()

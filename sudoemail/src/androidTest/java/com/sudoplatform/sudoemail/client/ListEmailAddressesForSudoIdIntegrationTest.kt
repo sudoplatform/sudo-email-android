@@ -85,7 +85,7 @@ class ListEmailAddressesForSudoIdIntegrationTest : BaseIntegrationTest() {
                         createdAt.time shouldBe emailAddress.createdAt.time
                         updatedAt.time shouldBe emailAddress.createdAt.time
                         lastReceivedAt shouldBe emailAddress.lastReceivedAt
-                        alias shouldBe aliasInput
+                        displayName shouldBe aliasInput
                     }
                     val folders = listEmailAddresses.result.items[0].folders
                     when (folders.size) {

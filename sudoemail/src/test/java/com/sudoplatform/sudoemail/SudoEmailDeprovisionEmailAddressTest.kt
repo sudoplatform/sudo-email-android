@@ -116,7 +116,7 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
                 createdAt shouldBe Date(1L)
                 updatedAt shouldBe Date(1L)
                 lastReceivedAt shouldBe Date(1L)
-                alias shouldBe null
+                displayName shouldBe null
             }
 
             verify(mockEmailAddressService).deprovision(

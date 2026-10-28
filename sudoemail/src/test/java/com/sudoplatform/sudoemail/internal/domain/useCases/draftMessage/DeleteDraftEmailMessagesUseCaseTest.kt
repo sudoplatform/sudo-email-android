@@ -142,7 +142,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2, draftId3),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = useCase.execute(input)
@@ -173,7 +173,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2, draftId3),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             useCase.execute(input)
@@ -184,34 +184,34 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 check { request ->
                     request.draftMessageKey shouldBe mockS3Key1
                     request.emailAddressId shouldBe emailAddressId
-                    request.emailMaskId shouldBe null
+                    request.emailAliasId shouldBe null
                 },
             )
             verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
                 check { request ->
                     request.draftMessageKey shouldBe mockS3Key2
                     request.emailAddressId shouldBe emailAddressId
-                    request.emailMaskId shouldBe null
+                    request.emailAliasId shouldBe null
                 },
             )
             verify(mockDraftEmailMessageService).cancelScheduledDraftMessage(
                 check { request ->
                     request.draftMessageKey shouldBe mockS3Key3
                     request.emailAddressId shouldBe emailAddressId
-                    request.emailMaskId shouldBe null
+                    request.emailAliasId shouldBe null
                 },
             )
         }
 
     @Test
-    fun `execute() should pass emailMaskId to cancelScheduledDraftMessage when provided`() =
+    fun `execute() should pass emailAliasId to cancelScheduledDraftMessage when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
+            val emailAliasId = "emailAliasId"
             val input =
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1),
                     emailAddressId = emailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             val singleSuccessResult =
@@ -232,7 +232,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 check { request ->
                     request.draftMessageKey shouldBe mockS3Key1
                     request.emailAddressId shouldBe emailAddressId
-                    request.emailMaskId shouldBe emailMaskId
+                    request.emailAliasId shouldBe emailAliasId
                 },
             )
         }
@@ -248,7 +248,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = useCase.execute(input)
@@ -263,17 +263,17 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
         }
 
     @Test
-    fun `execute() should include email mask id in s3 key when provided`() =
+    fun `execute() should include email alias id in s3 key when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
-            val mockS3Key1 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId1, emailMaskId)
-            val mockS3Key2 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId2, emailMaskId)
-            val mockS3Key3 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId3, emailMaskId)
+            val emailAliasId = "emailAliasId"
+            val mockS3Key1 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId1, emailAliasId)
+            val mockS3Key2 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId2, emailAliasId)
+            val mockS3Key3 = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId3, emailAliasId)
             val input =
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2, draftId3),
                     emailAddressId = emailAddressId,
-                    emailMaskId,
+                    emailAliasId,
                 )
 
             val result = useCase.execute(input)
@@ -297,7 +297,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
 
             verify(mockDraftEmailMessageService, times(3)).cancelScheduledDraftMessage(
                 check { input ->
-                    input.emailMaskId shouldBe emailMaskId
+                    input.emailAliasId shouldBe emailAliasId
                 },
             )
         }
@@ -313,7 +313,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2, draftId3),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = useCase.execute(input)
@@ -347,7 +347,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2, draftId3),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             // Should NOT throw even though cancel throws
@@ -372,7 +372,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val singleSuccessResult =
@@ -406,7 +406,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = useCase.execute(input)
@@ -432,7 +432,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val exception =
@@ -456,7 +456,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = emptyList(),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val exception =
@@ -487,7 +487,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = useCase.execute(input)
@@ -532,7 +532,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId2),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             useCase.execute(input)
@@ -567,7 +567,7 @@ class DeleteDraftEmailMessagesUseCaseTest : BaseTests() {
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = listOf(draftId1, draftId1, draftId2),
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             useCase.execute(input)

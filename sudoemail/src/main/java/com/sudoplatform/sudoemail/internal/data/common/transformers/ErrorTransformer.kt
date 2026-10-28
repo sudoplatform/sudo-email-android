@@ -103,51 +103,51 @@ internal object ErrorTransformer {
         }
 
     /**
-     * Interprets a GraphQL error and converts it to an appropriate EmailMaskException.
+     * Interprets a GraphQL error and converts it to an appropriate EmailAliasException.
      *
      * @param e [GraphQLResponse.Error] The GraphQL error to interpret.
-     * @return The corresponding [SudoEmailClient.EmailMaskException].
+     * @return The corresponding [SudoEmailClient.EmailAliasException].
      */
-    fun interpretEmailMaskError(e: GraphQLResponse.Error): SudoEmailClient.EmailMaskException {
+    fun interpretEmailAliasError(e: GraphQLResponse.Error): SudoEmailClient.EmailAliasException {
         val httpStatusCode = e.extensions?.get(HTTP_STATUS_CODE_KEY) as Int?
         val error = e.extensions?.get(StringConstants.ERROR_TYPE)?.toString() ?: ""
 
         if (httpStatusCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
-            return SudoEmailClient.EmailMaskException.AuthenticationException("$e")
+            return SudoEmailClient.EmailAliasException.AuthenticationException("$e")
         }
         if (httpStatusCode != null && httpStatusCode >= HttpURLConnection.HTTP_INTERNAL_ERROR) {
-            return SudoEmailClient.EmailMaskException.FailedException("$e")
+            return SudoEmailClient.EmailAliasException.FailedException("$e")
         }
         if (error.contains(StringConstants.ERROR_INVALID_KEYRING)) {
-            return SudoEmailClient.EmailMaskException.PublicKeyException(StringConstants.INVALID_KEYRING_MSG)
+            return SudoEmailClient.EmailAliasException.PublicKeyException(StringConstants.INVALID_KEYRING_MSG)
         }
         if (error.contains(StringConstants.ERROR_INVALID_ARGUMENT)) {
-            return SudoEmailClient.EmailMaskException.InvalidArgumentException(
+            return SudoEmailClient.EmailAliasException.InvalidArgumentException(
                 StringConstants.INVALID_ARGUMENT_ERROR_MSG,
             )
         }
         if (error.contains(StringConstants.ERROR_INVALID_EMAIL) || error.contains(StringConstants.ERROR_INVALID_DOMAIN)) {
-            return SudoEmailClient.EmailMaskException.InvalidEmailAddressException(
+            return SudoEmailClient.EmailAliasException.InvalidEmailAddressException(
                 StringConstants.INVALID_EMAIL_ADDRESS_MSG,
             )
         }
         if (error.contains(StringConstants.ERROR_EMAIL_MASK_NOT_FOUND) || error.contains(StringConstants.ERROR_ADDRESS_NOT_FOUND)) {
-            return SudoEmailClient.EmailMaskException.EmailMaskNotFoundException(
-                StringConstants.EMAIL_MASK_NOT_FOUND_MSG,
+            return SudoEmailClient.EmailAliasException.EmailAliasNotFoundException(
+                StringConstants.EMAIL_ALIAS_NOT_FOUND_MSG,
             )
         }
         if (error.contains(StringConstants.ERROR_EMAIL_MASK_ALREADY_EXISTS)) {
-            return SudoEmailClient.EmailMaskException.EmailMaskAlreadyExistsException(
-                StringConstants.EMAIL_MASK_ALREADY_EXISTS_MSG,
+            return SudoEmailClient.EmailAliasException.EmailAliasAlreadyExistsException(
+                StringConstants.EMAIL_ALIAS_ALREADY_EXISTS_MSG,
             )
         }
         if (error.contains(StringConstants.ERROR_EMAIL_MASK_LOCKED)) {
-            return SudoEmailClient.EmailMaskException.EmailMaskLockedException(
-                StringConstants.EMAIL_MASK_LOCKED_MSG,
+            return SudoEmailClient.EmailAliasException.EmailAliasLockedException(
+                StringConstants.EMAIL_ALIAS_LOCKED_MSG,
             )
         }
         if (error.contains(StringConstants.ERROR_ADDRESS_UNAVAILABLE)) {
-            return SudoEmailClient.EmailMaskException.UnavailableEmailAddressException(
+            return SudoEmailClient.EmailAliasException.UnavailableEmailAddressException(
                 StringConstants.EMAIL_ADDRESS_UNAVAILABLE_MSG,
             )
         }
@@ -156,36 +156,36 @@ internal object ErrorTransformer {
                 StringConstants.ERROR_POLICY_FAILED,
             )
         ) {
-            return SudoEmailClient.EmailMaskException.InsufficientEntitlementsException(
+            return SudoEmailClient.EmailAliasException.InsufficientEntitlementsException(
                 StringConstants.INSUFFICIENT_ENTITLEMENTS_MSG,
             )
         }
-        return SudoEmailClient.EmailMaskException.FailedException(e.toString())
+        return SudoEmailClient.EmailAliasException.FailedException(e.toString())
     }
 
     /**
-     * Interprets a throwable exception and converts it to an appropriate EmailMaskException.
+     * Interprets a throwable exception and converts it to an appropriate EmailAliasException.
      *
      * @param e [Throwable] The throwable to interpret.
      * @return [Throwable] The corresponding exception, which may be the original exception if already handled.
      */
-    fun interpretEmailMaskException(e: Throwable): Throwable =
+    fun interpretEmailAliasException(e: Throwable): Throwable =
         when (e) {
             is CancellationException,
-            is SudoEmailClient.EmailMaskException,
+            is SudoEmailClient.EmailAliasException,
             is KeyNotFoundException,
             -> e
 
             is Unsealer.UnsealerException ->
-                SudoEmailClient.EmailMaskException.UnsealingException(
-                    StringConstants.UNSEAL_EMAIL_MASK_ERROR_MSG,
+                SudoEmailClient.EmailAliasException.UnsealingException(
+                    StringConstants.UNSEAL_EMAIL_ALIAS_ERROR_MSG,
                     e,
                 )
 
             is DeviceKeyManager.DeviceKeyManagerException.KeyGenerationException ->
-                SudoEmailClient.EmailMaskException.PublicKeyException(StringConstants.KEY_GENERATION_ERROR_MSG)
+                SudoEmailClient.EmailAliasException.PublicKeyException(StringConstants.KEY_GENERATION_ERROR_MSG)
 
-            else -> SudoEmailClient.EmailMaskException.UnknownException(e)
+            else -> SudoEmailClient.EmailAliasException.UnknownException(e)
         }
 
     /**

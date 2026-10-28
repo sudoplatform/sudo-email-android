@@ -53,7 +53,7 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         ScheduledDraftMessage(
             id = dummyDraftId1,
             emailAddressId = dummyEmailAddressId,
-            emailMaskId = null,
+            emailAliasId = null,
             state = ScheduledDraftMessageState.SCHEDULED,
             sendAt = sendAt,
             owner = mockOwner,
@@ -67,7 +67,7 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
         ScheduledDraftMessage(
             id = dummyDraftId2,
             emailAddressId = dummyEmailAddressId,
-            emailMaskId = null,
+            emailAliasId = null,
             state = ScheduledDraftMessageState.SCHEDULED,
             sendAt = sendAt,
             owner = mockOwner,
@@ -378,7 +378,7 @@ class SudoEmailListScheduledDraftMessagesForEmailAddressIdTest : BaseTests() {
                 ScheduledDraftMessage(
                     id = "sentId",
                     emailAddressId = dummyEmailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                     state = ScheduledDraftMessageState.SENT,
                     sendAt = sendAt,
                     owner = mockOwner,

@@ -9,7 +9,7 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
+import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.ListAPIResult
@@ -17,17 +17,16 @@ import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.fail
+import kotlin.time.Duration
 
 /**
  * Test the operation of [SudoEmailClient.deleteCustomEmailFolder].
@@ -35,22 +34,11 @@ import kotlin.test.fail
 @RunWith(AndroidJUnit4::class)
 class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     private suspend fun createCustomEmailFolder(
@@ -66,11 +54,7 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
     @Test
     fun deleteCustomEmailFolderShouldReturnNullForUnknownFolder() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
@@ -87,11 +71,7 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
     fun deleteCustomEmailFolderShouldReturnDeletedFolderOnSuccess() =
         runTest {
             val customFolderName = "TEST"
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
@@ -109,20 +89,14 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
 
     @Test
     fun deleteCustomEmailFolderShouldMoveMessagesToTrashOnFolderDeletion() =
-        runTest {
+        runTest(timeout = Duration.parse("3m")) {
             val customFolderName = "TEST"
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
 
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
-
-            val customFolder = createCustomEmailFolder(emailAddress.id, customFolderName)
 
             val sendResult =
                 sendEmailMessage(
@@ -131,6 +105,11 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
                 )
 
             sendResult shouldNotBe null
+
+            val customFolder = createCustomEmailFolder(emailAddress.id, customFolderName)
+
+            // Wait to make sure message has been sent and processed before trying to update
+            waitForMessage(sendResult.id)
 
             val updateResult =
                 emailClient.updateEmailMessages(
@@ -141,11 +120,23 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
                 )
 
             updateResult shouldNotBe null
+            when (updateResult.status) {
+                BatchOperationStatus.SUCCESS -> {
+                    updateResult.successValues?.size shouldBe 1
+                    updateResult.successValues?.get(0)?.id shouldBe sendResult.id
+                }
+
+                else -> {
+                    fail("Unexpected failure to update message: ${updateResult.failureValues?.get(0)?.errorType}")
+                }
+            }
 
             val listCustomFolderMessages =
                 waitForMessagesByFolder(
                     1,
                     ListEmailMessagesForEmailFolderIdInput(customFolder.id),
+                    org.awaitility.Duration.ONE_MINUTE,
+                    traceId = "After moving to custom folder, waiting for messages to appear in custom folder",
                 )
             when (
                 listCustomFolderMessages
@@ -175,6 +166,8 @@ class DeleteCustomEmailFolderIntegrationTest : BaseIntegrationTest() {
                 waitForMessagesByFolder(
                     1,
                     ListEmailMessagesForEmailFolderIdInput(trashFolder!!.id),
+                    org.awaitility.Duration.ONE_MINUTE,
+                    traceId = "After deleting waiting for messages to appear in trash folder",
                 )
             when (
                 listTrashFolderMessages

@@ -121,7 +121,7 @@ internal object EmailAddressTransformer {
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
             lastReceivedAt = entity.lastReceivedAt,
-            alias = null,
+            displayName = null,
             folders = entity.folders.map { EmailFolderTransformer.sealedEntityToApi(it) },
         )
 
@@ -143,7 +143,7 @@ internal object EmailAddressTransformer {
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
             lastReceivedAt = entity.lastReceivedAt,
-            alias = entity.alias,
+            displayName = entity.alias,
             folders = entity.folders.map { EmailFolderTransformer.unsealedEntityToApi(it) },
         )
 

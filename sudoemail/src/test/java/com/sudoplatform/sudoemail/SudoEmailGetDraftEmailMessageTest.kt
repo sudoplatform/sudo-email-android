@@ -121,28 +121,28 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
         }
 
     @Test
-    fun `getDraftEmailMessage() should pass email mask id when provided`() =
+    fun `getDraftEmailMessage() should pass email alias id when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
-            val draftEntityWithMaskId =
+            val emailAliasId = "emailAliasId"
+            val draftEntityWithAliasId =
                 EntityDataFactory.getDraftEmailMessageWithContentEntity(
                     id = mockDraftId,
                     emailAddressId = mockEmailAddressId,
                     rfc822Data = unsealedDraftString.toByteArray(),
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             mockUseCase.stub {
                 onBlocking {
                     execute(any())
-                } doReturn draftEntityWithMaskId
+                } doReturn draftEntityWithAliasId
             }
 
             val input =
                 GetDraftEmailMessageInput(
                     id = mockDraftId,
                     emailAddressId = mockEmailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             val deferredResult =
@@ -153,14 +153,14 @@ class SudoEmailGetDraftEmailMessageTest : BaseTests() {
             deferredResult.start()
             val result = deferredResult.await()
 
-            result shouldBe DraftEmailMessageTransformer.entityWithContentToApi(draftEntityWithMaskId)
+            result shouldBe DraftEmailMessageTransformer.entityWithContentToApi(draftEntityWithAliasId)
 
             verify(mockUseCaseFactory).createGetDraftEmailMessageUseCase()
             verify(mockUseCase).execute(
                 check { useCaseInput ->
                     useCaseInput.draftId shouldBe mockDraftId
                     useCaseInput.emailAddressId shouldBe mockEmailAddressId
-                    useCaseInput.emailMaskId shouldBe emailMaskId
+                    useCaseInput.emailAliasId shouldBe emailAliasId
                 },
             )
         }

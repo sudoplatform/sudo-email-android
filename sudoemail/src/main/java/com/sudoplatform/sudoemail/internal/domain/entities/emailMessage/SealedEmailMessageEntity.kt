@@ -35,7 +35,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttribut
  * @property rfc822DataAttributes [SealedEmailMessage.Rfc822DataAttributes] S3 designation for retrieving RFC822 data attributes .
  * @property size [Double] The size of the encrypted RFC822 data stored in the backend in bytes.
  * @property encryptionStatus [EncryptionStatusEntity] Encryption status of the email message.
- * @property emailMaskId [String] The identifier of the email mask used to send or receive this message, if any.
+ * @property emailAliasId [String] The identifier of the email alias used to send or receive this message, if any.
  *
  */
 internal data class SealedEmailMessageEntity(
@@ -59,7 +59,7 @@ internal data class SealedEmailMessageEntity(
     val rfc822DataAttributes: Rfc822DataAttributes,
     val size: Double,
     val encryptionStatus: EncryptionStatusEntity?,
-    val emailMaskId: String?,
+    val emailAliasId: String?,
 ) {
     data class Rfc822DataAttributes(
         val bucket: String,

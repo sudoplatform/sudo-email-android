@@ -9,8 +9,6 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
-import com.sudoplatform.sudoemail.subscribeToEmailMessages
 import com.sudoplatform.sudoemail.subscription.EmailMessageSubscriber
 import com.sudoplatform.sudoemail.subscription.Subscriber
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
@@ -19,20 +17,17 @@ import com.sudoplatform.sudoemail.types.Direction
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.string.shouldMatch
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.awaitility.Duration
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.until
 import org.awaitility.kotlin.withPollInterval
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -47,7 +42,6 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
 
     private val emailMessageSubscriber =
         object : EmailMessageSubscriber {
@@ -59,21 +53,11 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
             ) { }
         }
 
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
-
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
             emailClient.unsubscribeAllFromEmailMessages()
-            sudoClient.reset()
         }
 
     @Test
@@ -172,12 +156,7 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
                 }
             emailClient.subscribeToEmailMessages(id, emailMessageSubscriber)
 
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -187,6 +166,9 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
             sentMessageId = sendResult.id
             sentMessageId.isBlank() shouldBe false
             sendResult.createdAt shouldNotBe null
+
+            // Wait to make sure message has been sent and processed before trying to update
+            waitForMessage(sendResult.id)
 
             val updateResult =
                 emailClient.updateEmailMessages(
@@ -202,7 +184,6 @@ class EmailMessageSubscriberIntegrationTest : BaseIntegrationTest() {
             val deleteResult = emailClient.deleteEmailMessage(sentMessageId)
             deleteResult shouldBe DeleteEmailMessageSuccessResult(sentMessageId)
 
-            delay(3000L)
             // Ensure that the callback has been called for each change type
             await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isCreated }
             await.atMost(Duration.ONE_MINUTE) withPollInterval Duration.TWO_HUNDRED_MILLISECONDS until { isUpdated }

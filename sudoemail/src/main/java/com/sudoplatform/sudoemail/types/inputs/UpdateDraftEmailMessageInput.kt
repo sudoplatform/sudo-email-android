@@ -11,8 +11,8 @@ import com.sudoplatform.sudoemail.types.EmailAddress
 /**
  * Input object containing information required to update a draft email message.
  *
- * The email address in the `From` field of the RFC6854 data must match either the `maskAddress` of the Email Mask associated with the
- * `emailMaskId` property, if provided, otherwise the `emailAddress` of the Email Address associated with the `senderEmailAddressId` property.
+ * The email address in the `From` field of the RFC6854 data must match either the `aliasAddress` of the Email Alias associated with the
+ * `emailAliasId` property, if provided, otherwise the `emailAddress` of the Email Address associated with the `senderEmailAddressId` property.
  *
  * @property id [String] The ID of the draft message to update
  * @property rfc822Data [ByteArray] Email message data formatted under the RFC-6854 (supersedes RFC 822)
@@ -26,13 +26,13 @@ import com.sudoplatform.sudoemail.types.EmailAddress
  *    - Address must match standard email address pattern:
  *       `^[a-zA-Z0-9](\.?[-_a-zA-Z0-9])*@[a-zA-Z0-9](-*\.?[a-zA-Z0-9])*\.[a-zA-Z](-?[a-zA-Z0-9])+$`.
  * @param senderEmailAddressId [String] Identifier of the [EmailAddress] being used to send the email.
- * @param emailMaskId [String?] Optional email mask ID associated with the draft.
+ * @param emailAliasId [String?] Optional email alias ID associated with the draft.
  */
 data class UpdateDraftEmailMessageInput(
     val id: String,
     val rfc822Data: ByteArray,
     val senderEmailAddressId: String,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

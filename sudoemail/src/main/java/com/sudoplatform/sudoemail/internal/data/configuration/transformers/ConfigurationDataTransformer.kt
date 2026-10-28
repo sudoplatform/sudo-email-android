@@ -29,8 +29,8 @@ internal object ConfigurationDataTransformer {
             emailMessageRecipientsLimit = configurationData.emailMessageRecipientsLimit,
             encryptedEmailMessageRecipientsLimit = configurationData.encryptedEmailMessageRecipientsLimit,
             prohibitedFileExtensions = configurationData.prohibitedFileExtensions,
-            emailMasksEnabled = configurationData.emailMasksEnabled,
-            externalEmailMasksEnabled = configurationData.externalEmailMasksEnabled,
+            emailAliasesEnabled = configurationData.emailMasksEnabled,
+            externalEmailAliasesEnabled = configurationData.externalEmailMasksEnabled,
             allowOwnerEmailAddressReuse = configurationData.allowOwnerEmailAddressReuse,
         )
 
@@ -49,8 +49,8 @@ internal object ConfigurationDataTransformer {
             emailMessageRecipientsLimit = configurationDataEntity.emailMessageRecipientsLimit,
             encryptedEmailMessageRecipientsLimit = configurationDataEntity.encryptedEmailMessageRecipientsLimit,
             prohibitedFileExtensions = configurationDataEntity.prohibitedFileExtensions,
-            emailMasksEnabled = configurationDataEntity.emailMasksEnabled,
-            externalEmailMasksEnabled = configurationDataEntity.externalEmailMasksEnabled,
+            emailAliasesEnabled = configurationDataEntity.emailAliasesEnabled,
+            externalEmailAliasesEnabled = configurationDataEntity.externalEmailAliasesEnabled,
             allowOwnerEmailAddressReuse = configurationDataEntity.allowOwnerEmailAddressReuse,
         )
 }

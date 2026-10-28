@@ -9,19 +9,16 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForEmailAddressIdInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assume
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -31,32 +28,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
     fun listDraftEmailMessageMetadataForEmailAddressIdShouldThrowErrorIfSenderEmailAddressNotFound() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             shouldThrow<SudoEmailClient.EmailAddressException.EmailAddressNotFoundException> {
                 emailClient.listDraftEmailMessageMetadataForEmailAddressId(
@@ -68,11 +50,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     @Test
     fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnEmptyListIfNoDrafts() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -89,11 +67,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     @Test
     fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnListOfDraftMessageMetadata() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -125,35 +99,31 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
         }
 
     @Test
-    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnEmailMaskIdInMetadata() =
+    fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnEmailAliasIdInMetadata() =
         runTest {
             val config = emailClient.getConfigurationData()
-            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailAliasesEnabled)
 
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
-            val maskDomains = getMaskDomains(emailClient)
-            val maskLocalPart = generateSafeLocalPart("mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+            val aliasDomains = getAliasDomains(emailClient)
+            val aliasLocalPart = generateSafeLocalPart("alias")
+            val aliasAddress = "$aliasLocalPart@${aliasDomains.first()}"
+            val emailAlias = provisionEmailAlias(aliasAddress, emailAddress.emailAddress, ownershipProof)
 
             val numMessages = 2
 
             for (i in 0 until numMessages) {
                 val rfc822Data =
                     DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
-                        from = emailMask.maskAddress,
-                        to = listOf(emailMask.maskAddress),
+                        from = emailAlias.aliasAddress,
+                        to = listOf(emailAlias.aliasAddress),
                         subject = "Draft $i",
                     )
-                val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id, emailMask.id)
+                val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id, emailAlias.id)
                 emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
             }
 
@@ -164,7 +134,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
 
             result.items.size shouldBe numMessages
             result.items.forEach { draftEmailMessageMetadata ->
-                draftEmailMessageMetadata.emailMaskId shouldBe emailMask.id
+                draftEmailMessageMetadata.emailAliasId shouldBe emailAlias.id
                 draftEmailMessageMetadata.emailAddressId shouldBe emailAddress.id
             }
         }
@@ -173,11 +143,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnListOfDraftMessageMetadataAndHitsDefaultLimitAndSpecificLimit() =
         runTest {
             val numMessages = 11
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -217,11 +183,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     @Test
     fun listDraftEmailMessageMetadataForEmailAddressIdShouldReturnListOfDraftMessageMetadataWithinLimitShouldBePaged() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -271,11 +233,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     @Test
     fun listDraftEmailMessageMetadataForEmailAddressIdShouldUpdateWhenNewDraftIsAdded() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -319,11 +277,7 @@ class ListDraftEmailMessageMetadataForEmailAddressIdIntegrationTest : BaseIntegr
     @Test
     fun listDraftEmailMessageMetadataForEmailAddressIdShouldNotListMessagesFromOtherAccounts() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null

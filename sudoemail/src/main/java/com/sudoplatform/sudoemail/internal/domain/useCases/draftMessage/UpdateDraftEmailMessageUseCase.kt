@@ -26,13 +26,13 @@ import com.sudoplatform.sudologging.Logger
  * @property draftId [String] The ID of the draft message to update.
  * @property emailAddressId [String] The email address ID associated with the draft.
  * @property rfc822Data [ByteArray] The updated RFC822 formatted email message data.
- * @property emailMaskId [String?] Optional email mask ID associated with the draft.
+ * @property emailAliasId [String?] Optional email alias ID associated with the draft.
  */
 internal data class UpdateDraftEmailMessageUseCaseInput(
     val draftId: String,
     val emailAddressId: String,
     val rfc822Data: ByteArray,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -105,7 +105,7 @@ internal class UpdateDraftEmailMessageUseCase(
             DefaultS3Client.constructS3KeyForDraftEmailMessage(
                 input.emailAddressId,
                 input.draftId,
-                input.emailMaskId,
+                input.emailAliasId,
             )
 
         draftEmailMessageService.get(

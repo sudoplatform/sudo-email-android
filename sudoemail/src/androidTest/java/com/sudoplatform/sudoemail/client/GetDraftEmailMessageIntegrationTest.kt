@@ -9,13 +9,11 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.internal.util.DefaultEmailMessageDataProcessor
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.string.shouldInclude
 import io.kotlintest.shouldBe
@@ -24,7 +22,6 @@ import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assume
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -35,33 +32,18 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
     fun getDraftEmailMessageShouldThrowErrorIfSenderEmailAddressNotFound() =
         runTest {
             val mockDraftId = UUID.randomUUID()
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -76,11 +58,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     fun getDraftEmailMessageShouldThrowErrorIfDraftMessageNotFound() =
         runTest {
             val mockDraftId = UUID.randomUUID()
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -94,11 +72,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun getDraftEmailMessageShouldReturnProperOutNetworkMessage() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -134,11 +108,7 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun getDraftEmailMessageShouldReturnProperInNetworkMessage() =
         runTest {
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -188,26 +158,22 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
         }
 
     @Test
-    fun getDraftEmailMessageShouldSuccessfullyGetDraftMessageWithEmailMaskId() =
+    fun getDraftEmailMessageShouldSuccessfullyGetDraftMessageWithEmailAliasId() =
         runTest {
             val config = emailClient.getConfigurationData()
-            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailAliasesEnabled)
 
-            val sudo = createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
-            val maskDomains = getMaskDomains(emailClient)
-            val maskLocalPart = generateSafeLocalPart("mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+            val aliasDomains = getAliasDomains(emailClient)
+            val aliasLocalPart = generateSafeLocalPart("alias")
+            val aliasAddress = "$aliasLocalPart@${aliasDomains.first()}"
+            val emailAlias = provisionEmailAlias(aliasAddress, emailAddress.emailAddress, ownershipProof)
 
             val rfc822Data =
                 DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
-                    from = emailMask.maskAddress,
-                    to = listOf(emailMask.maskAddress),
+                    from = emailAlias.aliasAddress,
+                    to = listOf(emailAlias.aliasAddress),
                     subject = "Test Draft",
                     body = "Test Body",
                 )
@@ -216,14 +182,14 @@ class GetDraftEmailMessageIntegrationTest : BaseIntegrationTest() {
                 CreateDraftEmailMessageInput(
                     rfc822Data = rfc822Data,
                     senderEmailAddressId = emailAddress.id,
-                    emailMaskId = emailMask.id,
+                    emailAliasId = emailAlias.id,
                 )
 
             val draftId = emailClient.createDraftEmailMessage(createDraftInput)
-            val input = GetDraftEmailMessageInput(draftId, emailAddress.id, emailMask.id)
+            val input = GetDraftEmailMessageInput(draftId, emailAddress.id, emailAlias.id)
             val draftEmailMessage = emailClient.getDraftEmailMessage(input)
             draftEmailMessage.id shouldBe draftId
             draftEmailMessage.emailAddressId shouldBe emailAddress.id
-            draftEmailMessage.emailMaskId shouldBe emailMask.id
+            draftEmailMessage.emailAliasId shouldBe emailAlias.id
         }
 }

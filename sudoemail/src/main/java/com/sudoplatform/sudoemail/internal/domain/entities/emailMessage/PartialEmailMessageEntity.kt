@@ -33,7 +33,7 @@ import java.util.Date
  * @property size [Double] The size of the encrypted RFC822 data stored in the backend in bytes.
  * @property encryptionStatus [EncryptionStatusEntity] Encryption status of the email message.
  * @property date [Date] The date the email message was sent or received.
- * @property emailMaskId [String] The identifier of the email mask used to send or receive this message, if any.
+ * @property emailAliasId [String] The identifier of the email alias used to send or receive this message, if any.
  *
  */
 internal data class PartialEmailMessageEntity(
@@ -56,5 +56,5 @@ internal data class PartialEmailMessageEntity(
     val size: Double,
     val encryptionStatus: EncryptionStatusEntity,
     val date: Date? = null,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
 )

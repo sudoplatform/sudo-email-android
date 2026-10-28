@@ -46,7 +46,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SealedEm
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageResultEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEncryptedEmailMessageRequest
-import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendMaskedEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendViaAliasEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.UpdateEmailMessagesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.UpdatedEmailMessageResultEntity
 import com.sudoplatform.sudoemail.internal.util.toDate
@@ -157,10 +157,10 @@ internal class GraphQLEmailMessageService(
         }
     }
 
-    override suspend fun sendMasked(input: SendMaskedEmailMessageRequest): SendEmailMessageResultEntity {
-        logger.debug("Sending masked email message: $input")
+    override suspend fun sendViaAlias(input: SendViaAliasEmailMessageRequest): SendEmailMessageResultEntity {
+        logger.debug("Sending email message via alias: $input")
         val (
-            emailMaskId,
+            emailAliasId,
             encryptionStatus,
             s3ObjectKey,
             region,
@@ -184,7 +184,7 @@ internal class GraphQLEmailMessageService(
 
             val mutationInput =
                 SendMaskedEmailMessageInput(
-                    emailMaskId = emailMaskId,
+                    emailMaskId = emailAliasId,
                     message = s3EmailObject,
                     rfc822Header = rfc822HeaderInput,
                     encryptionStatus = encryptionStatus.toEmailMessageEncryptionStatus(),

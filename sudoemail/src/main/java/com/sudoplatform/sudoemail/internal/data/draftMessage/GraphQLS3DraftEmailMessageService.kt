@@ -137,12 +137,12 @@ internal class GraphQLS3DraftEmailMessageService(
 
             val items =
                 result.items.map {
-                    val emailMaskId = DefaultS3Client.extractEmailMaskIdFromDraftMessageS3Key(it.key)
+                    val emailAliasId = DefaultS3Client.extractEmailMaskIdFromDraftMessageS3Key(it.key)
                     DraftEmailMessageMetadataEntity(
                         it.key.substringAfterLast("/"),
                         emailAddressId,
                         it.lastModified,
-                        emailMaskId = emailMaskId,
+                        emailAliasId = emailAliasId,
                     )
                 }
 
@@ -191,7 +191,7 @@ internal class GraphQLS3DraftEmailMessageService(
                 ScheduleSendDraftMessageInput(
                     draftMessageKey = input.draftMessageKey,
                     emailAddressId = input.emailAddressId,
-                    emailMaskId = if (input.emailMaskId != null) Optional.present(input.emailMaskId) else Optional.absent(),
+                    emailMaskId = if (input.emailAliasId != null) Optional.present(input.emailAliasId) else Optional.absent(),
                     sendAtEpochMs = input.sendAt.time.toDouble(),
                     symmetricKey = input.symmetricKey,
                 )
@@ -222,7 +222,7 @@ internal class GraphQLS3DraftEmailMessageService(
                 CancelScheduledDraftMessageInput(
                     draftMessageKey = input.draftMessageKey,
                     emailAddressId = input.emailAddressId,
-                    emailMaskId = if (input.emailMaskId != null) Optional.present(input.emailMaskId) else Optional.absent(),
+                    emailMaskId = if (input.emailAliasId != null) Optional.present(input.emailAliasId) else Optional.absent(),
                 )
             val mutationResponse =
                 apiClient.cancelScheduledDraftMessageMutation(

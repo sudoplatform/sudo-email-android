@@ -9,19 +9,16 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAttachment
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageWithBodyInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -32,36 +29,20 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
 
     private val messageBody =
         "A programmer had a problem. They thought they could solve the problem with threads. have Now problems. two they"
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
     fun getEmailMessageWithBodyShouldReturnSuccessfulResult() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -88,12 +69,7 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
     @Test
     fun getEmailMessageWithBodyForEncryptedMessageShouldReturnUnencryptedMessageBody() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -130,12 +106,7 @@ class GetEmailMessageWithBodyIntegrationTest : BaseIntegrationTest() {
     @Test
     fun getEmailMessageWithBodyForEncryptedMessageShouldReturnUnencryptedMessageBodyAndAttachments() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null

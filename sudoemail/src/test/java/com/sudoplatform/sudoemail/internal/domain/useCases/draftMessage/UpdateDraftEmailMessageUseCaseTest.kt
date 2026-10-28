@@ -172,15 +172,15 @@ class UpdateDraftEmailMessageUseCaseTest : BaseTests() {
         }
 
     @Test
-    fun `execute() should include email mask id in s3 key when provided`() =
+    fun `execute() should include email alias id in s3 key when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
+            val emailAliasId = "emailAliasId"
             val input =
                 UpdateDraftEmailMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = senderEmailAddressId,
                     rfc822Data = rfc822Data,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             useCase.execute(input)
@@ -192,7 +192,7 @@ class UpdateDraftEmailMessageUseCaseTest : BaseTests() {
             )
             verify(mockDraftEmailMessageService).get(
                 check {
-                    it.s3Key shouldBe DefaultS3Client.constructS3KeyForDraftEmailMessage(senderEmailAddressId, draftId, emailMaskId)
+                    it.s3Key shouldBe DefaultS3Client.constructS3KeyForDraftEmailMessage(senderEmailAddressId, draftId, emailAliasId)
                 },
             )
             verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
@@ -200,7 +200,7 @@ class UpdateDraftEmailMessageUseCaseTest : BaseTests() {
                 check {
                     it.s3Key shouldContain senderEmailAddressId
                     it.s3Key shouldContain draftId
-                    it.s3Key shouldContain emailMaskId
+                    it.s3Key shouldContain emailAliasId
                     it.symmetricKeyId shouldBe mockSymmetricKeyId
                     it.rfc822Data shouldBe rfc822Data
                 },

@@ -41,7 +41,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmai
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.ListEmailMessagesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendEncryptedEmailMessageRequest
-import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendMaskedEmailMessageRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.SendViaAliasEmailMessageRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.UpdateEmailMessagesRequest
 import com.sudoplatform.sudoemail.s3.DefaultS3Client
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
@@ -781,10 +781,10 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
             )
         }
 
-    /** Begin SendMaskedEmailMessageTests */
+    /** Begin SendEmailMessageViaAliasTests */
 
     @Test
-    fun `sendMaskedEmailMessage() should return result when successful`() =
+    fun `sendViaAlias() should return result when successful`() =
         runTest {
             val messageId = "masked-message-id-123"
             val s3Key = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, messageId)
@@ -807,8 +807,8 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                 )
 
             val request =
-                SendMaskedEmailMessageRequest(
-                    emailMaskId = "mask-id-123",
+                SendViaAliasEmailMessageRequest(
+                    emailAliasId = "mask-id-123",
                     encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
                     s3ObjectKey = s3Key,
                     region = "us-east-1",
@@ -820,7 +820,7 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                     forwardingMessageId = null,
                 )
 
-            val result = instanceUnderTest.sendMasked(request)
+            val result = instanceUnderTest.sendViaAlias(request)
 
             result shouldNotBe null
             result.id shouldBe messageId
@@ -841,7 +841,7 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
         }
 
     @Test
-    fun `sendMaskedEmailMessage() should handle unencrypted messages`() =
+    fun `sendViaAlias() should handle unencrypted messages`() =
         runTest {
             val mutationResponse = DataFactory.sendMaskedEmailMessageMutationResponse("messageId", 1000.0)
             mockApiClient.stub {
@@ -861,8 +861,8 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                 )
 
             val request =
-                SendMaskedEmailMessageRequest(
-                    emailMaskId = "mask-id-456",
+                SendViaAliasEmailMessageRequest(
+                    emailAliasId = "mask-id-456",
                     encryptionStatus = EncryptionStatusEntity.UNENCRYPTED,
                     s3ObjectKey = s3Key,
                     region = "us-east-1",
@@ -874,7 +874,7 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                     forwardingMessageId = null,
                 )
 
-            val result = instanceUnderTest.sendMasked(request)
+            val result = instanceUnderTest.sendViaAlias(request)
 
             result shouldNotBe null
 
@@ -887,7 +887,7 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
         }
 
     @Test
-    fun `sendMaskedEmailMessage() should throw when response has errors`() =
+    fun `sendViaAlias() should throw when response has errors`() =
         runTest {
             val testError =
                 GraphQLResponse.Error(
@@ -913,8 +913,8 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                 )
 
             val request =
-                SendMaskedEmailMessageRequest(
-                    emailMaskId = "mask-id-123",
+                SendViaAliasEmailMessageRequest(
+                    emailAliasId = "mask-id-123",
                     encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
                     s3ObjectKey = s3Key,
                     region = "us-east-1",
@@ -927,14 +927,14 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException> {
-                instanceUnderTest.sendMasked(request)
+                instanceUnderTest.sendViaAlias(request)
             }
 
             verify(mockApiClient).sendMaskedEmailMessageMutation(any())
         }
 
     @Test
-    fun `sendMaskedEmailMessage() should throw when result is null`() =
+    fun `sendViaAlias() should throw when result is null`() =
         runTest {
             mockApiClient.stub {
                 onBlocking {
@@ -953,8 +953,8 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                 )
 
             val request =
-                SendMaskedEmailMessageRequest(
-                    emailMaskId = "mask-id-123",
+                SendViaAliasEmailMessageRequest(
+                    emailAliasId = "mask-id-123",
                     encryptionStatus = EncryptionStatusEntity.ENCRYPTED,
                     s3ObjectKey = s3Key,
                     region = "us-east-1",
@@ -967,7 +967,7 @@ class GraphQLEmailMessageServiceTest : BaseTests() {
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
-                instanceUnderTest.sendMasked(request)
+                instanceUnderTest.sendViaAlias(request)
             }
 
             verify(mockApiClient).sendMaskedEmailMessageMutation(any())

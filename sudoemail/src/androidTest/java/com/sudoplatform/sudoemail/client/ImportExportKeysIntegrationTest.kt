@@ -17,7 +17,6 @@ import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -62,7 +61,8 @@ class ImportExportKeysIntegrationTest : BaseIntegrationTest() {
             val result = sendEmailMessage(emailClient, emailAddress)
             result.id.isBlank() shouldBe false
 
-            delay(3000)
+            // Wait until the sent message is queryable by id.
+            waitForMessage(result.id)
 
             val getMessageInput = GetEmailMessageInput(result.id)
             val storedEmailMessage =

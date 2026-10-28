@@ -122,10 +122,10 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
         }
 
     @Test
-    fun listDraftEmailMessagesForEmailAddressIdShouldReturnEmailMaskIdInDraftMessageMetadata() =
+    fun listDraftEmailMessagesForEmailAddressIdShouldReturnEmailAliasIdInDraftMessageMetadata() =
         runTest {
             val config = emailClient.getConfigurationData()
-            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailMasksEnabled)
+            Assume.assumeTrue("Test skipped due to masks not being enabled", config.emailAliasesEnabled)
 
             val sudo = createSudo(TestData.sudo)
             sudo shouldNotBe null
@@ -136,21 +136,21 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
             emailAddressList.add(emailAddress)
-            val maskDomains = getMaskDomains(emailClient)
-            val maskLocalPart = generateSafeLocalPart("mask")
-            val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-            val emailMask = provisionEmailMask(maskAddress, emailAddress.emailAddress, ownershipProof)
+            val aliasDomains = getAliasDomains(emailClient)
+            val aliasLocalPart = generateSafeLocalPart("alias")
+            val aliasAddress = "$aliasLocalPart@${aliasDomains.first()}"
+            val emailAlias = provisionEmailAlias(aliasAddress, emailAddress.emailAddress, ownershipProof)
 
             val numMessages = 2
 
             for (i in 0 until numMessages) {
                 val rfc822Data =
                     DefaultEmailMessageDataProcessor(context).encodeToInternetMessageData(
-                        from = emailMask.maskAddress,
-                        to = listOf(emailMask.maskAddress),
+                        from = emailAlias.aliasAddress,
+                        to = listOf(emailAlias.aliasAddress),
                         subject = "Draft $i",
                     )
-                val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id, emailMask.id)
+                val createDraftEmailMessageInput = CreateDraftEmailMessageInput(rfc822Data, emailAddress.id, emailAlias.id)
                 emailClient.createDraftEmailMessage(createDraftEmailMessageInput)
             }
 
@@ -158,7 +158,7 @@ class ListDraftEmailMessagesForEmailAddressIdIntegrationTest : BaseIntegrationTe
 
             result.items.size shouldBe numMessages
             result.items.forEach { draftEmailMessageMetadata ->
-                draftEmailMessageMetadata.emailMaskId shouldBe emailMask.id
+                draftEmailMessageMetadata.emailAliasId shouldBe emailAlias.id
                 draftEmailMessageMetadata.emailAddressId shouldBe emailAddress.id
             }
         }

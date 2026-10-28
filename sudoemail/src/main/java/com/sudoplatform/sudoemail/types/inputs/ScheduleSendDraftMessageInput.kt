@@ -18,6 +18,6 @@ import java.util.Date
 data class ScheduleSendDraftMessageInput(
     val id: String,
     val emailAddressId: String,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
     val sendAt: Date,
 )

@@ -9,7 +9,6 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.Direction
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAttachment
@@ -21,7 +20,6 @@ import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
@@ -35,7 +33,6 @@ import org.awaitility.Duration
 import org.awaitility.kotlin.await
 import org.junit.After
 import org.junit.Assume
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -46,22 +43,11 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     // Send Non-E2E email tests
@@ -69,12 +55,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailShouldReturnEmailMessageId() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -154,12 +135,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         runTest(
             timeout = kotlin.time.Duration.parse("2m"),
         ) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -247,12 +223,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailShouldThrowWithEmptyRecipients() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -286,12 +257,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailWithRecipientWithDisplayNameContainingComma() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -375,12 +341,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
         runTest(
             timeout = kotlin.time.Duration.parse("3m"),
         ) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -459,12 +420,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailShouldThrowWhenInvalidRecipientAddressUsed() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -478,12 +434,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailShouldThrowWhenInvalidSenderAddressUsed() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -512,12 +463,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailShouldThrowWhenInvalidAttachmentUsed() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -592,12 +538,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEmailShouldThrowWhenInNetworkRecipientAddressNotFound() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -622,12 +563,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailShouldReturnEmailMessageId() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -697,12 +633,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     fun sendEmailWithReplyingMessageIdShouldUpdateRepliedToState() =
         runTest {
             try {
-                val sudo = sudoClient.createSudo(TestData.sudo)
-                sudo shouldNotBe null
-                sudoList.add(sudo)
-
-                val ownershipProof = getOwnershipProof(sudo)
-                ownershipProof shouldNotBe null
+                val ownershipProof = sharedOwnershipProof()
 
                 val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
                 emailAddress shouldNotBe null
@@ -792,12 +723,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     fun sendEmailWithForwardingMessageIdShouldUpdateForwardedState() =
         runTest {
             try {
-                val sudo = sudoClient.createSudo(TestData.sudo)
-                sudo shouldNotBe null
-                sudoList.add(sudo)
-
-                val ownershipProof = getOwnershipProof(sudo)
-                ownershipProof shouldNotBe null
+                val ownershipProof = sharedOwnershipProof()
 
                 val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
                 emailAddress shouldNotBe null
@@ -886,12 +812,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailWithValidAttachmentShouldReturnEmailMessageId() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -979,12 +900,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailWithMultipleRecipientsShouldReturnEmailMessageId() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1051,12 +967,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailWithIdenticalFromRecipientShouldReturnEmailAddressId() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1112,12 +1023,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailShouldThrowWhenInvalidAttachmentUsed() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1153,12 +1059,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailShouldThrowWhenVariousInvalidAttachmentsUsed() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1236,12 +1137,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailShouldThrowWhenInNetworkRecipientAddressNotFound() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1269,12 +1165,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun sendEncryptedEmailWithRecipientWithDisplayNameContainingComma() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1362,12 +1253,7 @@ class SendEmailMessageIntegrationTest : BaseIntegrationTest() {
                     data = ByteArray(emailMessageMaxOutboundMessageSize),
                 )
 
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null

@@ -68,12 +68,12 @@ class UpdateEmailAddressMetadataIntegrationTest : BaseIntegrationTest() {
                 ProvisionEmailAddressInput(
                     emailAddress = emailAddress,
                     ownershipProofToken = ownershipProof,
-                    alias = aliasInput,
+                    displayName = aliasInput,
                 )
             val provisionedAddress = emailClient.provisionEmailAddress(provisionInput)
             provisionedAddress shouldNotBe null
             emailAddressList.add(provisionedAddress)
-            provisionedAddress.alias shouldBe aliasInput
+            provisionedAddress.displayName shouldBe aliasInput
 
             val updateInput =
                 UpdateEmailAddressMetadataInput(
@@ -86,7 +86,7 @@ class UpdateEmailAddressMetadataIntegrationTest : BaseIntegrationTest() {
 
             val getAddressInput = GetEmailAddressInput(updatedAddressId)
             val updatedEmailAddress = emailClient.getEmailAddress(getAddressInput)
-            updatedEmailAddress?.alias shouldBe "Alice Smith"
+            updatedEmailAddress?.displayName shouldBe "Alice Smith"
         }
 
     @Test
@@ -109,12 +109,12 @@ class UpdateEmailAddressMetadataIntegrationTest : BaseIntegrationTest() {
                 ProvisionEmailAddressInput(
                     emailAddress = emailAddress,
                     ownershipProofToken = ownershipProof,
-                    alias = aliasInput,
+                    displayName = aliasInput,
                 )
             val provisionedAddress = emailClient.provisionEmailAddress(provisionInput)
             provisionedAddress shouldNotBe null
             emailAddressList.add(provisionedAddress)
-            provisionedAddress.alias shouldBe aliasInput
+            provisionedAddress.displayName shouldBe aliasInput
 
             // Clear the alias by setting it to the empty string
             val updateInput =
@@ -128,6 +128,6 @@ class UpdateEmailAddressMetadataIntegrationTest : BaseIntegrationTest() {
 
             val getAddressInput = GetEmailAddressInput(updatedAddressId)
             val updatedEmailAddress = emailClient.getEmailAddress(getAddressInput)
-            updatedEmailAddress?.alias shouldBe null
+            updatedEmailAddress?.displayName shouldBe null
         }
 }

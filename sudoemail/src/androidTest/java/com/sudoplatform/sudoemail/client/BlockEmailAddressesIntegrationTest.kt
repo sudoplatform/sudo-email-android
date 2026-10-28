@@ -9,14 +9,12 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -24,7 +22,6 @@ import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.awaitility.Duration
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -35,15 +32,6 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
@@ -52,10 +40,17 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
             if (blocklist.isNotEmpty()) {
                 emailClient.unblockEmailAddressesByHashedValue(blocklist.map { it.hashedBlockedValue })
             }
+            // Deprovision per-test addresses. The shared sudo is torn down once in
+            // @AfterClass by the SharedSudoIntegrationTest base.
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
+
+    /**
+     * Generates a unique, email-shaped address string to use as a block target.
+     * blockEmailAddresses only validates format and hashes the value, so the target
+     * does not need to be a provisioned address.
+     */
+    private fun generateBlockTargetAddress(): String = "blocked-${UUID.randomUUID()}@spambot.com"
 
     @Test
     fun blockEmailAddressesThrowsAnErrorIfPassedAnEmptyAddressesArray() =
@@ -76,26 +71,13 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockEmailAddressesShouldAllowDuplicateAddresses() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-            receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
+            val addressToBlock = generateBlockTargetAddress()
 
             val result =
                 emailClient.blockEmailAddresses(
                     listOf(
-                        emailAddressToBlock.emailAddress.lowercase(),
-                        emailAddressToBlock.emailAddress.uppercase(),
+                        addressToBlock.lowercase(),
+                        addressToBlock.uppercase(),
                     ),
                 )
 
@@ -105,25 +87,10 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockEmailAddressesShouldSuccessfullyBlockASingleAddress() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-            receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
-
             val result =
                 emailClient.blockEmailAddresses(
                     listOf(
-                        emailAddressToBlock.emailAddress,
+                        generateBlockTargetAddress(),
                     ),
                 )
 
@@ -133,25 +100,10 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockEmailAddressesShouldSuccessfullyBlockASingleAddressWithActionParameter() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-            receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
-
             val result =
                 emailClient.blockEmailAddresses(
                     listOf(
-                        emailAddressToBlock.emailAddress,
+                        generateBlockTargetAddress(),
                     ),
                     action = BlockedEmailAddressAction.SPAM,
                 )
@@ -162,25 +114,16 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockEmailAddressesShouldSuccessfullyBlockASingleAddressWithEmailAddressIdParameter() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
+            // A real provisioned address is required here because the block is scoped
+            // to its id; the blocked target itself can be an arbitrary address string.
+            val receiverEmailAddress = provisionEmailAddress(emailClient, sharedOwnershipProof(), prefix = "receiver-${UUID.randomUUID()}")
             receiverEmailAddress shouldNotBe null
             emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
 
             val result =
                 emailClient.blockEmailAddresses(
                     listOf(
-                        emailAddressToBlock.emailAddress,
+                        generateBlockTargetAddress(),
                     ),
                     emailAddressId = receiverEmailAddress.id,
                 )
@@ -191,25 +134,10 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockEmailAddressesShouldSuccessfullyBlockASingleAddressWithLevelParameter() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-            receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
-
             val result =
                 emailClient.blockEmailAddresses(
                     listOf(
-                        emailAddressToBlock.emailAddress,
+                        generateBlockTargetAddress(),
                     ),
                     level = com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel.DOMAIN,
                 )
@@ -220,25 +148,10 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockEmailAddressesShouldSuccessfullyBlockMultipleAddress() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
-            receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
-
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof, prefix = "sender-${UUID.randomUUID()}")
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
-
             val result =
                 emailClient.blockEmailAddresses(
                     listOf(
-                        emailAddressToBlock.emailAddress,
+                        generateBlockTargetAddress(),
                         "spammyMcSpamface${UUID.randomUUID()}@spambot.com",
                     ),
                 )
@@ -249,13 +162,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun messagesFromBlockedAddressesShouldNotBeReceived() =
         runTest(timeout = kotlin.time.Duration.parse("5m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
+            val ownershipProof = sharedOwnershipProof()
             val receiver = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
             receiver shouldNotBe null
             emailAddressList.add(receiver)
@@ -318,9 +225,14 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
             )
 
             // Unblock the sender
+            val senderHashedValue =
+                emailClient
+                    .getEmailAddressBlocklist()
+                    .first { it.address == sender.emailAddress }
+                    .hashedBlockedValue
             val unblockResult =
-                emailClient.unblockEmailAddresses(
-                    listOf(sender.emailAddress),
+                emailClient.unblockEmailAddressesByHashedValue(
+                    listOf(senderHashedValue),
                 )
             unblockResult.status shouldBe BatchOperationStatus.SUCCESS
 
@@ -346,13 +258,7 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun messagesFromBlockedAddressWithSpamActionShouldBeHandledAppropriately() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
+            val ownershipProof = sharedOwnershipProof()
             val receiver = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
             receiver shouldNotBe null
             emailAddressList.add(receiver)
@@ -419,9 +325,14 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
             )
 
             // Unblock the sender
+            val senderHashedValue =
+                emailClient
+                    .getEmailAddressBlocklist()
+                    .first { it.address == sender.emailAddress }
+                    .hashedBlockedValue
             val unblockResult =
-                emailClient.unblockEmailAddresses(
-                    listOf(sender.emailAddress),
+                emailClient.unblockEmailAddressesByHashedValue(
+                    listOf(senderHashedValue),
                 )
             unblockResult.status shouldBe BatchOperationStatus.SUCCESS
 
@@ -447,12 +358,9 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockingByEmailAddressIdDoesNotBlockForOtherEmailAddresses() =
         runTest(timeout = kotlin.time.Duration.parse("3m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            // receiver1 + receiver2 + sender = 3 addresses, the emailAddressMaxPerSudo
+            // limit, all under the shared sudo.
+            val ownershipProof = sharedOwnershipProof()
 
             val receiver1 = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver1-${UUID.randomUUID()}")
             receiver1 shouldNotBe null
@@ -521,13 +429,9 @@ class BlockEmailAddressesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun blockingByDomainShouldBlockAllAddressesWithThatDomain() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
-
+            // receiver + sender1 + sender2 = 3 addresses, the emailAddressMaxPerSudo
+            // limit, all under the shared sudo.
+            val ownershipProof = sharedOwnershipProof()
             val receiver = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
             receiver shouldNotBe null
             emailAddressList.add(receiver)

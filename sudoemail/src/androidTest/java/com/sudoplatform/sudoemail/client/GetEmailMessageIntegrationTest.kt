@@ -9,11 +9,9 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.inputs.GetEmailMessageInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.types.shouldBeInstanceOf
@@ -21,7 +19,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
@@ -32,33 +29,17 @@ import java.util.Date
 @RunWith(AndroidJUnit4::class)
 class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
     fun getEmailMessageShouldReturnEmailMessageResult() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -86,12 +67,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun getEmailMessageShouldReturnEmailMessageResultForOutOfNetworkMessageWithAlias() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress =
                 provisionEmailAddress(
@@ -108,7 +84,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
                     emailAddress,
                     toAddresses =
                         listOf(
-                            EmailMessage.EmailAddress(successSimulatorAddress, emailAddress.alias),
+                            EmailMessage.EmailAddress(successSimulatorAddress, emailAddress.displayName),
                         ),
                 )
             sendResult.id.isBlank() shouldBe false
@@ -122,9 +98,9 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
                 from.firstOrNull() shouldBe
                     EmailMessage.EmailAddress(
                         emailAddress.emailAddress,
-                        emailAddress.alias,
+                        emailAddress.displayName,
                     )
-                to shouldBe listOf(EmailMessage.EmailAddress(successSimulatorAddress, emailAddress.alias))
+                to shouldBe listOf(EmailMessage.EmailAddress(successSimulatorAddress, emailAddress.displayName))
                 hasAttachments shouldBe false
                 size shouldBeGreaterThan 0.0
                 date.shouldBeInstanceOf<Date>()
@@ -134,12 +110,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
     @Test
     fun getEmailMessageShouldReturnEmailMessageResultForInNetworkMessageWithAlias() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress =
                 provisionEmailAddress(
@@ -156,7 +127,7 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
                     emailAddress,
                     toAddresses =
                         listOf(
-                            EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.alias),
+                            EmailMessage.EmailAddress(emailAddress.emailAddress, emailAddress.displayName),
                         ),
                 )
             sendResult.id.isBlank() shouldBe false
@@ -170,13 +141,13 @@ class GetEmailMessageIntegrationTest : BaseIntegrationTest() {
                 from.firstOrNull() shouldBe
                     EmailMessage.EmailAddress(
                         emailAddress.emailAddress,
-                        emailAddress.alias,
+                        emailAddress.displayName,
                     )
                 to shouldBe
                     listOf(
                         EmailMessage.EmailAddress(
                             emailAddress.emailAddress,
-                            emailAddress.alias,
+                            emailAddress.displayName,
                         ),
                     )
                 hasAttachments shouldBe false

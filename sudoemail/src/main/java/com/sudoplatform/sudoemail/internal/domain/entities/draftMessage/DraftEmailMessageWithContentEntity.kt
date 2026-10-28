@@ -25,7 +25,7 @@ internal data class DraftEmailMessageWithContentEntity(
     val emailAddressId: String,
     val updatedAt: Date,
     val rfc822Data: ByteArray,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
 ) : Parcelable {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -36,7 +36,7 @@ internal data class DraftEmailMessageWithContentEntity(
         if (id != other.id) return false
         if (emailAddressId != other.emailAddressId) return false
         if (updatedAt != other.updatedAt) return false
-        if (emailMaskId != other.emailMaskId) return false
+        if (emailAliasId != other.emailAliasId) return false
         return rfc822Data.contentEquals(other.rfc822Data)
     }
 
@@ -44,7 +44,7 @@ internal data class DraftEmailMessageWithContentEntity(
         var result = id.hashCode()
         result = 31 * result + emailAddressId.hashCode()
         result = 31 * result + updatedAt.hashCode()
-        result = 31 * result + (emailMaskId?.hashCode() ?: 0)
+        result = 31 * result + (emailAliasId?.hashCode() ?: 0)
         result = 31 * result + rfc822Data.contentHashCode()
         return result
     }

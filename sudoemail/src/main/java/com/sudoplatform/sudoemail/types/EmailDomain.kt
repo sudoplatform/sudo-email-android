@@ -13,12 +13,12 @@ import kotlinx.parcelize.Parcelize
  * Representation of an email domain used in the Sudo Platform Email SDK.
  *
  * @property domain [String] The domain name.
- * @property isMaskDomain [Boolean] Whether the domain is a mask domain.
+ * @property isAliasDomain [Boolean] Whether the domain is a mask domain.
  * @property metadata [Map] Metadata associated with the domain as key-value pairs.
  */
 @Parcelize
 data class EmailDomain(
     val domain: String,
-    val isMaskDomain: Boolean,
+    val isAliasDomain: Boolean,
     val metadata: Map<String, String>,
 ) : Parcelable

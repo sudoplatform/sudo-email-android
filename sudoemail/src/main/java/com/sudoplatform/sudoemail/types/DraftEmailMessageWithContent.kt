@@ -18,7 +18,7 @@ import java.util.Date
  * @property emailAddressId [String] Unique identifier of the email address associated with the draft
  *  email message.
  * @property updatedAt [Date] When the draft message was last updated.
- * @property emailMaskId [String?] Optional email mask ID associated with the draft.
+ * @property emailAliasId [String?] Optional email alias ID associated with the draft.
  * @property rfc822Data [ByteArray] The rfc822 compliant data of the draft message.
  */
 @Parcelize
@@ -26,7 +26,7 @@ data class DraftEmailMessageWithContent(
     override val id: String,
     override val emailAddressId: String,
     override val updatedAt: Date,
-    override val emailMaskId: String? = null,
+    override val emailAliasId: String? = null,
     val rfc822Data: ByteArray,
 ) : Parcelable,
     DraftEmailMessage {
@@ -39,7 +39,7 @@ data class DraftEmailMessageWithContent(
         if (id != other.id) return false
         if (emailAddressId != other.emailAddressId) return false
         if (updatedAt != other.updatedAt) return false
-        if (emailMaskId != other.emailMaskId) return false
+        if (emailAliasId != other.emailAliasId) return false
         return rfc822Data.contentEquals(other.rfc822Data)
     }
 
@@ -47,7 +47,7 @@ data class DraftEmailMessageWithContent(
         var result = id.hashCode()
         result = 31 * result + emailAddressId.hashCode()
         result = 31 * result + updatedAt.hashCode()
-        result = 31 * result + (emailMaskId?.hashCode() ?: 0)
+        result = 31 * result + (emailAliasId?.hashCode() ?: 0)
         result = 31 * result + rfc822Data.contentHashCode()
         return result
     }

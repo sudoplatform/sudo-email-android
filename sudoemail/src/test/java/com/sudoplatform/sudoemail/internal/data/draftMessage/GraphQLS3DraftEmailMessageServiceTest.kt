@@ -872,8 +872,8 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
         runTest {
             val emailAddressId = mockEmailAddressId
             val draftId = "draftIdWithEmailMask"
-            val emailMaskId = "emailMask123"
-            val key = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId, emailMaskId)
+            val emailAliasId = "emailMask123"
+            val key = DefaultS3Client.constructS3KeyForDraftEmailMessage(emailAddressId, draftId, emailAliasId)
             val updatedAt = Date()
 
             val s3Objects =
@@ -896,7 +896,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
 
             result.items.size shouldBe 1
             result.items[0].id shouldBe draftId
-            result.items[0].emailMaskId shouldBe emailMaskId
+            result.items[0].emailAliasId shouldBe emailAliasId
 
             verify(mockS3Client).list(any(), isNull(), isNull(), any())
         }
@@ -1280,7 +1280,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                     sendAt = sendAt,
                     symmetricKey = symmetricKey,
                 )
@@ -1305,12 +1305,12 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
         }
 
     @Test
-    fun `scheduleSendDraftMessage() should pass emailMaskId as Optional present when provided`() =
+    fun `scheduleSendDraftMessage() should pass emailAliasId as Optional present when provided`() =
         runTest {
             val draftMessageKey = "draftMessageKey"
             val sendAt = Date(System.currentTimeMillis() + 86400000)
             val symmetricKey = "symmetricKey"
-            val emailMaskId = "emailMaskId"
+            val emailAliasId = "emailAliasId"
 
             val scheduledDraftMessage =
                 DataFactory.getScheduledDraftMessage(
@@ -1331,7 +1331,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                     sendAt = sendAt,
                     symmetricKey = symmetricKey,
                 )
@@ -1340,13 +1340,13 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
 
             verify(mockApiClient).scheduleSendDraftMessageMutation(
                 check {
-                    it.emailMaskId shouldBe Optional.present(emailMaskId)
+                    it.emailMaskId shouldBe Optional.present(emailAliasId)
                 },
             )
         }
 
     @Test
-    fun `scheduleSendDraftMessage() should pass emailMaskId as Optional absent when not provided`() =
+    fun `scheduleSendDraftMessage() should pass emailAliasId as Optional absent when not provided`() =
         runTest {
             val draftMessageKey = "draftMessageKey"
             val sendAt = Date(System.currentTimeMillis() + 86400000)
@@ -1371,7 +1371,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                     sendAt = sendAt,
                     symmetricKey = symmetricKey,
                 )
@@ -1413,7 +1413,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                     sendAt = sendAt,
                     symmetricKey = symmetricKey,
                 )
@@ -1446,7 +1446,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                     sendAt = sendAt,
                     symmetricKey = symmetricKey,
                 )
@@ -1473,7 +1473,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                     sendAt = sendAt,
                     symmetricKey = symmetricKey,
                 )
@@ -1513,7 +1513,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 ScheduleSendDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                     sendAt = sendAt,
                     symmetricKey = symmetricKey,
                 )
@@ -1713,7 +1713,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = instanceUnderTest.cancelScheduledDraftMessage(request)
@@ -1730,10 +1730,10 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
         }
 
     @Test
-    fun `cancelScheduledDraftMessage() should pass emailMaskId as Optional present when provided`() =
+    fun `cancelScheduledDraftMessage() should pass emailAliasId as Optional present when provided`() =
         runTest {
             val draftMessageKey = "identityId/email/$emailAddressId/draft/$draftId"
-            val emailMaskId = "emailMaskId"
+            val emailAliasId = "emailAliasId"
             val mutationResponse = DataFactory.cancelScheduledDraftMessageResponse(draftMessageKey)
 
             mockApiClient.stub {
@@ -1744,20 +1744,20 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             instanceUnderTest.cancelScheduledDraftMessage(request)
 
             verify(mockApiClient).cancelScheduledDraftMessageMutation(
                 check {
-                    it.emailMaskId shouldBe Optional.present(emailMaskId)
+                    it.emailMaskId shouldBe Optional.present(emailAliasId)
                 },
             )
         }
 
     @Test
-    fun `cancelScheduledDraftMessage() should pass emailMaskId as Optional absent when not provided`() =
+    fun `cancelScheduledDraftMessage() should pass emailAliasId as Optional absent when not provided`() =
         runTest {
             val draftMessageKey = "identityId/email/$emailAddressId/draft/$draftId"
             val mutationResponse = DataFactory.cancelScheduledDraftMessageResponse(draftMessageKey)
@@ -1770,7 +1770,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             instanceUnderTest.cancelScheduledDraftMessage(request)
@@ -1797,7 +1797,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = instanceUnderTest.cancelScheduledDraftMessage(request)
@@ -1833,7 +1833,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -1862,7 +1862,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -1885,7 +1885,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             shouldThrow<RuntimeException> {
@@ -1910,7 +1910,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = customEmailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             instanceUnderTest.cancelScheduledDraftMessage(request)
@@ -1949,7 +1949,7 @@ class GraphQLS3DraftEmailMessageServiceTest : BaseTests() {
                 CancelScheduledDraftMessageRequest(
                     draftMessageKey = draftMessageKey,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {

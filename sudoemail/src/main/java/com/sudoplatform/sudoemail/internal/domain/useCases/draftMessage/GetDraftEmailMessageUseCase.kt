@@ -30,12 +30,12 @@ import com.sudoplatform.sudologging.Logger
  *
  * @property draftId [String] The ID of the draft message to retrieve.
  * @property emailAddressId [String] The email address ID associated with the draft.
- * @property emailMaskId [String?] Optional email mask ID associated with the draft.
+ * @property emailAliasId [String?] Optional email alias ID associated with the draft.
  */
 internal data class GetDraftEmailMessageUseCaseInput(
     val draftId: String,
     val emailAddressId: String,
-    val emailMaskId: String? = null,
+    val emailAliasId: String? = null,
 )
 
 /**
@@ -79,7 +79,7 @@ internal class GetDraftEmailMessageUseCase(
             DefaultS3Client.constructS3KeyForDraftEmailMessage(
                 input.emailAddressId,
                 input.draftId,
-                emailMaskId = input.emailMaskId,
+                emailAliasId = input.emailAliasId,
             )
 
         val draftMessageInfo =
@@ -125,7 +125,7 @@ internal class GetDraftEmailMessageUseCase(
                 emailAddressId = input.emailAddressId,
                 updatedAt = draftMessageInfo.updatedAt,
                 rfc822Data = unsealedRfc822Data,
-                emailMaskId = input.emailMaskId,
+                emailAliasId = input.emailAliasId,
             )
         } catch (e: Throwable) {
             logger.error(e.message)

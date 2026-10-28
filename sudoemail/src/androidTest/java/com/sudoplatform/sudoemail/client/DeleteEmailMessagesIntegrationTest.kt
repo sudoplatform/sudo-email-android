@@ -9,11 +9,9 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -26,7 +24,6 @@ import org.awaitility.kotlin.has
 import org.awaitility.kotlin.untilCallTo
 import org.awaitility.kotlin.withPollInterval
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -36,33 +33,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
 
     @After
     fun teardown() =
         runTest {
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
     fun deleteEmailMessagesShouldReturnSuccessWhenDeletingMultipleMessages() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -80,6 +61,15 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
 
             waitForMessages(messageCount)
 
+            await
+                .atMost(Duration.TEN_SECONDS)
+                .pollInterval(Duration.FIVE_HUNDRED_MILLISECONDS)
+                .untilAsserted {
+                    runBlocking {
+                        val updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
+                        updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
+                    }
+                }
             var updatedEmailAddress = emailClient.getEmailAddress(GetEmailAddressInput(emailAddress.id))
             updatedEmailAddress!!.numberOfEmailMessages shouldBe messageCount
 
@@ -100,12 +90,7 @@ class DeleteEmailMessagesIntegrationTest : BaseIntegrationTest() {
     @Test
     fun deleteEmailMessagesShouldReturnSuccessResultWhenDeletingExistingAndNonExistingMessages() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null

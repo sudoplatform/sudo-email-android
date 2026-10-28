@@ -10,8 +10,8 @@ import com.sudoplatform.sudoemail.internal.domain.entities.blockedAddress.Blocke
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.EmailFolderService
-import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.EmailMaskService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.EmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.BlockEmailAddressesUseCase
@@ -35,17 +35,17 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ListEmai
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ProvisionEmailAddressUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.UpdateEmailAddressMetadataUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DeprovisionEmailAliasUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DisableEmailAliasUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.EnableEmailAliasUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ListEmailAliasesUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ProvisionEmailAliasUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.UpdateEmailAliasUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.VerifyExternalEmailAddressUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.CreateCustomEmailFolderUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.DeleteCustomEmailFolderUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.ListEmailFoldersForEmailAddressIdUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.UpdateCustomEmailFolderUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.DeprovisionEmailMaskUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.DisableEmailMaskUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.EnableEmailMaskUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ListEmailMasksUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ProvisionEmailMaskUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.UpdateEmailMaskUseCase
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.VerifyExternalEmailAddressUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.DeleteEmailMessagesUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageWithBodyUseCase
@@ -123,17 +123,17 @@ internal interface UseCaseFactory {
 
     fun createGetEmailAddressBlocklistUseCase(): GetEmailAddressBlocklistUseCase
 
-    fun createProvisionEmailMaskUseCase(): ProvisionEmailMaskUseCase
+    fun createProvisionEmailAliasUseCase(): ProvisionEmailAliasUseCase
 
-    fun createDeprovisionEmailMaskUseCase(): DeprovisionEmailMaskUseCase
+    fun createDeprovisionEmailAliasUseCase(): DeprovisionEmailAliasUseCase
 
-    fun createUpdateEmailMaskUseCase(): UpdateEmailMaskUseCase
+    fun createUpdateEmailAliasUseCase(): UpdateEmailAliasUseCase
 
-    fun createEnableEmailMaskUseCase(): EnableEmailMaskUseCase
+    fun createEnableEmailAliasUseCase(): EnableEmailAliasUseCase
 
-    fun createDisableEmailMaskUseCase(): DisableEmailMaskUseCase
+    fun createDisableEmailAliasUseCase(): DisableEmailAliasUseCase
 
-    fun createListEmailMasksUseCase(): ListEmailMasksUseCase
+    fun createListEmailAliasesUseCase(): ListEmailAliasesUseCase
 
     fun createVerifyExternalEmailAddressUseCase(): VerifyExternalEmailAddressUseCase
 }
@@ -142,7 +142,7 @@ internal class DefaultUseCaseFactory(
     private val emailAddressService: EmailAddressService,
     private val emailFolderService: EmailFolderService,
     private val emailMessageService: EmailMessageService,
-    private val emailMaskService: EmailMaskService,
+    private val emailAliasService: EmailAliasService,
     private val configurationDataService: ConfigurationDataService,
     private val draftEmailMessageService: DraftEmailMessageService,
     private val blockedAddressService: BlockedAddressService,
@@ -410,51 +410,51 @@ internal class DefaultUseCaseFactory(
             logger = logger,
         )
 
-    override fun createProvisionEmailMaskUseCase(): ProvisionEmailMaskUseCase =
-        ProvisionEmailMaskUseCase(
-            emailMaskService = emailMaskService,
+    override fun createProvisionEmailAliasUseCase(): ProvisionEmailAliasUseCase =
+        ProvisionEmailAliasUseCase(
+            emailAliasService = emailAliasService,
             serviceKeyManager = serviceKeyManager,
             sealingService = sealingService,
             logger = logger,
         )
 
-    override fun createDeprovisionEmailMaskUseCase(): DeprovisionEmailMaskUseCase =
-        DeprovisionEmailMaskUseCase(
-            emailMaskService = emailMaskService,
+    override fun createDeprovisionEmailAliasUseCase(): DeprovisionEmailAliasUseCase =
+        DeprovisionEmailAliasUseCase(
+            emailAliasService = emailAliasService,
             logger = logger,
         )
 
-    override fun createUpdateEmailMaskUseCase(): UpdateEmailMaskUseCase =
-        UpdateEmailMaskUseCase(
-            emailMaskService = emailMaskService,
+    override fun createUpdateEmailAliasUseCase(): UpdateEmailAliasUseCase =
+        UpdateEmailAliasUseCase(
+            emailAliasService = emailAliasService,
             serviceKeyManager = serviceKeyManager,
             sealingService = sealingService,
             logger = logger,
         )
 
-    override fun createEnableEmailMaskUseCase(): EnableEmailMaskUseCase =
-        EnableEmailMaskUseCase(
-            emailMaskService = emailMaskService,
+    override fun createEnableEmailAliasUseCase(): EnableEmailAliasUseCase =
+        EnableEmailAliasUseCase(
+            emailAliasService = emailAliasService,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
         )
 
-    override fun createDisableEmailMaskUseCase(): DisableEmailMaskUseCase =
-        DisableEmailMaskUseCase(
-            emailMaskService = emailMaskService,
+    override fun createDisableEmailAliasUseCase(): DisableEmailAliasUseCase =
+        DisableEmailAliasUseCase(
+            emailAliasService = emailAliasService,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
         )
 
-    override fun createListEmailMasksUseCase(): ListEmailMasksUseCase =
-        ListEmailMasksUseCase(
-            emailMaskService = emailMaskService,
+    override fun createListEmailAliasesUseCase(): ListEmailAliasesUseCase =
+        ListEmailAliasesUseCase(
+            emailAliasService = emailAliasService,
             serviceKeyManager = serviceKeyManager,
             logger = logger,
         )
 
     override fun createVerifyExternalEmailAddressUseCase(): VerifyExternalEmailAddressUseCase =
         VerifyExternalEmailAddressUseCase(
-            emailMaskService = emailMaskService,
+            emailAliasService = emailAliasService,
         )
 }

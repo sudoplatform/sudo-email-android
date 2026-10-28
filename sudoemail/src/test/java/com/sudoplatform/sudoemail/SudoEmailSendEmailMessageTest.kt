@@ -156,7 +156,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             verify(mockUseCase).execute(
                 check { useCaseInput ->
                     useCaseInput.senderEmailAddressId shouldBe emailAddressId
-                    useCaseInput.senderMaskId shouldBe null
+                    useCaseInput.senderAliasId shouldBe null
                     useCaseInput.emailMessageHeader.toString() shouldBe
                         InternetMessageFormatHeaderTransformer
                             .apiToEntity(
@@ -199,7 +199,7 @@ class SudoEmailSendEmailMessageTest : BaseTests() {
             verify(mockUseCase).execute(
                 check { useCaseInput ->
                     useCaseInput.senderEmailAddressId shouldBe emailAddressId
-                    useCaseInput.senderMaskId shouldBe null
+                    useCaseInput.senderAliasId shouldBe null
                     useCaseInput.emailMessageHeader.toString() shouldBe
                         InternetMessageFormatHeaderTransformer
                             .apiToEntity(

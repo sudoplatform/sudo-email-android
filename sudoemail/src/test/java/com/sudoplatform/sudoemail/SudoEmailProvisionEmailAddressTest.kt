@@ -123,7 +123,7 @@ class SudoEmailProvisionEmailAddressTest : BaseTests() {
                 createdAt shouldBe Date(1L)
                 updatedAt shouldBe Date(1L)
                 lastReceivedAt shouldBe Date(1L)
-                alias shouldBe null
+                displayName shouldBe null
                 folders.size shouldBe 1
                 with(folders[0]) {
                     id shouldBe mockFolderId

@@ -75,7 +75,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 createdAt.time shouldBeGreaterThan 0L
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
-                alias shouldBe null
+                displayName shouldBe null
             }
             val folders = result.folders
             when (folders.size) {
@@ -115,7 +115,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 createdAt.time shouldBeGreaterThan 0L
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
-                alias shouldBe null
+                displayName shouldBe null
             }
             val folders = result1.folders
             when (folders.size) {
@@ -144,7 +144,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 createdAt.time shouldBeGreaterThan 0L
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
-                alias shouldBe null
+                displayName shouldBe null
             }
             val folders2 = result2.folders
             when (folders2.size) {
@@ -187,7 +187,7 @@ class ProvisionEmailAddressIntegrationTest : BaseIntegrationTest() {
                 createdAt.time shouldBeGreaterThan 0L
                 updatedAt.time shouldBeGreaterThan 0L
                 lastReceivedAt shouldBe null
-                alias shouldBe aliasInput
+                displayName shouldBe aliasInput
             }
             val folders = result.folders
             when (folders.size) {

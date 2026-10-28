@@ -9,41 +9,30 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.types.BatchOperationStatus
-import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.UUID
 
 /**
  * Test the operation of [SudoEmailClient.unblockEmailAddressesByHashedValue]
  */
 @RunWith(AndroidJUnit4::class)
 class UnblockEmailAddressesByHashedValueIntegrationTest : BaseIntegrationTest() {
-    private val emailAddressList = mutableListOf<EmailAddress>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
-
     @After
     fun teardown() =
         runTest {
-            emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
+            // Clear any blocklist entries left by a failed test (the happy path
+            // unblocks its own entries). No addresses/sudos are provisioned here.
+            val blocklist = emailClient.getEmailAddressBlocklist()
+            if (blocklist.isNotEmpty()) {
+                emailClient.unblockEmailAddressesByHashedValue(blocklist.map { it.hashedBlockedValue })
+            }
         }
 
     private fun blockAddresses(addresses: List<String>) =
@@ -63,22 +52,15 @@ class UnblockEmailAddressesByHashedValueIntegrationTest : BaseIntegrationTest() 
     @Test
     fun unblockingABlockedAddressShouldReturnSuccess() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
+            val ownershipProof = sharedOwnershipProof()
             ownershipProof shouldNotBe null
 
-            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof)
+            // A real provisioned address is required here because the client still need the symmetric key
+            // generated at provision time to encrypt the blocked address
+            val receiverEmailAddress = provisionEmailAddress(emailClient, ownershipProof, prefix = "receiver-${UUID.randomUUID()}")
             receiverEmailAddress shouldNotBe null
-            emailAddressList.add(receiverEmailAddress)
 
-            val emailAddressToBlock = provisionEmailAddress(emailClient, ownershipProof)
-            emailAddressToBlock shouldNotBe null
-            emailAddressList.add(emailAddressToBlock)
-
-            blockAddresses(listOf(emailAddressToBlock.emailAddress))
+            blockAddresses(listOf(generateBlockTargetAddress()))
 
             val blocklist = emailClient.getEmailAddressBlocklist()
 
@@ -87,4 +69,6 @@ class UnblockEmailAddressesByHashedValueIntegrationTest : BaseIntegrationTest() 
             val result = emailClient.unblockEmailAddressesByHashedValue(hashedValues)
             result.status shouldBe BatchOperationStatus.SUCCESS
         }
+
+    private fun generateBlockTargetAddress(): String = "blocked-${UUID.randomUUID()}@spambot.com"
 }

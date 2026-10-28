@@ -24,7 +24,7 @@ import java.util.Date
  * @property createdAt [Date] When the email address was created.
  * @property updatedAt [Date] When the email address was last updated.
  * @property lastReceivedAt [Date] When the email address last received an email message.
- * @property alias [String] An optional user defined alias name for the the email address.
+ * @property displayName [String] An optional user defined display name for the the email address.
  * @property folders [List<EmailFolder>] List of folders associated with this email address.
  */
 @Parcelize
@@ -39,7 +39,7 @@ data class EmailAddress(
     val createdAt: Date,
     val updatedAt: Date,
     val lastReceivedAt: Date? = null,
-    val alias: String? = null,
+    val displayName: String? = null,
     val folders: List<EmailFolder>,
 ) : Parcelable
 

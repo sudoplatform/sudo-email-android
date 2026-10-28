@@ -24,10 +24,10 @@ import com.sudoplatform.sudoemail.internal.data.draftMessage.transformers.Schedu
 import com.sudoplatform.sudoemail.internal.data.emailAddress.GraphQLEmailAddressService
 import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressPublicInfoTransformer
 import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressTransformer
+import com.sudoplatform.sudoemail.internal.data.emailAlias.GraphQLEmailAliasService
+import com.sudoplatform.sudoemail.internal.data.emailAlias.transformers.EmailAliasTransformer
 import com.sudoplatform.sudoemail.internal.data.emailFolder.GraphQLEmailFolderService
 import com.sudoplatform.sudoemail.internal.data.emailFolder.transformers.EmailFolderTransformer
-import com.sudoplatform.sudoemail.internal.data.emailMask.GraphQLEmailMaskService
-import com.sudoplatform.sudoemail.internal.data.emailMask.transformers.EmailMaskTransformer
 import com.sudoplatform.sudoemail.internal.data.emailMessage.GraphQLEmailMessageService
 import com.sudoplatform.sudoemail.internal.data.emailMessage.cache.RoomEmailMessageBodyCache
 import com.sudoplatform.sudoemail.internal.data.emailMessage.transformers.EmailAttachmentTransformer
@@ -41,8 +41,8 @@ import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEma
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.CheckEmailAddressAvailabilityRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.DeprovisionEmailAddressRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.EmailFolderService
-import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.EmailMaskService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.DeleteMessageForFolderIdRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.cache.CacheFlushInput
@@ -51,7 +51,6 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.DefaultUseCaseFactory
 import com.sudoplatform.sudoemail.internal.domain.useCases.UseCaseFactory
 import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.BlockEmailAddressesUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.UnblockEmailAddressesByHashedValueUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.blockedAddress.UnblockEmailAddressesUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.CancelScheduledDraftMessageUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.CreateDraftEmailMessageUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.DeleteDraftEmailMessagesUseCaseInput
@@ -65,16 +64,16 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ListEmai
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.LookupEmailAddressesPublicInfoUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ProvisionEmailAddressUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.UpdateEmailAddressMetadataUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DeprovisionEmailAliasUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DisableEmailAliasUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.EnableEmailAliasUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ListEmailAliasesUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ProvisionEmailAliasUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.UpdateEmailAliasUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.CreateCustomEmailFolderUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.DeleteCustomEmailFolderUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.ListEmailFoldersForEmailAddressIdUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailFolder.UpdateCustomEmailFolderUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.DeprovisionEmailMaskUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.DisableEmailMaskUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.EnableEmailMaskUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ListEmailMasksUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.ProvisionEmailMaskUseCaseInput
-import com.sudoplatform.sudoemail.internal.domain.useCases.emailMask.UpdateEmailMaskUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmailMessageWithBodyUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.ListEmailMessagesUseCaseInput
@@ -102,16 +101,16 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
+import com.sudoplatform.sudoemail.types.EmailAlias
 import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudoemail.types.EmailFolder
-import com.sudoplatform.sudoemail.types.EmailMask
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.EmailMessageWithBody
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
-import com.sudoplatform.sudoemail.types.PartialEmailMask
+import com.sudoplatform.sudoemail.types.PartialEmailAlias
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
@@ -125,9 +124,9 @@ import com.sudoplatform.sudoemail.types.inputs.CreateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteDraftEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.DeleteMessagesForFolderIdInput
-import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
-import com.sudoplatform.sudoemail.types.inputs.DisableEmailMaskInput
-import com.sudoplatform.sudoemail.types.inputs.EnableEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailAliasInput
+import com.sudoplatform.sudoemail.types.inputs.DisableEmailAliasInput
+import com.sudoplatform.sudoemail.types.inputs.EnableEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.FlushMessageBodyCacheInput
 import com.sudoplatform.sudoemail.types.inputs.GetDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.GetEmailAddressInput
@@ -137,22 +136,22 @@ import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessageMetadataForE
 import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailAliasesForOwnerInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
-import com.sudoplatform.sudoemail.types.inputs.ListEmailMasksForOwnerInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.ListScheduledDraftMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.LookupEmailAddressesPublicInfoInput
 import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAddressInput
-import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.ProvisionEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.ScheduleSendDraftMessageInput
 import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageInput
-import com.sudoplatform.sudoemail.types.inputs.SendMaskedEmailMessageInput
+import com.sudoplatform.sudoemail.types.inputs.SendEmailMessageViaAliasInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateCustomEmailFolderInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateDraftEmailMessageInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAddressMetadataInput
-import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.UpdateEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
 import com.sudoplatform.sudoemail.types.inputs.VerifyExternalEmailAddressInput
 import com.sudoplatform.sudoemail.util.EmailClientInvoker
@@ -204,8 +203,8 @@ internal class DefaultSudoEmailClient(
             serviceKeyManager,
             logger,
         ),
-    private val emailMaskService: EmailMaskService =
-        GraphQLEmailMaskService(
+    private val emailAliasService: EmailAliasService =
+        GraphQLEmailAliasService(
             apiClient,
             logger,
         ),
@@ -285,7 +284,7 @@ internal class DefaultSudoEmailClient(
             sealingService = sealingService,
             sudoUserClient = sudoUserClient,
             emailCryptoService = emailCryptoService,
-            emailMaskService = emailMaskService,
+            emailAliasService = emailAliasService,
             emailMessageBodyCache = emailMessageBodyCache,
             logger = logger,
         ),
@@ -352,24 +351,10 @@ internal class DefaultSudoEmailClient(
         return ConfigurationDataTransformer.entityToApi(config)
     }
 
-    @Deprecated("Use listEmailDomains instead", replaceWith = ReplaceWith("listEmailDomains"))
-    @Throws(SudoEmailClient.EmailAddressException::class)
-    override suspend fun getEmailMaskDomains(): List<String> {
-        ensureSignedIn()
-        return configurationDataService.getEmailMaskDomains()
-    }
-
     @Throws(SudoEmailClient.EmailAddressException::class)
     override suspend fun listEmailDomains(): List<EmailDomain> {
         ensureSignedIn()
         return configurationDataService.listEmailDomains()
-    }
-
-    @Deprecated("Use listEmailDomains instead", replaceWith = ReplaceWith("listEmailDomains"))
-    @Throws(SudoEmailClient.EmailAddressException::class)
-    override suspend fun getSupportedEmailDomains(): List<String> {
-        ensureSignedIn()
-        return configurationDataService.getSupportedEmailDomains()
     }
 
     @Throws(SudoEmailClient.EmailAddressException::class)
@@ -403,7 +388,7 @@ internal class DefaultSudoEmailClient(
                 ProvisionEmailAddressUseCaseInput(
                     input.emailAddress,
                     input.ownershipProofToken,
-                    input.alias,
+                    input.displayName,
                     input.keyId,
                 ),
             )
@@ -442,7 +427,7 @@ internal class DefaultSudoEmailClient(
         return useCase.execute(
             UpdateEmailAddressMetadataUseCaseInput(
                 input.id,
-                input.alias,
+                input.displayName,
             ),
         )
     }
@@ -621,19 +606,19 @@ internal class DefaultSudoEmailClient(
         )
     }
 
-    override suspend fun sendMaskedEmailMessage(input: SendMaskedEmailMessageInput): SendEmailMessageResult {
+    override suspend fun sendEmailMessageViaAlias(input: SendEmailMessageViaAliasInput): SendEmailMessageResult {
         ensureSignedIn()
-        logger.debug("sendMaskedEmailMessage input: $input")
+        logger.debug("sendEmailMessageViaAlias input: $input")
 
         val useCase = useCaseFactory.createSendEmailMessageUseCase()
 
-        val (senderEmailMaskId, emailMessageHeader, body, attachments, inlineAttachments, replyingMessageId, forwardingMessageId) = input
+        val (senderEmailAliasId, emailMessageHeader, body, attachments, inlineAttachments, replyingMessageId, forwardingMessageId) = input
 
         val result =
             useCase.execute(
                 SendEmailMessageUseCaseInput(
                     null,
-                    senderEmailMaskId,
+                    senderEmailAliasId,
                     InternetMessageFormatHeaderTransformer.apiToEntity(emailMessageHeader),
                     body,
                     attachments.map { EmailAttachmentTransformer.apiToEntity(it) },
@@ -817,7 +802,7 @@ internal class DefaultSudoEmailClient(
             CreateDraftEmailMessageUseCaseInput(
                 rfc822Data = input.rfc822Data,
                 emailAddressId = input.senderEmailAddressId,
-                emailMaskId = input.emailMaskId,
+                emailAliasId = input.emailAliasId,
             ),
         )
     }
@@ -837,7 +822,7 @@ internal class DefaultSudoEmailClient(
                 rfc822Data = input.rfc822Data,
                 emailAddressId = input.senderEmailAddressId,
                 draftId = input.id,
-                emailMaskId = input.emailMaskId,
+                emailAliasId = input.emailAliasId,
             ),
         )
     }
@@ -859,7 +844,7 @@ internal class DefaultSudoEmailClient(
                 DeleteDraftEmailMessagesUseCaseInput(
                     ids = input.ids,
                     emailAddressId = input.emailAddressId,
-                    emailMaskId = input.emailMaskId,
+                    emailAliasId = input.emailAliasId,
                 ),
             )
 
@@ -882,27 +867,11 @@ internal class DefaultSudoEmailClient(
                 GetDraftEmailMessageUseCaseInput(
                     draftId = input.id,
                     emailAddressId = input.emailAddressId,
-                    emailMaskId = input.emailMaskId,
+                    emailAliasId = input.emailAliasId,
                 ),
             )
 
         return DraftEmailMessageTransformer.entityWithContentToApi(result)
-    }
-
-    @Deprecated(
-        "Use listDraftEmailMessagesForEmailAddressId instead to retrieve draft email messages",
-        ReplaceWith("listDraftEmailMessagesForEmailAddressId(input)"),
-    )
-    @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun listDraftEmailMessages(): List<DraftEmailMessageWithContent> {
-        ensureSignedIn()
-        logger.debug("listDraftEmailMessages")
-
-        val useCase = useCaseFactory.createListDraftEmailMessagesUseCase()
-
-        val result = useCase.execute()
-
-        return result.map { DraftEmailMessageTransformer.entityWithContentToApi(it) }
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)
@@ -925,22 +894,6 @@ internal class DefaultSudoEmailClient(
             items = result.items.map { DraftEmailMessageTransformer.entityWithContentToApi(it) },
             nextToken = result.nextToken,
         )
-    }
-
-    @Deprecated(
-        "Use listDraftEmailMessagesMetadataFormEmailAddressId instead to retrieve draft email messages",
-        ReplaceWith("listDraftEmailMessageMetadataForEmailAddressId(input)"),
-    )
-    @Throws(SudoEmailClient.EmailMessageException::class)
-    override suspend fun listDraftEmailMessageMetadata(): List<DraftEmailMessageMetadata> {
-        ensureSignedIn()
-        logger.debug("listDraftEmailMessageMetadata")
-
-        val useCase = useCaseFactory.createListDraftEmailMessageMetadataUseCase()
-
-        val result = useCase.execute()
-
-        return result.map { DraftEmailMessageTransformer.draftMetadataEntityToApi(it) }
     }
 
     @Throws(SudoEmailClient.EmailMessageException::class)
@@ -976,7 +929,7 @@ internal class DefaultSudoEmailClient(
                 ScheduleSendDraftMessageUseCaseInput(
                     id = input.id,
                     emailAddressId = input.emailAddressId,
-                    emailMaskId = input.emailMaskId,
+                    emailAliasId = input.emailAliasId,
                     sendAt = input.sendAt,
                 ),
             )
@@ -994,7 +947,7 @@ internal class DefaultSudoEmailClient(
             CancelScheduledDraftMessageUseCaseInput(
                 draftId = input.id,
                 emailAddressId = input.emailAddressId,
-                emailMaskId = input.emailMaskId,
+                emailAliasId = input.emailAliasId,
             ),
         )
     }
@@ -1035,35 +988,6 @@ internal class DefaultSudoEmailClient(
                     action = action ?: BlockedEmailAddressAction.DROP,
                     emailAddressId = emailAddressId,
                     level = level ?: BlockedEmailAddressLevel.ADDRESS,
-                ),
-            )
-
-        return BatchOperationResult(
-            status =
-                when (result.status) {
-                    BatchOperationStatusEntity.SUCCESS -> BatchOperationStatus.SUCCESS
-                    BatchOperationStatusEntity.FAILURE -> BatchOperationStatus.FAILURE
-                    else -> BatchOperationStatus.PARTIAL
-                },
-            successValues = result.successValues,
-            failureValues = result.failureValues,
-        )
-    }
-
-    @Deprecated(
-        "Use unblockEmailAddressesByHashedValue instead",
-        ReplaceWith("unblockEmailAddressesByHashedValue"),
-    )
-    override suspend fun unblockEmailAddresses(addresses: List<String>): BatchOperationResult<String, String> {
-        ensureSignedIn()
-        logger.debug("unblockEmailAddresses addresses: $addresses")
-
-        val useCase = useCaseFactory.createUnblockEmailAddressesUseCase()
-
-        val result =
-            useCase.execute(
-                UnblockEmailAddressesUseCaseInput(
-                    addresses = addresses,
                 ),
             )
 
@@ -1151,16 +1075,16 @@ internal class DefaultSudoEmailClient(
         }
     }
 
-    override suspend fun provisionEmailMask(input: ProvisionEmailMaskInput): EmailMask {
+    override suspend fun provisionEmailAlias(input: ProvisionEmailAliasInput): EmailAlias {
         ensureSignedIn()
-        logger.debug("provisionEmailMask input: $input")
+        logger.debug("provisionEmailAlias input: $input")
 
-        val useCase = useCaseFactory.createProvisionEmailMaskUseCase()
+        val useCase = useCaseFactory.createProvisionEmailAliasUseCase()
 
         val result =
             useCase.execute(
-                ProvisionEmailMaskUseCaseInput(
-                    input.maskAddress,
+                ProvisionEmailAliasUseCaseInput(
+                    input.aliasAddress,
                     input.realAddress,
                     input.ownershipProofToken,
                     input.metadata,
@@ -1168,89 +1092,89 @@ internal class DefaultSudoEmailClient(
                     input.keyId,
                 ),
             )
-        return EmailMaskTransformer.unsealedEntityToApi(result)
+        return EmailAliasTransformer.unsealedEntityToApi(result)
     }
 
-    override suspend fun deprovisionEmailMask(input: DeprovisionEmailMaskInput): PartialEmailMask {
+    override suspend fun deprovisionEmailAlias(input: DeprovisionEmailAliasInput): PartialEmailAlias {
         ensureSignedIn()
-        logger.debug("deprovisionEmailMask input: $input")
+        logger.debug("deprovisionEmailAlias input: $input")
 
-        val useCase = useCaseFactory.createDeprovisionEmailMaskUseCase()
+        val useCase = useCaseFactory.createDeprovisionEmailAliasUseCase()
 
         val result =
             useCase.execute(
-                DeprovisionEmailMaskUseCaseInput(
-                    input.emailMaskId,
+                DeprovisionEmailAliasUseCaseInput(
+                    input.emailAliasId,
                 ),
             )
-        return EmailMaskTransformer.partialEntityToApi(result)
+        return EmailAliasTransformer.partialEntityToApi(result)
     }
 
-    override suspend fun updateEmailMask(input: UpdateEmailMaskInput): EmailMask {
+    override suspend fun updateEmailAlias(input: UpdateEmailAliasInput): EmailAlias {
         ensureSignedIn()
-        logger.debug("updateEmailMask input: $input")
+        logger.debug("updateEmailAlias input: $input")
 
-        val useCase = useCaseFactory.createUpdateEmailMaskUseCase()
+        val useCase = useCaseFactory.createUpdateEmailAliasUseCase()
 
         val result =
             useCase.execute(
-                UpdateEmailMaskUseCaseInput(
-                    input.emailMaskId,
+                UpdateEmailAliasUseCaseInput(
+                    input.emailAliasId,
                     input.metadata,
                     input.expiresAt,
                     input.realAddress,
                 ),
             )
-        return EmailMaskTransformer.unsealedEntityToApi(result)
+        return EmailAliasTransformer.unsealedEntityToApi(result)
     }
 
-    override suspend fun enableEmailMask(input: EnableEmailMaskInput): EmailMask {
+    override suspend fun enableEmailAlias(input: EnableEmailAliasInput): EmailAlias {
         ensureSignedIn()
-        logger.debug("enableEmailMask input: $input")
+        logger.debug("enableEmailAlias input: $input")
 
-        val useCase = useCaseFactory.createEnableEmailMaskUseCase()
+        val useCase = useCaseFactory.createEnableEmailAliasUseCase()
 
         val result =
             useCase.execute(
-                EnableEmailMaskUseCaseInput(
-                    input.emailMaskId,
+                EnableEmailAliasUseCaseInput(
+                    input.emailAliasId,
                 ),
             )
-        return EmailMaskTransformer.unsealedEntityToApi(result)
+        return EmailAliasTransformer.unsealedEntityToApi(result)
     }
 
-    override suspend fun disableEmailMask(input: DisableEmailMaskInput): EmailMask {
+    override suspend fun disableEmailAlias(input: DisableEmailAliasInput): EmailAlias {
         ensureSignedIn()
-        logger.debug("disableEmailMask input: $input")
+        logger.debug("disableEmailAlias input: $input")
 
-        val useCase = useCaseFactory.createDisableEmailMaskUseCase()
+        val useCase = useCaseFactory.createDisableEmailAliasUseCase()
 
         val result =
             useCase.execute(
-                DisableEmailMaskUseCaseInput(
-                    input.emailMaskId,
+                DisableEmailAliasUseCaseInput(
+                    input.emailAliasId,
                 ),
             )
-        return EmailMaskTransformer.unsealedEntityToApi(result)
+        return EmailAliasTransformer.unsealedEntityToApi(result)
     }
 
-    override suspend fun listEmailMasksForOwner(input: ListEmailMasksForOwnerInput): ListAPIResult<EmailMask, PartialEmailMask> {
+    override suspend fun listEmailAliasesForOwner(input: ListEmailAliasesForOwnerInput): ListAPIResult<EmailAlias, PartialEmailAlias> {
         ensureSignedIn()
-        logger.debug("listEmailMasksForOwner input: $input")
+        logger.debug("listEmailAliasesForOwner input: $input")
 
         val useCase =
-            useCaseFactory.createListEmailMasksUseCase()
+            useCaseFactory.createListEmailAliasesUseCase()
 
         val result =
             useCase.execute(
-                ListEmailMasksUseCaseInput(
+                ListEmailAliasesUseCaseInput(
                     input.limit,
                     input.nextToken,
                     input.filter,
                 ),
             )
 
-        return ListApiResultTransformer.transformEmailMaskListApiResultEntity(result)
+        return ListApiResultTransformer.transformEmailAliasListApiResultEntity(result)
     }
 
     override suspend fun verifyExternalEmailAddress(input: VerifyExternalEmailAddressInput): VerifyExternalEmailAddressResult {

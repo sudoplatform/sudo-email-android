@@ -177,7 +177,7 @@ object DataFactory {
                 key = "testKey",
             ),
         size: Double = 1.0,
-        emailMaskId: String? = null,
+        emailAliasId: String? = null,
     ) = SealedEmailMessage(
         id = id,
         owner = owner,
@@ -205,7 +205,7 @@ object DataFactory {
         rfc822DataAttributes = rfc822DataAttributes,
         size = size,
         encryptionStatus = encryptionStatus,
-        emailMaskId = emailMaskId,
+        emailMaskId = emailAliasId,
     )
 
     fun getScheduledDraftMessage(
@@ -427,8 +427,8 @@ object DataFactory {
         emailMessageRecipientsLimit: Int = 5,
         encryptedEmailMessageRecipientsLimit: Int = 10,
         prohibitedFileExtensions: List<String> = listOf(".js", ".exe", ".lib"),
-        emailMasksEnabled: Boolean = true,
-        externalEmailMasksEnabled: Boolean = true,
+        emailAliasesEnabled: Boolean = true,
+        externalEmailAliasesEnabled: Boolean = true,
         allowOwnerEmailAddressReuse: Boolean = true,
     ): GraphQLResponse<GetEmailConfigQuery.Data> =
         GraphQLResponse<GetEmailConfigQuery.Data>(
@@ -443,8 +443,8 @@ object DataFactory {
                         emailMessageRecipientsLimit,
                         encryptedEmailMessageRecipientsLimit,
                         prohibitedFileExtensions,
-                        emailMasksEnabled,
-                        externalEmailMasksEnabled,
+                        emailAliasesEnabled,
+                        externalEmailAliasesEnabled,
                         allowOwnerEmailAddressReuse,
                     ),
                 ),

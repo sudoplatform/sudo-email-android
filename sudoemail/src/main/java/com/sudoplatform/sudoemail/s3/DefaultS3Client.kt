@@ -116,17 +116,17 @@ class DefaultS3Client(
         fun constructS3KeyForDraftEmailMessage(
             emailAddressId: String,
             draftEmailMessageId: String = "",
-            emailMaskId: String? = null,
+            emailAliasId: String? = null,
         ): String {
             var key = "${constructS3PrefixForEmailAddress(emailAddressId)}/draft"
-            key = if (emailMaskId?.isNotEmpty() == true) "$key/mask/$emailMaskId" else key
+            key = if (emailAliasId?.isNotEmpty() == true) "$key/mask/$emailAliasId" else key
             key = if (draftEmailMessageId.isNotEmpty()) "$key/$draftEmailMessageId" else key
             return key
         }
 
         /**
-         * Extracts the emailMaskId from a draft message S3 key if present.
-         * Matches '/mask/{emailMaskId}/' in the key and returns the emailMaskId, or null if not found.
+         * Extracts the emailAliasId from a draft message S3 key if present.
+         * Matches '/mask/{emailAliasId}/' in the key and returns the emailAliasId, or null if not found.
          */
         fun extractEmailMaskIdFromDraftMessageS3Key(key: String): String? {
             val regex = "/mask/([^/]+)/".toRegex()

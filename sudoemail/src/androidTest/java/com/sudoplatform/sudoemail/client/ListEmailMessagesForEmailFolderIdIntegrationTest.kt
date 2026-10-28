@@ -9,18 +9,17 @@ package com.sudoplatform.sudoemail.client
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.sudoplatform.sudoemail.BaseIntegrationTest
 import com.sudoplatform.sudoemail.SudoEmailClient
-import com.sudoplatform.sudoemail.TestData
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.DateRange
 import com.sudoplatform.sudoemail.types.EmailAddress
-import com.sudoplatform.sudoemail.types.EmailMask
+import com.sudoplatform.sudoemail.types.EmailAlias
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageDateRange
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.SortOrder
 import com.sudoplatform.sudoemail.types.State
 import com.sudoplatform.sudoemail.types.inputs.CreateCustomEmailFolderInput
-import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailMaskInput
+import com.sudoplatform.sudoemail.types.inputs.DeprovisionEmailAliasInput
 import com.sudoplatform.sudoemail.types.inputs.EmailMessageFilterInput
 import com.sudoplatform.sudoemail.types.inputs.EmailMessageMailboxType
 import com.sudoplatform.sudoemail.types.inputs.EmailMessageStateFilter
@@ -30,7 +29,6 @@ import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderId
 import com.sudoplatform.sudoemail.types.inputs.MailboxIdsFilterInput
 import com.sudoplatform.sudoemail.types.inputs.StringFieldFilterInput
 import com.sudoplatform.sudoemail.types.inputs.UpdateEmailMessagesInput
-import com.sudoplatform.sudoprofiles.Sudo
 import io.kotlintest.fail
 import io.kotlintest.matchers.collections.shouldHaveSize
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
@@ -44,7 +42,6 @@ import io.kotlintest.shouldNotBe
 import io.kotlintest.shouldThrow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
@@ -56,39 +53,23 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     private val emailAddressList = mutableListOf<EmailAddress>()
-    private val emailMaskList = mutableListOf<EmailMask>()
-    private val sudoList = mutableListOf<Sudo>()
-
-    @Before
-    fun setup() {
-        runTest {
-            sudoClient.reset()
-            sudoClient.generateEncryptionKey()
-        }
-    }
+    private val emailAliasList = mutableListOf<EmailAlias>()
 
     @After
     fun teardown() =
         runTest {
-            emailMaskList.map {
-                emailClient.deprovisionEmailMask(
-                    DeprovisionEmailMaskInput(it.id),
+            emailAliasList.map {
+                emailClient.deprovisionEmailAlias(
+                    DeprovisionEmailAliasInput(it.id),
                 )
             }
             emailAddressList.map { emailClient.deprovisionEmailAddress(it.id) }
-            sudoList.map { sudoClient.deleteSudo(it) }
-            sudoClient.reset()
         }
 
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResult() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -158,12 +139,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListResultForOutOfNetworkMessage() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress =
                 provisionEmailAddress(
@@ -209,7 +185,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                             listOf(
                                 EmailMessage.EmailAddress(
                                     emailAddress.emailAddress,
-                                    emailAddress.alias,
+                                    emailAddress.displayName,
                                 ),
                             )
                         to shouldBe
@@ -235,12 +211,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldRespectLimit() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -313,12 +284,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldRespectSortDateRange() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -399,12 +365,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldRespectUpdatedAtDateRange() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -479,12 +440,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmptyListForOutOfDateRangeSortDate() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -520,7 +476,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                         EmailMessageDateRange(
                             sortDate =
                                 DateRange(
-                                    startDate = sudo.createdAt,
+                                    startDate = sharedSudo().createdAt,
                                     endDate = emailAddress.createdAt,
                                 ),
                         ),
@@ -543,12 +499,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmptyListForOutOfDateRangeUpdatedAtDate() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -584,7 +535,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                         EmailMessageDateRange(
                             updatedAt =
                                 DateRange(
-                                    startDate = sudo.createdAt,
+                                    startDate = sharedSudo().createdAt,
                                     endDate = emailAddress.createdAt,
                                 ),
                         ),
@@ -607,12 +558,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldThrowForMultipleDateRangeSpecified() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -666,12 +612,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldThrowWhenInputStartDateGreaterThanEndDateForSortDateRange() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -720,12 +661,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldThrowWhenInputStartDateGreaterThanEndDateForUpdatedAtDateRange() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -774,12 +710,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListAscending() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -861,12 +792,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmailMessageListDescending() =
         runTest(timeout = kotlin.time.Duration.parse("3m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -940,12 +866,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnEmptyListWhenFolderContainsNoMessages() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1021,12 +942,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldReturnPartialResult() =
         runTest(timeout = kotlin.time.Duration.parse("2m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1102,12 +1018,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldRespectIncludeDeletedMessagesFlag() =
         runTest(timeout = kotlin.time.Duration.parse("3m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1214,12 +1125,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldRespectStateFilter() =
         runTest(timeout = kotlin.time.Duration.parse("3m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1306,12 +1212,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldWorkForCustomFolders() =
         runTest {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             val emailAddress = provisionEmailAddress(emailClient, ownershipProof)
             emailAddress shouldNotBe null
@@ -1377,12 +1278,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
     @Test
     fun listEmailMessagesForEmailFolderIdShouldRespectMailboxIdsFilter() =
         runTest(timeout = kotlin.time.Duration.parse("3m")) {
-            val sudo = sudoClient.createSudo(TestData.sudo)
-            sudo shouldNotBe null
-            sudoList.add(sudo)
-
-            val ownershipProof = getOwnershipProof(sudo)
-            ownershipProof shouldNotBe null
+            val ownershipProof = sharedOwnershipProof()
 
             // The address that will receive messages
             val recipientAddress = provisionEmailAddress(emailClient, ownershipProof)
@@ -1398,23 +1294,23 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                 getFolderByName(emailClient, recipientAddress.id, "INBOX")
                     ?: fail("INBOX folder could not be found")
 
-            val masksEnabled = emailClient.getConfigurationData().emailMasksEnabled
+            val aliasesEnabled = emailClient.getConfigurationData().emailAliasesEnabled
 
-            if (masksEnabled) {
-                val maskDomains = getMaskDomains(emailClient)
-                maskDomains.size shouldBeGreaterThanOrEqual 1
+            if (aliasesEnabled) {
+                val aliasDomains = getAliasDomains(emailClient)
+                aliasDomains.size shouldBeGreaterThanOrEqual 1
 
-                val maskLocalPart = generateSafeLocalPart("android-mbx-mask")
-                val maskAddress = "$maskLocalPart@${maskDomains.first()}"
-                val provisionedMask =
-                    provisionEmailMask(
-                        maskAddress = maskAddress,
+                val aliasLocalPart = generateSafeLocalPart("android-mbx-alias")
+                val aliasAddress = "$aliasLocalPart@${aliasDomains.first()}"
+                val provisionedAlias =
+                    provisionEmailAlias(
+                        aliasAddress = aliasAddress,
                         realAddress = recipientAddress.emailAddress,
                         ownershipProofToken = ownershipProof,
                     )
-                emailMaskList.add(provisionedMask)
+                emailAliasList.add(provisionedAlias)
 
-                // Send a plain (non-masked) inbound message to the recipient address
+                // Send a plain (non-alias) inbound message to the recipient address
                 val plainSubject = "Plain inbound message ${UUID.randomUUID()}"
                 sendEmailMessage(
                     emailClient,
@@ -1423,13 +1319,13 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                     subject = plainSubject,
                 )
 
-                // Send an inbound message via the mask address (routes to the real recipient address)
-                val maskedSubject = "Masked inbound message ${UUID.randomUUID()}"
+                // Send an inbound message via the alias address (routes to the real recipient address)
+                val aliasedSubject = "Aliased inbound message ${UUID.randomUUID()}"
                 sendEmailMessage(
                     emailClient,
                     fromAddress = senderAddress,
-                    toAddresses = listOf(EmailMessage.EmailAddress(provisionedMask.maskAddress)),
-                    subject = maskedSubject,
+                    toAddresses = listOf(EmailMessage.EmailAddress(provisionedAlias.aliasAddress)),
+                    subject = aliasedSubject,
                 )
 
                 // Wait for both inbound messages to arrive in INBOX
@@ -1438,7 +1334,7 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                     ListEmailMessagesForEmailFolderIdInput(folderId = inboxFolder.id),
                 )
 
-                // Filter by ADDRESS mailbox id - should return only the non-masked message
+                // Filter by ADDRESS mailbox id - should return only the non-alias message
                 val addressFilter =
                     EmailMessageFilterInput(
                         mailboxIds =
@@ -1461,44 +1357,44 @@ class ListEmailMessagesForEmailFolderIdIntegrationTest : BaseIntegrationTest() {
                     is ListAPIResult.Success -> {
                         addressFiltered.result.items shouldHaveSize 1
                         addressFiltered.result.items[0].subject shouldBe plainSubject
-                        addressFiltered.result.items[0].emailMaskId shouldBe null
+                        addressFiltered.result.items[0].emailAliasId shouldBe null
                     }
                     else -> {
                         fail("Unexpected ListAPIResult when filtering by ADDRESS mailbox id")
                     }
                 }
 
-                // Filter by MASK mailbox id - should return only the masked message
-                val maskFilter =
+                // Filter by MASK mailbox id - should return only the aliased message
+                val aliasFilter =
                     EmailMessageFilterInput(
                         mailboxIds =
                             listOf(
                                 MailboxIdsFilterInput(
                                     type = EmailMessageMailboxType.MASK,
-                                    id = StringFieldFilterInput(equal = provisionedMask.id),
+                                    id = StringFieldFilterInput(equal = provisionedAlias.id),
                                 ),
                             ),
                     )
                 when (
-                    val maskFiltered =
+                    val aliasFiltered =
                         emailClient.listEmailMessagesForEmailFolderId(
                             ListEmailMessagesForEmailFolderIdInput(
                                 folderId = inboxFolder.id,
-                                filter = maskFilter,
+                                filter = aliasFilter,
                             ),
                         )
                 ) {
                     is ListAPIResult.Success -> {
-                        maskFiltered.result.items shouldHaveSize 1
-                        maskFiltered.result.items[0].subject shouldBe maskedSubject
-                        maskFiltered.result.items[0].emailMaskId shouldBe provisionedMask.id
+                        aliasFiltered.result.items shouldHaveSize 1
+                        aliasFiltered.result.items[0].subject shouldBe aliasedSubject
+                        aliasFiltered.result.items[0].emailAliasId shouldBe provisionedAlias.id
                     }
                     else -> {
                         fail("Unexpected ListAPIResult when filtering by MASK mailbox id")
                     }
                 }
             } else {
-                // Masks not enabled: send a plain message and verify ADDRESS mailbox id filter returns the expected count
+                // Aliases not enabled: send a plain message and verify ADDRESS mailbox id filter returns the expected count
 
                 val plainSubject = "Plain inbound message ${UUID.randomUUID()}"
                 sendEmailMessage(

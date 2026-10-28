@@ -10,7 +10,25 @@ buildscript {
     repositories {
         maven { url = "https://plugins.gradle.org/m2" }
         google()
-        mavenCentral()
+        // In CI, CODEARTIFACT_AUTH_TOKEN is set and Maven Central is resolved through the
+        // AWS CodeArtifact pull-through cache (avoids Maven Central rate-limiting on the
+        // shared runners). Locally the token is absent, so we use mavenCentral() directly.
+        if (System.getenv("CODEARTIFACT_AUTH_TOKEN")) {
+            maven {
+                name = "CodeArtifact Maven Central"
+                url = uri(findProperty("codeartifactMavenCentralUrl"))
+                credentials {
+                    username = "aws"
+                    password = System.getenv("CODEARTIFACT_AUTH_TOKEN")
+                }
+                content {
+                    // com.anonyome artifacts are internal (Nexus); never resolve them here.
+                    excludeGroup("com.anonyome")
+                }
+            }
+        } else {
+            mavenCentral()
+        }
     }
     dependencies {
         classpath "com.android.tools.build:gradle:$agp_version"
@@ -76,7 +94,25 @@ allprojects {
     repositories {
         mavenLocal()
         google()
-        mavenCentral()
+        // In CI, CODEARTIFACT_AUTH_TOKEN is set and Maven Central is resolved through the
+        // AWS CodeArtifact pull-through cache. Locally the token is absent, so we use
+        // mavenCentral() directly (the default developer setup).
+        if (System.getenv("CODEARTIFACT_AUTH_TOKEN")) {
+            maven {
+                name = "CodeArtifact Maven Central"
+                url = uri(findProperty("codeartifactMavenCentralUrl"))
+                credentials {
+                    username = "aws"
+                    password = System.getenv("CODEARTIFACT_AUTH_TOKEN")
+                }
+                content {
+                    // com.anonyome artifacts are internal (Nexus); never resolve them here.
+                    excludeGroup("com.anonyome")
+                }
+            }
+        } else {
+            mavenCentral()
+        }
         if (internalRepoUsername?.trim()) {
             maven {
                 name = internalSnapshotRepoName

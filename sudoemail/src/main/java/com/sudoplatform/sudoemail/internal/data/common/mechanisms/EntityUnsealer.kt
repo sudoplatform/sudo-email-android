@@ -15,10 +15,10 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.KeyType
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttributeEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.SealedEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UnsealedEmailAddressEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.SealedEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.SealedEmailFolderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.UnsealedEmailFolderEntity
-import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.SealedEmailMaskEntity
-import com.sudoplatform.sudoemail.internal.domain.entities.emailMask.UnsealedEmailMaskEntity
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
 import com.sudoplatform.sudoemail.util.Constants
@@ -156,16 +156,16 @@ internal class EmailAddressUnsealer(
     }
 }
 
-internal class EmailMaskUnsealer(
+internal class EmailAliasUnsealer(
     override val deviceKeyManager: DeviceKeyManager,
-) : EntityUnsealer<SealedEmailMaskEntity, UnsealedEmailMaskEntity>() {
+) : EntityUnsealer<SealedEmailAliasEntity, UnsealedEmailAliasEntity>() {
     /**
-     * Unseals an email mask.
+     * Unseals an email alias.
      *
-     * @param sealedEntity [SealedEmailMaskEntity] The sealed email mask to unseal.
-     * @return [UnsealedEmailMaskEntity] The unsealed email mask.
+     * @param sealedEntity [SealedEmailAliasEntity] The sealed email alias to unseal.
+     * @return [UnsealedEmailAliasEntity] The unsealed email alias.
      */
-    override suspend fun unseal(sealedEntity: SealedEmailMaskEntity): UnsealedEmailMaskEntity {
+    override suspend fun unseal(sealedEntity: SealedEmailAliasEntity): UnsealedEmailAliasEntity {
         val metadata =
             sealedEntity.sealedMetadata?.let { sealedAttribute ->
                 val unsealed = unseal(sealedEntity.sealedMetadata)
@@ -186,12 +186,12 @@ internal class EmailMaskUnsealer(
                 metadata
             }
 
-        return UnsealedEmailMaskEntity(
+        return UnsealedEmailAliasEntity(
             id = sealedEntity.id,
             owner = sealedEntity.owner,
             owners = sealedEntity.owners,
             identityId = sealedEntity.identityId,
-            maskAddress = sealedEntity.maskAddress,
+            aliasAddress = sealedEntity.aliasAddress,
             realAddress = sealedEntity.realAddress,
             realAddressType = sealedEntity.realAddressType,
             status = sealedEntity.status,

@@ -96,7 +96,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val result = useCase.execute(input)
@@ -113,7 +113,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                     it.draftMessageKey.contains(emailAddressId) shouldBe true
                     it.draftMessageKey.contains(draftId) shouldBe true
                     it.emailAddressId shouldBe emailAddressId
-                    it.emailMaskId shouldBe null
+                    it.emailAliasId shouldBe null
                 },
             )
             verify(mockSudoUserClient).getCredentialsProvider()
@@ -121,14 +121,14 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
         }
 
     @Test
-    fun `execute() should pass emailMaskId through to service when provided`() =
+    fun `execute() should pass emailAliasId through to service when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
+            val emailAliasId = "emailAliasId"
             val input =
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             val result = useCase.execute(input)
@@ -140,9 +140,9 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 check { request ->
                     request.draftMessageKey.contains(emailAddressId) shouldBe true
                     request.draftMessageKey.contains(draftId) shouldBe true
-                    request.draftMessageKey.contains(emailMaskId) shouldBe true
+                    request.draftMessageKey.contains(emailAliasId) shouldBe true
                     request.emailAddressId shouldBe emailAddressId
-                    request.emailMaskId shouldBe emailMaskId
+                    request.emailAliasId shouldBe emailAliasId
                 },
             )
             verify(mockSudoUserClient).getCredentialsProvider()
@@ -160,7 +160,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             val exception =
@@ -184,7 +184,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             useCase.execute(input)
@@ -213,7 +213,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.FailedException> {
@@ -237,7 +237,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException> {
@@ -262,7 +262,7 @@ class CancelScheduledDraftMessageUseCaseTest : BaseTests() {
                 CancelScheduledDraftMessageUseCaseInput(
                     draftId = draftId,
                     emailAddressId = emailAddressId,
-                    emailMaskId = null,
+                    emailAliasId = null,
                 )
 
             shouldThrow<SudoEmailClient.EmailMessageException.InvalidArgumentException> {

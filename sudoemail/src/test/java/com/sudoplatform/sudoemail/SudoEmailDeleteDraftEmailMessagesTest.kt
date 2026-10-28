@@ -153,14 +153,14 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
         }
 
     @Test
-    fun `deleteDraftEmailMessages() should pass email mask id when provided`() =
+    fun `deleteDraftEmailMessages() should pass email alias id when provided`() =
         runTest {
-            val emailMaskId = "emailMaskId"
+            val emailAliasId = "emailAliasId"
             val input =
                 DeleteDraftEmailMessagesInput(
                     ids = draftIds,
                     emailAddressId = emailAddressId,
-                    emailMaskId = emailMaskId,
+                    emailAliasId = emailAliasId,
                 )
 
             val deferredResult =
@@ -177,7 +177,7 @@ class SudoEmailDeleteDraftEmailMessagesTest : BaseTests() {
             verify(mockUseCaseFactory).createDeleteDraftEmailMessagesUseCase()
             verify(mockUseCase).execute(
                 check { useCaseInput ->
-                    useCaseInput.emailMaskId shouldBe emailMaskId
+                    useCaseInput.emailAliasId shouldBe emailAliasId
                 },
             )
             verify(mockUseCaseFactory, times(draftIds.size)).createCancelScheduledDraftMessageUseCase()

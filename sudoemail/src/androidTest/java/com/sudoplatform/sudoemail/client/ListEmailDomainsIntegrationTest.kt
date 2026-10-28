@@ -41,9 +41,9 @@ class ListEmailDomainsIntegrationTest : BaseIntegrationTest() {
         runTest {
             val config = emailClient.getConfigurationData()
             val generalDomains = getEmailDomains(emailClient)
-            var maskDomains: List<String> = emptyList()
-            if (config.emailMasksEnabled) {
-                maskDomains = getMaskDomains(emailClient)
+            var aliasDomains: List<String> = emptyList()
+            if (config.emailAliasesEnabled) {
+                aliasDomains = getAliasDomains(emailClient)
             }
 
             val domainsList = emailClient.listEmailDomains()
@@ -54,16 +54,16 @@ class ListEmailDomainsIntegrationTest : BaseIntegrationTest() {
             generalDomains.forEach { generalDomain ->
                 val match = domainsList.find { it.domain == generalDomain }
                 match shouldNotBe null
-                match?.isMaskDomain shouldBe false
+                match?.isAliasDomain shouldBe false
                 matchedDomains.add(match!!)
             }
-            maskDomains.forEach { maskDomain ->
+            aliasDomains.forEach { maskDomain ->
                 val match = domainsList.find { it.domain == maskDomain }
                 match shouldNotBe null
-                match?.isMaskDomain shouldBe true
+                match?.isAliasDomain shouldBe true
                 matchedDomains.add(match!!)
             }
 
-            matchedDomains.size shouldBe generalDomains.size + maskDomains.size
+            matchedDomains.size shouldBe generalDomains.size + aliasDomains.size
         }
 }
