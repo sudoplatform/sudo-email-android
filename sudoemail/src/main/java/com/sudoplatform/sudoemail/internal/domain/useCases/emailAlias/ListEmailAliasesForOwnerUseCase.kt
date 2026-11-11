@@ -29,7 +29,7 @@ import com.sudoplatform.sudologging.Logger
  * @property nextToken [String] Optional token for pagination.
  * @property filter [EmailAliasFilter] Optional filter criteria for the email aliases.
  */
-internal data class ListEmailAliasesUseCaseInput(
+internal data class ListEmailAliasesForOwnerUseCaseInput(
     val limit: Int?,
     val nextToken: String?,
     val filter: EmailAliasFilterInput?,
@@ -45,7 +45,7 @@ internal data class ListEmailAliasesUseCaseInput(
  * @property serviceKeyManager [ServiceKeyManager] Manager for encryption keys.
  * @property logger [Logger] Logger for debugging.
  */
-internal class ListEmailAliasesUseCase(
+internal class ListEmailAliasesForOwnerUseCase(
     private val emailAliasService: EmailAliasService,
     private val serviceKeyManager: ServiceKeyManager,
     private val logger: Logger,
@@ -53,11 +53,13 @@ internal class ListEmailAliasesUseCase(
     /**
      * Executes the list email aliases use case.
      *
-     * @param input [ListEmailAliasesUseCaseInput] The input parameters.
+     * @param input [ListEmailAliasesForOwnerUseCaseInput] The input parameters.
      * @return [ListAPIResultEntity] The result containing sealed email aliases.
      */
-    suspend fun execute(input: ListEmailAliasesUseCaseInput): ListAPIResultEntity<UnsealedEmailAliasEntity, PartialEmailAliasEntity> {
-        logger.debug("ListEmailAliasesUseCase execute input: $input")
+    suspend fun execute(
+        input: ListEmailAliasesForOwnerUseCaseInput,
+    ): ListAPIResultEntity<UnsealedEmailAliasEntity, PartialEmailAliasEntity> {
+        logger.debug("ListEmailAliasesForOwnerUseCase execute input: $input")
         val (items, nextToken) =
             emailAliasService.listForOwner(
                 input =

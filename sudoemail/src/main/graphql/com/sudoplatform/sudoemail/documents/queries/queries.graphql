@@ -138,12 +138,27 @@ query ListEmailMessagesForEmailFolderId(
 
 
 query ListEmailMasksForOwner($input: ListEmailMasksForOwnerInput!) {
-    listEmailMasksForOwner(input: $input) {
-        items {
-            ...EmailMask
-        }
-        nextToken
+  listEmailMasksForOwner(input: $input) {
+    items {
+      ...EmailMask
     }
+    nextToken
+  }
+}
+
+query ListEmailMasks($input: ListEmailMasksInput!) {
+  listEmailMasks(input: $input) {
+    items {
+      ...EmailMaskListInfo
+    }
+    nextToken
+  }
+}
+
+query GetEmailMaskById($id: String!) {
+  getEmailMaskById(id: $id) {
+    ...EmailMask
+  }
 }
 
 query GetEmailAddressBlocklist($input: GetEmailAddressBlocklistInput!) {

@@ -38,6 +38,8 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.UpdateEm
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DeprovisionEmailAliasUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DisableEmailAliasUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.EnableEmailAliasUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.GetEmailAliasByIdUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ListEmailAliasesForOwnerUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ListEmailAliasesUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ProvisionEmailAliasUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.UpdateEmailAliasUseCase
@@ -133,7 +135,11 @@ internal interface UseCaseFactory {
 
     fun createDisableEmailAliasUseCase(): DisableEmailAliasUseCase
 
+    fun createListEmailAliasesForOwnerUseCase(): ListEmailAliasesForOwnerUseCase
+
     fun createListEmailAliasesUseCase(): ListEmailAliasesUseCase
+
+    fun createGetEmailAliasByIdUseCase(): GetEmailAliasByIdUseCase
 
     fun createVerifyExternalEmailAddressUseCase(): VerifyExternalEmailAddressUseCase
 }
@@ -446,8 +452,22 @@ internal class DefaultUseCaseFactory(
             logger = logger,
         )
 
+    override fun createListEmailAliasesForOwnerUseCase(): ListEmailAliasesForOwnerUseCase =
+        ListEmailAliasesForOwnerUseCase(
+            emailAliasService = emailAliasService,
+            serviceKeyManager = serviceKeyManager,
+            logger = logger,
+        )
+
     override fun createListEmailAliasesUseCase(): ListEmailAliasesUseCase =
         ListEmailAliasesUseCase(
+            emailAliasService = emailAliasService,
+            serviceKeyManager = serviceKeyManager,
+            logger = logger,
+        )
+
+    override fun createGetEmailAliasByIdUseCase(): GetEmailAliasByIdUseCase =
+        GetEmailAliasByIdUseCase(
             emailAliasService = emailAliasService,
             serviceKeyManager = serviceKeyManager,
             logger = logger,

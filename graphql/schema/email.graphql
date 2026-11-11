@@ -394,6 +394,13 @@ input ListEmailMasksForOwnerInput {
   nextToken: String
 }
 
+input ListEmailMasksInput {
+  sudoId: ID
+  filter: EmailMaskFilterInput
+  limit: Int
+  nextToken: String
+}
+
 enum BlockedAddressHashAlgorithm {
   SHA256
 }
@@ -726,10 +733,38 @@ type EmailMask {
   version: Int!
 }
 
+type EmailMaskListInfo {
+   id: ID!
+   owner: ID!
+   owners: [Owner!]!
+   keyRingId: ID!
+   identityId: ID!
+   maskAddress: String!
+   realAddressType: EmailMaskRealAddressType!
+   status: EmailMaskStatus!
+   inboundReceived: Int!
+   inboundDelivered: Int!
+   outboundReceived: Int!
+   outboundDelivered: Int!
+   spamCount: Int!
+   virusCount: Int!
+   metadata: SealedAttribute
+   expiresAtEpochSec: Int
+   createdAtEpochMs: Float!
+   updatedAtEpochMs: Float!
+   version: Int!
+ }
+
 type EmailMaskConnection {
   items: [EmailMask!]!
   nextToken: String
 }
+
+type EmailMaskListConnection {
+  items: [EmailMaskListInfo!]!
+  nextToken: String
+}
+
 type VerifyExternalEmailAddressResult {
   isVerified: Boolean!
   reason: String
@@ -804,9 +839,15 @@ type Query {
     input: ListScheduledDraftMessagesForEmailAddressIdInput!
   ): ScheduledDraftMessageConnection!
 
+  # Deprecated. Use listEmailMasks instead
   listEmailMasksForOwner(
     input: ListEmailMasksForOwnerInput!
   ): EmailMaskConnection!
+
+  listEmailMasks(input: ListEmailMasksInput!): EmailMaskListConnection!
+
+  # Get an Email Mask matching the given ID
+  getEmailMaskById(id: String!): EmailMask
 }
 
 type Mutation {

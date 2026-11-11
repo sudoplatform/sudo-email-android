@@ -219,31 +219,58 @@ fragment ScheduledDraftMessage on ScheduledDraftMessage {
 }
 
 fragment EmailMask on EmailMask {
+  id
+  owner
+  owners {
     id
-    owner
-    owners {
-        id
-        issuer
-    }
-    keyRingId
-    identityId
-    maskAddress
-    realAddress
-    realAddressType
-    status
-    inboundReceived
-    inboundDelivered
-    outboundReceived
-    outboundDelivered
-    spamCount
-    virusCount
-    metadata {
-        ...SealedAttribute
-    }
-    expiresAtEpochSec
-    version
-    createdAtEpochMs
-    updatedAtEpochMs
+    issuer
+  }
+  keyRingId
+  identityId
+  maskAddress
+  realAddress
+  realAddressType
+  status
+  inboundReceived
+  inboundDelivered
+  outboundReceived
+  outboundDelivered
+  spamCount
+  virusCount
+  metadata {
+    ...SealedAttribute
+  }
+  expiresAtEpochSec
+  version
+  createdAtEpochMs
+  updatedAtEpochMs
+}
+
+fragment EmailMaskListInfo on EmailMaskListInfo {
+  id
+  owner
+  owners {
+    id
+    issuer
+  }
+  keyRingId
+  identityId
+  maskAddress
+  realAddressType
+  status
+  inboundReceived
+  inboundDelivered
+  outboundReceived
+  outboundDelivered
+  spamCount
+  virusCount
+  metadata {
+    ...SealedAttribute
+  }
+  expiresAtEpochSec
+  version
+  createdAtEpochMs
+  updatedAtEpochMs
 }
 
 fragment VerifyExternalEmailAddressResult on VerifyExternalEmailAddressResult {

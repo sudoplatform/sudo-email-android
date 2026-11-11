@@ -45,6 +45,26 @@ internal sealed class EmailAliasEntity {
     abstract val version: Int
 }
 
+internal sealed class EmailAliasListEntity {
+    abstract val id: String
+    abstract val owner: String
+    abstract val owners: List<OwnerEntity>
+    abstract val identityId: String
+    abstract val aliasAddress: String
+    abstract val realAddressType: EmailAliasEntityRealAddressType
+    abstract val status: EmailAliasEntityStatus
+    abstract val inboundReceived: Int
+    abstract val inboundDelivered: Int
+    abstract val outboundReceived: Int
+    abstract val outboundDelivered: Int
+    abstract val spamCount: Int
+    abstract val virusCount: Int
+    abstract val expiresAt: Date?
+    abstract val createdAt: Date
+    abstract val updatedAt: Date
+    abstract val version: Int
+}
+
 /**
  * Core entity representation of an unsealed email alias used in the Sudo Platform Email SDK.
  *
@@ -89,6 +109,50 @@ internal data class UnsealedEmailAliasEntity(
     override val updatedAt: Date,
     val metadata: Map<String, String>? = null,
 ) : EmailAliasEntity(),
+    Parcelable
+
+/**
+ * Core entity representation of an unsealed email alias list result used in the Sudo Platform Email SDK.
+ *
+ * @property id [String] Unique identifier of the email alias.
+ * @property owner [String] Identifier of the user that owns the email alias.
+ * @property owners [List<OwnerEntity>] List of identifiers of the user/sudo associated with this email alias.
+ * @property identityId [String] Identity identifier associated with the email alias.
+ * @property aliasAddress [String] The alias email address in format 'local-part@domain'.
+ * @property realAddressType [EmailAliasEntityRealAddressType] Type of the real address (internal or external).
+ * @property status [EmailAliasEntityStatus] Current status of the email alias.
+ * @property inboundReceived [Int] Number of inbound emails received.
+ * @property inboundDelivered [Int] Number of inbound emails delivered.
+ * @property outboundReceived [Int] Number of outbound emails received.
+ * @property outboundDelivered [Int] Number of outbound emails delivered.
+ * @property spamCount [Int] Number of spam emails detected.
+ * @property virusCount [Int] Number of virus emails detected.* @property expiresAt [Date] Optional expiration date for the email alias.
+ * @property version [Int] Current version of the email alias.
+ * @property createdAt [java.util.Date] When the email alias was created.
+ * @property updatedAt [java.util.Date] When the email alias was last updated.
+ * @property metadata [Map<String, String>] Optional unsealed metadata associated with the email alias.
+ */
+@Parcelize
+internal data class UnsealedEmailAliasListEntity(
+    override val id: String,
+    override val owner: String,
+    override val owners: List<OwnerEntity>,
+    override val identityId: String,
+    override val aliasAddress: String,
+    override val realAddressType: EmailAliasEntityRealAddressType,
+    override val status: EmailAliasEntityStatus,
+    override val inboundReceived: Int,
+    override val inboundDelivered: Int,
+    override val outboundReceived: Int,
+    override val outboundDelivered: Int,
+    override val spamCount: Int,
+    override val virusCount: Int,
+    override val expiresAt: Date?,
+    override val version: Int,
+    override val createdAt: Date,
+    override val updatedAt: Date,
+    val metadata: Map<String, String>? = null,
+) : EmailAliasListEntity(),
     Parcelable
 
 /**
@@ -139,6 +203,51 @@ internal data class SealedEmailAliasEntity(
     Parcelable
 
 /**
+ * Core entity representation of a sealed email alias list API result used in the Sudo Platform Email SDK.
+ *
+ * @property id [String] Unique identifier of the email alias.
+ * @property owner [String] Identifier of the user that owns the email alias.
+ * @property owners [List<OwnerEntity>] List of identifiers of the user/sudo associated with this email alias.
+ * @property identityId [String] Identity identifier associated with the email alias.
+ * @property aliasAddress [String] The alias email address in format 'local-part@domain'.
+ * @property realAddressType [EmailAliasEntityRealAddressType] Type of the real address (internal or external).
+ * @property status [EmailAliasEntityStatus] Current status of the email alias.
+ * @property inboundReceived [Int] Number of inbound emails received.
+ * @property inboundDelivered [Int] Number of inbound emails delivered.
+ * @property outboundReceived [Int] Number of outbound emails received.
+ * @property outboundDelivered [Int] Number of outbound emails delivered.
+ * @property spamCount [Int] Number of spam emails detected.
+ * @property virusCount [Int] Number of virus emails detected.
+ * @property expiresAt [Date] Optional expiration date for the email alias.
+ * @property version [Int] Current version of the email alias.
+ * @property createdAt [java.util.Date] When the email alias was created.
+ * @property updatedAt [java.util.Date] When the email alias was last updated.
+ * @property sealedMetadata [SealedAttributeEntity] Optional sealed metadata associated with the email alias.
+ */
+@Parcelize
+internal data class SealedEmailAliasListEntity(
+    override val id: String,
+    override val owner: String,
+    override val owners: List<OwnerEntity>,
+    override val identityId: String,
+    override val aliasAddress: String,
+    override val realAddressType: EmailAliasEntityRealAddressType,
+    override val status: EmailAliasEntityStatus,
+    override val inboundReceived: Int,
+    override val inboundDelivered: Int,
+    override val outboundReceived: Int,
+    override val outboundDelivered: Int,
+    override val spamCount: Int,
+    override val virusCount: Int,
+    override val expiresAt: Date?,
+    override val version: Int,
+    override val createdAt: Date,
+    override val updatedAt: Date,
+    val sealedMetadata: SealedAttributeEntity? = null,
+) : EmailAliasListEntity(),
+    Parcelable
+
+/**
  * Core entity representation of a partial email alias used when unsealing fails in the Sudo Platform Email SDK.
  *
  * This entity contains only the basic information that can be retrieved without decryption.
@@ -183,6 +292,51 @@ internal data class PartialEmailAliasEntity(
     override val createdAt: Date,
     override val updatedAt: Date,
 ) : EmailAliasEntity(),
+    Parcelable
+
+/**
+ * Core entity representation of a partial email alias list item used when unsealing fails in the Sudo Platform Email SDK.
+ *
+ * This entity contains only the basic information that can be retrieved without decryption.
+ *
+ * @property id [String] Unique identifier of the email alias.
+ * @property owner [String] Identifier of the owner.
+ * @property owners [List<OwnerEntity>] List of owners of the email alias.
+ * @property identityId [String] Identity identifier of the owner.
+ * @property aliasAddress [String] The email alias address.
+ * @property realAddressType [EmailAliasEntityRealAddressType] Type of the real address (internal or external).
+ * @property status [EmailAliasEntityStatus] Current status of the email alias.
+ * @property inboundReceived [Int] Number of inbound emails received.
+ * @property inboundDelivered [Int] Number of inbound emails delivered.
+ * @property outboundReceived [Int] Number of outbound emails received.
+ * @property outboundDelivered [Int] Number of outbound emails delivered.
+ * @property spamCount [Int] Number of spam emails blocked.
+ * @property virusCount [Int] Number of virus emails blocked.
+ * @property expiresAt [Date] Optional expiration date for the email alias.
+ * @property version [Int] Current version of the email alias.
+ * @property createdAt [java.util.Date] When the email alias was created.
+ * @property updatedAt [java.util.Date] When the email alias was last updated.
+ */
+@Parcelize
+internal data class PartialEmailAliasListEntity(
+    override val id: String,
+    override val owner: String,
+    override val owners: List<OwnerEntity>,
+    override val identityId: String,
+    override val aliasAddress: String,
+    override val realAddressType: EmailAliasEntityRealAddressType,
+    override val status: EmailAliasEntityStatus,
+    override val inboundReceived: Int,
+    override val inboundDelivered: Int,
+    override val outboundReceived: Int,
+    override val outboundDelivered: Int,
+    override val spamCount: Int,
+    override val virusCount: Int,
+    override val expiresAt: Date?,
+    override val version: Int,
+    override val createdAt: Date,
+    override val updatedAt: Date,
+) : EmailAliasListEntity(),
     Parcelable
 
 internal sealed interface EmailAliasStatusFilterInputEntity

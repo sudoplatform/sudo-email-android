@@ -13,15 +13,19 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.ListAPIResultE
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PartialEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UnsealedEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.PartialEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.PartialEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.EmailMessageEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailMessage.PartialEmailMessageEntity
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAlias
+import com.sudoplatform.sudoemail.types.EmailAliasListItem
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailAlias
+import com.sudoplatform.sudoemail.types.PartialEmailAliasListItem
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.PartialResult
 
@@ -130,6 +134,44 @@ internal object ListApiResultTransformer {
                     entity.result.failed.map {
                         PartialResult(
                             EmailAliasTransformer.partialEntityToApi(it.partial),
+                            it.cause,
+                        )
+                    }
+                ListAPIResult.Partial(
+                    ListAPIResult.ListPartialResult(
+                        success,
+                        partials,
+                        entity.result.nextToken,
+                    ),
+                )
+            }
+        }
+
+    /**
+     * Transforms an email alias list API result entity to API type.
+     *
+     * @param entity [ListAPIResultEntity]The email alias list API result entity.
+     * @return The [ListAPIResult] containing email aliases and partial results.
+     */
+    fun transformEmailAliasListItemListApiResultEntity(
+        entity: ListAPIResultEntity<UnsealedEmailAliasListEntity, PartialEmailAliasListEntity>,
+    ): ListAPIResult<EmailAliasListItem, PartialEmailAliasListItem> =
+        when (entity) {
+            is ListAPIResultEntity.Success -> {
+                val success = entity.result.items.map { EmailAliasTransformer.unsealedListEntityToApi(it) }
+                ListAPIResult.Success(
+                    ListAPIResult.ListSuccessResult(
+                        success,
+                        entity.result.nextToken,
+                    ),
+                )
+            }
+            is ListAPIResultEntity.Partial -> {
+                val success = entity.result.items.map { EmailAliasTransformer.unsealedListEntityToApi(it) }
+                val partials =
+                    entity.result.failed.map {
+                        PartialResult(
+                            EmailAliasTransformer.partialListEntityToApi(it.partial),
                             it.cause,
                         )
                     }

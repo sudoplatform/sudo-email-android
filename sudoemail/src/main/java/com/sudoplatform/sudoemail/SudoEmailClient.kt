@@ -30,6 +30,7 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailAlias
+import com.sudoplatform.sudoemail.types.EmailAliasListItem
 import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
@@ -39,6 +40,7 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailAlias
+import com.sudoplatform.sudoemail.types.PartialEmailAliasListItem
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
@@ -65,6 +67,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAdd
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAliasesForOwnerInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailAliasesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
@@ -1295,9 +1298,27 @@ interface SudoEmailClient : AutoCloseable {
      * Lists email aliases owned by the current user, with optional filtering and pagination.
      *
      * @param {ListEmailAliasesForOwnerInput} input The input parameters for filtering and pagination
-     * @returns {ListOutput<EmailAlias>} A promise that resolves to a list of email aliases and pagination info
+     * @returns {ListAPIResult<EmailAlias, PartialEmailAlias>} A promise that resolves to a list of email aliases and pagination info
      */
+    @Deprecated("Deprecated", replaceWith = ReplaceWith("listEmailAliases"))
     suspend fun listEmailAliasesForOwner(input: ListEmailAliasesForOwnerInput): ListAPIResult<EmailAlias, PartialEmailAlias>
+
+    /**
+     * Lists email aliases owned by the current user, with optional filtering and pagination.
+     *
+     * @param {ListEmailAliasesInput} input The input parameters for filtering and pagination
+     * @returns {ListAPIResult<EmailAliasListItem, PartialEmailAliasListItem>} A promise that resolves to a list of email aliases and pagination info
+     */
+    suspend fun listEmailAliases(input: ListEmailAliasesInput): ListAPIResult<EmailAliasListItem, PartialEmailAliasListItem>
+
+    /**
+     * Retrieves the email alias associated with the given unique identifier.
+     *
+     * @param id [String] The unique identifier of the email alias to retrieve
+     * @return [EmailAlias] The retrieved email alias
+     * @throws [EmailAliasException.EmailAliasNotFoundException] if no alias matches the given id
+     */
+    suspend fun getEmailAliasById(id: String): EmailAlias
 
     /**
      * Verifies an external email address for an email alias by sending a verification code

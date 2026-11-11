@@ -67,6 +67,8 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.UpdateEm
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DeprovisionEmailAliasUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.DisableEmailAliasUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.EnableEmailAliasUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.GetEmailAliasByIdUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ListEmailAliasesForOwnerUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ListEmailAliasesUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.ProvisionEmailAliasUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAlias.UpdateEmailAliasUseCaseInput
@@ -102,6 +104,7 @@ import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
 import com.sudoplatform.sudoemail.types.EmailAddress
 import com.sudoplatform.sudoemail.types.EmailAddressPublicInfo
 import com.sudoplatform.sudoemail.types.EmailAlias
+import com.sudoplatform.sudoemail.types.EmailAliasListItem
 import com.sudoplatform.sudoemail.types.EmailDomain
 import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
@@ -111,6 +114,7 @@ import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
 import com.sudoplatform.sudoemail.types.PartialEmailAlias
+import com.sudoplatform.sudoemail.types.PartialEmailAliasListItem
 import com.sudoplatform.sudoemail.types.PartialEmailMessage
 import com.sudoplatform.sudoemail.types.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.types.SendEmailMessageResult
@@ -137,6 +141,7 @@ import com.sudoplatform.sudoemail.types.inputs.ListDraftEmailMessagesForEmailAdd
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailAliasesForOwnerInput
+import com.sudoplatform.sudoemail.types.inputs.ListEmailAliasesInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.types.inputs.ListEmailMessagesForEmailFolderIdInput
@@ -1158,16 +1163,17 @@ internal class DefaultSudoEmailClient(
         return EmailAliasTransformer.unsealedEntityToApi(result)
     }
 
+    @Deprecated("Deprecated", replaceWith = ReplaceWith("listEmailAliases"))
     override suspend fun listEmailAliasesForOwner(input: ListEmailAliasesForOwnerInput): ListAPIResult<EmailAlias, PartialEmailAlias> {
         ensureSignedIn()
         logger.debug("listEmailAliasesForOwner input: $input")
 
         val useCase =
-            useCaseFactory.createListEmailAliasesUseCase()
+            useCaseFactory.createListEmailAliasesForOwnerUseCase()
 
         val result =
             useCase.execute(
-                ListEmailAliasesUseCaseInput(
+                ListEmailAliasesForOwnerUseCaseInput(
                     input.limit,
                     input.nextToken,
                     input.filter,
@@ -1175,6 +1181,40 @@ internal class DefaultSudoEmailClient(
             )
 
         return ListApiResultTransformer.transformEmailAliasListApiResultEntity(result)
+    }
+
+    override suspend fun listEmailAliases(input: ListEmailAliasesInput): ListAPIResult<EmailAliasListItem, PartialEmailAliasListItem> {
+        ensureSignedIn()
+        logger.debug("listEmailAliases input: $input")
+
+        val useCase = useCaseFactory.createListEmailAliasesUseCase()
+
+        val result =
+            useCase.execute(
+                ListEmailAliasesUseCaseInput(
+                    sudoId = input.sudoId,
+                    input.limit,
+                    input.nextToken,
+                    input.filter,
+                ),
+            )
+
+        return ListApiResultTransformer.transformEmailAliasListItemListApiResultEntity(result)
+    }
+
+    override suspend fun getEmailAliasById(id: String): EmailAlias {
+        ensureSignedIn()
+        logger.debug("getEmailAliasById id: $id")
+
+        val useCase = useCaseFactory.createGetEmailAliasByIdUseCase()
+
+        val result =
+            useCase.execute(
+                GetEmailAliasByIdUseCaseInput(
+                    id,
+                ),
+            )
+        return EmailAliasTransformer.unsealedEntityToApi(result)
     }
 
     override suspend fun verifyExternalEmailAddress(input: VerifyExternalEmailAddressInput): VerifyExternalEmailAddressResult {

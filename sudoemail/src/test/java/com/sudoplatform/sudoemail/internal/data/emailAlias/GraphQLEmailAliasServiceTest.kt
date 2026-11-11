@@ -14,9 +14,12 @@ import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.api.ApiClient
 import com.sudoplatform.sudoemail.data.DataFactory
 import com.sudoplatform.sudoemail.graphql.DeprovisionEmailMaskMutation
+import com.sudoplatform.sudoemail.graphql.GetEmailMaskByIdQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailMasksQuery
 import com.sudoplatform.sudoemail.graphql.ProvisionEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.UpdateEmailMaskMutation
 import com.sudoplatform.sudoemail.graphql.fragment.EmailMask
+import com.sudoplatform.sudoemail.graphql.fragment.EmailMaskListInfo
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.DisableEmailMaskInput
@@ -24,12 +27,18 @@ import com.sudoplatform.sudoemail.graphql.type.EnableEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMaskInput
+import com.sudoplatform.sudoemail.internal.data.emailAlias.transformers.EmailAliasFilterTransformer
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyFormatEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.DeprovisionEmailAliasRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.DisableEmailAliasRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasEntityRealAddressType
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasEntityStatus
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasFilterInputEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EnableEmailAliasRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EqualStatusFilterEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.GetEmailAliasByIdRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.ListEmailAliasesRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.NotEqualRealAddressTypeFilterEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.ProvisionEmailAliasRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UpdateEmailAliasRequest
 import com.sudoplatform.sudoemail.keys.KeyPair
@@ -1141,5 +1150,447 @@ class GraphQLEmailAliasServiceTest : BaseTests() {
             }
 
             verify(mockApiClient).verifyExternalAddressMutation(any())
+        }
+
+    /** Begin list tests */
+
+    @Test
+    fun `list() should return expected results on success`() =
+        runTest {
+            val listEmailMasksQueryResponse = DataFactory.listEmailMasksQueryResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request = ListEmailAliasesRequest()
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe listEmailMasksQueryResponse.data.listEmailMasks.items.size
+            result.nextToken shouldBe null
+
+            val resultItem = result.items[0]
+            resultItem shouldNotBe null
+            resultItem.id shouldBe "mockEmailMaskId"
+            resultItem.aliasAddress shouldBe "mask@example.com"
+
+            verify(mockApiClient).listEmailMasksQuery(
+                any(),
+            )
+        }
+
+    @Test
+    fun `list() should properly pass optional sudoId parameter`() =
+        runTest {
+            val sudoId = "mockSudoId"
+            val listEmailMasksQueryResponse = DataFactory.listEmailMasksQueryResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request = ListEmailAliasesRequest(sudoId = sudoId)
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe listEmailMasksQueryResponse.data.listEmailMasks.items.size
+            result.nextToken shouldBe null
+
+            val resultItem = result.items[0]
+            resultItem shouldNotBe null
+            resultItem.id shouldBe "mockEmailMaskId"
+            resultItem.aliasAddress shouldBe "mask@example.com"
+
+            verify(mockApiClient).listEmailMasksQuery(
+                check {
+                    it.sudoId shouldBe Optional.present(sudoId)
+                },
+            )
+        }
+
+    @Test
+    fun `list() should properly pass optional filter parameters`() =
+        runTest {
+            val filter =
+                EmailAliasFilterInputEntity(
+                    status = EqualStatusFilterEntity(EmailAliasEntityStatus.DISABLED),
+                    addressType = NotEqualRealAddressTypeFilterEntity(EmailAliasEntityRealAddressType.EXTERNAL),
+                )
+            val listEmailMasksQueryResponse = DataFactory.listEmailMasksQueryResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request = ListEmailAliasesRequest(filter = filter)
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe listEmailMasksQueryResponse.data.listEmailMasks.items.size
+            result.nextToken shouldBe null
+
+            val resultItem = result.items[0]
+            resultItem shouldNotBe null
+            resultItem.id shouldBe "mockEmailMaskId"
+            resultItem.aliasAddress shouldBe "mask@example.com"
+
+            val expectedFilter = EmailAliasFilterTransformer.entityToGraphQl(filter)
+
+            verify(mockApiClient).listEmailMasksQuery(
+                check {
+                    it.filter shouldBe Optional.present(expectedFilter)
+                },
+            )
+        }
+
+    @Test
+    fun `list() should properly pass optional limit parameter`() =
+        runTest {
+            val limit = 2
+            val listEmailMasksQueryResponse = DataFactory.listEmailMasksQueryResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request = ListEmailAliasesRequest(limit = limit)
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe listEmailMasksQueryResponse.data.listEmailMasks.items.size
+            result.nextToken shouldBe null
+
+            val resultItem = result.items[0]
+            resultItem shouldNotBe null
+            resultItem.id shouldBe "mockEmailMaskId"
+            resultItem.aliasAddress shouldBe "mask@example.com"
+
+            verify(mockApiClient).listEmailMasksQuery(
+                check {
+                    it.limit shouldBe Optional.present(limit)
+                },
+            )
+        }
+
+    @Test
+    fun `list() should properly pass optional nextToken parameter`() =
+        runTest {
+            val nextToken = "mockToken"
+            val listEmailMasksQueryResponse = DataFactory.listEmailMasksQueryResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request = ListEmailAliasesRequest(nextToken = nextToken)
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe listEmailMasksQueryResponse.data.listEmailMasks.items.size
+            result.nextToken shouldBe null
+
+            val resultItem = result.items[0]
+            resultItem shouldNotBe null
+            resultItem.id shouldBe "mockEmailMaskId"
+            resultItem.aliasAddress shouldBe "mask@example.com"
+
+            verify(mockApiClient).listEmailMasksQuery(
+                check {
+                    it.nextToken shouldBe Optional.present(nextToken)
+                },
+            )
+        }
+
+    @Test
+    fun `list() should properly pass all optional parameters`() =
+        runTest {
+            val sudoId = "mockSudoId"
+            val filter =
+                EmailAliasFilterInputEntity(
+                    status = EqualStatusFilterEntity(EmailAliasEntityStatus.DISABLED),
+                    addressType = NotEqualRealAddressTypeFilterEntity(EmailAliasEntityRealAddressType.EXTERNAL),
+                )
+            val limit = 2
+            val nextToken = "mockToken"
+            val listEmailMasksQueryResponse = DataFactory.listEmailMasksQueryResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request =
+                ListEmailAliasesRequest(
+                    sudoId = sudoId,
+                    filter = filter,
+                    limit = limit,
+                    nextToken = nextToken,
+                )
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe listEmailMasksQueryResponse.data.listEmailMasks.items.size
+            result.nextToken shouldBe null
+
+            val resultItem = result.items[0]
+            resultItem shouldNotBe null
+            resultItem.id shouldBe "mockEmailMaskId"
+            resultItem.aliasAddress shouldBe "mask@example.com"
+
+            val expectedFilter = EmailAliasFilterTransformer.entityToGraphQl(filter)
+
+            verify(mockApiClient).listEmailMasksQuery(
+                check {
+                    it.sudoId shouldBe Optional.present(sudoId)
+                    it.filter shouldBe Optional.present(expectedFilter)
+                    it.limit shouldBe Optional.present(limit)
+                    it.nextToken shouldBe Optional.present(nextToken)
+                },
+            )
+        }
+
+    @Test
+    fun `list() should return results with nextToken for pagination`() =
+        runTest {
+            val emailMasks =
+                listOf(
+                    DataFactory.getEmailMaskListInfo(
+                        id = "id-1",
+                    ),
+                    DataFactory.getEmailMaskListInfo(
+                        id = "id-2",
+                    ),
+                )
+            val nextToken = "dummyToken"
+            val listEmailMasksQueryResponse =
+                DataFactory.listEmailMasksQueryResponse(
+                    emailMasks = emailMasks,
+                    nextToken = nextToken,
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request =
+                ListEmailAliasesRequest()
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe emailMasks.size
+            result.nextToken shouldBe nextToken
+
+            val resultItem = result.items[0]
+            resultItem shouldNotBe null
+            resultItem.id shouldBe emailMasks[0].id
+            resultItem.aliasAddress shouldBe "mask@example.com"
+
+            verify(mockApiClient).listEmailMasksQuery(
+                any(),
+            )
+        }
+
+    @Test
+    fun `list() should return empty list when no results`() =
+        runTest {
+            val emptyList = listOf<EmailMaskListInfo>()
+            val listEmailMasksQueryResponse =
+                DataFactory.listEmailMasksQueryResponse(
+                    emailMasks = emptyList,
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn listEmailMasksQueryResponse
+            }
+
+            val request =
+                ListEmailAliasesRequest()
+
+            val result = instanceUnderTest.list(request)
+
+            result shouldNotBe null
+            result.items.size shouldBe emptyList.size
+            result.nextToken shouldBe null
+
+            verify(mockApiClient).listEmailMasksQuery(
+                any(),
+            )
+        }
+
+    @Test
+    fun `list() should throw AuthenticationException when NotAuthorizedException occurs`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doThrow SudoEmailClient.EmailAliasException.AuthenticationException("Mock")
+
+                val request =
+                    ListEmailAliasesRequest()
+
+                shouldThrow<SudoEmailClient.EmailAliasException.AuthenticationException> {
+                    instanceUnderTest.list(request)
+                }
+
+                verify(mockApiClient).listEmailMasksQuery(
+                    any(),
+                )
+            }
+        }
+
+    @Test
+    fun `list() should throw exception when GraphQL returns errors`() =
+        runTest {
+            val error =
+                GraphQLResponse.Error(
+                    "Mock GraphQL Error",
+                    emptyList(),
+                    emptyList(),
+                    mapOf("errorType" to "ServiceError"),
+                )
+            val queryResponse =
+                GraphQLResponse<ListEmailMasksQuery.Data>(
+                    null,
+                    listOf(error),
+                )
+            mockApiClient.stub {
+                onBlocking {
+                    listEmailMasksQuery(any())
+                } doReturn queryResponse
+            }
+
+            val request =
+                ListEmailAliasesRequest()
+
+            shouldThrow<SudoEmailClient.EmailAliasException> {
+                instanceUnderTest.list(request)
+            }
+
+            verify(mockApiClient).listEmailMasksQuery(
+                any(),
+            )
+        }
+
+    /** Begin GetEmailAliasByIdTests */
+
+    @Test
+    fun `getById() should return sealed email alias when successful`() =
+        runTest {
+            val getEmailMaskByIdQueryResponse = DataFactory.getEmailMaskByIdQueryResponse()
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMaskByIdQuery(any<String>())
+                } doReturn getEmailMaskByIdQueryResponse
+            }
+
+            val request =
+                GetEmailAliasByIdRequest(
+                    id = "mockEmailMaskId",
+                )
+
+            val result = instanceUnderTest.getById(request)
+
+            result shouldNotBe null
+            result!!.id shouldBe "mockEmailMaskId"
+            result.aliasAddress shouldBe "mask@example.com"
+            result.realAddress shouldBe "real@example.com"
+
+            verify(mockApiClient).getEmailMaskByIdQuery(
+                check { id ->
+                    id shouldBe "mockEmailMaskId"
+                },
+            )
+        }
+
+    @Test
+    fun `getById() should return null when no email mask returned`() =
+        runTest {
+            val emptyResponse = DataFactory.getEmailMaskByIdQueryResponse(emailMask = null)
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMaskByIdQuery(any<String>())
+                } doReturn emptyResponse
+            }
+
+            val request =
+                GetEmailAliasByIdRequest(
+                    id = "nonExistentMaskId",
+                )
+
+            val result = instanceUnderTest.getById(request)
+
+            result shouldBe null
+
+            verify(mockApiClient).getEmailMaskByIdQuery(any<String>())
+        }
+
+    @Test
+    fun `getById() should throw AuthenticationException when NotAuthorizedException is thrown`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMaskByIdQuery(any<String>())
+                } doThrow NotAuthorizedException("Not authorized")
+            }
+
+            val request =
+                GetEmailAliasByIdRequest(
+                    id = "mockEmailMaskId",
+                )
+
+            shouldThrow<SudoEmailClient.EmailAliasException.AuthenticationException> {
+                instanceUnderTest.getById(request)
+            }
+
+            verify(mockApiClient).getEmailMaskByIdQuery(any<String>())
+        }
+
+    @Test
+    fun `getById() should throw EmailAliasNotFoundException when response has mask not found error`() =
+        runTest {
+            val errorResponse =
+                GraphQLResponse<GetEmailMaskByIdQuery.Data>(
+                    null,
+                    listOf(
+                        GraphQLResponse.Error(
+                            "Email mask not found",
+                            null,
+                            null,
+                            mapOf("errorType" to "sudoplatform.email.EmailMaskNotFound"),
+                        ),
+                    ),
+                )
+
+            mockApiClient.stub {
+                onBlocking {
+                    getEmailMaskByIdQuery(any<String>())
+                } doReturn errorResponse
+            }
+
+            val request =
+                GetEmailAliasByIdRequest(
+                    id = "nonExistentMaskId",
+                )
+
+            shouldThrow<SudoEmailClient.EmailAliasException.EmailAliasNotFoundException> {
+                instanceUnderTest.getById(request)
+            }
+
+            verify(mockApiClient).getEmailMaskByIdQuery(any<String>())
         }
 }

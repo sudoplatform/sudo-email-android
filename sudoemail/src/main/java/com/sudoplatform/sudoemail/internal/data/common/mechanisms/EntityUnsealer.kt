@@ -16,7 +16,9 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttribut
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.SealedEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UnsealedEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.SealedEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.SealedEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.SealedEmailFolderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.UnsealedEmailFolderEntity
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
@@ -193,6 +195,59 @@ internal class EmailAliasUnsealer(
             identityId = sealedEntity.identityId,
             aliasAddress = sealedEntity.aliasAddress,
             realAddress = sealedEntity.realAddress,
+            realAddressType = sealedEntity.realAddressType,
+            status = sealedEntity.status,
+            inboundReceived = sealedEntity.inboundReceived,
+            inboundDelivered = sealedEntity.inboundDelivered,
+            outboundReceived = sealedEntity.outboundReceived,
+            outboundDelivered = sealedEntity.outboundDelivered,
+            spamCount = sealedEntity.spamCount,
+            virusCount = sealedEntity.virusCount,
+            expiresAt = sealedEntity.expiresAt,
+            version = sealedEntity.version,
+            createdAt = sealedEntity.createdAt,
+            updatedAt = sealedEntity.updatedAt,
+            metadata = metadata,
+        )
+    }
+}
+
+internal class EmailAliasListUnsealer(
+    override val deviceKeyManager: DeviceKeyManager,
+) : EntityUnsealer<SealedEmailAliasListEntity, UnsealedEmailAliasListEntity>() {
+    /**
+     * Unseals an email alias.
+     *
+     * @param sealedEntity [SealedEmailAliasListEntity] The sealed email alias to unseal.
+     * @return [UnsealedEmailAliasListEntity] The unsealed email alias.
+     */
+    override suspend fun unseal(sealedEntity: SealedEmailAliasListEntity): UnsealedEmailAliasListEntity {
+        val metadata =
+            sealedEntity.sealedMetadata?.let { sealedAttribute ->
+                val unsealed = unseal(sealedEntity.sealedMetadata)
+                val jsonObject = JSONObject(unsealed)
+
+                // Convert JSONObject to Map<String, String>
+                val metadata = mutableMapOf<String, String>()
+                val keys = jsonObject.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    val value =
+                        when (val obj = jsonObject.get(key)) {
+                            is String -> obj
+                            else -> obj.toString()
+                        }
+                    metadata[key] = value
+                }
+                metadata
+            }
+
+        return UnsealedEmailAliasListEntity(
+            id = sealedEntity.id,
+            owner = sealedEntity.owner,
+            owners = sealedEntity.owners,
+            identityId = sealedEntity.identityId,
+            aliasAddress = sealedEntity.aliasAddress,
             realAddressType = sealedEntity.realAddressType,
             status = sealedEntity.status,
             inboundReceived = sealedEntity.inboundReceived,

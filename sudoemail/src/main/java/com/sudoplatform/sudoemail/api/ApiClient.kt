@@ -27,6 +27,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
+import com.sudoplatform.sudoemail.graphql.GetEmailMaskByIdQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMaskDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
@@ -34,6 +35,7 @@ import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMasksForOwnerQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailMasksQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
@@ -70,6 +72,7 @@ import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMasksForOwnerInput
+import com.sudoplatform.sudoemail.graphql.type.ListEmailMasksInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailAddressIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesForEmailFolderIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMessagesInput
@@ -381,6 +384,18 @@ open class ApiClient(
         graphQLClient.query<ListEmailMasksForOwnerQuery, ListEmailMasksForOwnerQuery.Data>(
             ListEmailMasksForOwnerQuery.OPERATION_DOCUMENT,
             mapOf("input" to input),
+        )
+
+    open suspend fun listEmailMasksQuery(input: ListEmailMasksInput): GraphQLResponse<ListEmailMasksQuery.Data> =
+        graphQLClient.query<ListEmailMasksQuery, ListEmailMasksQuery.Data>(
+            ListEmailMasksQuery.OPERATION_DOCUMENT,
+            mapOf("input" to input),
+        )
+
+    open suspend fun getEmailMaskByIdQuery(id: String): GraphQLResponse<GetEmailMaskByIdQuery.Data> =
+        graphQLClient.query<GetEmailMaskByIdQuery, GetEmailMaskByIdQuery.Data>(
+            GetEmailMaskByIdQuery.OPERATION_DOCUMENT,
+            mapOf("id" to id),
         )
 
     open suspend fun verifyExternalAddressMutation(

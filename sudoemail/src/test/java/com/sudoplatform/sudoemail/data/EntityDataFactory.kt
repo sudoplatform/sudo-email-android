@@ -19,6 +19,11 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PartialE
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyFormatEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.SealedEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UnsealedEmailAddressEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasEntityRealAddressType
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasEntityStatus
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.PartialEmailAliasListEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.SealedEmailAliasListEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.PartialEmailFolderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.SealedEmailFolderEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.UnsealedEmailFolderEntity
@@ -531,5 +536,123 @@ internal object EntityDataFactory {
         owners = owners,
         createdAt = createdAt,
         updatedAt = createdAt,
+    )
+
+    fun getSealedEmailAliasListEntity(
+        id: String = "mockEmailAliasId",
+        owner: String = "mockOwner",
+        owners: List<OwnerEntity> = listOf(getOwnerEntity()),
+        identityId: String = "mockIdentityId",
+        maskAddress: String = "mask@example.com",
+        status: EmailAliasEntityStatus = EmailAliasEntityStatus.ENABLED,
+        inboundReceived: Int = 0,
+        inboundDelivered: Int = 0,
+        outboundReceived: Int = 0,
+        outboundDelivered: Int = 0,
+        spamCount: Int = 0,
+        virusCount: Int = 0,
+        realAddressType: EmailAliasEntityRealAddressType = EmailAliasEntityRealAddressType.EXTERNAL,
+        metadata: SealedAttributeEntity? = null,
+        expiresAt: Date? = null,
+        version: Int = 1,
+        createdAt: Date = Date(1),
+        updatedAt: Date = Date(1),
+    ) = SealedEmailAliasListEntity(
+        id = id,
+        owner = owner,
+        owners = owners,
+        identityId = identityId,
+        aliasAddress = maskAddress,
+        realAddressType = realAddressType,
+        status = status,
+        inboundReceived = inboundReceived,
+        inboundDelivered = inboundDelivered,
+        outboundReceived = outboundReceived,
+        outboundDelivered = outboundDelivered,
+        spamCount = spamCount,
+        virusCount = virusCount,
+        expiresAt = expiresAt,
+        version = version,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        sealedMetadata = metadata,
+    )
+
+    fun getUnsealedEmailAliasListEntity(
+        id: String = "mockEmailAliasId",
+        owner: String = "mockOwner",
+        owners: List<OwnerEntity> = listOf(getOwnerEntity()),
+        identityId: String = "mockIdentityId",
+        maskAddress: String = "mask@example.com",
+        status: EmailAliasEntityStatus = EmailAliasEntityStatus.ENABLED,
+        inboundReceived: Int = 0,
+        inboundDelivered: Int = 0,
+        outboundReceived: Int = 0,
+        outboundDelivered: Int = 0,
+        spamCount: Int = 0,
+        virusCount: Int = 0,
+        realAddressType: EmailAliasEntityRealAddressType = EmailAliasEntityRealAddressType.EXTERNAL,
+        metadata: Map<String, String>? = null,
+        expiresAt: Date? = null,
+        version: Int = 1,
+        createdAt: Date = Date(1),
+        updatedAt: Date = Date(1),
+    ) = UnsealedEmailAliasListEntity(
+        id = id,
+        owner = owner,
+        owners = owners,
+        identityId = identityId,
+        aliasAddress = maskAddress,
+        realAddressType = realAddressType,
+        status = status,
+        inboundReceived = inboundReceived,
+        inboundDelivered = inboundDelivered,
+        outboundReceived = outboundReceived,
+        outboundDelivered = outboundDelivered,
+        spamCount = spamCount,
+        virusCount = virusCount,
+        expiresAt = expiresAt,
+        version = version,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        metadata = metadata,
+    )
+
+    fun getPartialUnsealedAliasListEntity(
+        id: String = "mockEmailAliasId",
+        owner: String = "mockOwner",
+        owners: List<OwnerEntity> = listOf(getOwnerEntity()),
+        identityId: String = "mockIdentityId",
+        maskAddress: String = "mask@example.com",
+        status: EmailAliasEntityStatus = EmailAliasEntityStatus.ENABLED,
+        inboundReceived: Int = 0,
+        inboundDelivered: Int = 0,
+        outboundReceived: Int = 0,
+        outboundDelivered: Int = 0,
+        spamCount: Int = 0,
+        virusCount: Int = 0,
+        realAddressType: EmailAliasEntityRealAddressType = EmailAliasEntityRealAddressType.EXTERNAL,
+        expiresAt: Date? = null,
+        version: Int = 1,
+        createdAt: Date = Date(1),
+        updatedAt: Date = Date(1),
+    ) = PartialEmailAliasListEntity(
+        id = id,
+        owner = owner,
+        owners = owners,
+        identityId = identityId,
+        aliasAddress = maskAddress,
+        realAddressType = realAddressType,
+        status = status,
+        inboundReceived = inboundReceived,
+        inboundDelivered = inboundDelivered,
+        outboundReceived = outboundReceived,
+        outboundDelivered = outboundDelivered,
+        spamCount = spamCount,
+        virusCount = virusCount,
+        expiresAt = expiresAt,
+        version = version,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
     )
 }

@@ -23,12 +23,13 @@ import com.sudoplatform.sudoemail.graphql.GetEmailAddressBlocklistQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailAddressQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
+import com.sudoplatform.sudoemail.graphql.GetEmailMaskByIdQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailFoldersForEmailAddressIdQuery
-import com.sudoplatform.sudoemail.graphql.ListEmailMasksForOwnerQuery
+import com.sudoplatform.sudoemail.graphql.ListEmailMasksQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailAddressIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesForEmailFolderIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailMessagesQuery
@@ -54,6 +55,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailConfigurationData
 import com.sudoplatform.sudoemail.graphql.fragment.EmailDomain
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.graphql.fragment.EmailMask
+import com.sudoplatform.sudoemail.graphql.fragment.EmailMaskListInfo
 import com.sudoplatform.sudoemail.graphql.fragment.GetEmailAddressBlocklistResponse
 import com.sudoplatform.sudoemail.graphql.fragment.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
@@ -849,23 +851,37 @@ object DataFactory {
             null,
         )
 
-    fun listEmailMasksForOwnerQueryResponse(
-        emailMasks: List<EmailMask> = listOf(getEmailMask()),
+    fun listEmailMasksQueryResponse(
+        emailMasks: List<EmailMaskListInfo> = listOf(getEmailMaskListInfo()),
         nextToken: String? = null,
-    ): GraphQLResponse<ListEmailMasksForOwnerQuery.Data> =
-        GraphQLResponse<ListEmailMasksForOwnerQuery.Data>(
-            ListEmailMasksForOwnerQuery.Data(
-                listEmailMasksForOwner =
-                    ListEmailMasksForOwnerQuery.ListEmailMasksForOwner(
+    ): GraphQLResponse<ListEmailMasksQuery.Data> =
+        GraphQLResponse<ListEmailMasksQuery.Data>(
+            ListEmailMasksQuery.Data(
+                listEmailMasks =
+                    ListEmailMasksQuery.ListEmailMasks(
                         items =
                             emailMasks.map {
-                                ListEmailMasksForOwnerQuery.Item(
+                                ListEmailMasksQuery.Item(
                                     __typename = "EmailMask",
-                                    emailMask = it,
+                                    emailMaskListInfo = it,
                                 )
                             },
                         nextToken = nextToken,
                     ),
+            ),
+            null,
+        )
+
+    fun getEmailMaskByIdQueryResponse(emailMask: EmailMask? = getEmailMask()): GraphQLResponse<GetEmailMaskByIdQuery.Data> =
+        GraphQLResponse<GetEmailMaskByIdQuery.Data>(
+            GetEmailMaskByIdQuery.Data(
+                getEmailMaskById =
+                    emailMask?.let {
+                        GetEmailMaskByIdQuery.GetEmailMaskById(
+                            __typename = "EmailMask",
+                            emailMask = it,
+                        )
+                    },
             ),
             null,
         )
@@ -1018,6 +1034,44 @@ object DataFactory {
         identityId = identityId,
         maskAddress = maskAddress,
         realAddress = realAddress,
+        realAddressType = realAddressType,
+        status = status,
+        inboundReceived = 0,
+        inboundDelivered = 0,
+        outboundReceived = 0,
+        outboundDelivered = 0,
+        spamCount = 0,
+        virusCount = 0,
+        metadata = metadata,
+        expiresAtEpochSec = expiresAtEpochSec,
+        createdAtEpochMs = 1.0,
+        updatedAtEpochMs = 2.0,
+        version = 1,
+    )
+
+    fun getEmailMaskListInfo(
+        id: String = "mockEmailMaskId",
+        owner: String = "mockOwner",
+        keyRingId: String = "mockKeyRingId",
+        identityId: String = "mockIdentityId",
+        maskAddress: String = "mask@example.com",
+        status: EmailMaskStatus = EmailMaskStatus.ENABLED,
+        realAddressType: EmailMaskRealAddressType = EmailMaskRealAddressType.EXTERNAL,
+        metadata: EmailMaskListInfo.Metadata? = null,
+        expiresAtEpochSec: Int? = null,
+    ) = EmailMaskListInfo(
+        id = id,
+        owner = owner,
+        owners =
+            listOf(
+                EmailMaskListInfo.Owner(
+                    id = owner,
+                    issuer = "issuer",
+                ),
+            ),
+        keyRingId = keyRingId,
+        identityId = identityId,
+        maskAddress = maskAddress,
         realAddressType = realAddressType,
         status = status,
         inboundReceived = 0,

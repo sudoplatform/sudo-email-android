@@ -10,6 +10,7 @@ import com.sudoplatform.sudoemail.graphql.fragment.BlockedAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.graphql.fragment.EmailMask
+import com.sudoplatform.sudoemail.graphql.fragment.EmailMaskListInfo
 import com.sudoplatform.sudoemail.graphql.fragment.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
 import com.sudoplatform.sudoemail.internal.domain.entities.common.OwnerEntity
@@ -88,6 +89,18 @@ internal object OwnerTransformer {
      * @return The [OwnerEntity].
      */
     fun graphQLToEntity(graphQL: EmailMask.Owner): OwnerEntity =
+        OwnerEntity(
+            id = graphQL.id,
+            issuer = graphQL.issuer,
+        )
+
+    /**
+     * Transforms a GraphQL email mask list owner to entity type.
+     *
+     * @param graphQL [EmailMaskListInfo.Owner] The GraphQL owner from an email mask.
+     * @return The [OwnerEntity].
+     */
+    fun graphQLToEntity(graphQL: EmailMaskListInfo.Owner): OwnerEntity =
         OwnerEntity(
             id = graphQL.id,
             issuer = graphQL.issuer,

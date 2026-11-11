@@ -10,13 +10,19 @@ import com.sudoplatform.sudoemail.internal.data.common.transformers.OwnerTransfo
 import com.sudoplatform.sudoemail.internal.domain.entities.common.SealedAttributeEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.PartialEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.PartialEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.SealedEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.SealedEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UnsealedEmailAliasListEntity
 import com.sudoplatform.sudoemail.internal.util.toDate
 import com.sudoplatform.sudoemail.types.EmailAlias
+import com.sudoplatform.sudoemail.types.EmailAliasListItem
 import com.sudoplatform.sudoemail.types.PartialEmailAlias
+import com.sudoplatform.sudoemail.types.PartialEmailAliasListItem
 import java.util.Date
 import com.sudoplatform.sudoemail.graphql.fragment.EmailMask as EmailMaskFragment
+import com.sudoplatform.sudoemail.graphql.fragment.EmailMaskListInfo as EmailMaskListFragment
 
 /**
  * Transformer responsible for transforming the EmailMask GraphQL data
@@ -37,6 +43,28 @@ internal object EmailAliasTransformer {
             identityId = fragment.identityId,
             aliasAddress = fragment.maskAddress,
             realAddress = fragment.realAddress,
+            realAddressType = EmailAliasRealAddressTypeTransformer.graphQLToEntity(fragment.realAddressType),
+            status = EmailAliasStatusTransformer.graphQLToEntity(fragment.status),
+            inboundReceived = fragment.inboundReceived,
+            inboundDelivered = fragment.inboundDelivered,
+            outboundReceived = fragment.outboundReceived,
+            outboundDelivered = fragment.outboundDelivered,
+            spamCount = fragment.spamCount,
+            virusCount = fragment.virusCount,
+            sealedMetadata = fragment.metadata?.toSealedAttributeEntity(),
+            expiresAt = fragment.expiresAtEpochSec?.let { Date(it * 1000L) },
+            version = fragment.version,
+            createdAt = fragment.createdAtEpochMs.toDate(),
+            updatedAt = fragment.updatedAtEpochMs.toDate(),
+        )
+
+    fun graphQlListToSealedListEntity(fragment: EmailMaskListFragment): SealedEmailAliasListEntity =
+        SealedEmailAliasListEntity(
+            id = fragment.id,
+            owner = fragment.owner,
+            owners = fragment.owners.map { OwnerTransformer.graphQLToEntity(it) },
+            identityId = fragment.identityId,
+            aliasAddress = fragment.maskAddress,
             realAddressType = EmailAliasRealAddressTypeTransformer.graphQLToEntity(fragment.realAddressType),
             status = EmailAliasStatusTransformer.graphQLToEntity(fragment.status),
             inboundReceived = fragment.inboundReceived,
@@ -75,7 +103,37 @@ internal object EmailAliasTransformer {
             metadata = emailAlias.metadata,
         )
 
+    fun unsealedListEntityToApi(emailAlias: UnsealedEmailAliasListEntity): EmailAliasListItem =
+        EmailAliasListItem(
+            id = emailAlias.id,
+            owner = emailAlias.owner,
+            owners = emailAlias.owners.map { OwnerTransformer.entityToApi(it) },
+            identityId = emailAlias.identityId,
+            aliasAddress = emailAlias.aliasAddress,
+            realAddressType = EmailAliasRealAddressTypeTransformer.entityToApi(emailAlias.realAddressType),
+            status = EmailAliasStatusTransformer.entityToApi(emailAlias.status),
+            inboundReceived = emailAlias.inboundReceived,
+            inboundDelivered = emailAlias.inboundDelivered,
+            outboundReceived = emailAlias.outboundReceived,
+            outboundDelivered = emailAlias.outboundDelivered,
+            spamCount = emailAlias.spamCount,
+            virusCount = emailAlias.virusCount,
+            expiresAt = emailAlias.expiresAt,
+            createdAt = emailAlias.createdAt,
+            updatedAt = emailAlias.updatedAt,
+            version = emailAlias.version,
+            metadata = emailAlias.metadata,
+        )
+
     private fun EmailMaskFragment.Metadata.toSealedAttributeEntity(): SealedAttributeEntity =
+        SealedAttributeEntity(
+            algorithm = sealedAttribute.algorithm,
+            keyId = sealedAttribute.keyId,
+            plainTextType = sealedAttribute.plainTextType,
+            base64EncodedSealedData = sealedAttribute.base64EncodedSealedData,
+        )
+
+    private fun EmailMaskListFragment.Metadata.toSealedAttributeEntity(): SealedAttributeEntity =
         SealedAttributeEntity(
             algorithm = sealedAttribute.algorithm,
             keyId = sealedAttribute.keyId,
@@ -144,6 +202,33 @@ internal object EmailAliasTransformer {
             updatedAt = sealedEmailAlias.updatedAt,
         )
 
+    /**
+     * Transforms a sealed SealedEmailAliasListEntity to PartialEmailAliasListEntity.
+     *
+     * @param sealedEmailAlias [SealedEmailAliasListEntity] The sealed email alias entity.
+     * @return [PartialEmailAliasListEntity] The partial email alias entity.
+     */
+    fun toPartialListEntity(sealedEmailAlias: SealedEmailAliasListEntity): PartialEmailAliasListEntity =
+        PartialEmailAliasListEntity(
+            id = sealedEmailAlias.id,
+            owner = sealedEmailAlias.owner,
+            owners = sealedEmailAlias.owners,
+            identityId = sealedEmailAlias.identityId,
+            aliasAddress = sealedEmailAlias.aliasAddress,
+            realAddressType = sealedEmailAlias.realAddressType,
+            status = sealedEmailAlias.status,
+            inboundReceived = sealedEmailAlias.inboundReceived,
+            inboundDelivered = sealedEmailAlias.inboundDelivered,
+            outboundReceived = sealedEmailAlias.outboundReceived,
+            outboundDelivered = sealedEmailAlias.outboundDelivered,
+            spamCount = sealedEmailAlias.spamCount,
+            virusCount = sealedEmailAlias.virusCount,
+            expiresAt = sealedEmailAlias.expiresAt,
+            version = sealedEmailAlias.version,
+            createdAt = sealedEmailAlias.createdAt,
+            updatedAt = sealedEmailAlias.updatedAt,
+        )
+
     fun partialEntityToApi(result: PartialEmailAliasEntity): PartialEmailAlias =
         PartialEmailAlias(
             id = result.id,
@@ -152,6 +237,27 @@ internal object EmailAliasTransformer {
             identityId = result.identityId,
             aliasAddress = result.aliasAddress,
             realAddress = result.realAddress,
+            realAddressType = EmailAliasRealAddressTypeTransformer.entityToApi(result.realAddressType),
+            status = EmailAliasStatusTransformer.entityToApi(result.status),
+            inboundReceived = result.inboundReceived,
+            inboundDelivered = result.inboundDelivered,
+            outboundReceived = result.outboundReceived,
+            outboundDelivered = result.outboundDelivered,
+            spamCount = result.spamCount,
+            virusCount = result.virusCount,
+            expiresAt = result.expiresAt,
+            createdAt = result.createdAt,
+            updatedAt = result.updatedAt,
+            version = result.version,
+        )
+
+    fun partialListEntityToApi(result: PartialEmailAliasListEntity): PartialEmailAliasListItem =
+        PartialEmailAliasListItem(
+            id = result.id,
+            owner = result.owner,
+            owners = result.owners.map { OwnerTransformer.entityToApi(it) },
+            identityId = result.identityId,
+            aliasAddress = result.aliasAddress,
             realAddressType = EmailAliasRealAddressTypeTransformer.entityToApi(result.realAddressType),
             status = EmailAliasStatusTransformer.entityToApi(result.status),
             inboundReceived = result.inboundReceived,

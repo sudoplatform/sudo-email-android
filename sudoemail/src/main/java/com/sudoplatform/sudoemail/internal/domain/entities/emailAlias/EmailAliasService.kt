@@ -138,6 +138,15 @@ internal data class EmailAliasFilter(
 )
 
 /**
+ * Request to retrieve an email alias by its unique identifier.
+ *
+ * @property id [String] The ID of the email alias to retrieve.
+ */
+internal data class GetEmailAliasByIdRequest(
+    val id: String,
+)
+
+/**
  * Request to list email aliases for an owner.
  *
  * @property filter [EmailAliasFilter] Optional filter criteria for the email aliases.
@@ -151,13 +160,39 @@ internal data class ListEmailAliasesForOwnerRequest(
 )
 
 /**
+ * Request to list email aliases.
+ *
+ * @property sudoId [String] Optional ID of a Sudo to filter aliases by
+ * @property filter [EmailAliasFilter] Optional filter criteria for the email aliases.
+ * @property limit [Int] Optional maximum number of results to return.
+ * @property nextToken [String] Optional token for pagination.
+ */
+internal data class ListEmailAliasesRequest(
+    val sudoId: String? = null,
+    val filter: EmailAliasFilterInputEntity? = null,
+    val limit: Int? = null,
+    val nextToken: String? = null,
+)
+
+/**
+ * Output from listing email aliases for an owner.
+ *
+ * @property items The [List] of [SealedEmailAliasEntity]s.
+ * @property nextToken [String] Optional token for retrieving the next page of results.
+ */
+internal data class ListEmailAliasesForOwnerOutput(
+    val items: List<SealedEmailAliasEntity>,
+    val nextToken: String? = null,
+)
+
+/**
  * Output from listing email aliases.
  *
- * @property items The [List] of [EmailAliasEntity]s.
+ * @property items The [List] of [SealedEmailAliasListEntity]s.
  * @property nextToken [String] Optional token for retrieving the next page of results.
  */
 internal data class ListEmailAliasesOutput(
-    val items: List<SealedEmailAliasEntity>,
+    val items: List<SealedEmailAliasListEntity>,
     val nextToken: String? = null,
 )
 
@@ -211,9 +246,26 @@ internal interface EmailAliasService {
      * List email aliases for an owner.
      *
      * @param input [ListEmailAliasesForOwnerRequest] Parameters used to list email aliases for an owner.
+     * @return [ListEmailAliasesForOwnerOutput] List API result containing email aliases and next token.
+     */
+    @Deprecated("Deprecated", replaceWith = ReplaceWith("list"))
+    suspend fun listForOwner(input: ListEmailAliasesForOwnerRequest): ListEmailAliasesForOwnerOutput
+
+    /**
+     * List email aliases.
+     *
+     * @param input [ListEmailAliasesRequest] Parameters used to list email aliases.
      * @return [ListEmailAliasesOutput] List API result containing email aliases and next token.
      */
-    suspend fun listForOwner(input: ListEmailAliasesForOwnerRequest): ListEmailAliasesOutput
+    suspend fun list(input: ListEmailAliasesRequest): ListEmailAliasesOutput
+
+    /**
+     * Retrieve an email alias by its unique identifier.
+     *
+     * @param input [GetEmailAliasByIdRequest] Parameters used to retrieve the email alias.
+     * @return [SealedEmailAliasEntity] The retrieved email alias entity, or null if not found.
+     */
+    suspend fun getById(input: GetEmailAliasByIdRequest): SealedEmailAliasEntity?
 
     /**
      * Verify an external email address for an email alias.

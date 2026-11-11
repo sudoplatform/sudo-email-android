@@ -15,6 +15,7 @@ import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.DisableEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.EnableEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailMasksForOwnerInput
+import com.sudoplatform.sudoemail.graphql.type.ListEmailMasksInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.ProvisionEmailMaskPublicKeyInput
 import com.sudoplatform.sudoemail.graphql.type.UpdateEmailMaskInput
@@ -27,8 +28,11 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.Deprovisio
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.DisableEmailAliasRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EnableEmailAliasRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.GetEmailAliasByIdRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.ListEmailAliasesForOwnerOutput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.ListEmailAliasesForOwnerRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.ListEmailAliasesOutput
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.ListEmailAliasesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.ProvisionEmailAliasRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.SealedEmailAliasEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.UpdateEmailAliasRequest
@@ -230,7 +234,7 @@ internal class GraphQLEmailAliasService(
         }
     }
 
-    override suspend fun listForOwner(input: ListEmailAliasesForOwnerRequest): ListEmailAliasesOutput {
+    override suspend fun listForOwner(input: ListEmailAliasesForOwnerRequest): ListEmailAliasesForOwnerOutput {
         try {
             val queryInput =
                 ListEmailMasksForOwnerInput(
@@ -249,10 +253,69 @@ internal class GraphQLEmailAliasService(
             val emailAliases = queryResult?.items ?: emptyList()
             val newNextToken = queryResult?.nextToken
 
-            return ListEmailAliasesOutput(
+            return ListEmailAliasesForOwnerOutput(
                 items = emailAliases.map { EmailAliasTransformer.graphQLToSealedEntity(it.emailMask) },
                 nextToken = newNextToken,
             )
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAliasException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw ErrorTransformer.interpretEmailAliasException(e)
+            }
+        }
+    }
+
+    override suspend fun list(input: ListEmailAliasesRequest): ListEmailAliasesOutput {
+        try {
+            val queryInput =
+                ListEmailMasksInput(
+                    sudoId = Optional.presentIfNotNull(input.sudoId),
+                    filter = Optional.presentIfNotNull(input.filter?.let { EmailAliasFilterTransformer.entityToGraphQl(it) }),
+                    limit = Optional.presentIfNotNull(input.limit),
+                    nextToken = Optional.presentIfNotNull(input.nextToken),
+                )
+            val queryResponse = apiClient.listEmailMasksQuery(queryInput)
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors}")
+                throw ErrorTransformer.interpretEmailAliasError(queryResponse.errors.first())
+            }
+
+            val queryResult = queryResponse.data?.listEmailMasks
+            val emailAliases = queryResult?.items ?: emptyList()
+            val newNextToken = queryResult?.nextToken
+
+            return ListEmailAliasesOutput(
+                items = emailAliases.map { EmailAliasTransformer.graphQlListToSealedListEntity(it.emailMaskListInfo) },
+                nextToken = newNextToken,
+            )
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAliasException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw ErrorTransformer.interpretEmailAliasException(e)
+            }
+        }
+    }
+
+    override suspend fun getById(input: GetEmailAliasByIdRequest): SealedEmailAliasEntity? {
+        logger.debug("getEmailAliasById input: $input")
+
+        try {
+            val queryResponse = apiClient.getEmailMaskByIdQuery(input.id)
+
+            if (queryResponse.hasErrors()) {
+                logger.error("errors = ${queryResponse.errors}")
+                throw ErrorTransformer.interpretEmailAliasError(queryResponse.errors.first())
+            }
+
+            val result = queryResponse.data?.getEmailMaskById?.emailMask ?: return null
+            return EmailAliasTransformer.graphQLToSealedEntity(result)
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {
