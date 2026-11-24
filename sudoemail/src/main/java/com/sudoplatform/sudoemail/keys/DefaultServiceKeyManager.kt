@@ -29,6 +29,14 @@ internal class DefaultServiceKeyManager(
         ),
 ) : DefaultDeviceKeyManager(keyManager, logger),
     ServiceKeyManager {
+    companion object {
+        /** Name of the key store password whose value is the singleton key pair's identifier. */
+        internal const val SINGLETON_KEY_ID_NAME = "singleton-key-id"
+    }
+
+    /** Guards reading and changing the singleton key pair and its recorded identifier. */
+    private val singletonLock = Any()
+
     @Throws(DeviceKeyManager.DeviceKeyManagerException.UserIdNotFoundException::class)
     override fun getKeyRingId(): String {
         try {
@@ -88,5 +96,134 @@ internal class DefaultServiceKeyManager(
                 e,
             )
         }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun getSingletonKeyPair(): KeyPair? =
+        synchronized(singletonLock) {
+            getSingletonKeyId()?.let { readSingletonKeyPair(it) }
+        }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun createSingletonKeyPairIfAbsent(): SingletonKeyPairResult =
+        synchronized(singletonLock) {
+            val recordedKeyId = getSingletonKeyId()
+            recordedKeyId?.let { readSingletonKeyPair(it) }?.let {
+                return SingletonKeyPairResult(keyPair = it, created = false)
+            }
+
+            // Generated before its identifier is recorded, so the record never names a key
+            // pair that does not exist.
+            val keyPair = generateKeyPair()
+            try {
+                recordSingletonKeyId(keyPair.keyId)
+            } catch (e: DeviceKeyManager.DeviceKeyManagerException) {
+                try {
+                    keyManager.deleteKeyPair(keyPair.keyId)
+                } catch (deleteError: Exception) {
+                    logger.warning("Couldn't delete key pair ${keyPair.keyId} after failing to record it: $deleteError")
+                }
+                throw e
+            }
+
+            if (recordedKeyId != null) {
+                reportReplacedSingletonKeyPair(missingKeyId = recordedKeyId, replacementKeyId = keyPair.keyId)
+            } else {
+                logger.info("Created singleton key pair ${keyPair.keyId}")
+            }
+            SingletonKeyPairResult(keyPair = keyPair, created = true)
+        }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun getSingletonKeyId(): String? {
+        try {
+            return keyManager
+                .getPassword(SINGLETON_KEY_ID_NAME)
+                ?.toString(Charsets.UTF_8)
+                ?.takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                "Failed to read the singleton key pair identifier",
+                e,
+            )
+        }
+    }
+
+    @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
+    override fun removeKeyPair(keyId: String) {
+        synchronized(singletonLock) {
+            if (keyId == getSingletonKeyId()) {
+                return
+            }
+            try {
+                keyManager.deleteKeyPair(keyId)
+            } catch (e: Exception) {
+                logger.error("error $e")
+                throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                    "Failed to remove key pair",
+                    e,
+                )
+            }
+        }
+    }
+
+    /**
+     * The key archive leaves public keys out, but the key store regenerates the public key of
+     * each private key it imports, so the singleton key pair is whole again afterwards.
+     */
+    override fun importKeys(archiveData: ByteArray) {
+        synchronized(singletonLock) {
+            super.importKeys(archiveData)
+        }
+    }
+
+    /**
+     * The recorded singleton key pair, or `null` if its private key is not on this device.
+     *
+     * @throws DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException if the
+     *  private key is present without its public key. Replacing the key pair then would split
+     *  email addresses across two singleton key pairs.
+     */
+    private fun readSingletonKeyPair(keyId: String): KeyPair? {
+        getKeyPairWithId(keyId)?.let { return it }
+        if (privateKeyExists(keyId)) {
+            val message = "Singleton key pair $keyId has a private key but no public key"
+            logger.error(message)
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(message)
+        }
+        return null
+    }
+
+    private fun recordSingletonKeyId(keyId: String) {
+        try {
+            keyManager.deletePassword(SINGLETON_KEY_ID_NAME)
+            keyManager.addPassword(keyId.toByteArray(Charsets.UTF_8), SINGLETON_KEY_ID_NAME)
+        } catch (e: Exception) {
+            logger.error("error $e")
+            throw DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException(
+                "Failed to record the singleton key pair identifier",
+                e,
+            )
+        }
+    }
+
+    /**
+     * Logs, and outputs to the log driver as an error, that the singleton key pair's private
+     * key was missing and a new singleton key pair replaced it. Email addresses sealed to the
+     * missing key cannot be read on this device until a key archive containing it is imported.
+     */
+    private fun reportReplacedSingletonKeyPair(
+        missingKeyId: String,
+        replacementKeyId: String,
+    ) {
+        val message =
+            "Singleton key pair $missingKeyId has no private key on this device; replaced it with $replacementKeyId. " +
+                "Email addresses sealed to $missingKeyId can't be read here until a key archive containing it is imported."
+        logger.error(message)
+        logger.outputError(
+            Error(message),
+            mapOf("missingKeyId" to missingKeyId, "replacementKeyId" to replacementKeyId),
+        )
     }
 }

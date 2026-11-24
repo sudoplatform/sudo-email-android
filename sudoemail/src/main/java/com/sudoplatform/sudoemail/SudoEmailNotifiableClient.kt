@@ -77,7 +77,8 @@ interface SudoEmailNotifiableClient : NotifiableClient {
         /**
          * Provide the namespace to use for internal data and cryptographic keys. This should be unique
          * per client per app to avoid name conflicts between multiple clients. If a value is not supplied
-         * a default value will be used.
+         * [SudoEmailClient.DEFAULT_KEY_NAMESPACE] will be used. It must match the namespace of the
+         * [SudoEmailClient] whose keys decrypt the notifications.
          */
         fun setNamespace(namespace: String) =
             also {

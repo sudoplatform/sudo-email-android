@@ -16,8 +16,16 @@ query GetPublicKeyForEmail($keyId: String!) {
   }
 }
 
-query GetPublicKeysForEmail($limit: Int, $nextToken: String) {
-  getPublicKeysForEmail(limit: $limit, nextToken: $nextToken) {
+query GetPublicKeysForEmail(
+  $limit: Int
+  $nextToken: String
+  $keyFormats: [KeyFormat!]
+) {
+  getPublicKeysForEmail(
+    limit: $limit
+    nextToken: $nextToken
+    keyFormats: $keyFormats
+  ) {
     ...PaginatedPublicKey
   }
 }

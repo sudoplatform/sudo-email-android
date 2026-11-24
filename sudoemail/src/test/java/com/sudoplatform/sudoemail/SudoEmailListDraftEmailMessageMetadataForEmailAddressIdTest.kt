@@ -86,6 +86,8 @@ class SudoEmailListDraftEmailMessageMetadataForEmailAddressIdTest : BaseTests() 
             region = "region",
             emailBucket = "identityBucket",
             transientBucket = "transientBucket",
+            enforceSingletonKeyPair = false,
+            allowCallerManagedKeys = true,
             s3TransientClient = mockS3Client,
             s3EmailClient = mockS3Client,
             useCaseFactory = mockUseCaseFactory,

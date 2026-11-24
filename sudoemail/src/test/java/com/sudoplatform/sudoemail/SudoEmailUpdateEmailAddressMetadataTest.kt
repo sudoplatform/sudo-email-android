@@ -78,6 +78,8 @@ class SudoEmailUpdateEmailAddressMetadataTest : BaseTests() {
             region = "region",
             emailBucket = "identityBucket",
             transientBucket = "transientBucket",
+            enforceSingletonKeyPair = false,
+            allowCallerManagedKeys = true,
             notificationHandler = null,
             s3TransientClient = mockS3Client,
             s3EmailClient = mockS3Client,

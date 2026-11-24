@@ -35,6 +35,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmai
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmailAddressesRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ProvisionEmailAddressRequest
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyRegistrationEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.SealedEmailAddressEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UpdateEmailAddressMetadataRequest
 import com.sudoplatform.sudologging.Logger
@@ -321,6 +322,37 @@ internal class GraphQLEmailAddressService(
                     publicInfo.emailAddressPublicInfo,
                 )
             }
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            when (e) {
+                is NotAuthorizedException -> throw SudoEmailClient.EmailAddressException.AuthenticationException(
+                    cause = e,
+                )
+                else -> throw ErrorTransformer.interpretEmailAddressException(e)
+            }
+        }
+    }
+
+    override suspend fun listPublicKeyRegistrations(): List<PublicKeyRegistrationEntity> {
+        try {
+            val registrations = mutableListOf<PublicKeyRegistrationEntity>()
+            var nextToken: String? = null
+            // A page can be empty while more remain, so read until there's no next token.
+            do {
+                val queryResponse = apiClient.getPublicKeysForEmailQuery(nextToken)
+                if (queryResponse.hasErrors()) {
+                    logger.error("errors = ${queryResponse.errors}")
+                    throw ErrorTransformer.interpretEmailAddressError(queryResponse.errors.first())
+                }
+                val page =
+                    queryResponse.data?.getPublicKeysForEmail?.paginatedPublicKey
+                        ?: throw SudoEmailClient.EmailAddressException.FailedException(StringConstants.NO_PUBLIC_KEYS_ERROR_MSG)
+                page.items.mapTo(registrations) {
+                    PublicKeyRegistrationEntity(keyId = it.publicKey.keyId, keyRingId = it.publicKey.keyRingId)
+                }
+                nextToken = page.nextToken
+            } while (nextToken != null)
+            return registrations
         } catch (e: Throwable) {
             logger.error("unexpected error $e")
             when (e) {

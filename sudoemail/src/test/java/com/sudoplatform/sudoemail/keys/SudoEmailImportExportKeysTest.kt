@@ -101,6 +101,8 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             null,
             mockS3Client,
             mockS3Client,
+            enforceSingletonKeyPair = false,
+            allowCallerManagedKeys = true,
             useCaseFactory = mockUseCaseFactory,
         )
     }
@@ -190,7 +192,7 @@ class SudoEmailImportExportKeysTest : BaseTests() {
             val messageBody = "test draft message"
             // End of obtained from JS exportKeys API.
 
-            val keyManager = KeyManager(InMemoryStore())
+            val keyManager = KeyManager(InMemoryStore(keyNameSpace))
 
             val serviceKeyManager = DefaultServiceKeyManager(keyNameSpace, mockUserClient, keyManager, mockLogger)
             val emailClient =
@@ -203,6 +205,8 @@ class SudoEmailImportExportKeysTest : BaseTests() {
                     region = "region",
                     emailBucket = "identityBucket",
                     transientBucket = "transientBucket",
+                    enforceSingletonKeyPair = false,
+                    allowCallerManagedKeys = true,
                     notificationHandler = null,
                     s3TransientClient = mockS3Client,
                     s3EmailClient = mockS3Client,

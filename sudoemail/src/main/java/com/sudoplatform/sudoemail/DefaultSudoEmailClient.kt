@@ -39,7 +39,6 @@ import com.sudoplatform.sudoemail.internal.domain.entities.common.BatchOperation
 import com.sudoplatform.sudoemail.internal.domain.entities.configuration.ConfigurationDataService
 import com.sudoplatform.sudoemail.internal.domain.entities.draftMessage.DraftEmailMessageService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.CheckEmailAddressAvailabilityRequest
-import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.DeprovisionEmailAddressRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAlias.EmailAliasService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailFolder.EmailFolderService
@@ -58,6 +57,7 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.GetDraft
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ListScheduledDraftMessagesForEmailAddressIdUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ScheduleSendDraftMessageUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.UpdateDraftEmailMessageUseCaseInput
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.DeprovisionedKeyPairRemovalException
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.GetEmailAddressUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ListEmailAddressesForSudoIdUseCaseInput
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ListEmailAddressesUseCaseInput
@@ -98,6 +98,7 @@ import com.sudoplatform.sudoemail.types.BatchOperationStatus
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel
 import com.sudoplatform.sudoemail.types.ConfigurationData
+import com.sudoplatform.sudoemail.types.CreateSingletonKeysIfAbsentResult
 import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
@@ -110,6 +111,7 @@ import com.sudoplatform.sudoemail.types.EmailFolder
 import com.sudoplatform.sudoemail.types.EmailMessage
 import com.sudoplatform.sudoemail.types.EmailMessageOperationFailureResult
 import com.sudoplatform.sudoemail.types.EmailMessageWithBody
+import com.sudoplatform.sudoemail.types.KeyResult
 import com.sudoplatform.sudoemail.types.ListAPIResult
 import com.sudoplatform.sudoemail.types.ListOutput
 import com.sudoplatform.sudoemail.types.PartialEmailAddress
@@ -187,6 +189,11 @@ import kotlinx.coroutines.sync.withLock
  * @property region [String] The AWS region.
  * @property emailBucket [String] The S3 Bucket for email messages sent from this identity.
  * @property transientBucket [String] The S3 Bucket for temporary draft email messages.
+ * @property enforceSingletonKeyPair [Boolean] Whether every email address and email alias is
+ *  provisioned with one shared key pair rather than a key pair of its own.
+ * @property allowCallerManagedKeys [Boolean] Whether the app manages its key pairs, so
+ *  deprovisioning an email address never removes them. When `false`, deprovisioning removes them
+ *  once nothing else uses them.
  */
 internal class DefaultSudoEmailClient(
     private val context: Context,
@@ -269,6 +276,8 @@ internal class DefaultSudoEmailClient(
             context = context,
             logger = logger,
         ),
+    private val enforceSingletonKeyPair: Boolean,
+    private val allowCallerManagedKeys: Boolean,
     private val useCaseFactory: UseCaseFactory =
         DefaultUseCaseFactory(
             emailAddressService = emailAddressService,
@@ -292,6 +301,8 @@ internal class DefaultSudoEmailClient(
             emailAliasService = emailAliasService,
             emailMessageBodyCache = emailMessageBodyCache,
             logger = logger,
+            enforceSingletonKeyPair = enforceSingletonKeyPair,
+            allowCallerManagedKeys = allowCallerManagedKeys,
         ),
     private val subscriptions: SubscriptionService =
         SubscriptionService(apiClient, serviceKeyManager, sudoUserClient, logger),
@@ -300,6 +311,13 @@ internal class DefaultSudoEmailClient(
      * Mutex for thread-safe access to the sign-in callback.
      */
     private val callbackMutex = Mutex()
+
+    /**
+     * Serialises the operations that register key pairs with the service or remove them from the
+     * device, so a deprovision can't remove a key pair that a provisioning running alongside it is
+     * registering.
+     */
+    private val keyRegistrationMutex = Mutex()
 
     /**
      * Threadsafe container for optional callback to be invoked when operations are attempted while not signed in.
@@ -389,14 +407,16 @@ internal class DefaultSudoEmailClient(
         val useCase = useCaseFactory.createProvisionEmailAddressUseCase()
 
         val result =
-            useCase.execute(
-                ProvisionEmailAddressUseCaseInput(
-                    input.emailAddress,
-                    input.ownershipProofToken,
-                    input.displayName,
-                    input.keyId,
-                ),
-            )
+            keyRegistrationMutex.withLock {
+                useCase.execute(
+                    ProvisionEmailAddressUseCaseInput(
+                        input.emailAddress,
+                        input.ownershipProofToken,
+                        input.displayName,
+                        input.keyId,
+                    ),
+                )
+            }
         return EmailAddressTransformer.unsealedEntityToApi(result)
     }
 
@@ -405,21 +425,29 @@ internal class DefaultSudoEmailClient(
         ensureSignedIn()
         logger.debug("deprovisionEmailAddress id: $id")
 
+        val useCase = useCaseFactory.createDeprovisionEmailAddressUseCase()
         val result =
-            emailAddressService.deprovision(
-                DeprovisionEmailAddressRequest(
-                    emailAddressId = id,
-                ),
-            )
+            try {
+                keyRegistrationMutex.withLock { useCase.execute(id) }
+            } catch (e: DeprovisionedKeyPairRemovalException) {
+                flushCacheAfterDeprovision(id)
+                throw SudoEmailClient.EmailAddressException.KeyPairRemovalFailedException(
+                    emailAddress = EmailAddressTransformer.sealedEntityToApi(e.deprovisioned),
+                    keyIds = e.keyIds,
+                    message = StringConstants.KEY_PAIR_REMOVAL_FAILED_MSG,
+                    cause = e.cause,
+                )
+            }
+        flushCacheAfterDeprovision(id)
+        return EmailAddressTransformer.sealedEntityToApi(result)
+    }
 
-        // Flush cache entries for the deprovisioned email address
+    private suspend fun flushCacheAfterDeprovision(emailAddressId: String) {
         try {
-            emailMessageBodyCache.flush(CacheFlushInput(emailAddressId = id))
+            emailMessageBodyCache.flush(CacheFlushInput(emailAddressId = emailAddressId))
         } catch (e: Exception) {
             logger.error("Cache flush error after deprovision: ${e.message}")
         }
-
-        return EmailAddressTransformer.sealedEntityToApi(result)
     }
 
     @Throws(SudoEmailClient.EmailAddressException::class)
@@ -1080,6 +1108,21 @@ internal class DefaultSudoEmailClient(
         }
     }
 
+    @Throws(SudoEmailClient.EmailCryptographicKeysException::class)
+    override suspend fun createSingletonKeysIfAbsent(): CreateSingletonKeysIfAbsentResult {
+        ensureSignedIn()
+        logger.debug("createSingletonKeysIfAbsent")
+        try {
+            val result = useCaseFactory.createCreateSingletonKeysIfAbsentUseCase().execute()
+            return CreateSingletonKeysIfAbsentResult(
+                keyPair = KeyResult(created = result.created, keyId = result.keyPair.keyId),
+            )
+        } catch (e: Throwable) {
+            logger.error("unexpected error $e")
+            throw ErrorTransformer.interpretEmailCryptographicKeysException(e)
+        }
+    }
+
     override suspend fun provisionEmailAlias(input: ProvisionEmailAliasInput): EmailAlias {
         ensureSignedIn()
         logger.debug("provisionEmailAlias input: $input")
@@ -1087,16 +1130,18 @@ internal class DefaultSudoEmailClient(
         val useCase = useCaseFactory.createProvisionEmailAliasUseCase()
 
         val result =
-            useCase.execute(
-                ProvisionEmailAliasUseCaseInput(
-                    input.aliasAddress,
-                    input.realAddress,
-                    input.ownershipProofToken,
-                    input.metadata,
-                    input.expiresAt,
-                    input.keyId,
-                ),
-            )
+            keyRegistrationMutex.withLock {
+                useCase.execute(
+                    ProvisionEmailAliasUseCaseInput(
+                        input.aliasAddress,
+                        input.realAddress,
+                        input.ownershipProofToken,
+                        input.metadata,
+                        input.expiresAt,
+                        input.keyId,
+                    ),
+                )
+            }
         return EmailAliasTransformer.unsealedEntityToApi(result)
     }
 

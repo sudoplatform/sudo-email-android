@@ -11,6 +11,7 @@ import com.amplifyframework.api.graphql.GraphQLOperation
 import com.amplifyframework.api.graphql.GraphQLResponse
 import com.amplifyframework.core.Action
 import com.amplifyframework.core.Consumer
+import com.apollographql.apollo.api.Optional
 import com.sudoplatform.sudoemail.graphql.BlockEmailAddressesMutation
 import com.sudoplatform.sudoemail.graphql.CancelScheduledDraftMessageMutation
 import com.sudoplatform.sudoemail.graphql.CheckEmailAddressAvailabilityQuery
@@ -30,6 +31,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMaskByIdQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMaskDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
+import com.sudoplatform.sudoemail.graphql.GetPublicKeysForEmailQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailDomainsQuery
@@ -68,6 +70,7 @@ import com.sudoplatform.sudoemail.graphql.type.DeprovisionEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.DisableEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.EnableEmailMaskInput
 import com.sudoplatform.sudoemail.graphql.type.GetEmailAddressBlocklistInput
+import com.sudoplatform.sudoemail.graphql.type.KeyFormat
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesForSudoIdInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailAddressesInput
 import com.sudoplatform.sudoemail.graphql.type.ListEmailFoldersForEmailAddressIdInput
@@ -168,6 +171,21 @@ open class ApiClient(
         graphQLClient.query<LookupEmailAddressesPublicInfoQuery, LookupEmailAddressesPublicInfoQuery.Data>(
             LookupEmailAddressesPublicInfoQuery.OPERATION_DOCUMENT,
             mapOf("input" to input),
+        )
+
+    /**
+     * Get a page of the public keys registered for the signed in user's email addresses and
+     * email aliases, in every key format.
+     */
+    open suspend fun getPublicKeysForEmailQuery(nextToken: String?): GraphQLResponse<GetPublicKeysForEmailQuery.Data> =
+        graphQLClient.query<GetPublicKeysForEmailQuery, GetPublicKeysForEmailQuery.Data>(
+            GetPublicKeysForEmailQuery.OPERATION_DOCUMENT,
+            mapOf(
+                "limit" to Optional.Absent,
+                "nextToken" to Optional.presentIfNotNull(nextToken),
+                // An empty list asks for every key format; omitting it returns only RSA_PUBLIC_KEY keys.
+                "keyFormats" to Optional.present(emptyList<KeyFormat>()),
+            ),
         )
 
     open suspend fun listEmailFoldersForEmailAddressIdQuery(

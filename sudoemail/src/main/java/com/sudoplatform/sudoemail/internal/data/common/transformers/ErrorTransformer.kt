@@ -305,6 +305,24 @@ internal object ErrorTransformer {
         }
 
     /**
+     * Interprets a throwable exception and converts it to an appropriate EmailCryptographicKeysException.
+     *
+     * @param e [Throwable] The throwable to interpret.
+     * @return [Throwable] The corresponding exception, which may be the original exception if already handled.
+     */
+    fun interpretEmailCryptographicKeysException(e: Throwable): Throwable =
+        when (e) {
+            is CancellationException,
+            is SudoEmailClient.EmailCryptographicKeysException,
+            -> e
+
+            is DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException ->
+                SudoEmailClient.EmailCryptographicKeysException.SecureKeyArchiveException(e.message, e)
+
+            else -> SudoEmailClient.EmailCryptographicKeysException.UnknownException(e)
+        }
+
+    /**
      * Interprets a GraphQL error and converts it to an appropriate EmailMessageException.
      *
      * @param e [GraphQLResponse.Error] The GraphQL error to interpret.

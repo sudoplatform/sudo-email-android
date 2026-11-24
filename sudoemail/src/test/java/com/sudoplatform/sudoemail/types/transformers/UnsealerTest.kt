@@ -10,6 +10,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.amazonaws.util.Base64
 import com.sudoplatform.sudoemail.BaseTests
+import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.graphql.fragment.BlockedAddress
 import com.sudoplatform.sudoemail.graphql.fragment.EmailAddressWithoutFolders
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
@@ -55,7 +56,7 @@ class UnsealerTest : BaseTests() {
     }
 
     private val keyManager by before {
-        KeyManager(AndroidSQLiteStore(context))
+        KeyManager(AndroidSQLiteStore(context, SudoEmailClient.DEFAULT_KEY_NAMESPACE))
     }
 
     private val serviceKeyManager by before {

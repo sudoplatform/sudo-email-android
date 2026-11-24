@@ -21,9 +21,11 @@ import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import java.util.Date
@@ -35,6 +37,10 @@ import java.util.Date
 class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
     private val sealedEmailAddress by before {
         EntityDataFactory.getSealedEmailAddressEntity()
+    }
+
+    private val sealedEmailAddressWithKeys by before {
+        sealedEmailAddress.copy(keyRingId = "keyRingId", keyIds = listOf("keyId1", "keyId2"))
     }
 
     private val mockEmailAddressService by before {
@@ -77,6 +83,8 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             s3EmailClient = mockS3Client,
             emailAddressService = mockEmailAddressService,
             emailMessageBodyCache = mockEmailMessageBodyCache,
+            enforceSingletonKeyPair = false,
+            allowCallerManagedKeys = false,
         )
     }
 
@@ -155,5 +163,48 @@ class SudoEmailDeprovisionEmailAddressTest : BaseTests() {
             verify(mockEmailAddressService).deprovision(
                 any(),
             )
+        }
+
+    @Test
+    fun `deprovisionEmailAddress() should keep the key pairs when the key registrations can't be listed`() =
+        runTest {
+            mockEmailAddressService.stub {
+                onBlocking { deprovision(any()) } doReturn sealedEmailAddressWithKeys
+                onBlocking { listPublicKeyRegistrations() } doThrow
+                    SudoEmailClient.EmailAddressException.FailedException("Mock")
+            }
+
+            client.deprovisionEmailAddress(mockEmailAddressId).id shouldBe mockEmailAddressId
+
+            verify(mockEmailAddressService).deprovision(any())
+            verify(mockEmailAddressService).listPublicKeyRegistrations()
+            verify(mockKeyManager).getPassword(DefaultServiceKeyManager.SINGLETON_KEY_ID_NAME)
+            verify(mockEmailMessageBodyCache).flush(any())
+        }
+
+    @Test
+    fun `deprovisionEmailAddress() should throw KeyPairRemovalFailedException after trying every key pair`() =
+        runTest {
+            mockEmailAddressService.stub {
+                onBlocking { deprovision(any()) } doReturn sealedEmailAddressWithKeys
+                onBlocking { listPublicKeyRegistrations() } doReturn emptyList()
+            }
+            mockKeyManager.stub {
+                on { deleteKeyPair("keyId1") } doThrow RuntimeException("Mock")
+            }
+
+            val error =
+                shouldThrow<SudoEmailClient.EmailAddressException.KeyPairRemovalFailedException> {
+                    client.deprovisionEmailAddress(mockEmailAddressId)
+                }
+
+            error.emailAddress.id shouldBe mockEmailAddressId
+            error.keyIds shouldBe listOf("keyId1")
+            verify(mockEmailAddressService).deprovision(any())
+            verify(mockEmailAddressService).listPublicKeyRegistrations()
+            verify(mockKeyManager, times(3)).getPassword(DefaultServiceKeyManager.SINGLETON_KEY_ID_NAME)
+            verify(mockKeyManager).deleteKeyPair("keyId1")
+            verify(mockKeyManager).deleteKeyPair("keyId2")
+            verify(mockEmailMessageBodyCache).flush(any())
         }
 }

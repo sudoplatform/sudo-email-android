@@ -28,6 +28,7 @@ import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ListEmai
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.LookupEmailAddressesPublicInfoRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ProvisionEmailAddressRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyFormatEntity
+import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.PublicKeyRegistrationEntity
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UpdateEmailAddressMetadataRequest
 import com.sudoplatform.sudoemail.keys.KeyPair
 import io.kotlintest.shouldBe
@@ -2133,5 +2134,26 @@ class GraphQLEmailAddressServiceTest : BaseTests() {
             result[0].publicKeyDetails shouldNotBe null
 
             verify(mockApiClient).lookupEmailAddressesPublicInfoQuery(any())
+        }
+
+    @Test
+    fun `listPublicKeyRegistrations() should read every page, including an empty one`() =
+        runTest {
+            mockApiClient.stub {
+                onBlocking { getPublicKeysForEmailQuery(null) } doReturn
+                    DataFactory.getPublicKeysForEmailQueryResponse(emptyList(), nextToken = "page2")
+                onBlocking { getPublicKeysForEmailQuery("page2") } doReturn
+                    DataFactory.getPublicKeysForEmailQueryResponse(listOf("keyId" to "keyRing1", "keyId" to "keyRing2"))
+            }
+
+            val result = instanceUnderTest.listPublicKeyRegistrations()
+
+            result shouldBe
+                listOf(
+                    PublicKeyRegistrationEntity(keyId = "keyId", keyRingId = "keyRing1"),
+                    PublicKeyRegistrationEntity(keyId = "keyId", keyRingId = "keyRing2"),
+                )
+            verify(mockApiClient).getPublicKeysForEmailQuery(null)
+            verify(mockApiClient).getPublicKeysForEmailQuery("page2")
         }
 }

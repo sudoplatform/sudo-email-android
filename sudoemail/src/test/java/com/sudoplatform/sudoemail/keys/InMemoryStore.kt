@@ -11,7 +11,9 @@ import com.sudoplatform.sudokeymanager.StoreInterface
 /**
  * Basic KeyManager store implementation mainly used for testing.
  */
-class InMemoryStore : StoreInterface {
+class InMemoryStore(
+    override val keyNamespace: String,
+) : StoreInterface {
     private val keys: MutableMap<Pair<String, KeyType>, ByteArray> = mutableMapOf()
 
     @Synchronized

@@ -25,6 +25,7 @@ import com.sudoplatform.sudoemail.graphql.GetEmailConfigQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailDomainsQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMaskByIdQuery
 import com.sudoplatform.sudoemail.graphql.GetEmailMessageQuery
+import com.sudoplatform.sudoemail.graphql.GetPublicKeysForEmailQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesForSudoIdQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailAddressesQuery
 import com.sudoplatform.sudoemail.graphql.ListEmailDomainsQuery
@@ -57,6 +58,8 @@ import com.sudoplatform.sudoemail.graphql.fragment.EmailFolder
 import com.sudoplatform.sudoemail.graphql.fragment.EmailMask
 import com.sudoplatform.sudoemail.graphql.fragment.EmailMaskListInfo
 import com.sudoplatform.sudoemail.graphql.fragment.GetEmailAddressBlocklistResponse
+import com.sudoplatform.sudoemail.graphql.fragment.PaginatedPublicKey
+import com.sudoplatform.sudoemail.graphql.fragment.PublicKey
 import com.sudoplatform.sudoemail.graphql.fragment.ScheduledDraftMessage
 import com.sudoplatform.sudoemail.graphql.fragment.SealedAttribute
 import com.sudoplatform.sudoemail.graphql.fragment.SealedEmailMessage
@@ -758,6 +761,39 @@ object DataFactory {
                             it,
                         )
                     },
+                ),
+            ),
+            null,
+        )
+
+    fun getPublicKeysForEmailQueryResponse(
+        registrations: List<Pair<String, String>>,
+        nextToken: String? = null,
+    ): GraphQLResponse<GetPublicKeysForEmailQuery.Data> =
+        GraphQLResponse<GetPublicKeysForEmailQuery.Data>(
+            GetPublicKeysForEmailQuery.Data(
+                GetPublicKeysForEmailQuery.GetPublicKeysForEmail(
+                    "__typename",
+                    PaginatedPublicKey(
+                        registrations.map { (keyId, keyRingId) ->
+                            PaginatedPublicKey.Item(
+                                "__typename",
+                                PublicKey(
+                                    id = "$keyRingId/$keyId",
+                                    keyId = keyId,
+                                    keyRingId = keyRingId,
+                                    algorithm = "RSAEncryptionOAEPAESCBC",
+                                    keyFormat = KeyFormat.RSA_PUBLIC_KEY,
+                                    publicKey = "publicKey",
+                                    owner = "mockOwner",
+                                    version = 1,
+                                    createdAtEpochMs = 1.0,
+                                    updatedAtEpochMs = 1.0,
+                                ),
+                            )
+                        },
+                        nextToken,
+                    ),
                 ),
             ),
             null,

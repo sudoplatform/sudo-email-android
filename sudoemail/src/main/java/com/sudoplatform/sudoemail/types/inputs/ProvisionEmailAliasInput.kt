@@ -11,6 +11,8 @@ import java.util.Date
  *  The ownership proof must contain an audience of "sudoplatform".
  * @property metadata Optional metadata to associate with the email alias.
  * @property expiresAt Optional expiration date for the email alias. If not provided, the alias will not expire.
+ * @property keyId Optional identifier of an existing key pair to provision the email alias with. Requires a client
+ *  built with `setAllowCallerManagedKeys(true)`, the default.
  */
 data class ProvisionEmailAliasInput(
     val aliasAddress: String,

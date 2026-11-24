@@ -15,6 +15,7 @@ import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.keys.DeviceKeyManager
 import com.sudoplatform.sudoemail.keys.KeyPair
+import com.sudoplatform.sudoemail.keys.ProvisioningKeyProvider
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
@@ -85,6 +86,12 @@ class ProvisionEmailAddressUseCaseTest : BaseTests() {
             mockServiceKeyManager,
             mockSealingService,
             mockLogger,
+            ProvisioningKeyProvider.forEmailAddress(
+                mockServiceKeyManager,
+                mockLogger,
+                enforceSingletonKeyPair = false,
+                allowCallerManagedKeys = true,
+            ),
         )
     }
 
@@ -274,6 +281,28 @@ class ProvisionEmailAddressUseCaseTest : BaseTests() {
                 )
 
             shouldThrow<SudoEmailClient.EmailAddressException.AuthenticationException> {
+                useCase.execute(input)
+            }
+
+            verify(mockServiceKeyManager).getCurrentSymmetricKeyId()
+            verify(mockServiceKeyManager).generateKeyPair()
+            verify(mockEmailAddressService).provision(any())
+        }
+
+    @Test
+    fun `execute() should keep the generated key pair when the failure doesn't prove the service rejected it`() =
+        runTest {
+            mockEmailAddressService.stub {
+                onBlocking { provision(any()) } doThrow SudoEmailClient.EmailAddressException.FailedException("Mock 5xx")
+            }
+
+            val input =
+                ProvisionEmailAddressUseCaseInput(
+                    emailAddress = "example@sudoplatform.com",
+                    ownershipProofToken = "ownershipProofToken",
+                )
+
+            shouldThrow<SudoEmailClient.EmailAddressException.FailedException> {
                 useCase.execute(input)
             }
 

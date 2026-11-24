@@ -14,7 +14,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 35
         versionCode = 1
-        versionName = "18.0.0"
+        versionName = "25.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testApplicationId = "com.sudoplatform.sudoemail.test"
         consumerProguardFiles 'consumer-rules.pro'
@@ -26,9 +26,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            testCoverageEnabled false
+            enableAndroidTestCoverage true
         }
 
+    }
+    testCoverage {
+        jacocoVersion = "0.8.13"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -122,10 +125,10 @@ dependencies {
     implementation("com.apollographql.apollo:apollo-runtime:4.3.3")
 
     // Sudo Platform
-    implementation 'com.sudoplatform:sudokeymanager:9.0.0'
+    implementation 'com.sudoplatform:sudokeymanager:10.0.0'
     implementation "com.sudoplatform:sudologging:6.0.0"
     implementation "com.sudoplatform:sudoconfigmanager:9.0.0"
-    implementation 'com.sudoplatform:sudouser:21.1.1'
+    implementation 'com.sudoplatform:sudouser:21.2.2'
     implementation 'com.sudoplatform:sudoapiclient:12.0.2'
     implementation 'com.sudoplatform:sudonotification:5.0.1'
 
@@ -277,25 +280,20 @@ apollo {
     }
 }
 
-// Configure Apollo tasks to handle incremental build issues
-afterEvaluate {
-    tasks.withType(Task).matching { it.name.contains("generateServiceApolloSources") }.configureEach {
-        doNotTrackState("Apollo source generation can have incremental build issues with missing output files")
-    }
-}
-
-
 // Jacoco test coverage
 apply plugin: 'jacoco'
 
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = "0.8.13"
 }
 
 tasks.register('jacocoTestReport', JacocoReport) {
     dependsOn "testDebugUnitTest"
     group = "Reporting"
     description = "Generate Jacoco coverage reports"
+    reports {
+        xml.required = true
+    }
     classDirectories.setFrom(
             fileTree(
                     dir: "${buildDir}/tmp/kotlin-classes/debug",

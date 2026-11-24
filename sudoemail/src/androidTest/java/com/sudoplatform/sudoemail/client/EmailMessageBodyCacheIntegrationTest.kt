@@ -157,6 +157,8 @@ class EmailMessageBodyCacheIntegrationTest : BaseIntegrationTest() {
                     region = configuration.region,
                     emailBucket = configuration.emailBucket,
                     transientBucket = configuration.transientBucket,
+                    enforceSingletonKeyPair = false,
+                    allowCallerManagedKeys = true,
                     emailMessageBodyCache = instrumentedCache,
                 )
         }

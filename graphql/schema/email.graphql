@@ -817,14 +817,19 @@ type Query {
     input: ListEmailMessagesForEmailFolderIdInput!
   ): EmailMessageConnection!
 
-  getPublicKeyForEmail(keyId: String!): PublicKey
+  getPublicKeyForEmail(keyId: String!, keyFormats: [KeyFormat!]): PublicKey
 
-  getPublicKeysForEmail(limit: Int, nextToken: String): PaginatedPublicKey!
+  getPublicKeysForEmail(
+    limit: Int
+    nextToken: String
+    keyFormats: [KeyFormat!]
+  ): PaginatedPublicKey!
 
   getKeyRingForEmail(
     keyRingId: String!
     limit: Int
     nextToken: String
+    keyFormats: [KeyFormat!]
   ): PaginatedPublicKey!
 
   lookupEmailAddressesPublicInfo(

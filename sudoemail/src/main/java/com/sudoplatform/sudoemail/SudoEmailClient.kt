@@ -24,6 +24,7 @@ import com.sudoplatform.sudoemail.types.BatchOperationResult
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressAction
 import com.sudoplatform.sudoemail.types.BlockedEmailAddressLevel
 import com.sudoplatform.sudoemail.types.ConfigurationData
+import com.sudoplatform.sudoemail.types.CreateSingletonKeysIfAbsentResult
 import com.sudoplatform.sudoemail.types.DeleteEmailMessageSuccessResult
 import com.sudoplatform.sudoemail.types.DraftEmailMessageMetadata
 import com.sudoplatform.sudoemail.types.DraftEmailMessageWithContent
@@ -111,7 +112,17 @@ interface SudoEmailClient : AutoCloseable {
         const val DEFAULT_EMAIL_FOLDER_LIMIT = 10
         const val DEFAULT_EMAIL_MESSAGE_LIMIT = 10
 
-        const val DEFAULT_KEY_NAMESPACE = "eml"
+        /**
+         * Default namespace the client's keys are stored under. [SudoEmailClient] and
+         * [SudoEmailNotifiableClient] must use the same namespace for notifications to be
+         * decrypted.
+         *
+         * Every platform uses this namespace, which key archives need in order to import across
+         * platforms. Keys stored by an earlier version of the SDK under its old default, `"eml"`,
+         * aren't found under this one; pass that namespace to [Builder.setNamespace] and
+         * [SudoEmailNotifiableClient.Builder.setNamespace] to keep using them.
+         */
+        const val DEFAULT_KEY_NAMESPACE = "sudo-email"
         const val DEFAULT_KEYRING_SERVICE_NAME = "sudo-email"
 
         private const val CONFIG_EMAIL_SERVICE = "emService"
@@ -199,6 +210,8 @@ interface SudoEmailClient : AutoCloseable {
         private var namespace: String = DEFAULT_KEY_NAMESPACE
         private var notificationHandler: SudoEmailNotificationHandler? = null
         private var databaseName: String = AndroidSQLiteStore.DEFAULT_DATABASE_NAME
+        private var enforceSingletonKeyPair: Boolean = false
+        private var allowCallerManagedKeys: Boolean = true
 
         /**
          * Provide the application context (required input).
@@ -254,7 +267,9 @@ interface SudoEmailClient : AutoCloseable {
         /**
          * Provide the namespace to use for internal data and cryptographic keys. This should be unique
          * per client per app to avoid name conflicts between multiple clients. If a value is not supplied
-         * a default value will be used.
+         * [DEFAULT_KEY_NAMESPACE] will be used. Key archives record it and import only into a client
+         * with the same namespace, so use the same value on every device and platform that keys move
+         * between.
          */
         fun setNamespace(namespace: String) =
             also {
@@ -272,6 +287,56 @@ interface SudoEmailClient : AutoCloseable {
         fun setDatabaseName(databaseName: String) =
             also {
                 this.databaseName = databaseName
+            }
+
+        /**
+         * Provide whether every email address and email alias is provisioned with one shared key
+         * pair instead of a key pair of its own (optional input). Defaults to `false`.
+         *
+         * When `true`, every email address and email alias provisioned without a `keyId` is
+         * registered with one shared key pair, which the app creates with
+         * [createSingletonKeysIfAbsent] before provisioning. The client never creates it itself:
+         * provisioning without it throws
+         * [EmailAddressException.SingletonKeyPairNotFoundException] or
+         * [EmailAliasException.SingletonKeyPairNotFoundException]. Deprovisioning never removes
+         * a key pair, even with [setAllowCallerManagedKeys] set to `false`, and the shared key
+         * pair is never removed when a provisioning fails; only [reset] removes it.
+         *
+         * Messages are still sealed, but every email address's messages are sealed to the same
+         * key, so all of them can be read with that one key. Apps that don't need email addresses
+         * kept cryptographically separate from one another can use this to keep key management
+         * and key export and import simple.
+         *
+         * When `false`, each email address and email alias provisioned without a `keyId` gets a
+         * key pair of its own, which is removed from the device when the service rejects its
+         * provisioning. See [setAllowCallerManagedKeys] for removing it after a deprovision.
+         *
+         * Either way, a `keyId` supplied when provisioning is used instead, if
+         * [setAllowCallerManagedKeys] is `true`.
+         */
+        fun setEnforceSingletonKeyPair(enforceSingletonKeyPair: Boolean) =
+            also {
+                this.enforceSingletonKeyPair = enforceSingletonKeyPair
+            }
+
+        /**
+         * Provide whether the app may supply the key pair an email address or email alias is
+         * provisioned with, as the `keyId` of [ProvisionEmailAddressInput] or
+         * [ProvisionEmailAliasInput] (optional input). Defaults to `true`.
+         *
+         * When `true`, the app is responsible for its key pairs, so deprovisioning never removes
+         * one: key pairs stay on the device until [reset], including those the client generated.
+         *
+         * When `false`, the client manages every key pair itself: provisioning with a `keyId`
+         * throws [EmailAddressException.InvalidArgumentException] or
+         * [EmailAliasException.InvalidArgumentException], and deprovisioning an email address
+         * removes its key pairs from the device once no other email address or email alias uses
+         * them; see [deprovisionEmailAddress]. Deprovisioning removes nothing while
+         * [setEnforceSingletonKeyPair] is `true`.
+         */
+        fun setAllowCallerManagedKeys(allowCallerManagedKeys: Boolean) =
+            also {
+                this.allowCallerManagedKeys = allowCallerManagedKeys
             }
 
         /** A configuration item that is needed is missing */
@@ -338,6 +403,8 @@ interface SudoEmailClient : AutoCloseable {
                 notificationHandler = notificationHandler,
                 s3TransientClient = s3Client ?: DefaultS3Client(context!!, sudoUserClient!!, region, transientBucket, logger),
                 s3EmailClient = s3Client ?: DefaultS3Client(context!!, sudoUserClient!!, region, emailBucket, logger),
+                enforceSingletonKeyPair = enforceSingletonKeyPair,
+                allowCallerManagedKeys = allowCallerManagedKeys,
             )
         }
     }
@@ -413,6 +480,44 @@ interface SudoEmailClient : AutoCloseable {
         ) : EmailAddressException(message = message, cause = cause)
 
         class LimitExceededException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
+
+        /**
+         * An argument is not valid, for example a [ProvisionEmailAddressInput.keyId] supplied to a
+         * client built with [Builder.setAllowCallerManagedKeys] set to `false`.
+         */
+        class InvalidArgumentException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
+
+        /**
+         * The client enforces a singleton key pair, but this device does not have it. Call
+         * [createSingletonKeysIfAbsent] to create it, or import a key archive that contains it
+         * with [importKeys] (for example on a second device, before provisioning).
+         */
+        class SingletonKeyPairNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAddressException(message = message, cause = cause)
+
+        /**
+         * The email address was deprovisioned, but this device could not remove some of its key
+         * pairs. Only thrown by a client built with [Builder.setAllowCallerManagedKeys] set to
+         * `false`. Treat the email address as deprovisioned: [emailAddress] is the email address,
+         * as a successful [deprovisionEmailAddress] would have returned it. The key pairs in
+         * [keyIds] stay on the device until [reset]. Removing a key pair that is already absent
+         * succeeds, so this means the device key store itself failed, and other key operations
+         * are likely to fail too. The [cause] carries the first underlying error.
+         *
+         * @property emailAddress [EmailAddress] The deprovisioned email address.
+         * @property keyIds [List<String>] Identifiers of the key pairs that could not be removed.
+         */
+        class KeyPairRemovalFailedException(
+            val emailAddress: EmailAddress,
+            val keyIds: List<String>,
             message: String? = null,
             cause: Throwable? = null,
         ) : EmailAddressException(message = message, cause = cause)
@@ -547,6 +652,16 @@ interface SudoEmailClient : AutoCloseable {
             cause: Throwable? = null,
         ) : EmailAliasException(message = message, cause = cause)
 
+        /**
+         * The client enforces a singleton key pair, but this device does not have it. Call
+         * [createSingletonKeysIfAbsent] to create it, or import a key archive that contains it
+         * with [importKeys] (for example on a second device, before provisioning).
+         */
+        class SingletonKeyPairNotFoundException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailAliasException(message = message, cause = cause)
+
         class AuthenticationException(
             message: String? = null,
             cause: Throwable? = null,
@@ -666,6 +781,21 @@ interface SudoEmailClient : AutoCloseable {
             message: String? = null,
             cause: Throwable? = null,
         ) : EmailCryptographicKeysException(message = message, cause = cause)
+
+        /**
+         * The client's configuration does not support the operation, for example
+         * [createSingletonKeysIfAbsent] on a client built without
+         * [Builder.setEnforceSingletonKeyPair].
+         */
+        class InvalidConfigurationException(
+            message: String? = null,
+            cause: Throwable? = null,
+        ) : EmailCryptographicKeysException(message = message, cause = cause)
+
+        /** An unexpected error wrapping the underlying cause. */
+        class UnknownException(
+            cause: Throwable,
+        ) : EmailCryptographicKeysException(cause = cause)
     }
 
     /**
@@ -744,10 +874,19 @@ interface SudoEmailClient : AutoCloseable {
     /**
      * Provision an [EmailAddress].
      *
+     * The email address is registered with the key pair [ProvisionEmailAddressInput.keyId] names
+     * if one is supplied, otherwise with the singleton key pair if the client was built with
+     * [Builder.setEnforceSingletonKeyPair], otherwise with a new key pair of its own. A new key
+     * pair is removed again if the service rejects the provisioning.
+     *
      * @param input [ProvisionEmailAddressInput] Parameters used to provision an email address.
      * @return The provisioned [EmailAddress].
      *
-     * @throws [EmailAddressException].
+     * @throws [EmailAddressException], including
+     *  [EmailAddressException.InvalidArgumentException] if a `keyId` is supplied to a client built
+     *  with [Builder.setAllowCallerManagedKeys] set to `false`, and
+     *  [EmailAddressException.SingletonKeyPairNotFoundException] if the client enforces a
+     *  singleton key pair that this device does not have.
      */
     @Throws(EmailAddressException::class)
     suspend fun provisionEmailAddress(input: ProvisionEmailAddressInput): EmailAddress
@@ -755,10 +894,21 @@ interface SudoEmailClient : AutoCloseable {
     /**
      * Deprovision an [EmailAddress].
      *
+     * With [Builder.setAllowCallerManagedKeys] set to `false`, once the email address is
+     * deprovisioned its key pair is removed from the device, unless another of the user's email
+     * addresses or email aliases still uses it. Nothing is removed if the client was built with
+     * [Builder.setEnforceSingletonKeyPair], or if the service can't say whether the key pair is
+     * still used. By default, with [Builder.setAllowCallerManagedKeys] set to `true`,
+     * deprovisioning never removes a key pair. Deprovisioning an email alias never removes a key
+     * pair.
+     *
      * @param id [String] The identifier of the [EmailAddress] to deprovision.
      * @return The deprovisioned [EmailAddress].
      *
-     * @throws [EmailAddressException].
+     * @throws [EmailAddressException] if the email address was not deprovisioned, or
+     *  [EmailAddressException.KeyPairRemovalFailedException] if it was deprovisioned but its key
+     *  pair could not be removed from the device (only with [Builder.setAllowCallerManagedKeys]
+     *  set to `false`).
      */
     @Throws(EmailAddressException::class)
     suspend fun deprovisionEmailAddress(id: String): EmailAddress
@@ -1237,15 +1387,28 @@ interface SudoEmailClient : AutoCloseable {
     /**
      * Import cryptographic keys from a key archive.
      *
+     * Every key already on this device is removed first, so the store ends up matching the
+     * archive rather than merging with it.
+     *
+     * The archive's keys must all be in this client's key namespace ([Builder.setNamespace]), so a
+     * client on another device or platform must use the same namespace. If the archive has no keys
+     * for this client's namespace, or has keys for another namespace, the import fails and the
+     * existing keys are kept.
+     *
      * @param archiveData [ByteArray] Key archive data to import the keys from.
      *
-     * @throws [EmailCryptographicKeysException]
+     * @throws [EmailCryptographicKeysException] if the archive is empty or cannot be read, holds no
+     *  keys for this client's namespace, or holds keys for another namespace. The existing keys are
+     *  kept.
      */
     @Throws(EmailCryptographicKeysException::class)
     suspend fun importKeys(archiveData: ByteArray)
 
     /**
      * Export the cryptographic keys to a key archive.
+     *
+     * The archive records this client's key namespace, and imports only into a client with the
+     * same namespace.
      *
      * @returns Key archive data.
      *
@@ -1255,10 +1418,43 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun exportKeys(): ByteArray
 
     /**
+     * Create the singleton key pair every email address and email alias is sealed to, if this
+     * device does not have it.
+     *
+     * Requires a client built with [Builder.setEnforceSingletonKeyPair]. Call it once the user is
+     * signed in, before provisioning: provisioning never creates the key, and fails with
+     * [EmailAddressException.SingletonKeyPairNotFoundException] or
+     * [EmailAliasException.SingletonKeyPairNotFoundException] without it.
+     *
+     * The result says whether the key had to be created. If it was, the device's key material has
+     * changed, so back the keys up again with [exportKeys]. If the user already has email
+     * addresses or email aliases, a new key also means this device does not have the one they are
+     * sealed to (for example a second device, or one whose keys were removed), so import the
+     * user's key backup with [importKeys].
+     *
+     * @return Whether the singleton key pair was created, and its identifier.
+     * @throws EmailCryptographicKeysException.InvalidConfigurationException if the client does not
+     *  enforce a singleton key pair; otherwise [EmailCryptographicKeysException] if the key cannot
+     *  be created.
+     */
+    @Throws(EmailCryptographicKeysException::class)
+    suspend fun createSingletonKeysIfAbsent(): CreateSingletonKeysIfAbsentResult
+
+    /**
      * Provisions a new email alias with the specified configuration.
+     *
+     * The key pair is chosen as for [provisionEmailAddress]: the supplied
+     * [ProvisionEmailAliasInput.keyId], otherwise the singleton key pair if the client enforces
+     * one, otherwise a new key pair of its own. Deprovisioning an email alias never removes a key
+     * pair.
      *
      * @param {ProvisionEmailAliasInput} input The input parameters for provisioning the email alias
      * @returns {EmailAlias} The newly created email alias
+     * @throws [EmailAliasException], including
+     *  [EmailAliasException.InvalidArgumentException] if a `keyId` is supplied to a client built
+     *  with [Builder.setAllowCallerManagedKeys] set to `false`, and
+     *  [EmailAliasException.SingletonKeyPairNotFoundException] if the client enforces a singleton
+     *  key pair that this device does not have.
      */
     suspend fun provisionEmailAlias(input: ProvisionEmailAliasInput): EmailAlias
 
@@ -1387,7 +1583,9 @@ interface SudoEmailClient : AutoCloseable {
     suspend fun setMessageBodyCacheSizeLimit(bytes: Long)
 
     /**
-     * Reset any internal state and cached content.
+     * Reset any internal state and cached content, and remove every key from the device. This
+     * includes the singleton key pair, so call [createSingletonKeysIfAbsent] again before
+     * provisioning.
      */
     fun reset()
 }

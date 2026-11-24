@@ -10,17 +10,17 @@ import com.amazonaws.services.cognitoidentity.model.NotAuthorizedException
 import com.amazonaws.util.Base64
 import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudoemail.graphql.type.SealedAttributeInput
-import com.sudoplatform.sudoemail.internal.data.common.StringConstants
 import com.sudoplatform.sudoemail.internal.data.common.transformers.ErrorTransformer
 import com.sudoplatform.sudoemail.internal.data.emailAddress.transformers.EmailAddressTransformer
 import com.sudoplatform.sudoemail.internal.data.emailFolder.transformers.EmailFolderTransformer
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.EmailAddressService
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.ProvisionEmailAddressRequest
 import com.sudoplatform.sudoemail.internal.domain.entities.emailAddress.UnsealedEmailAddressEntity
-import com.sudoplatform.sudoemail.keys.KeyPair
+import com.sudoplatform.sudoemail.keys.ProvisioningKeyProvider
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.secure.SealingService
 import com.sudoplatform.sudoemail.types.SymmetricKeyEncryptionAlgorithm
+import com.sudoplatform.sudoemail.util.isDefinitiveRejection
 import com.sudoplatform.sudokeymanager.KeyNotFoundException
 import com.sudoplatform.sudologging.Logger
 
@@ -43,17 +43,22 @@ internal data class ProvisionEmailAddressUseCaseInput(
  * Use case for provisioning a new email address.
  *
  * This use case handles creating a new email address with encryption keys and optional alias.
+ * The key pair is chosen by [keyProvider], and a key pair generated for the request is removed
+ * again if the service definitely rejects it.
  *
  * @property emailAddressService [EmailAddressService] Service for email address operations.
  * @property serviceKeyManager [ServiceKeyManager] Manager for encryption keys.
  * @property sealingService [SealingService] Service for sealing/encrypting data.
  * @property logger [Logger] Logger for debugging.
+ * @property keyProvider [ProvisioningKeyProvider] Chooses the key pair to provision with, and
+ *  removes it if the provision is rejected.
  */
 internal class ProvisionEmailAddressUseCase(
     private val emailAddressService: EmailAddressService,
     private val serviceKeyManager: ServiceKeyManager,
     private val sealingService: SealingService,
     private val logger: Logger,
+    private val keyProvider: ProvisioningKeyProvider,
 ) {
     /**
      * Executes the provision email address use case.
@@ -61,6 +66,10 @@ internal class ProvisionEmailAddressUseCase(
      * @param input [ProvisionEmailAddressUseCaseInput] The input parameters.
      * @return [UnsealedEmailAddressEntity] The provisioned email address.
      * @throws KeyNotFoundException if the encryption key is not found.
+     * @throws SudoEmailClient.EmailAddressException.InvalidArgumentException if a key pair is
+     *  supplied but the client doesn't allow caller managed keys.
+     * @throws SudoEmailClient.EmailAddressException.SingletonKeyPairNotFoundException if the
+     *  client enforces a singleton key pair that this device does not have.
      * @throws SudoEmailClient.EmailAddressException.AuthenticationException if authentication fails.
      */
     suspend fun execute(input: ProvisionEmailAddressUseCaseInput): UnsealedEmailAddressEntity {
@@ -71,16 +80,6 @@ internal class ProvisionEmailAddressUseCase(
             if (symmetricKeyId == null) {
                 symmetricKeyId = this.serviceKeyManager.generateNewCurrentSymmetricKey()
             }
-
-            val keyPair: KeyPair =
-                if (input.keyId != null) {
-                    val id = input.keyId
-                    this.serviceKeyManager.getKeyPairWithId(id) ?: throw KeyNotFoundException(
-                        StringConstants.PUBLIC_KEY_NOT_FOUND_ERROR_MSG,
-                    )
-                } else {
-                    this.serviceKeyManager.generateKeyPair()
-                }
 
             val alias =
                 if (input.alias !== null) {
@@ -96,14 +95,24 @@ internal class ProvisionEmailAddressUseCase(
                     null
                 }
 
+            val key = keyProvider.key(input.keyId)
+
             val provisionEmailAddressRequest =
                 ProvisionEmailAddressRequest(
                     emailAddress = input.emailAddress,
                     ownershipProofToken = input.ownershipProofToken,
                     alias = alias,
-                    keyPair = keyPair,
+                    keyPair = key.keyPair,
                 )
-            val provisionedEmailAddress = emailAddressService.provision(provisionEmailAddressRequest)
+            val provisionedEmailAddress =
+                try {
+                    emailAddressService.provision(provisionEmailAddressRequest)
+                } catch (e: Throwable) {
+                    if (e.isDefinitiveRejection) {
+                        keyProvider.discardRejectedKey(key)
+                    }
+                    throw e
+                }
 
             val folders =
                 provisionedEmailAddress.folders.map { folder ->

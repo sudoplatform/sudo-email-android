@@ -29,6 +29,7 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ListDraf
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ListScheduledDraftMessagesForEmailAddressIdUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.ScheduleSendDraftMessageUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.draftMessage.UpdateDraftEmailMessageUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.DeprovisionEmailAddressUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.GetEmailAddressUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ListEmailAddressesForSudoIdUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailAddress.ListEmailAddressesUseCase
@@ -54,7 +55,9 @@ import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.GetEmail
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.ListEmailMessagesUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.SendEmailMessageUseCase
 import com.sudoplatform.sudoemail.internal.domain.useCases.emailMessage.UpdateEmailMessagesUseCase
+import com.sudoplatform.sudoemail.internal.domain.useCases.keys.CreateSingletonKeysIfAbsentUseCase
 import com.sudoplatform.sudoemail.internal.util.EmailMessageDataProcessor
+import com.sudoplatform.sudoemail.keys.ProvisioningKeyProvider
 import com.sudoplatform.sudoemail.keys.ServiceKeyManager
 import com.sudoplatform.sudoemail.s3.S3Client
 import com.sudoplatform.sudoemail.secure.EmailCryptoService
@@ -64,6 +67,8 @@ import com.sudoplatform.sudouser.SudoUserClient
 
 internal interface UseCaseFactory {
     fun createProvisionEmailAddressUseCase(): ProvisionEmailAddressUseCase
+
+    fun createDeprovisionEmailAddressUseCase(): DeprovisionEmailAddressUseCase
 
     fun createUpdateEmailAddressMetadataUseCase(): UpdateEmailAddressMetadataUseCase
 
@@ -142,6 +147,8 @@ internal interface UseCaseFactory {
     fun createGetEmailAliasByIdUseCase(): GetEmailAliasByIdUseCase
 
     fun createVerifyExternalEmailAddressUseCase(): VerifyExternalEmailAddressUseCase
+
+    fun createCreateSingletonKeysIfAbsentUseCase(): CreateSingletonKeysIfAbsentUseCase
 }
 
 internal class DefaultUseCaseFactory(
@@ -162,6 +169,8 @@ internal class DefaultUseCaseFactory(
     private val emailCryptoService: EmailCryptoService,
     private val emailMessageBodyCache: EmailMessageBodyCache,
     private val logger: Logger,
+    private val enforceSingletonKeyPair: Boolean,
+    private val allowCallerManagedKeys: Boolean,
 ) : UseCaseFactory {
     override fun createProvisionEmailAddressUseCase(): ProvisionEmailAddressUseCase =
         ProvisionEmailAddressUseCase(
@@ -169,6 +178,22 @@ internal class DefaultUseCaseFactory(
             serviceKeyManager = serviceKeyManager,
             sealingService = sealingService,
             logger = logger,
+            keyProvider =
+                ProvisioningKeyProvider.forEmailAddress(
+                    serviceKeyManager = serviceKeyManager,
+                    logger = logger,
+                    enforceSingletonKeyPair = enforceSingletonKeyPair,
+                    allowCallerManagedKeys = allowCallerManagedKeys,
+                ),
+        )
+
+    override fun createDeprovisionEmailAddressUseCase(): DeprovisionEmailAddressUseCase =
+        DeprovisionEmailAddressUseCase(
+            emailAddressService = emailAddressService,
+            serviceKeyManager = serviceKeyManager,
+            logger = logger,
+            enforceSingletonKeyPair = enforceSingletonKeyPair,
+            allowCallerManagedKeys = allowCallerManagedKeys,
         )
 
     override fun createUpdateEmailAddressMetadataUseCase(): UpdateEmailAddressMetadataUseCase =
@@ -422,6 +447,13 @@ internal class DefaultUseCaseFactory(
             serviceKeyManager = serviceKeyManager,
             sealingService = sealingService,
             logger = logger,
+            keyProvider =
+                ProvisioningKeyProvider.forEmailAlias(
+                    serviceKeyManager = serviceKeyManager,
+                    logger = logger,
+                    enforceSingletonKeyPair = enforceSingletonKeyPair,
+                    allowCallerManagedKeys = allowCallerManagedKeys,
+                ),
         )
 
     override fun createDeprovisionEmailAliasUseCase(): DeprovisionEmailAliasUseCase =
@@ -476,5 +508,12 @@ internal class DefaultUseCaseFactory(
     override fun createVerifyExternalEmailAddressUseCase(): VerifyExternalEmailAddressUseCase =
         VerifyExternalEmailAddressUseCase(
             emailAliasService = emailAliasService,
+        )
+
+    override fun createCreateSingletonKeysIfAbsentUseCase(): CreateSingletonKeysIfAbsentUseCase =
+        CreateSingletonKeysIfAbsentUseCase(
+            serviceKeyManager = serviceKeyManager,
+            enforceSingletonKeyPair = enforceSingletonKeyPair,
+            logger = logger,
         )
 }

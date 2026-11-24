@@ -9,9 +9,13 @@ package com.sudoplatform.sudoemail.keys
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.sudoplatform.sudoemail.BaseTests
+import com.sudoplatform.sudoemail.SudoEmailClient
 import com.sudoplatform.sudokeymanager.AndroidSQLiteStore
 import com.sudoplatform.sudokeymanager.KeyManager
 import com.sudoplatform.sudokeymanager.KeyManagerInterface
+import com.sudoplatform.sudologging.LogDriverInterface
+import com.sudoplatform.sudologging.LogLevel
+import com.sudoplatform.sudologging.Logger
 import com.sudoplatform.sudouser.SudoUserClient
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.string.shouldStartWith
@@ -23,9 +27,12 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.verify
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import timber.log.Timber
@@ -47,7 +54,7 @@ class ServiceKeyManagerRoboTest : BaseTests() {
     }
 
     private val keyManager by before {
-        KeyManager(AndroidSQLiteStore(context))
+        KeyManager(AndroidSQLiteStore(context, SudoEmailClient.DEFAULT_KEY_NAMESPACE))
     }
 
     private val serviceKeyManager by before {
@@ -184,4 +191,43 @@ class ServiceKeyManagerRoboTest : BaseTests() {
             symmetricKeyId shouldNotBe null
             symmetricKeyId?.isBlank() shouldBe false
         }
+
+    @Test
+    fun `createSingletonKeyPairIfAbsent() should replace a singleton whose private key is missing and report it`() {
+        val logDriver =
+            mock<LogDriverInterface>().stub {
+                on { logLevel } doReturn LogLevel.VERBOSE
+            }
+        val manager =
+            DefaultServiceKeyManager(
+                userClient = mockUserClient,
+                keyRingServiceName = keyRingServiceName,
+                keyManager = keyManager,
+                logger = Logger("test", logDriver),
+            )
+        val missingKeyId = manager.createSingletonKeyPairIfAbsent().keyPair.keyId
+        keyManager.deleteKeyPair(missingKeyId)
+
+        val replacement = manager.createSingletonKeyPairIfAbsent()
+
+        replacement.created shouldBe true
+        replacement.keyPair.keyId shouldNotBe missingKeyId
+        manager.getSingletonKeyPair()?.keyId shouldBe replacement.keyPair.keyId
+        verify(logDriver).outputError(
+            any(),
+            eq(mapOf("missingKeyId" to missingKeyId, "replacementKeyId" to replacement.keyPair.keyId)),
+        )
+    }
+
+    @Test
+    fun `createSingletonKeyPairIfAbsent() should throw rather than replace a singleton missing its public key`() {
+        val singletonKeyId = serviceKeyManager.createSingletonKeyPairIfAbsent().keyPair.keyId
+        keyManager.deletePublicKey(singletonKeyId)
+
+        shouldThrow<DeviceKeyManager.DeviceKeyManagerException.KeyOperationFailedException> {
+            serviceKeyManager.createSingletonKeyPairIfAbsent()
+        }
+
+        serviceKeyManager.getSingletonKeyId() shouldBe singletonKeyId
+    }
 }

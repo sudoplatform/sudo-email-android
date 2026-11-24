@@ -28,6 +28,15 @@ object StringConstants {
     const val KEY_GENERATION_ERROR_MSG = "Failed to generate a public key pair"
     const val KEY_ARCHIVE_ERROR_MSG = "Unable to perform key archive operation"
     const val NO_EMAIL_ADDRESS_ERROR_MSG = "No email address returned"
+    const val NO_PUBLIC_KEYS_ERROR_MSG = "No public keys returned"
+    const val SINGLETON_KEY_PAIR_NOT_FOUND_MSG =
+        "This device doesn't have the shared key pair. Create it, or import a key backup that contains it."
+    const val KEY_PAIR_REMOVAL_FAILED_MSG =
+        "The email address was deprovisioned, but its key couldn't be removed from this device."
+    const val CALLER_MANAGED_KEYS_NOT_ALLOWED_MSG =
+        "keyId can't be supplied to a client built with setAllowCallerManagedKeys(false)"
+    const val SINGLETON_KEY_PAIR_NOT_ENFORCED_MSG =
+        "createSingletonKeysIfAbsent() requires a client built with setEnforceSingletonKeyPair(true)"
     const val INVALID_KEYRING_MSG = "Invalid key ring identifier"
     const val INVALID_EMAIL_ADDRESS_MSG = "Invalid email address"
     const val INSUFFICIENT_ENTITLEMENTS_MSG = "Entitlements have been exceeded"

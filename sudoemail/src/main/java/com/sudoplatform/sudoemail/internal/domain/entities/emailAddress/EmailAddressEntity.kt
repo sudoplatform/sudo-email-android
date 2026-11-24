@@ -75,6 +75,8 @@ internal data class UnsealedEmailAddressEntity(
  * @property lastReceivedAt [java.util.Date] When the email address last received an email message.
  * @property sealedAlias [SealedAttributeEntity] An optional sealed user defined alias name for the email address.
  * @property folders [List<SealedEmailFolderEntity>] List of folders associated with this email address.
+ * @property keyRingId [String] Identifier of the email address's key ring on the service.
+ * @property keyIds [List<String>] Identifiers of the key pairs registered for the email address.
  */
 @Parcelize
 internal data class SealedEmailAddressEntity(
@@ -90,5 +92,7 @@ internal data class SealedEmailAddressEntity(
     override val lastReceivedAt: Date? = null,
     val sealedAlias: SealedAttributeEntity? = null,
     val folders: List<SealedEmailFolderEntity>,
+    val keyRingId: String? = null,
+    val keyIds: List<String> = emptyList(),
 ) : EmailAddressEntity(),
     Parcelable

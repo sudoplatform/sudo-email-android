@@ -178,4 +178,13 @@ internal interface EmailAddressService {
      * @return [List] of [EmailAddressPublicInfoEntity]s.
      */
     suspend fun lookupPublicInfo(input: LookupEmailAddressesPublicInfoRequest): List<EmailAddressPublicInfoEntity>
+
+    /**
+     * List every registration of the user's public keys, across all of the user's email addresses
+     * and email aliases, in every key format. Reads every page.
+     *
+     * @return The registrations. A key registered for several email addresses or email aliases
+     *  appears once for each.
+     */
+    suspend fun listPublicKeyRegistrations(): List<PublicKeyRegistrationEntity>
 }

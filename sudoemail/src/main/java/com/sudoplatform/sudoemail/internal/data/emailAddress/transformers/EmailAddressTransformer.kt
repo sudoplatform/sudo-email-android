@@ -78,6 +78,8 @@ internal object EmailAddressTransformer {
             lastReceivedAt = emailAddressWithoutFoldersEntity.lastReceivedAt,
             sealedAlias = emailAddressWithoutFoldersEntity.sealedAlias,
             folders = emailAddress.folders.map { EmailFolderTransformer.graphQLToSealedEntity(it.emailFolder) },
+            keyRingId = emailAddressWithoutFoldersEntity.keyRingId,
+            keyIds = emailAddressWithoutFoldersEntity.keyIds,
         )
     }
 
@@ -101,6 +103,8 @@ internal object EmailAddressTransformer {
             lastReceivedAt = emailAddressWithoutFolders.lastReceivedAtEpochMs.toDate(),
             sealedAlias = emailAddressWithoutFolders.alias?.toSealedAttributeEntity(),
             folders = emptyList(),
+            keyRingId = emailAddressWithoutFolders.keyRingId,
+            keyIds = emailAddressWithoutFolders.keyIds,
         )
 
     /**

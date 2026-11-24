@@ -262,10 +262,22 @@ internal open class DefaultDeviceKeyManager(
     @Throws(DeviceKeyManager.DeviceKeyManagerException::class)
     override fun importKeys(archiveData: ByteArray) {
         try {
-            keyManager.removeAllKeys()
+            // saveKeys removes the existing keys itself, once the archive is known to hold keys for
+            // this namespace.
             val archive = SecureKeyArchive.getInstanceV3(archiveData, keyManager)
             archive.unarchive()
+            // saveKeys would silently skip keys in other namespaces, so refuse the archive instead.
+            val otherNamespaces = archive.namespaces - keyManager.namespace
+            if (otherNamespaces.isNotEmpty()) {
+                val message =
+                    "The key archive has keys in namespaces other than \"${keyManager.namespace}\": " +
+                        otherNamespaces.sorted().joinToString { "\"$it\"" }
+                logger.error(message)
+                throw DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException(message)
+            }
             archive.saveKeys()
+        } catch (e: DeviceKeyManager.DeviceKeyManagerException) {
+            throw e
         } catch (e: Exception) {
             logger.error("error $e")
             throw DeviceKeyManager.DeviceKeyManagerException.SecureKeyArchiveException(
